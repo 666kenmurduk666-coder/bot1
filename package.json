@@ -1,0 +1,9 @@
+{
+  "name": "ai-agents-office",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An office dashboard for AI agents, with you as the CEO.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
