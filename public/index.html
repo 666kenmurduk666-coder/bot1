@@ -175,6 +175,10 @@ dialog::backdrop{background:#000a}
   <!-- OFFICE -->
   <section class="view on" id="v-office">
     <div class="card">
+      <div id="officeQuestStrip" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:6px 8px;margin-bottom:7px;background:rgba(10,18,40,.55);border:1px solid rgba(47,95,168,.7);border-radius:8px;color:#e9edf7;font-size:11px">
+        <button id="officeQuestHead" title="I-click para buksan / isara ang quests" style="font-weight:700;color:#8fd0e8;background:transparent;border:0;padding:0;cursor:pointer;font-size:11px;white-space:nowrap">📜 Daily quest <span id="officeQuestCount" class="hint" style="font-size:11px">0/0</span> <span id="officeQuestCoin" style="color:#ffd34d;font-size:11px">🪙0</span> <span id="officeQuestCaret" style="color:#9fb2d0">▾</span></button>
+        <div id="officeQuestList" style="display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:180px">🔵 Facebook login para sa quest at rewards.</div>
+      </div>
     <div id="oc3d" style="display:none;position:relative">
       <button id="playBtn" title="Roblox-style controls: WASD = lakad, Space = jump, E = harvest" style="display:block;position:absolute;left:10px;bottom:10px;z-index:9999;background:linear-gradient(135deg,#e8622c,#f0723c);color:#fff;border:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px #0008;opacity:.95">🎮 Maglaro (Roblox Mode)</button>
       <div id="jumpPanel" style="display:none;position:absolute;right:8px;bottom:8px;z-index:9999;background:rgba(10,18,40,.82);padding:4px;border-radius:7px;border:1px solid rgba(47,95,168,.7);pointer-events:auto;box-shadow:none">
@@ -238,7 +242,6 @@ dialog::backdrop{background:#000a}
     </div>
     <div class="grid" style="margin-top:12px">
       <div class="card"><h2>Office status</h2><div id="officeStatus" class="hint"></div></div>
-      <div class="card"><h2>📜 Daily quest <span id="officeQuestCount" class="hint" style="font-size:11px">0/0</span> <span id="officeQuestCoin" style="color:#ffd34d;font-size:11px">🪙0</span></h2><div id="officeQuestList" class="hint" style="line-height:1.5">🔵 Facebook login para sa quest at rewards.</div></div>
       <div class="card"><h2>CEO feed</h2><div class="feed" id="officeFeed"></div></div>
     </div>
     <div class="card" style="margin-top:12px"><div class="bar"><h2>💬 Watercooler talk</h2><span class="sp"></span><button id="genConv" class="ceoOnly">Generate conversation</button></div><div id="convFeed"></div></div>
@@ -836,12 +839,15 @@ $('officeMoreBtn').onclick=()=>{
 $('zonesBtn').onclick=()=>{const p=$('jumpPanel');if(!p)return;p.style.display=(p.style.display==='none')?'block':'none';};
 $('chatBtn').onclick=()=>{const c=$('mmoChat');if(!c)return;c.classList.remove('min');const inp=$('mmoChatIn');if(inp&&!document.body.classList.contains('ui-hidden'))inp.focus();};
 $('fsBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){toast('Fullscreen hindi available sa browser na ' + e.message);}};
+// 📜 Quest strip toggle (nasa ibabaw ng office view)
+const qHead=$('officeQuestHead');
+if(qHead)qHead.onclick=()=>{const l=$('officeQuestList'),c=$('officeQuestCaret');if(!l)return;const show=l.style.display==='none';l.style.display=show?'flex':'none';if(c)c.textContent=show?'▾':'▸';};
 // floor view: isang pindot, kita lahat sa LOOB — transparent ang mga pader + wide-angle lens!
-const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(11,fy+1.2,7);cam3d.phi=.58;cam3d.theta=.5;cam3d.r=26;cam3d.lastUser=Date.now();
+const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(20,fy+1.2,14);cam3d.phi=.6;cam3d.theta=.5;cam3d.r=44;cam3d.lastUser=Date.now();
   camera3d.fov=58;camera3d.updateProjectionMatrix();
   if(!xrayOn){xrayOn=true;const xb=$('xray');if(xb)xb.textContent='⊙ Normal view';xrayApply();}
   toast('Loob ng '+name+' ? wide-angle view, kita lahat! ✨')};
-$('v1f').onclick=()=>{if(!cam3d)return;cam3d.target.set(11,1.2,7);cam3d.phi=.58;cam3d.theta=.5;cam3d.r=26;cam3d.lastUser=Date.now();camera3d.fov=58;camera3d.updateProjectionMatrix();toast('🏢 Main Office lang — iisang palapag!')};
+$('v1f').onclick=()=>{if(!cam3d)return;cam3d.target.set(20,1.2,14);cam3d.phi=.6;cam3d.theta=.5;cam3d.r=44;cam3d.lastUser=Date.now();camera3d.fov=58;camera3d.updateProjectionMatrix();toast('🏢 Buong 1F Office — main + conference + cafeteria + fun room!')};
 $('resetLayout').onclick=$('resetLayout2').onclick=async()=>{await api('/api/layout/reset',{method:'POST',body:'{}'});toast('Layout reset');await refresh();drawEditor()};
 $('saveLayout').onclick=async()=>{const r=await api('/api/layout',{method:'POST',body:JSON.stringify({layout:S.layout})});toast(r.ok?'Layout saved':'Error');await refresh()};
 
@@ -2274,7 +2280,7 @@ function buildRoom3d(id){
   buildAttendance3d();
   buildLivingWorld3d();
   // orbit camera
-  cam3d={target:new THREE.Vector3(11,1.2,7),theta:.5,phi:.62,r:32,lastUser:0};
+  cam3d={target:new THREE.Vector3(20,1.2,14),theta:.5,phi:.6,r:44,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
@@ -2984,18 +2990,18 @@ function buildGym3d(){
 function buildOfficeWing3d(){
   // malaking sahig ng bagong wing (kanan ng opisina, malayo sa court)
   const deck=new THREE.Mesh(new THREE.BoxGeometry(23,.1,17),m3('#cfd4da'));
-  deck.position.set(33,-.73,21.5);deck.receiveShadow=true;g.level.add(deck);
+  deck.position.set(33,-.05,21.5);deck.receiveShadow=true;g.level.add(deck);
   // connecting walkway mula sa lumang opisina papunta sa wing
   const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,7.2),m3('#dfe4ec'));
-  link.rotation.x=-Math.PI/2;link.position.set(21.8,-.68,16.6);link.receiveShadow=true;g.level.add(link);
+  link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,16.6);link.receiveShadow=true;g.level.add(link);
   // low glass railings
   [[33,13.1],[33,29.9]].forEach(z=>box3(23,.5,.09,'#a8d8ff',33,.25,z));
   [[21.6,21.5],[44.4,21.5]].forEach(x=>box3(.09,.5,17,'#a8d8ff',x,.25,21.5));
   const zone=(x,z,w,d,col,label)=>{
     const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
-    f.rotation.x=-Math.PI/2;f.position.set(x,-.675,z);f.receiveShadow=true;g.level.add(f);
-    [[x,z-d/2],[x,z+d/2]].forEach(p=>box3(w,.03,.08,'#eef3fb',p[0],-.65,p[1],true));
-    [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,-.65,z,true));
+    f.rotation.x=-Math.PI/2;f.position.set(x,.02,z);f.receiveShadow=true;g.level.add(f);
+    [[x,z-d/2],[x,z+d/2]].forEach(p=>box3(w,.03,.08,'#eef3fb',p[0],.04,p[1],true));
+    [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,.04,z,true));
     mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
   };
   // 🧠 CONFERENCE
@@ -4752,7 +4758,7 @@ $('hireRun').onclick=async()=>{
 };
 /* ✨? JUMP TO LOCATION: isang pindot, diretso sa lugar! */
 const JUMP_VIEWS={
-  hq:{t:[11,4,7],phi:.66,theta:.5,r:30},
+  hq:{t:[20,1.2,14],phi:.6,theta:.5,r:44},
   mall:{t:[23.8,5,-5],phi:.5,theta:.3,r:14},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
@@ -5216,12 +5222,12 @@ function renderBzQuests(v){
   list.innerHTML=tasks.map(t=>{
     const done=!!t.done;
     const prog=t.target>1?(' '+t.progress+'/'+t.target):'';
-    return '<button data-task="'+bzEsc(t.id)+'" title="'+bzEsc(t.label)+'" style="width:100%;display:flex;gap:6px;align-items:center;font-size:11px;color:'+(done?'#7ee2a8':'#dbe6f8')+';background:'+(done?'rgba(43,74,63,.22)':'rgba(10,20,42,.26)')+';border:0;border-left:2px solid '+(done?'#2b4a3f':'#2f5fa8')+';border-radius:5px;padding:5px 6px;margin-bottom:3px;cursor:'+(done?'default':'pointer')+';text-align:left;box-sizing:border-box">'+
+    return '<button data-task="'+bzEsc(t.id)+'" title="'+bzEsc(t.label)+'" style="flex:1 1 130px;min-width:124px;display:flex;gap:6px;align-items:center;font-size:11px;color:'+(done?'#7ee2a8':'#dbe6f8')+';background:'+(done?'rgba(43,74,63,.22)':'rgba(10,20,42,.26)')+';border:0;border-left:2px solid '+(done?'#2b4a3f':'#2f5fa8')+';border-radius:5px;padding:5px 6px;cursor:'+(done?'default':'pointer')+';text-align:left;box-sizing:border-box">'+
       '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(47,95,168,.30);border-radius:5px;font-size:13px">'+(done?'✅':(icons[t.id]||'📌'))+'</span>'+
       '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(done?'text-decoration:line-through;opacity:.8':'')+'">'+bzEsc(short[t.id]||t.label)+prog+'</span>'+
       '<span style="color:'+(done?'#7ee2a8':'#ffd34d')+';font-size:10px;font-weight:700">'+(done?'DONE':'+'+(t.coin||0))+'</span></button>';
   }).join('')+
-    '<div style="color:#8494b4;font-size:10px;margin-top:5px;line-height:1.3">👆 I-click lang ang quest — auto reward.</div>';
+    '<div style="flex-basis:100%;color:#8494b4;font-size:10px;margin-top:3px;line-height:1.3">👆 I-click lang ang quest — auto reward.</div>';
   list.querySelectorAll('[data-task]').forEach(btn=>btn.onclick=()=>bzOneClickTask(btn.dataset.task));
   const qc=document.getElementById('bzQuickCheck');if(qc)qc.onclick=bzCheckin;
 }
@@ -5366,7 +5372,7 @@ function bzMakeDialog(id,title,width){
 }
 /* ========== 🐾 CARE & RETURN — bot battery/mood + FarmVille garden ========== */
 let CARE_STATE={bots:[],farm:[],day:{acts:0,rewarded:0,cap:8,rewardCap:5}};
-function syncQuestPanel(){createBzQuestPanel();if(typeof renderBzQuests==='function'&&typeof bzVisitor!=='undefined')renderBzQuests(bzVisitor);}
+function syncQuestPanel(){createBzQuestPanel();try{renderBzQuests(typeof bzVisitor!=='undefined'?bzVisitor:null);}catch(e){}}
 async function loadCare(silent){
   try{
     const r=await pubApi('/api/care/state');
