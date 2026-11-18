@@ -93,10 +93,10 @@ body.ui-hidden .bub3d{display:none!important}
 #uiHideBtn{background:linear-gradient(135deg,#3f5f8a,#2f5fa8);color:#fff;font-weight:700}
 #mmoChatHead{display:flex;align-items:center;gap:4px;padding:3px 6px;background:linear-gradient(90deg,#16325d,#102342);color:#cfe0ff;font-size:10px;font-weight:700;cursor:pointer;user-select:none}
 #mmoChatBody{flex:1;display:flex;flex-direction:column;min-height:0}
-#mmoChatLog{flex:1;overflow:auto;padding:3px 6px;font-size:10px;line-height:1.3;color:#d9e6ff;scrollbar-width:thin}
+#mmoChatLog{flex:1;overflow:auto;padding:3px 6px;font-size:11px;line-height:1.35;color:#d9e6ff;scrollbar-width:thin}
 #mmoChatLog b{color:#7fc7ff}
 #mmoChatFoot{display:flex;gap:4px;padding:3px 5px;border-top:1px solid #223a63}
-#mmoChatIn{flex:1;min-width:0;background:#0b1730;border:1px solid #2f5fa8;border-radius:6px;padding:3px 6px;color:#e9edf7;font-size:10px}
+#mmoChatIn{flex:1;min-width:0;background:#0b1730;border:1px solid #2f5fa8;border-radius:6px;padding:3px 6px;color:#e9edf7;font-size:11px}
 #mmoChatSend{padding:3px 7px;margin-right:11px;font-size:10px;font-weight:700;background:#e8622c;border-color:#e8622c;color:#fff}
 /* my workflows */
 .wfhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -177,25 +177,27 @@ dialog::backdrop{background:#000a}
     <div class="card">
     <div id="oc3d" style="display:none;position:relative">
       <button id="playBtn" title="Roblox-style controls: WASD = lakad, Space = jump, E = harvest" style="display:block;position:absolute;left:10px;bottom:10px;z-index:9999;background:linear-gradient(135deg,#e8622c,#f0723c);color:#fff;border:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px #0008;opacity:.95">🎮 Maglaro (Roblox Mode)</button>
-      <div id="jumpPanel" style="position:absolute;right:10px;bottom:10px;z-index:9999;background:rgba(10,18,40,.9);padding:6px;border-radius:10px;border:2px solid #2f5fa8;pointer-events:auto;box-shadow:0 4px 20px #0008">
-        <button id="jumpToggle" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:8px">📍 Views</button>
-        <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:8px;margin-left:4px">🎬 LIVE OFFICE · 1-CLICK</button>
-        <div id="jumpList" style="display:none;flex-direction:column;gap:5px;margin-top:6px">
-          <button id="jHq" style="font-size:12px;padding:5px 8px;cursor:pointer">🏢 Office</button>
-          <button id="jMall" style="font-size:12px;padding:5px 8px;cursor:pointer">🛍️ Mall</button>
-          <button id="jFarm" style="font-size:12px;padding:5px 8px;cursor:pointer">🌱 Farm</button>
-          <button id="jPark" style="font-size:12px;padding:5px 8px;cursor:pointer">🚙 Parking</button>
-          <button id="jPool" style="font-size:12px;padding:5px 8px;cursor:pointer">🌊🍹 2F Resort</button>
-          <button id="jLab" style="font-size:12px;padding:5px 8px;cursor:pointer">🧪 Lab</button>
-          <button id="jCourt" style="font-size:12px;padding:5px 8px;cursor:pointer">🏀 Court</button>
-          <button id="jGym" style="font-size:12px;padding:5px 8px;cursor:pointer">💪 Gym</button>
-          <button id="liveOffBtn" style="display:none;font-size:11px;padding:5px 8px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:8px">⏹ I-off ang Live</button>
+      <div id="jumpPanel" style="display:none;position:absolute;right:8px;bottom:8px;z-index:9999;background:rgba(10,18,40,.82);padding:4px;border-radius:7px;border:1px solid rgba(47,95,168,.7);pointer-events:auto;box-shadow:none">
+        <button id="jumpToggle" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:6px">📍 Zones</button>
+        <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:6px;margin-left:3px">🎬 LIVE</button>
+        <div id="jumpList" style="display:none;flex-direction:column;gap:3px;margin-top:4px">
+          <button id="jHq" style="font-size:11px;padding:3px 6px;cursor:pointer">🏢 Office</button>
+          <button id="jConf" style="font-size:11px;padding:3px 6px;cursor:pointer">🧠 Conference</button>
+          <button id="jCafeteria" style="font-size:11px;padding:3px 6px;cursor:pointer">☕ Cafeteria</button>
+          <button id="jFun" style="font-size:11px;padding:3px 6px;cursor:pointer">🛋️ Fun Room</button>
+          <button id="jMall" style="font-size:11px;padding:3px 6px;cursor:pointer">🛍️ Mall</button>
+          <button id="jFarm" style="font-size:11px;padding:3px 6px;cursor:pointer">🌱 Farm</button>
+          <button id="jPark" style="font-size:11px;padding:3px 6px;cursor:pointer">🚙 Parking</button>
+          <button id="jPool" style="font-size:11px;padding:3px 6px;cursor:pointer">🌊🍹 2F Resort</button>
+          <button id="jLab" style="font-size:11px;padding:3px 6px;cursor:pointer">🧪 Lab</button>
+          <button id="jCourt" style="font-size:11px;padding:3px 6px;cursor:pointer">🏀 Court</button>
+          <button id="jGym" style="font-size:11px;padding:3px 6px;cursor:pointer">💪 Gym</button>
+          <button id="liveOffBtn" style="display:none;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
         </div>
-        <div style="color:#9fb2d0;font-size:9px;margin-top:4px;line-height:1.3">1 click sa 🎬 kiosk/button = LIVE CAM + FB Studio · ikaw pipindot ng Go Live</div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
-      <div id="mmoChat" class="min">
-        <div id="mmoChatHead" title="Click para buksan ang chat"><span id="mmoChatFull">💬 WORLD CHAT</span><span id="mmoChatTiny" style="display:none">💬</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
+      <div id="mmoChat">
+        <div id="mmoChatHead" title="Click para itago / ipakita"><span>💬 WORLD CHAT</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
         <div id="mmoChatBody">
           <div id="mmoChatLog"></div>
           <div id="mmoChatFoot"><input id="mmoChatIn" maxlength="120" placeholder="Mag-type ng mensahe..." autocomplete="off"><button id="mmoChatSend" title="I-send">➤</button></div>
@@ -210,6 +212,9 @@ dialog::backdrop{background:#000a}
         <button id="ceoModeBtn" class="ob-main" style="background:linear-gradient(135deg,#8a6a20,#c9a227);color:#fff;border-color:#e8c04a;font-weight:700">🎮 Maglaro</button>
         <button id="liveBtn" class="ob-main" title="1 click = LIVE CAM ON + FB Live Studio">🎬 1-CLICK LIVE</button>
         <button id="careBtn" class="ob-main" style="background:linear-gradient(135deg,#1f7a4d,#2a8a7a);color:#fff;border-color:#4fc9b5">🌱 Care</button>
+        <button id="zonesBtn" class="ob-main" title="Mga zone / punta sa ibang view">📍 Zones</button>
+        <button id="chatBtn" class="ob-main" title="Buksan ang world chat">💬 Chat</button>
+        <button id="fsBtn" class="ob-main" title="Full screen ang office">⛶ Full</button>
         <span class="sp"></span>
         <span class="hint" id="officeInfo"></span>
         <button id="officeMoreBtn" class="ob-more" title="I-click para makita ang lahat ng controls">⚙️ Controls ▾</button>
@@ -233,6 +238,7 @@ dialog::backdrop{background:#000a}
     </div>
     <div class="grid" style="margin-top:12px">
       <div class="card"><h2>Office status</h2><div id="officeStatus" class="hint"></div></div>
+      <div class="card"><h2>📜 Daily quest <span id="officeQuestCount" class="hint" style="font-size:11px">0/0</span> <span id="officeQuestCoin" style="color:#ffd34d;font-size:11px">🪙0</span></h2><div id="officeQuestList" class="hint" style="line-height:1.5">🔵 Facebook login para sa quest at rewards.</div></div>
       <div class="card"><h2>CEO feed</h2><div class="feed" id="officeFeed"></div></div>
     </div>
     <div class="card" style="margin-top:12px"><div class="bar"><h2>💬 Watercooler talk</h2><span class="sp"></span><button id="genConv" class="ceoOnly">Generate conversation</button></div><div id="convFeed"></div></div>
@@ -826,6 +832,10 @@ $('officeMoreBtn').onclick=()=>{
   p.style.display=open?'none':'block';
   $('officeMoreBtn').textContent=open?'⚙️ Controls ▾':'⚙️ Controls ▴';
 };
+// 🛠️ Office bar controls — lahat ng menu nasa loob na ng office
+$('zonesBtn').onclick=()=>{const p=$('jumpPanel');if(!p)return;p.style.display=(p.style.display==='none')?'block':'none';};
+$('chatBtn').onclick=()=>{const c=$('mmoChat');if(!c)return;c.classList.remove('min');const inp=$('mmoChatIn');if(inp&&!document.body.classList.contains('ui-hidden'))inp.focus();};
+$('fsBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch(e){toast('Fullscreen hindi available sa browser na ' + e.message);}};
 // floor view: isang pindot, kita lahat sa LOOB — transparent ang mga pader + wide-angle lens!
 const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(11,fy+1.2,7);cam3d.phi=.58;cam3d.theta=.5;cam3d.r=26;cam3d.lastUser=Date.now();
   camera3d.fov=58;camera3d.updateProjectionMatrix();
@@ -1886,7 +1896,9 @@ function botStep(c,dx,dz,st,t,baseY){
   while(diff>Math.PI)diff-=Math.PI*2;
   while(diff<-Math.PI)diff+=Math.PI*2;
   g.rotation.y+=diff*.15;
-  g.position.y=(baseY||0)+.045+Math.sin(t/190+c.ph)*.035;
+  // 💃 masiglang bounce habang naglalakad + konting tapon ng katawan
+  g.position.y=(baseY||0)+.06+Math.abs(Math.sin(t/150+c.ph))*.17;
+  g.rotation.z=Math.sin(t/150+c.ph)*.06;
 }
 // MGA SPOT SA 1F LANG — walang elevator/roof, iwas sa pagkakapisan
 const GROUND_SPOTS={
@@ -2255,6 +2267,7 @@ function buildRoom3d(id){
   buildPlayground3d();
   buildSports3d();
   buildGym3d();
+  buildOfficeWing3d();
   buildSportsBots3d();
   buildPoleLights3d();
   buildSunRays3d();
@@ -2967,6 +2980,40 @@ function buildGym3d(){
   box3(2.2,1,.18,'#223a63',gx,.55,gz+3.5);
   box3(1.8,.62,.04,'#7ee2a8',gx,.6,gz+3.4,true);
 }
+/* ===== 🏢 OFFICE WING — malawak na dagdag na opisina, maayos na zones (Pixel-style) ===== */
+function buildOfficeWing3d(){
+  // malaking sahig ng bagong wing (kanan ng opisina, malayo sa court)
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(23,.1,17),m3('#cfd4da'));
+  deck.position.set(33,-.73,21.5);deck.receiveShadow=true;g.level.add(deck);
+  // connecting walkway mula sa lumang opisina papunta sa wing
+  const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,7.2),m3('#dfe4ec'));
+  link.rotation.x=-Math.PI/2;link.position.set(21.8,-.68,16.6);link.receiveShadow=true;g.level.add(link);
+  // low glass railings
+  [[33,13.1],[33,29.9]].forEach(z=>box3(23,.5,.09,'#a8d8ff',33,.25,z));
+  [[21.6,21.5],[44.4,21.5]].forEach(x=>box3(.09,.5,17,'#a8d8ff',x,.25,21.5));
+  const zone=(x,z,w,d,col,label)=>{
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
+    f.rotation.x=-Math.PI/2;f.position.set(x,-.675,z);f.receiveShadow=true;g.level.add(f);
+    [[x,z-d/2],[x,z+d/2]].forEach(p=>box3(w,.03,.08,'#eef3fb',p[0],-.65,p[1],true));
+    [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,-.65,z,true));
+    mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
+  };
+  // 🧠 CONFERENCE
+  zone(25,20,8,7,'#2d3b57','CONFERENCE 🧠');
+  box3(4,.16,1.6,'#8a6238',25,.28,20);box3(3.4,.08,.9,'#2d3b57',25,.17,20);
+  [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',25+dx,.38,18.6);box3(.55,.75,.55,'#2f5fa8',25+dx,.38,21.4);});
+  box3(2.4,1.3,.1,'#102342',25,1.25,23);box3(2.1,1.05,.03,'#66d9ff',25,1.25,22.94,true);
+  // ☕ CAFETERIA
+  zone(32,20,7,7,'#4a3c32','CAFETERIA ☕');
+  box3(3,.9,.7,'#6b4a32',32,.45,17.4);box3(2.8,.12,.5,'#d8c6a8',32,.95,17.4);
+  [-.9,.9].forEach(dx=>cyl3(.16,.25,'#d8c6a8',32+dx,1.1,17.4));
+  [-1.6,1.6].forEach(dx=>{box3(.9,.12,.9,'#8a6238',32+dx,.36,21.5);cyl3(.1,.5,'#9aa4b8',32+dx,.55,21.5);});
+  // 🛋️ FUN ROOM
+  zone(39,20,7,7,'#45385c','FUN ROOM 🛋️');
+  [-1.4,1.4].forEach(dx=>{box3(1.4,.5,1,'#7a5aa8',39+dx,.25,21.5);box3(1.4,.7,.2,'#9a7ac8',39+dx,.6,22);});
+  box3(3,1.6,.12,'#16213c',39,1.35,17.4);box3(2.7,1.3,.03,'#ff7ac8',39,1.35,17.34,true);
+  box3(.7,.3,.5,'#e8622c',39,.15,19);
+}
 /* ===== 🏃 SPORTS BOTS: mga round bot na naglalaro sa bawat field ===== */
 function makeSportBot3d(col,x,z){
   const p=new THREE.Group();
@@ -3565,15 +3612,12 @@ function buildCity3d(){
   cityMovers3d=[];g.trees=[];
   const roadMat=m3('#4a4f5a');
   const mkRoad=(w,d,x,z)=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);r.rotation.x=-Math.PI/2;r.position.set(x,-.69,z);r.receiveShadow=true;g.level.add(r)};  mkRoad(180,4.4,18,36);
-  mkRoad(4.4,190,-6.8,30);
+  // 🚫 Kalsadang katabi ng office (x=-6.8) tinanggal — luwang na ang office wing
   for(let x=-70;x<=105;x+=3.2){
     const d=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.24),m3('#e8e8e8'));
     d.rotation.x=-Math.PI/2;d.position.set(x,-.68,36);g.level.add(d);
   }
-  for(let z=-60;z<=110;z+=3.2){
-    const d=new THREE.Mesh(new THREE.PlaneGeometry(.24,1.3),m3('#e8e8e8'));
-    d.rotation.x=-Math.PI/2;d.position.set(-6.8,-.68,z);g.level.add(d);
-  }
+  // (walang patayong kalsada sa tabi ng office)
   // trees around the plot
   [[-3.4,1.5],[-3.4,6],[-3.4,10.5],[-3.4,15],[4,-1.4],[10,-1.4],[16,-1.4],
    [24,1.5],[24,10.5],[23.8,16],[24,17],[2,16.2],[7.5,16.2],[13,16.2],[24.5,24],[-12,-9],[24,-9],[-12,26]]
@@ -3593,7 +3637,7 @@ function buildCity3d(){
   cityBlock3d(-10,90,12,9,10,'#8a95a8');
   cityBlock3d(28,90,9,9,13,'#a89a8a');
   // streetlights — nasa sidewalk, HINDI sa ibabaw ng kalsada
-  lamp3d(-2.2,32.4);lamp3d(11,39.6);lamp3d(26,32.4);lamp3d(44,39.6);lamp3d(-10.4,4);lamp3d(-10.4,13);
+  lamp3d(-2.2,32.4);lamp3d(11,39.6);lamp3d(26,32.4);lamp3d(44,39.6);
   buildFarm3d();
   buildParking3d();
   // moving cars
@@ -3650,15 +3694,7 @@ function frame3D(){
   if(cam3d){
     const c=cam3d;
     if(!playerMode && followBot&&followBot.group)c.target.lerp(new THREE.Vector3(followBot.group.position.x,1.3,followBot.group.position.z),.14);
-    // ✨ LIVE CAM: auto-cycling showcase camera (para sa Streamlabs 24/7!)
-    if(liveOn&&cam3d&&(Date.now()-(cam3d.lastUser||0))>3000){
-      if(Date.now()>liveNext){liveShot=(liveShot+1)%LIVE_SHOTS.length;liveNext=Date.now()+6500;}
-      const s=LIVE_SHOTS[liveShot];
-      cam3d.target.lerp(new THREE.Vector3(s[0],s[1],s[2]),.04);
-      cam3d.phi+=(s[3]-cam3d.phi)*.04;
-      cam3d.theta+=(s[4]-cam3d.theta)*.04;
-      cam3d.r+=(s[5]-cam3d.r)*.04;
-    }
+    // 🎮 Roblox camera — walang auto-cycling; manual lang (right-click drag / wheel / WASD)
     camera3d.position.set(
       c.target.x+c.r*Math.cos(c.phi)*Math.sin(c.theta),
       c.target.y+c.r*Math.sin(c.phi),
@@ -3675,7 +3711,7 @@ function frame3D(){
     const g=c.group;
     // GROUND LOCK + ROUTE SANITIZER: lahat nasa 1F, pero hindi binubura ang ruta
     c.floorY=0;
-    if(g.position.y>.12&&!c.act&&!(c.route&&c.route.length))g.position.y=0;
+    if(g.position.y>.4&&!c.act&&!(c.route&&c.route.length)){g.position.y=0;g.rotation.z*=.7;}
     if(c.route&&c.route.length){
       if(c.route.some(w=>w.y||w.lift||w.ride)){
         const last=c.route[c.route.length-1];
@@ -3697,8 +3733,13 @@ function frame3D(){
       c.shadow.visible=!(c.route&&c.route.length&&c.route[0].lift);
     }
     // ✨ EMOASYON: emoji sa itaas ng ulo depende sa ginagawa!
-    setEmo(c.emo,c.act==='nap'?'😴':c.act==='swim'?'🌊':c.act==='dance'?'💃':c.act==='band'?'🎸':c.act==='chill'?'🛋️':c.act==='drink'?'☕':c.act==='break'?'⏸️':c.route&&c.route.length?'🚶':'✨');
-    g.scale.y=.86+Math.sin(t/380+c.ph)*.014; // paghinga, iba-ibang phase
+    // ✨ emosyon: masigla at nag-iiba-iba habang naglalakad
+    const WALK_EMO=['😊','😄','🤩','🙂','💚','✨'];
+    const emo=c.act==='nap'?'😴':c.act==='swim'?'🌊':c.act==='dance'?'💃':c.act==='band'?'🎸':c.act==='chill'?'🛋️':c.act==='drink'?'☕':c.act==='break'?'⏸️':(c.route&&c.route.length)?WALK_EMO[(Math.floor(t/2200)+i)%WALK_EMO.length]:'✨';
+    setEmo(c.emo,emo);
+    const br=Math.sin(t/260+c.ph); // squash & stretch habang humihinga
+    g.scale.y=.86+br*.03;g.scale.x=g.scale.z=.86-br*.015;
+    if(!(c.route&&c.route.length))g.rotation.z*=.82;
     c.wait-=dt*16.667;
     if(c.route&&c.route.length){
       const wp=c.route[0];
@@ -4223,7 +4264,7 @@ function frame3D(){
       player.lastMoveDir={x:dx,z:dz};
     }
     if(moveKeys.space)moveKeys.space=false;
-    if(!riding){player.y=groundYAt(player.x,player.z,player.y);player.vy=0;player.onGround=true;player.group.position.y=player.y;}
+    if(!riding){player.y=groundYAt(player.x,player.z,player.y);player.vy=0;player.onGround=true;player.group.position.y=player.y+(moving?Math.abs(Math.sin(Date.now()/150))*.07:0);}
     if(player.shadow) player.shadow.position.set(player.x,.03,player.z);
     // CEO GREETING: bots na malapit = magbabati! (wag snob!)
     if(playerMode && player && Date.now()-lastGreet>4000){
@@ -4681,9 +4722,9 @@ $('vaultAdd').onclick=async()=>{
 function toggleLiveOffice(force){
   liveOn=(typeof force==='boolean')?force:!liveOn;
   $('liveBtn').textContent=liveOn?'🎬 LIVE ON':'🎬 1-CLICK LIVE';
-  const zb=$('liveZoneBtn');if(zb)zb.textContent=liveOn?'🎬 LIVE OFFICE · ON':'🎬 LIVE OFFICE · 1-CLICK';
+  const zb=$('liveZoneBtn');if(zb)zb.textContent=liveOn?'🎬 LIVE ON':'🎬 LIVE';
   const off=$('liveOffBtn');if(off)off.style.display=liveOn?'block':'none';
-  if(liveOn){liveShot=0;liveNext=0;if(cam3d)cam3d.lastUser=0;}
+  if(liveOn){liveShot=0;liveNext=0;}
   else toast('🎬 LIVE OFFICE OFF — manual control na!');
 }
 /* 🎬 ONE-CLICK LIVE — LIVE CAM + FB Live Studio; ang "Go Live" ay nasa FB account mo pa rin */
@@ -4719,11 +4760,15 @@ const JUMP_VIEWS={
   lab:{t:[31,1.5,-9],phi:.55,theta:.3,r:18},
   resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
   court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
-  gym:{t:[30,1.5,26],phi:.55,theta:.3,r:18}
+  gym:{t:[30,1.5,26],phi:.55,theta:.3,r:18},
+  conf:{t:[25,1.5,20],phi:.55,theta:.3,r:14},
+  cafeteria:{t:[32,1.5,20],phi:.55,theta:.3,r:14},
+  fun:{t:[39,1.5,20],phi:.55,theta:.3,r:14}
 };
 function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
 $('jHq').onclick=e=>{e.stopPropagation();jumpTo('hq')};$('jMall').onclick=e=>{e.stopPropagation();jumpTo('mall')};$('jFarm').onclick=e=>{e.stopPropagation();jumpTo('farm')};$('jPark').onclick=e=>{e.stopPropagation();jumpTo('park')};$('jPool').onclick=e=>{e.stopPropagation();jumpTo('resort')};$('jLab').onclick=e=>{e.stopPropagation();jumpTo('lab')};
 $('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
+$('jConf').onclick=e=>{e.stopPropagation();jumpTo('conf')};$('jCafeteria').onclick=e=>{e.stopPropagation();jumpTo('cafeteria')};$('jFun').onclick=e=>{e.stopPropagation();jumpTo('fun')};
 $('liveZoneBtn').onclick=oneClickLive;
 $('liveOffBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(false)};
 /* ✨ ROBLOX-STYLE: WASD = lakad, Space = jump, E = harvest pananim! */
@@ -4852,7 +4897,7 @@ setInterval(async()=>{
   }catch(e){}
 },5000);
 </script>
-<div id="gameHud" style="position:fixed;top:70px;left:10px;z-index:50;background:rgba(10,18,40,.72);color:#e6ecf7;padding:4px 6px;border-radius:8px;border:1px solid rgba(47,95,168,.6);font-size:11px;display:none;cursor:move;box-shadow:none;backdrop-filter:blur(1px)"><span style="font-weight:700">💰 <span id="coinTxt">0</span></span><button id="hudToggle" title="Controls (WASD / Space / E / Enter)" style="padding:1px 5px;font-size:10px;margin-left:4px">ⓘ</button><button id="outfitBtn" title="Palette ng karakter" style="padding:1px 5px;font-size:10px;margin-left:3px">🎨</button><div id="hudExtra" style="display:none"><div id="questLine" style="font-size:10px;color:#ffd06b;margin-top:3px;line-height:1.35">🎯 Daily quest: 0/4</div><div id="hudTips" style="font-size:10px;color:#9fb2d0;margin-top:3px;line-height:1.45">WASD = lakad · Space = jump<br>E = harvest/shoot/approve · Enter = chat</div></div></div>
+<div id="gameHud" style="position:fixed;top:70px;left:10px;z-index:50;background:rgba(10,18,40,.7);color:#e6ecf7;padding:3px 5px;border-radius:7px;border:1px solid rgba(47,95,168,.55);font-size:10px;display:none;cursor:move;box-shadow:none;backdrop-filter:blur(1px)"><span style="font-weight:700">💰 <span id="coinTxt">0</span></span><button id="hudToggle" title="Controls (WASD / Space / E / Enter)" style="padding:1px 4px;font-size:9px;margin-left:3px">ⓘ</button><button id="outfitBtn" title="Palette ng karakter" style="padding:1px 4px;font-size:9px;margin-left:2px">🎨</button><div id="hudExtra" style="display:none"><div id="hudTips" style="font-size:10px;color:#9fb2d0;margin-top:3px;line-height:1.45">WASD = lakad · Space = jump<br>E = harvest/shoot/approve · Enter = chat</div></div></div>
 <script>
 /* ================= 🎮 EXTRA GAME FEATURES ================= */
 function esc2(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -5148,32 +5193,22 @@ function createBzPanel(){
   el.innerHTML='<div style="display:flex;align-items:center;gap:5px;font-weight:700;color:#ffd34d;cursor:pointer;font-size:10px" id="bzHead">🛒 BAZAAR<span style="flex:1"></span><span id="bzMin" title="Hide / show" style="font-size:11px">–</span></div><div id="bzBody" style="margin-top:4px"></div>';
   document.body.appendChild(el);
   document.getElementById('bzHead').onclick=()=>{
-    const b=document.getElementById('bzBody'),q=document.getElementById('bzQuestPanel');
+    const b=document.getElementById('bzBody');
     const hide=b.style.display!=='none';b.style.display=hide?'none':'block';
-    if(q)q.style.display=hide?'none':'block';
   };
   bzPanelBody=document.getElementById('bzBody');
-  createBzQuestPanel();
   return el;
 }
-/* 📋 QUEST STRIP — nasa LEFT side, translucent, nasa loob ng office view */
+/* 📋 QUEST — nasa loob na ng Office view (card), walang floating panel sa avatar */
 function createBzQuestPanel(){
-  let q=document.getElementById('bzQuestPanel');
-  if(q)return q;
-  q=document.createElement('div');q.id='bzQuestPanel';
-  q.style.cssText='position:fixed;left:132px;top:70px;z-index:54;width:auto;max-width:46vw;background:rgba(9,17,35,.26);border:1px solid rgba(127,199,255,.18);border-radius:8px;padding:4px 6px;color:#e9edf7;font-size:9.5px;box-shadow:none;backdrop-filter:blur(1px);cursor:pointer';
-  q.innerHTML='<div id="bzQuestHead" title="Click para buksan ang quests" style="display:flex;align-items:center;gap:5px;color:#8fd0e8;font-weight:700;font-size:9.5px;white-space:nowrap">📜 <span id="bzQuestCount">0/0</span><span id="bzQuestCoin" style="color:#ffd34d">🪙0</span><span id="bzQuestCaret" style="color:#9fb2d0">▸</span></div><div id="bzQuestBody" style="display:none;margin-top:4px;min-width:160px"><div id="bzQuestList"></div></div>';
-  document.body.appendChild(q);
-  const head=document.getElementById('bzQuestHead');
-  head.onclick=e=>{e.stopPropagation();const b=document.getElementById('bzQuestBody'),c=document.getElementById('bzQuestCaret');const show=b.style.display!=='block';b.style.display=show?'block':'none';c.textContent=show?'▾':'▸';};
-  return q;
+  const old=document.getElementById('bzQuestPanel');if(old)old.remove();
+  return null;
 }
 function renderBzQuests(v){
-  createBzQuestPanel();
-  const list=document.getElementById('bzQuestList'),coin=document.getElementById('bzQuestCoin'),cnt=document.getElementById('bzQuestCount');
+  const list=document.getElementById('officeQuestList'),coin=document.getElementById('officeQuestCoin'),cnt=document.getElementById('officeQuestCount');
   if(!list)return;
   if(coin)coin.textContent='🪙'+(v?(v.coins||0):0);
-  if(!v){if(cnt)cnt.textContent='—';list.innerHTML='<div style="color:#9fb2d0;font-size:9px;line-height:1.35">🔵 Facebook login para sa quest at rewards.</div>';return;}
+  if(!v){if(cnt)cnt.textContent='—';list.innerHTML='<div style="color:#9fb2d0;font-size:11px;line-height:1.35">🔵 Facebook login para sa quest at rewards.</div>';return;}
   const short={checkin:'Check-in',stalls:'Market stalls',posts:'Product posts',bots:'Office bots',order:'Mall order',share:'Affiliate post',content:'Office content'};
   const icons={checkin:'📅',stalls:'🛍️',posts:'📖',bots:'🤖',order:'🧾',share:'📣',content:'🎬'};
   const tasks=v.tasks||[];
@@ -5181,12 +5216,12 @@ function renderBzQuests(v){
   list.innerHTML=tasks.map(t=>{
     const done=!!t.done;
     const prog=t.target>1?(' '+t.progress+'/'+t.target):'';
-    return '<button data-task="'+bzEsc(t.id)+'" title="'+bzEsc(t.label)+'" style="width:100%;display:flex;gap:5px;align-items:center;font-size:9px;color:'+(done?'#7ee2a8':'#dbe6f8')+';background:'+(done?'rgba(43,74,63,.22)':'rgba(10,20,42,.26)')+';border:0;border-left:2px solid '+(done?'#2b4a3f':'#2f5fa8')+';border-radius:4px;padding:3px 4px;margin-bottom:2px;cursor:'+(done?'default':'pointer')+';text-align:left;box-sizing:border-box">'+
-      '<span style="width:19px;height:19px;display:flex;align-items:center;justify-content:center;background:rgba(47,95,168,.30);border-radius:4px;font-size:11px">'+(done?'✅':(icons[t.id]||'📌'))+'</span>'+
+    return '<button data-task="'+bzEsc(t.id)+'" title="'+bzEsc(t.label)+'" style="width:100%;display:flex;gap:6px;align-items:center;font-size:11px;color:'+(done?'#7ee2a8':'#dbe6f8')+';background:'+(done?'rgba(43,74,63,.22)':'rgba(10,20,42,.26)')+';border:0;border-left:2px solid '+(done?'#2b4a3f':'#2f5fa8')+';border-radius:5px;padding:5px 6px;margin-bottom:3px;cursor:'+(done?'default':'pointer')+';text-align:left;box-sizing:border-box">'+
+      '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(47,95,168,.30);border-radius:5px;font-size:13px">'+(done?'✅':(icons[t.id]||'📌'))+'</span>'+
       '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(done?'text-decoration:line-through;opacity:.8':'')+'">'+bzEsc(short[t.id]||t.label)+prog+'</span>'+
-      '<span style="color:'+(done?'#7ee2a8':'#ffd34d')+';font-size:8.5px;font-weight:700">'+(done?'DONE':'+'+(t.coin||0))+'</span></button>';
+      '<span style="color:'+(done?'#7ee2a8':'#ffd34d')+';font-size:10px;font-weight:700">'+(done?'DONE':'+'+(t.coin||0))+'</span></button>';
   }).join('')+
-    '<div style="color:#8494b4;font-size:8px;margin-top:3px;line-height:1.3">👆 I-click lang ang quest — auto reward.</div>';
+    '<div style="color:#8494b4;font-size:10px;margin-top:5px;line-height:1.3">👆 I-click lang ang quest — auto reward.</div>';
   list.querySelectorAll('[data-task]').forEach(btn=>btn.onclick=()=>bzOneClickTask(btn.dataset.task));
   const qc=document.getElementById('bzQuickCheck');if(qc)qc.onclick=bzCheckin;
 }
@@ -5331,7 +5366,7 @@ function bzMakeDialog(id,title,width){
 }
 /* ========== 🐾 CARE & RETURN — bot battery/mood + FarmVille garden ========== */
 let CARE_STATE={bots:[],farm:[],day:{acts:0,rewarded:0,cap:8,rewardCap:5}};
-function syncQuestPanel(){const q=document.getElementById('bzQuestPanel');if(q)q.style.display=(view==='office')?'block':'none';}
+function syncQuestPanel(){createBzQuestPanel();if(typeof renderBzQuests==='function'&&typeof bzVisitor!=='undefined')renderBzQuests(bzVisitor);}
 async function loadCare(silent){
   try{
     const r=await pubApi('/api/care/state');
