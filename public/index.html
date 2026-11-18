@@ -2275,6 +2275,7 @@ function buildRoom3d(id){
   buildSports3d();
   buildGym3d();
   buildOfficeWing3d();
+  if(typeof buildZonePartitions3d==='function')buildZonePartitions3d();
   buildSportsBots3d();
   buildPoleLights3d();
   buildSunRays3d();
@@ -3059,6 +3060,55 @@ function buildOfficeWing3d(){
     box3(1.05,.5,.04,'#66d9ff',LX+dx,.85,25.94,true);
   });
   cyl3(.22,.5,'#4fb6d8',LX-2.6,.25,28.2);cyl3(.22,.5,'#c94f8a',LX+2.6,.25,28.2);
+}
+/* ===== 🧱 ZONE PARTITIONS — maayos na harang sa pagitan ng zones, may gate ===== */
+function buildZonePartitions3d(){
+  if(!g.level||g.zonePartLevel===g.level)return;
+  g.zonePartLevel=g.level;
+  const H=.92;
+  const panel=(w,d,x,z,col,y)=>{
+    const b=y||0;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,H,d),new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:.34,roughness:.16,metalness:.1,side:THREE.DoubleSide,depthWrite:false}));
+    m.position.set(x,b+H/2,z);g.level.add(m);
+    box3(w,.05,d+.06,'#eef3fb',x,b+H,z,true);
+    box3(w,.05,d+.06,'#9fb2d0',x,b+.04,z);
+  };
+  const post=(x,z,col,y)=>cyl3(.055,H+.18,col||'#c9d6e6',x,(y||0)+(H+.18)/2,z,true);
+  const runX=(z,x1,x2,gateX,col,y)=>{
+    const gw=2.2;
+    if(gateX==null){panel(x2-x1,.09,(x1+x2)/2,z,col,y);return;}
+    const a=Math.max(x1,gateX-gw/2),b=Math.min(x2,gateX+gw/2);
+    if(a-x1>.15)panel(a-x1,.09,(x1+a)/2,z,col,y);
+    if(x2-b>.15)panel(x2-b,.09,(b+x2)/2,z,col,y);
+    post(a,z,col,y);post(b,z,col,y);
+    box3(gw,.03,.1,'#8fe3ff',gateX,(y||0)+.03,z,true);
+  };
+  const runZ=(x,z1,z2,gateZ,col,y)=>{
+    const gw=2.2;
+    if(gateZ==null){panel(.09,z2-z1,x,(z1+z2)/2,col,y);return;}
+    const a=Math.max(z1,gateZ-gw/2),b=Math.min(z2,gateZ+gw/2);
+    if(a-z1>.15)panel(.09,a-z1,x,(z1+a)/2,col,y);
+    if(z2-b>.15)panel(.09,z2-b,x,(b+z2)/2,col,y);
+    post(x,a,col,y);post(x,b,col,y);
+    box3(.1,.03,gw,'#8fe3ff',x,(y||0)+.03,gateZ,true);
+  };
+  const rect=(x1,x2,z1,z2,gate,col,y)=>{
+    runZ(x1,z1,z2,gate&&gate.side==='west'?gate.at:null,col,y);
+    runZ(x2,z1,z2,gate&&gate.side==='east'?gate.at:null,col,y);
+    runX(z1,x1,x2,gate&&gate.side==='south'?gate.at:null,col,y);
+    runX(z2,x1,x2,gate&&gate.side==='north'?gate.at:null,col,y);
+  };
+  // 🏢 Office wing — harang sa pagitan ng magkakasunod na kwarto
+  runZ(29.65,16.5,23.5,20,'#7cf7ff',0);   // conference | cafeteria
+  runZ(37.05,16.5,23.5,20,'#c9a227',0);   // cafeteria | fun room
+  runX(24,37.3,44.3,40.8,'#c98ac9',0);    // fun room | lab
+  // 🏃 Sports + event — mababang harang na may pintuan
+  rect(48.5,59.5,22,30,{side:'west',at:26},'#7ee2a8',-.68); // gym
+  rect(58,70,-4,20,{side:'west',at:8},'#7cf7ff',-.68);       // tennis
+  rect(37,55,-28,-16,{side:'north',at:46},'#ffd34d',-.55);   // event stage
+  // 🌊🍹 2F resort — bar | pool | mall
+  runZ(15.8,-8,-3,-5.5,'#ff8f5a',4);
+  runZ(21.6,-8,-3,-5.5,'#7cf7ff',4);
 }
 /* ===== 🏃 SPORTS BOTS: mga round bot na naglalaro sa bawat field ===== */
 function makeSportBot3d(col,x,z){
