@@ -5756,6 +5756,7 @@ async function openConnections(){
       '<b style="color:#ffd34d">🔐 Walang password na itinatago dito.</b> Gamitin ang <b>official OAuth / token</b> mula sa bawat site. '+
       'Ang Facebook visitor login ay dumaan sa sarili nating Facebook App; ang YouTube/Google at iba pa ay token lang. '+
       'Server-side lang ang values — hindi nila makikita ang visitors at hindi lumalabas sa chat.</div>'+
+    '<button id="bzFbSetup" style="width:100%;margin-bottom:9px;background:linear-gradient(135deg,#1877f2,#2f5fa8);color:#fff;border:0;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer">🔵 I-setup ang Facebook Login (App ID / Secret / Redirect)</button>'+
     list.map((x,i)=>{
       const link=(String(x.url||'').indexOf('/')===0)?(location.origin+x.url):x.url;
       return '<div style="border:1px solid '+(x.ready?'#2bb37a':'#2f5fa8')+';border-radius:9px;padding:8px;margin-bottom:6px;background:rgba(11,23,48,.78)">'+
@@ -5780,6 +5781,39 @@ async function openConnections(){
   const db=body.querySelector('[data-deploy]');
   if(db)db.onclick=()=>{window.open('https://dashboard.render.com/','_blank','noopener');toast('🚀 Render dashboard binuksan — pindutin ang Manual Deploy pag naka-login ka na.');};
   document.getElementById('bzConnRefresh').onclick=openConnections;
+  document.getElementById('bzFbSetup').onclick=openFbSetup;
+}
+/* 🔵 FACEBOOK SETUP — i-type ng CEO sa sarili niyang browser; server-side lang itatago */
+function openFbSetup(){
+  if(!ceoPass){toast('🔒 CEO Login muna!');return;}
+  const redirect=location.origin+'/api/fb/callback';
+  const d=bzMakeDialog('bzFbSetupDlg','🔵 FACEBOOK LOGIN SETUP','min(530px,94vw)'),body=document.getElementById('bzFbSetupDlgBody');
+  body.innerHTML=
+    '<div style="background:rgba(24,119,242,.12);border:1px solid #1877f2;border-radius:8px;padding:7px;margin-bottom:8px;color:#b9c8e0;font-size:10px;line-height:1.5">'+
+      'Gawin muna sa <b>developers.facebook.com</b>: Create App → <b>Facebook Login for Consumers</b> → kopyahin ang App ID at App Secret sa <b>Settings → Basic</b>.<br>'+
+      'Sa <b>Facebook Login → Settings</b>, ilagay angRedirect URI sa ibaba bilang <b>Valid OAuth Redirect URI</b> then Save Changes.</div>'+
+    '<label style="display:block;color:#8494b4;font-size:10px;margin:6px 0 3px">App ID</label>'+
+    '<input id="fbSetId" placeholder="123456789012345" style="width:100%;box-sizing:border-box;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:7px;padding:7px;font-size:11px">'+
+    '<label style="display:block;color:#8494b4;font-size:10px;margin:6px 0 3px">App Secret</label>'+
+    '<input id="fbSetSecret" type="password" placeholder="••••••••••••••••" style="width:100%;box-sizing:border-box;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:7px;padding:7px;font-size:11px">'+
+    '<label style="display:block;color:#8494b4;font-size:10px;margin:6px 0 3px">Redirect URI</label>'+
+    '<input id="fbSetRedirect" readonly style="width:100%;box-sizing:border-box;background:#16213c;color:#7fc7ff;border:1px solid #2f5fa8;border-radius:7px;padding:7px;font-size:10px">'+
+    '<div style="display:flex;gap:6px;margin-top:10px">'+
+      '<button id="fbSetCopy" style="flex:1;background:#2f5fa8;color:#fff;border:0;border-radius:7px;padding:7px;font-size:10.5px;cursor:pointer">📋 Kopyahin ang Redirect</button>'+
+      '<button id="fbSetSave" style="flex:1;background:#1877f2;color:#fff;border:0;border-radius:7px;padding:7px;font-size:10.5px;font-weight:700;cursor:pointer">💾 I-save</button>'+
+    '</div>'+
+    '<div style="color:#8494b4;font-size:9px;margin-top:7px;line-height:1.5">🔐 Ipapadala lang sa sarili nating server at isusulat sa settings.json. Hindi ito ipapakita ulit sa browser at hindi lalabas sa chat. Kung magre-redeploy, i-set ulit dito o gamitin ang Render env vars.</div>';
+  document.getElementById('fbSetRedirect').value=redirect;
+  if(!d.open)d.showModal();
+  document.getElementById('fbSetCopy').onclick=async()=>{try{await navigator.clipboard.writeText(redirect);toast('📋 Nako-copy ang Redirect URI!')}catch(e){document.getElementById('fbSetRedirect').select();toast('⚠ Pindutin ang Ctrl+C para kopyahin')}};
+  document.getElementById('fbSetSave').onclick=async()=>{
+    const id=document.getElementById('fbSetId').value.trim();
+    const secret=document.getElementById('fbSetSecret').value.trim();
+    if(!id||!secret){toast('⚠ Kailangan ang App ID at App Secret');return;}
+    const r=await api('/api/ceo/setup-fb',{method:'POST',body:JSON.stringify({fbAppId:id,fbAppSecret:secret,fbRedirectUri:redirect})});
+    if(r&&r.ok){toast('✅ Facebook Login naka-set up na!');document.getElementById('fbSetSecret').value='';d.close();openConnections();}
+    else toast('⚠ Hindi ma-save: '+((r&&r.error)||'subukan ulit'));
+  };
 }
 /* 👁 HIDE UI — iisa ang pindutan para mawala ang lahat ng floating panels (H key din) */
 function createUiHideBtn(){
