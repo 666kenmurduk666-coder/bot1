@@ -2628,17 +2628,17 @@ function buildFarm3d(){
   const fx=[2,12,22,32,42]; // 5 farms nakahilera (kanya-kanya!) — inilipat para HINDI humarang sa kalsada!
   fx.forEach((x,fi)=>{
     const z=56;
-    box3(7.5,.25,8,'#8a6a44',x,.02,z); // lupa ng bukid
+    const soil=box3(7.5,.25,8,'#8a6a44',x,.02,z); // lupa ng bukid
     // pananim: mais + gulay!
     for(let r=0;r<3;r++)for(let c2=0;c2<4;c2++){
       const kind=Math.random();
       if(kind<.4){
         const stalk=new THREE.Mesh(new THREE.ConeGeometry(.18,.55,6),m3('#7ac74f'));stalk.position.set(x-2.4+c2*1.6,.4,z-2.2+r*2.2);stalk.castShadow=true;g.level.add(stalk);
         const corn=cyl3(.06,.22,'#ffd34d',x-2.4+c2*1.6,.6,z-2.2+r*2.2);corn.rotation.z=.5;
-        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:stalk});
+        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:stalk,soil:soil});
       } else {
         const veg=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),m3(kind<.7?'#3f9d6a':'#c94f8a'));veg.position.set(x-2.4+c2*1.6,.2,z-2.2+r*2.2);veg.castShadow=true;g.level.add(veg);
-        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:veg});
+        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:veg,soil:soil});
       }
     }
     // bakod: poste + riles (harap bukas)
@@ -3895,6 +3895,7 @@ function frame3D(){
     b.grp.rotation.y=-b.ang+Math.PI/2;
     const flap=Math.sin(t/110+b.ph)*.55;b.lw.rotation.z=flap;b.rw.rotation.z=-flap;
   });
+  if(typeof updateWaterFx==='function')updateWaterFx(t);
   if(g.clouds)g.clouds.forEach(c=>{c.s.position.x+=c.sp*dt;if(c.s.position.x>130)c.s.position.x=-110;});
   if(g.riverTex)g.riverTex.offset.y=(t/9000)%1;
   if(g.fallTex)g.fallTex.forEach((ft,i)=>{ft.offset.y=((-t/1100)+i*.37)%1;});
@@ -5391,8 +5392,60 @@ function updateCareHud(){
 function applyFarmVisuals(){
   (farmPlots||[]).forEach(p=>{
     const st=(CARE_STATE.farm||[])[p.idx];if(!st||!p.mesh)return;
+    const dryH=(st.dryMs||0)/3600000,moist=Math.max(0,Math.min(100,100-dryH/20*100));
     const col=st.dead?'#7a6a52':st.stage==='ready'?'#ffd34d':st.thirsty?'#c9a227':'#3f9d6a';
-    try{p.mesh.material.color.set(col);p.mesh.scale.setScalar(st.dead?.5:st.stage==='ready'?1.15:1);p.state=st.stage;}catch(e){}
+    try{
+      p.mesh.material.color.set(col);
+      const base=st.dead?.5:st.stage==='ready'?1.15:1;
+      p.mesh.scale.set(base,base*(st.thirsty?.78:1),base);
+      p.mesh.rotation.z=st.thirsty?.22:0; // 🥀 tuyo = nakayuko; busog = nakatindig
+      if(p.soil)p.soil.material.color.set(st.dead?'#a08a68':moist>60?'#5c422b':moist>25?'#75583a':'#967450');
+      p.state=st.stage;
+    }catch(e){}
+  });
+}
+/* 💧 REALISTIC WATERING: watering can + falling drops + splashes + plant perking up */
+function playWateringFx(idx){
+  if(!threeReady||!g.level)return;
+  const plot=(farmPlots||[]).find(p=>p.idx===idx);if(!plot)return;
+  const x=plot.x,z=plot.z,grp=new THREE.Group();g.level.add(grp);
+  const can=new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,.3,10),m3('#5fa8d8'));can.position.set(x-.82,1.05,z-.18);can.rotation.z=-.95;grp.add(can);
+  const spout=new THREE.Mesh(new THREE.CylinderGeometry(.04,.06,.42,8),m3('#5fa8d8'));spout.position.set(x-.48,.92,z-.18);spout.rotation.z=-1.05;grp.add(spout);
+  const handle=new THREE.Mesh(new THREE.TorusGeometry(.13,.025,6,12,Math.PI),m3('#3f7fae'));handle.position.set(x-.93,1.24,z-.18);grp.add(handle);
+  const drops=[];
+  for(let i=0;i<28;i++){
+    const d=new THREE.Mesh(new THREE.SphereGeometry(.032,6,6),m3('#7cd8ff',{emissive:'#2bb3d6',emissiveIntensity:.6}));
+    d.position.set(x-.28+(Math.random()-.5)*.4,.85+Math.random()*.8,z-.18+(Math.random()-.5)*.4);
+    grp.add(d);drops.push({m:d,delay:i*.055,ph:Math.random()*6.28});
+  }
+  const rings=[];
+  for(let i=0;i<3;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(.1,.012,6,16),m3('#9fe8ff',{transparent:true,opacity:.8}));r.rotation.x=-Math.PI/2;r.position.set(x,.07,z);grp.add(r);rings.push(r);}
+  const fx={grp,drops,rings,t0:Date.now(),mesh:plot.mesh,soil:plot.soil,
+    base:{x:plot.mesh.scale.x,y:plot.mesh.scale.y,z:plot.mesh.scale.z,rot:plot.mesh.rotation.z},
+    soilColor:plot.soil?plot.soil.material.color.getHex():null};
+  (g.waterFx||(g.waterFx=[])).push(fx);
+}
+function updateWaterFx(t){
+  if(!g.waterFx||!g.waterFx.length)return;
+  g.waterFx=g.waterFx.filter(fx=>{
+    const e=(t-fx.t0)/1000;
+    if(e>2.6){
+      g.level.remove(fx.grp);
+      fx.mesh.scale.set(fx.base.x,fx.base.y,fx.base.z);fx.mesh.rotation.z=fx.base.rot;
+      if(fx.soil)fx.soil.material.color.setHex(fx.soilColor);
+      return false;
+    }
+    fx.drops.forEach((d,i)=>{
+      const tt=e-d.delay;if(tt<0){d.m.visible=false;return;}
+      d.m.visible=d.m.position.y>.08;
+      d.m.position.y-=.055;d.m.position.x+=Math.sin(t/90+d.ph)*.004;
+    });
+    fx.rings.forEach((r,i)=>{const u=((e-i*.4)%1+1)%1;r.scale.setScalar(.5+u*2.4);r.material.opacity=Math.max(0,.8-u*.8);});
+    const p=Math.sin(e*9)*.12;
+    fx.mesh.scale.set(fx.base.x*(1+p),fx.base.y*(1+p),fx.base.z*(1+p));
+    fx.mesh.rotation.z=fx.base.rot+Math.sin(e*11)*.1;
+    if(fx.soil)fx.soil.material.color.set('#5c422b');
+    return true;
   });
 }
 function careBar(pct,color){
@@ -5427,6 +5480,8 @@ function openCareDialog(){
         return '<div style="border:1px solid '+col+';border-radius:7px;padding:5px;background:rgba(10,20,42,.45);text-align:center">'+
           '<div style="font-size:24px">'+p.face+'</div><div style="font-size:9.5px;color:#fff">'+bzEsc(p.crop)+'</div>'+
           '<div style="font-size:8.5px;color:'+col+'">'+p.stage+' · health '+p.health+'%</div>'+
+          careBar(Math.max(0,Math.min(100,100-(p.dryMs||0)/3600000/20*100)),(p.dryMs||0)>12000000?'#ff6b5e':(p.dryMs||0)>7200000?'#ffd34d':'#5fd48a')+
+          '<div style="font-size:8px;color:#9fb2d0;margin-top:2px">💧 moisture '+Math.round(Math.max(0,100-(p.dryMs||0)/720000))+'% · huling diligan '+((p.dryMs||0)<3600000?Math.round((p.dryMs||0)/60000)+' min':((p.dryMs||0)/3600000).toFixed(1)+' oras')+' na</div>'+
           careBar(p.growth,'#7ac74f')+
           '<div style="font-size:8px;color:#9fb2d0;margin-top:2px">growth '+p.growth+'%</div>'+
           (act?'<button data-farm="'+i+'" data-kind="'+act[0]+'" style="width:100%;margin-top:4px;background:'+(p.dead?'#8f6fd8':p.thirsty?'#ffb03a':'#2bb3a6')+';color:#fff;border:0;border-radius:5px;padding:4px;font-size:9px;font-weight:700;cursor:pointer">'+act[1]+'</button>':'<div style="color:#8494b4;font-size:8px;margin-top:4px">Busog pa 💧</div>')+
@@ -5446,7 +5501,8 @@ async function careAct(kind,id,plot){
   if(r.farm)CARE_STATE.farm=r.farm;
   if(r.day)CARE_STATE.day=r.day;
   if(r.visitor&&typeof bzVisitor!=='undefined'){bzVisitor=r.visitor;if(typeof renderBzPanel==='function')renderBzPanel();}
-  updateCareHud();applyFarmVisuals();
+  updateCareHud();
+  if(kind==='water'&&r.ok){playWateringFx(plot);setTimeout(applyFarmVisuals,2800);}else applyFarmVisuals();
   toast(r.msg||'🐾 Alaga done!');
   if(document.getElementById('careDlg')&&document.getElementById('careDlg').open)openCareDialog();
   return r;
