@@ -3036,12 +3036,12 @@ function buildOfficeWing3d(){
     [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,.04,z,true));
     mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
   };
-  // 🧠 CONFERENCE — may 0.5m gap sa cafeteria
-  const CX=25.4, AX=33.4, FX=40.8, LX=40;
-  zone(CX,20,8,7,'#2d3b57','CONFERENCE 🧠');
-  box3(4,.16,1.6,'#8a6238',CX,.28,20);box3(3.4,.08,.9,'#2d3b57',CX,.17,20);
-  [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,18.6);box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,21.4);});
-  box3(2.4,1.3,.1,'#102342',CX,1.25,23);box3(2.1,1.05,.03,'#66d9ff',CX,1.25,22.94,true);
+  // 🧠 CONFERENCE — INILIPAT sa likod-kaliwa ng wing, malayo sa Cafeteria!
+  const CX=28, AX=33.4, FX=40.8, LX=40, CZ=27;
+  zone(CX,CZ,8,5,'#2d3b57','CONFERENCE 🧠');
+  box3(4,.16,1.6,'#8a6238',CX,.28,CZ);box3(3.4,.08,.9,'#2d3b57',CX,.17,CZ);
+  [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,CZ-1.4);box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,CZ+1.4);});
+  box3(2.4,1.3,.1,'#102342',CX,1.25,CZ+2.4);box3(2.1,1.05,.03,'#66d9ff',CX,1.25,CZ+2.34,true);
   // ☕ CAFETERIA
   zone(AX,20,7,7,'#4a3c32','CAFETERIA ☕');
   box3(3,.9,.7,'#6b4a32',AX,.45,17.4);box3(2.8,.12,.5,'#d8c6a8',AX,.95,17.4);
@@ -3098,7 +3098,7 @@ function buildZonePartitions3d(){
     runX(z2,x1,x2,gate&&gate.side==='north'?gate.at:null,col,y);
   };
   // 🏢 Office wing — harang sa pagitan ng magkakasunod na kwarto
-  runZ(29.65,16.5,23.5,20,'#7cf7ff',0);   // conference | cafeteria
+  runX(24,24,32,28,'#7cf7ff',0);            // conference (likod-kaliwa) | cafeteria
   runZ(37.05,16.5,23.5,20,'#c9a227',0);   // cafeteria | fun room
   runX(24,37.3,44.3,40.8,'#c98ac9',0);    // fun room | lab
   // 🏃 Sports + event — mababang harang na may pintuan
@@ -4866,7 +4866,7 @@ const JUMP_VIEWS={
   court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
   gym:{t:[54,1.5,26],phi:.55,theta:.3,r:18},
-  conf:{t:[25.4,1.5,20],phi:.55,theta:.3,r:14},
+  conf:{t:[28,1.5,27],phi:.55,theta:.3,r:14},
   cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
   fun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
 };
