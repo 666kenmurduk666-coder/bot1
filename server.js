@@ -37,7 +37,7 @@ function settings() {
   if (!keys.coarena && process.env.COARENA_API_KEY) keys.coarena = { apiKey: process.env.COARENA_API_KEY };
   if (!keys.groq && process.env.GROQ_API_KEY) keys.groq = { apiKey: process.env.GROQ_API_KEY };
   const apiKey = disk.apiKey || process.env.OPENROUTER_API_KEY
-    || keys.coarena.apiKey || keys.groq.apiKey || '';
+    || (keys.coarena && keys.coarena.apiKey) || (keys.groq && keys.groq.apiKey) || '';
   let provider = disk.provider || process.env.AI_PROVIDER || 'auto';
   if (provider === 'auto') {
     provider = apiKey.startsWith('sk-or-') ? 'openrouter'
@@ -54,7 +54,7 @@ function settings() {
     model: disk.model || process.env.AI_MODEL || defaults[provider] || 'gpt-4o-mini',
     baseUrl: disk.baseUrl || process.env.AI_BASE_URL || '',
     keys: keys,
-    failover: Array.isArray(disk.failover) && disk.failover.length ? disk.failover : (keys.groq.apiKey ? ['groq'] : [])
+    failover: Array.isArray(disk.failover) && disk.failover.length ? disk.failover : (keys.groq && keys.groq.apiKey ? ['groq'] : [])
   };
 }
 
