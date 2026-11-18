@@ -195,6 +195,7 @@ dialog::backdrop{background:#000a}
           <button id="jPool" style="font-size:11px;padding:3px 6px;cursor:pointer">🌊🍹 2F Resort</button>
           <button id="jLab" style="font-size:11px;padding:3px 6px;cursor:pointer">🧪 Lab</button>
           <button id="jCourt" style="font-size:11px;padding:3px 6px;cursor:pointer">🏀 Court</button>
+          <button id="jEvent" style="font-size:11px;padding:3px 6px;cursor:pointer">🎤 Event Stage</button>
           <button id="jGym" style="font-size:11px;padding:3px 6px;cursor:pointer">💪 Gym</button>
           <button id="liveOffBtn" style="display:none;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
         </div>
@@ -2186,22 +2187,22 @@ function buildRoom3d(id){
   // room labels ginawa na sa bagong layout (itaas) — iwasang mag-doble
   // malilinaw na pangalan ng mga building (may kulay para hindi maguluhan!)
   mkWallSign('HQ 👑 OPIS',5,1.95,14.06,'#c9a227',0,2.8,.56);
-  // ===== SECURITY BOOTH ni BANTAY (guard bot) — sa entrance ng campus =====
-  mkLabel('SECURITY',21.5,16.5,3);
-  box3(2.6,.18,2.6,'#8a95a8',21.5,.1,16.5); // sahig ng booth
-  box3(2.6,.5,.16,'#cfd6e0',21.5,.45,15.3); // likod na pader
-  box3(.16,.5,2.6,'#cfd6e0',20.3,.45,16.5);box3(.16,.5,2.6,'#cfd6e0',22.7,.45,16.5); // magkabilang gilid
-  glass(2.2,.9,.06,21.5,1.15,15.3); // bintana sa likod
-  glass(.06,.9,2.2,20.3,1.15,16.5);glass(.06,.9,2.2,22.7,1.15,16.5); // gilid windows
-  box3(2.6,.12,2.6,'#c2c9d6',21.5,2.75,16.5); // bubong ng booth
-  box3(1.8,.75,.5,'#6b4423',21.5,.8,15.6); // desk ni Bantay
-  box3(.6,.45,.08,'#10151f',21.5,1.45,15.6,true); // monitor (may hacks!)
+  // ===== SECURITY BOOTH ni BANTAY — inilipat sa x=12,z=17.5 (wala na sa wing/link) =====
+  mkLabel('SECURITY',12,17.5,3);
+  box3(2.6,.18,2.6,'#8a95a8',12,.1,17.5); // sahig ng booth
+  box3(2.6,.5,.16,'#cfd6e0',12,.45,16.3); // likod na pader
+  box3(.16,.5,2.6,'#cfd6e0',10.7,.45,17.5);box3(.16,.5,2.6,'#cfd6e0',13.3,.45,17.5); // magkabilang gilid
+  glass(2.2,.9,.06,12,1.15,16.3); // bintana sa likod
+  glass(.06,.9,2.2,10.7,1.15,17.5);glass(.06,.9,2.2,13.3,1.15,17.5); // gilid windows
+  box3(2.6,.12,2.6,'#c2c9d6',12,2.75,17.5); // bubong ng booth
+  box3(1.8,.75,.5,'#6b4423',12,.8,16.6); // desk ni Bantay
+  box3(.6,.45,.08,'#10151f',12,1.45,16.6,true); // monitor (may hacks!)
   const guardLight=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8),m3('#ff2a2a',{emissive:'#ff2a2a',emissiveIntensity:.25}));
-  guardLight.position.set(21.5,2.95,15.3);g.level.add(guardLight);g.guardLight=guardLight; // emergency light!
-  const bantay=makeChar3d({c:'#2b3346',name:'Bantay'},21.5,16.2); // si BANTAY mismo!
+  guardLight.position.set(12,2.95,16.3);g.level.add(guardLight);g.guardLight=guardLight; // emergency light!
+  const bantay=makeChar3d({c:'#2b3346',name:'Bantay'},12,17.2); // si BANTAY mismo!
   bantay.group.rotation.y=0;
-  // ✨? BANTAY PATROL: naglalakad-lakad sa paligid ng campus (labas ng buildings)!
-  bantay.patrol=[[21.5,16.2],[24,13],[24,-2],[10,-3],[-2,5],[-2,15],[6,17],[14,17]];
+  // ✨ BANTAY PATROL: hindi na tumatakbo sa bagong office wing
+  bantay.patrol=[[12,17.2],[14,18],[12,21],[4,18],[-2,15],[6,17],[14,17]];
   bantay.pi=0;
   g.bantay=bantay;
   // ===== ✨ KEEPER BOT: bantay ng vault (malapit sa CEO office) =====
@@ -2346,6 +2347,19 @@ function buildRoom3d(id){
       });
       return best;
     };
+    // 🛍️ pindutin ang BAGUIO NIGHT MARKET stall — affiliate product post ang lalabas
+    const pickStall=(cx,cy)=>{
+      if(!camera3d||!g.bazaarStalls||!g.bazaarStalls.length)return null;
+      const r=dom.getBoundingClientRect();
+      const nx=((cx-r.left)/r.width)*2-1,ny=-((cy-r.top)/r.height)*2+1;
+      let best=null,bd=.16;
+      g.bazaarStalls.forEach(s=>{
+        const v=new THREE.Vector3(s.x,s.y+1.35,s.z).project(camera3d);
+        const d=Math.hypot(v.x-nx,v.y-ny);
+        if(d<bd){bd=d;best=s;}
+      });
+      return best;
+    };
     // 🎬 pindutin ang LIVE OFFICE kiosk para i-on ang auto-showcase
     const pickLiveZone=(cx,cy)=>{
       if(!camera3d)return false;
@@ -2361,9 +2375,13 @@ function buildRoom3d(id){
       if(drag&&Math.abs(e.clientX-sx)<6&&Math.abs(e.clientY-sy)<6){
         if(pickLiveZone(e.clientX,e.clientY))oneClickLive();
         else{
-          const b=pickBot(e.clientX,e.clientY);
-          if(b)setFollow(b);
-          else{const room=pickOffice(e.clientX,e.clientY);if(room){openOfficeDialog(room.id);}else if(followBot)setFollow(null);}
+          const st=pickStall(e.clientX,e.clientY);
+          if(st&&typeof showShopFrame==='function')showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''));
+          else{
+            const b=pickBot(e.clientX,e.clientY);
+            if(b)setFollow(b);
+            else{const room=pickOffice(e.clientX,e.clientY);if(room){openOfficeDialog(room.id);}else if(followBot)setFollow(null);}
+          }
         }
       }
       drag=false;
@@ -2392,8 +2410,12 @@ function buildRoom3d(id){
       if(e.touches.length<2)pinch0=null;
       if(touchD&&cam3d&&e.touches.length===0){const tc=e.changedTouches[0];
         if(Math.abs(tc.clientX-touchD.x)<8&&Math.abs(tc.clientY-touchD.y)<8){
-          const b=pickBot(tc.clientX,tc.clientY);
-          if(b)setFollow(b);else{const room=pickOffice(tc.clientX,tc.clientY);if(room)openOfficeDialog(room.id);else if(followBot)setFollow(null);}
+          const st=pickStall(tc.clientX,tc.clientY);
+          if(st&&typeof showShopFrame==='function')showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''));
+          else{
+            const b=pickBot(tc.clientX,tc.clientY);
+            if(b)setFollow(b);else{const room=pickOffice(tc.clientX,tc.clientY);if(room)openOfficeDialog(room.id);else if(followBot)setFollow(null);}
+          }
         }}
       touchD=null;
     });
@@ -2563,7 +2585,7 @@ let farmPlots=[]; // ✨ GROW A GARDEN: mga pananim sa farm!
 let lastInteract=0;
 let liveOn=false,liveShot=0,liveNext=0; // ✨ LIVE CAM: auto-cycling camera para sa Streamlabs
 // 🎬 Lahat ng view — office bots muna, sunod ang court/gym/mall/farm/park/pool/lab
-const LIVE_SHOTS=[[11,1.5,7,.4,.5,24],[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[21.5,1.5,16.5,.45,.9,10],[30,1.5,8,.5,.3,16],[30,1.5,26,.55,.3,18],[23.8,5.4,-5,.45,.5,13],[17,5.4,-5,.45,2.4,14],[13,1.5,23,.55,2.6,18],[31,1.5,-9,.55,.3,18],[22,1,56,.55,.2,28],[15,1,42,.6,.3,24]];
+const LIVE_SHOTS=[[11,1.5,7,.4,.5,24],[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[12,1.5,17.5,.45,.9,10],[30,1.5,8,.5,.3,16],[54,1.5,26,.55,.3,18],[23.8,5.4,-5,.45,.5,13],[17,5.4,-5,.45,2.4,14],[18.7,5.5,-5,.55,2.6,16],[40,1.5,27,.55,.3,14],[22,1,56,.55,.2,28],[15,1,42,.6,.3,24]];
 let nightManual=null; // ✨ night mode: null=auto (18:00-6:00 PH), true/false=manual
 let rainOn=false,rainDrops=[],rainNoise=null; // ☔ ulan
 function spawnRainDrops(){
@@ -2901,16 +2923,16 @@ function buildExtraScenery3d(){
     const j=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),new THREE.MeshBasicMaterial({color:'#9fe4f7',transparent:true,opacity:.8}));
     j.position.set(Math.cos(a)*1.2,2.5,Math.sin(a)*1.2);jets.add(j);
   }
-  ftn.add(jets);ftn.position.set(29,0,19);g.level.add(ftn);g.fountainJets=jets;
+  ftn.add(jets);ftn.position.set(50,0,12);g.level.add(ftn);g.fountainJets=jets; // labas ng office wing
 }
-/* ===== 🏟️ SPORTS: tennis court, baseball field, soccer field ===== */
+/* ===== 🏟️ SPORTS: tennis court, event stage, soccer field ===== */
 function buildSports3d(){
   g.sportsBalls=[];
   const slab=(x,z,w,d,col)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));m.rotation.x=-Math.PI/2;m.position.set(x,-.688,z);m.receiveShadow=true;g.level.add(m);return m;};
   const ln=(x,z,w,d)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3('#f4f8ff'));m.rotation.x=-Math.PI/2;m.position.set(x,-.684,z);g.level.add(m);return m;};
   const box=(x,y,z,w,h,d,col)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m3(col));m.position.set(x,y,z);m.castShadow=true;g.level.add(m);return m;};
   // 🎾 TENNIS COURT — kanan ng HQ
-  const tx=46,tz=8,TW=12,TD=24;
+  const tx=64,tz=8,TW=12,TD=24; // inilipat sa kanan — hindi kinakain ang FUN ROOM ng wing
   slab(tx,tz,TW,TD,'#2f7d6b');
   slab(tx,tz,TW-1.8,TD-1.8,'#3a9480');
   ln(tx,tz+TD/2-.45,TW,.12);ln(tx,tz-TD/2+.45,TW,.12);
@@ -2947,26 +2969,28 @@ function buildSports3d(){
   mkLabel('SOCCER FIELD ⚽',sx,sz-SD/2-1.2,1.9,'#c9a227');
   const sb=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10),m3('#ffffff'));sb.castShadow=true;g.level.add(sb);
   g.sportsBalls.push({m:sb,kind:'soccer',hx:sx,hz:sz});
-  // ⚾ BASEBALL FIELD — kanan-likod
+  // 🎤 EVENT STAGE — dating baseball field, ginawang malawak na event/gathering area
   const bx=46,bz=-22;
-  const out=new THREE.Mesh(new THREE.CircleGeometry(16,40,Math.PI*.55,Math.PI*.9),m3('#4c9e52'));
-  out.rotation.x=-Math.PI/2;out.rotation.z=-Math.PI*.2;out.position.set(bx,-.686,bz+2);g.level.add(out);
-  const dirt=new THREE.Mesh(new THREE.PlaneGeometry(13,13),m3('#b98355'));dirt.rotation.x=-Math.PI/2;dirt.rotation.z=Math.PI/4;dirt.position.set(bx,-.683,bz+4);g.level.add(dirt);
-  const base=(x,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(.85,.85),m3('#ffffff'));m.rotation.x=-Math.PI/2;m.rotation.z=Math.PI/4;m.position.set(x,-.679,z);g.level.add(m);};
-  base(bx,bz+9);base(bx+6.4,bz+2.6);base(bx,bz-4);base(bx-6.4,bz+2.6);
-  const mound=new THREE.Mesh(new THREE.CircleGeometry(1.5,20),m3('#c99566'));mound.rotation.x=-Math.PI/2;mound.position.set(bx,-.681,bz+2.6);g.level.add(mound);
-  box(bx,.12,bz+9,1,.24,1,'#ffffff');
-  // backstop fence
-  [-3,0,3].forEach(px=>box(bx+px,1.4,bz+11,.08,2.8,.08,'#9aa6b5'));
-  const fence=new THREE.Mesh(new THREE.PlaneGeometry(6.4,2.6),new THREE.MeshBasicMaterial({color:'#c9d2e0',transparent:true,opacity:.3,side:THREE.DoubleSide,depthWrite:false}));
-  fence.position.set(bx,1.4,bz+11);g.level.add(fence);
-  mkLabel('BASEBALL FIELD ⚾',bx,bz-15,1.9,'#c9a227');
-  const bb=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),m3('#fff8e8'));bb.castShadow=true;g.level.add(bb);
-  g.sportsBalls.push({m:bb,kind:'baseball',hx:bx,hz:bz});
+  box(bx,-.55,bz,18,.26,12,'#6b4a30');                         // wooden stage deck
+  box(bx,-.4,bz-1,15,.12,9,'#8a6242');
+  [-7,-3.5,0,3.5,7].forEach(px=>box(bx+px,-.38,bz+5.6,.08,.06,11.8,'#c9a227',true));
+  // truss + LED backdrop
+  [-8,8].forEach(px=>{box(bx+px,2.6,bz-5,.16,5.2,.16,'#9aa6b5');});
+  box(bx,5.1,bz-5,16.2,.16,.16,'#9aa6b5');
+  box(bx,2.9,bz-5.1,13,4.6,.12,'#101d38',true);
+  box(bx,2.9,bz-5.02,11.8,3.9,.04,'#3b6fd8',true);
+  mkWallSign('🎤 CYBORG LIVE EVENT STAGE',bx,4.5,bz-4.9,'#ffd34d',0,7,.7);
+  // speakers + spotlights
+  [-6.5,6.5].forEach(px=>{box(bx+px,.6,bz-3.6,1.1,2.4,1,'#222b3d');box(bx+px,.6,bz-3.02,.75,1.8,.05,'#3a4256',true);});
+  [-6,-2,2,6].forEach(px=>{cyl3(.13,.3,'#ffd34d',bx+px,5.0,bz-4.5);});
+  // audience benches
+  [-8,-4,0,4,8].forEach(px=>[-2,2].forEach(row=>box(bx+px,-.5,bz+row,3,.25,.65,'#5c432e')));
+  mkLabel('EVENT STAGE 🎤',bx,bz-8,2.2,'#c9a227');
 }
 /* ===== 💪 GYM — treadmills + weights malapit sa basketball court ===== */
 function buildGym3d(){
-  const gx=30,gz=26;
+  // inilipat sa kanan ng office wing (x=54) — hindi na kinakain ang conference/cafeteria/fun room
+  const gx=54,gz=26;
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(11,8),m3('#3a4256'));
   floor.rotation.x=-Math.PI/2;floor.position.set(gx,-.684,gz);floor.receiveShadow=true;g.level.add(floor);
   [[gx,gz-3.9],[gx,gz+3.9]].forEach(z=>box3(11,.02,.1,'#f2f6ff',gx,-.66,z,true));
@@ -2994,9 +3018,17 @@ function buildOfficeWing3d(){
   // connecting walkway mula sa lumang opisina papunta sa wing
   const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,7.2),m3('#dfe4ec'));
   link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,16.6);link.receiveShadow=true;g.level.add(link);
-  // low glass railings
-  [[33,13.1],[33,29.9]].forEach(z=>box3(23,.5,.09,'#a8d8ff',33,.25,z));
-  [[21.6,21.5],[44.4,21.5]].forEach(x=>box3(.09,.5,17,'#a8d8ff',x,.25,21.5));
+  // daan papuntang gym (kanan ng wing)
+  const gymLink=new THREE.Mesh(new THREE.PlaneGeometry(4.6,4),m3('#dfe4ec'));
+  gymLink.rotation.x=-Math.PI/2;gymLink.position.set(46.5,.02,26);gymLink.receiveShadow=true;g.level.add(gymLink);
+  mkLabel('💪 GYM →',46.5,26,.8,'#c9a227');
+  // low glass railings — may butas sa office link at gym link
+  box3(23,.5,.09,'#a8d8ff',33,.25,29.9);                     // likod
+  box3(20.3,.5,.09,'#a8d8ff',34.25,.25,13.1);                 // harap (butas sa link)
+  box3(.09,.5,2.4,'#a8d8ff',21.6,.25,14.2);                   // kaliwa, itaas ng link
+  box3(.09,.5,11.4,'#a8d8ff',21.6,.25,24.3);                  // kaliwa, ibaba ng link
+  box3(.09,.5,11,'#a8d8ff',44.4,.25,18.5);                    // kanan, bago ang gym link
+  box3(.09,.5,2,'#a8d8ff',44.4,.25,29);                       // kanan, pagkatapos ng gym link
   const zone=(x,z,w,d,col,label)=>{
     const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
     f.rotation.x=-Math.PI/2;f.position.set(x,.02,z);f.receiveShadow=true;g.level.add(f);
@@ -3004,21 +3036,29 @@ function buildOfficeWing3d(){
     [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,.04,z,true));
     mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
   };
-  // 🧠 CONFERENCE
-  zone(25,20,8,7,'#2d3b57','CONFERENCE 🧠');
-  box3(4,.16,1.6,'#8a6238',25,.28,20);box3(3.4,.08,.9,'#2d3b57',25,.17,20);
-  [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',25+dx,.38,18.6);box3(.55,.75,.55,'#2f5fa8',25+dx,.38,21.4);});
-  box3(2.4,1.3,.1,'#102342',25,1.25,23);box3(2.1,1.05,.03,'#66d9ff',25,1.25,22.94,true);
+  // 🧠 CONFERENCE — may 0.5m gap sa cafeteria
+  const CX=25.4, AX=33.4, FX=40.8, LX=40;
+  zone(CX,20,8,7,'#2d3b57','CONFERENCE 🧠');
+  box3(4,.16,1.6,'#8a6238',CX,.28,20);box3(3.4,.08,.9,'#2d3b57',CX,.17,20);
+  [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,18.6);box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,21.4);});
+  box3(2.4,1.3,.1,'#102342',CX,1.25,23);box3(2.1,1.05,.03,'#66d9ff',CX,1.25,22.94,true);
   // ☕ CAFETERIA
-  zone(32,20,7,7,'#4a3c32','CAFETERIA ☕');
-  box3(3,.9,.7,'#6b4a32',32,.45,17.4);box3(2.8,.12,.5,'#d8c6a8',32,.95,17.4);
-  [-.9,.9].forEach(dx=>cyl3(.16,.25,'#d8c6a8',32+dx,1.1,17.4));
-  [-1.6,1.6].forEach(dx=>{box3(.9,.12,.9,'#8a6238',32+dx,.36,21.5);cyl3(.1,.5,'#9aa4b8',32+dx,.55,21.5);});
+  zone(AX,20,7,7,'#4a3c32','CAFETERIA ☕');
+  box3(3,.9,.7,'#6b4a32',AX,.45,17.4);box3(2.8,.12,.5,'#d8c6a8',AX,.95,17.4);
+  [-.9,.9].forEach(dx=>cyl3(.16,.25,'#d8c6a8',AX+dx,1.1,17.4));
+  [-1.6,1.6].forEach(dx=>{box3(.9,.12,.9,'#8a6238',AX+dx,.36,21.5);cyl3(.1,.5,'#9aa4b8',AX+dx,.55,21.5);});
   // 🛋️ FUN ROOM
-  zone(39,20,7,7,'#45385c','FUN ROOM 🛋️');
-  [-1.4,1.4].forEach(dx=>{box3(1.4,.5,1,'#7a5aa8',39+dx,.25,21.5);box3(1.4,.7,.2,'#9a7ac8',39+dx,.6,22);});
-  box3(3,1.6,.12,'#16213c',39,1.35,17.4);box3(2.7,1.3,.03,'#ff7ac8',39,1.35,17.34,true);
-  box3(.7,.3,.5,'#e8622c',39,.15,19);
+  zone(FX,20,7,7,'#45385c','FUN ROOM 🛋️');
+  [-1.4,1.4].forEach(dx=>{box3(1.4,.5,1,'#7a5aa8',FX+dx,.25,21.5);box3(1.4,.7,.2,'#9a7ac8',FX+dx,.6,22);});
+  box3(3,1.6,.12,'#16213c',FX,1.35,17.4);box3(2.7,1.3,.03,'#ff7ac8',FX,1.35,17.34,true);
+  box3(.7,.3,.5,'#e8622c',FX,.15,19);
+  // 🧪 LAB — sariling zone sa likod ng wing, hindi na walang-laman
+  zone(LX,27,7,5,'#2f4d4a','LAB 🧪');
+  [-1.6,0,1.6].forEach(dx=>{
+    box3(1.3,.75,.7,'#9aa4b8',LX+dx,.38,26.3);
+    box3(1.05,.5,.04,'#66d9ff',LX+dx,.85,25.94,true);
+  });
+  cyl3(.22,.5,'#4fb6d8',LX-2.6,.25,28.2);cyl3(.22,.5,'#c94f8a',LX+2.6,.25,28.2);
 }
 /* ===== 🏃 SPORTS BOTS: mga round bot na naglalaro sa bawat field ===== */
 function makeSportBot3d(col,x,z){
@@ -3047,17 +3087,17 @@ function buildSportsBots3d(){
   };
   // 🎾 TENNIS — dalawang player sa magkabilang side ng net
   [0,1].forEach(i=>{
-    add('tennis',i?'#4b8dff':'#e8622c',i?48:44,i?14:2,'tennis',i*2.4,b=>{
+    add('tennis',i?'#4b8dff':'#e8622c',i?68:60,i?13:3,'tennis',i*2.4,b=>{
       const r=new THREE.Group();
       const ring=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,7,14),m3('#f0b429'));ring.position.y=.22;r.add(ring);
       const h=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.38,6),m3('#3a4256'));h.position.y=-.1;r.add(h);
       r.position.set(.45,.47,.12);r.rotation.z=-.5;b.grp.add(r);b.racket=r;
     });
   });
-  // ⚾ BASEBALL — pitcher, batter, fielder
-  add('pitcher','#2bb3a6',46,-19.4,'baseball',0);
-  add('batter','#f0b429',46,-13,'baseball',1.5);
-  add('fielder','#7a6fd8',50,-33,'baseball',3.1);
+  // 🎤 EVENT CREW — host, DJ at crew sa stage
+  add('pitcher','#2bb3a6',46,-24,'baseball',0);
+  add('batter','#f0b429',42,-26,'baseball',1.5);
+  add('fielder','#7a6fd8',50,-25,'baseball',3.1);
   // ⚽ SOCCER — apat na player, dalawang team
   [[9,-26,'#4b8dff',0],[15,-26,'#4b8dff',1.8],[9,-14,'#e8622c',3.2],[15,-14,'#e8622c',4.9]]
     .forEach(a=>add('soccer',a[2],a[0],a[1],'soccer',a[3]));
@@ -3068,10 +3108,10 @@ function buildPoleLights3d(){
   const pts=[
     [23,3.5],[37,3.5],[23,12.5],[37,12.5],                     // basketball
     [1,-5],[23,-5],[1,-35],[23,-35],[1,-20],[23,-20],           // soccer
-    [39,-5],[53,-5],[39,21],[53,21],                            // tennis
-    [30,-38],[62,-38],[30,-6],[62,-6],[38,-40],[54,-40],        // baseball
+    [57,-5],[71,-5],[57,21],[71,21],                            // tennis (inilipat sa x=64)
+    [30,-38],[62,-38],[30,-6],[62,-6],[38,-40],[54,-40],        // event stage area
     [-11,2],[-11,20],[-11,32],[38,32],[56,32],[24,32],[4,32],   // roads
-    [7,24],[17,32],[34,19],[24,20]                              // playground/fountain
+    [7,24],[17,32],[46,19],[20,24]                              // playground / lab / wing (hindi sa loob ng room)
   ];
   const gc=document.createElement('canvas');gc.width=gc.height=64;
   const gq=gc.getContext('2d'),rg=gq.createRadialGradient(32,32,1,32,32,32);
@@ -3113,7 +3153,7 @@ function drawAttendance(){
     const st=attendance[nm]||{out:false,act:'working'};
     rows.push([nm,st.out?'OUT':'IN',st.act]);
   });
-  [['🏀 COURT',g.courtBots?g.courtBots.length:0],['🎾 TENNIS',2],['⚾ BASEBALL',3],['⚽ SOCCER',4],
+  [['🏀 COURT',g.courtBots?g.courtBots.length:0],['🎾 TENNIS',2],['🎤 EVENT',3],['⚽ SOCCER',4],
    ['🛝 PLAY',g.playBots?g.playBots.length:0],['☕ CART',g.cartBots?g.cartBots.length:0]]
     .forEach(r=>{if(r[1])rows.push([r[0],'OUT','playing x'+r[1]]);});
   rows.slice(0,13).forEach((r,i)=>{
@@ -3264,15 +3304,17 @@ function buildBermudaGrass3d(){
     if(x>=24&&x<=36&&z>=4.5&&z<=11.5)return true;          // basketball court
     if(x>=-3.5&&x<=25.5&&z>=-3.5&&z<=17.5)return true;    // semento sa paligid ng HQ
     if(z>=33.3&&z<=38.5)return true;                        // kalsada (pahalang)
-    if(x>=-9.2&&x<=-4.4)return true;                        // kalsada (patayo)
     if(Math.abs(x+28)<4.2&&z>-60&&z<32)return true;         // ilog
     if(Math.hypot(x+28,z-24)<10)return true;                 // lawa
-    if(Math.hypot(x-29,z-19)<4.2)return true;                // fountain
-    if(x>=27.5&&x<=32.5&&z>=12.2&&z<=15.5)return true;      // coffee cart
+    if(Math.hypot(x-50,z-12)<4)return true;                   // fountain (bagong posisyon)
+    if(x>=36&&x<=40&&z>=9&&z<=12)return true;                // coffee cart (bagong posisyon)
     if(x>=8&&x<=16&&z>=25&&z<=31)return true;                // playground
+    if(x>=21.5&&x<=44.5&&z>=13&&z<=30)return true;           // office wing deck
+    if(x>=44.2&&x<=48.8&&z>=24&&z<=28)return true;           // gym link
+    if(x>=48.5&&x<=59.5&&z>=22&&z<=30)return true;           // gym
     if(x>=1&&x<=23&&z>=-36&&z<=-4)return true;                // soccer field
-    if(x>=38&&x<=54&&z>=-6&&z<=22)return true;                // tennis court
-    if(Math.hypot(x-46,z+22)<17)return true;                   // baseball field
+    if(x>=58&&x<=70&&z>=-4&&z<=20)return true;                // tennis court (bagong posisyon)
+    if(x>=36&&x<=56&&z>=-29&&z<=-14)return true;               // event stage + audience
     if(Math.hypot(x+28,z+50)<12||Math.hypot(x-66,z+44)<12)return true; // waterfalls
     return false;
   };
@@ -3523,8 +3565,8 @@ function buildCoffeeCart3d(){
   add(cart,new THREE.BoxGeometry(.7,.6,.5),'#dfe5ee',-.55,1.45,0);
   add(cart,new THREE.BoxGeometry(.25,.12,.25),'#f5f0e6',.6,1.2,0);
   add(cart,new THREE.BoxGeometry(.25,.12,.25),'#f5f0e6',.95,1.2,0);
-  cart.position.set(30,-.7,13.4);g.level.add(cart);g.coffeeCart=cart;
-  mkLabel('COFFEE ☕',30,13.4,3.05,'#c98ac9');
+  cart.position.set(38,-.7,10.5);g.level.add(cart);g.coffeeCart=cart;
+  mkLabel('COFFEE ☕',38,10.5,3.05,'#c98ac9');
   const buyer=(col,x,z,ph)=>{
     const p=new THREE.Group();
     add(p,new THREE.SphereGeometry(.32,14,11),col,0,.42,0);
@@ -3541,8 +3583,8 @@ function buildCoffeeCart3d(){
     p.scale.setScalar(.85);p.position.set(x,-.7,z);g.level.add(p);
     g.cartBots.push({grp:p,cup,legs,hx:x,hz:z,ph});
   };
-  buyer('#4b8dff',28.4,14.4,0);
-  buyer('#f0b429',31.6,14.4,2.5);
+  buyer('#4b8dff',36.4,11.5,0);
+  buyer('#f0b429',39.6,11.5,2.5);
 }
 /* ===== 🛝 MINI PLAYGROUND: swing, slide, seesaw ===== */
 /* ===== 👶 BABY BOTS: maliliit na round bots na naglalaro sa playground ===== */
@@ -3650,8 +3692,7 @@ function buildCity3d(){
   car3d(-8,34.6,false,'#c94f4f',70);
   car3d(6,37.2,false,'#4f8ac9',70);
   car3d(24,34.6,false,'#e8c04a',70);
-  car3d(-5.6,2,true,'#5ac98f',80);
-  car3d(-8,12,true,'#c98ac9',80);
+  // tinanggal ang dalawang vertical cars — wala na ang x=-6.8 side road
 }
 function frame3D(){
   if(!threeReady)return;
@@ -3970,7 +4011,7 @@ function frame3D(){
     g.playground.swings.forEach((s,i)=>{s.rotation.z=Math.sin(t/900+i*1.2)*.28;});
     g.playground.seesaw.rotation.z=Math.sin(t/1400)*.14;
   }
-  // 🏃 SPORTS BOTS: tennis, baseball, soccer — lahat gumagalaw
+  // 🏃 SPORTS BOTS: tennis, event crew, soccer — lahat gumagalaw
   if(g.sportsBots)g.sportsBots.forEach(b=>{
     let A=b.grp.rotation.y;const p=b.grp.position;
     if(b.kind==='tennis'){
@@ -4763,18 +4804,19 @@ const JUMP_VIEWS={
   mall:{t:[23.8,5,-5],phi:.5,theta:.3,r:14},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
-  pool:{t:[13,1.5,23],phi:.55,theta:2.6,r:18},
-  lab:{t:[31,1.5,-9],phi:.55,theta:.3,r:18},
+  pool:{t:[18.7,5.5,-5],phi:.55,theta:2.6,r:16},
+  lab:{t:[40,1.5,27],phi:.55,theta:.3,r:14},
   resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
   court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
-  gym:{t:[30,1.5,26],phi:.55,theta:.3,r:18},
-  conf:{t:[25,1.5,20],phi:.55,theta:.3,r:14},
-  cafeteria:{t:[32,1.5,20],phi:.55,theta:.3,r:14},
-  fun:{t:[39,1.5,20],phi:.55,theta:.3,r:14}
+  event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
+  gym:{t:[54,1.5,26],phi:.55,theta:.3,r:18},
+  conf:{t:[25.4,1.5,20],phi:.55,theta:.3,r:14},
+  cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
+  fun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
 };
 function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
 $('jHq').onclick=e=>{e.stopPropagation();jumpTo('hq')};$('jMall').onclick=e=>{e.stopPropagation();jumpTo('mall')};$('jFarm').onclick=e=>{e.stopPropagation();jumpTo('farm')};$('jPark').onclick=e=>{e.stopPropagation();jumpTo('park')};$('jPool').onclick=e=>{e.stopPropagation();jumpTo('resort')};$('jLab').onclick=e=>{e.stopPropagation();jumpTo('lab')};
-$('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
+$('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jEvent').onclick=e=>{e.stopPropagation();jumpTo('event')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
 $('jConf').onclick=e=>{e.stopPropagation();jumpTo('conf')};$('jCafeteria').onclick=e=>{e.stopPropagation();jumpTo('cafeteria')};$('jFun').onclick=e=>{e.stopPropagation();jumpTo('fun')};
 $('liveZoneBtn').onclick=oneClickLive;
 $('liveOffBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(false)};
@@ -4959,7 +5001,7 @@ const QUEST_DEFS=[
   {id:'fields',label:'Inspect 2 sports fields',target:2,coin:20},
   {id:'game',label:'Mag-shoot ng 1 basket',target:1,coin:20}
 ];
-const QUEST_FIELDS=[{id:'tennis',x:46,z:8,n:'Tennis'},{id:'soccer',x:12,z:-20,n:'Soccer'},{id:'baseball',x:46,z:-22,n:'Baseball'}];
+const QUEST_FIELDS=[{id:'tennis',x:64,z:8,n:'Tennis'},{id:'soccer',x:12,z:-20,n:'Soccer'},{id:'event',x:46,z:-22,n:'Event Stage'}];
 function todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function loadQuests(){
   try{const v=JSON.parse(localStorage.getItem('dailyQuests')||'null');if(v&&v.date===todayKey())return v;}catch(e){}
@@ -5572,40 +5614,51 @@ function buildBazaar3d(){
   if(!threeReady||!g.level||g.bzLevel===g.level)return;
   g.bzLevel=g.level;g.bazaarStalls=[];
   const Y=4,X1=26,X2=36,Z1=-8,Z2=-2;
-  box3(X2-X1,.35,Z2-Z1,'#b8c0cc',(X1+X2)/2,Y-.18,(Z1+Z2)/2);
+  // 🌲 BAGUIO NIGHT MARKET — kahoy na sahig, mainit na ilaw, tarpaulin
+  box3(X2-X1,.35,Z2-Z1,'#7a5a3c',(X1+X2)/2,Y-.18,(Z1+Z2)/2);
   for(let x=X1;x<X2;x++)for(let z=Z1;z<Z2;z++){
-    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3((x+z)%2?'#33415f':'#273552',{emissive:(x+z)%2?'#15294a':'#10213a',emissiveIntensity:.5}));
+    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3((x+z)%2?'#8a6a48':'#6f5238',{roughness:1}));
     t.rotation.x=-Math.PI/2;t.position.set(x+.5,Y+.01,z+.5);t.receiveShadow=true;g.level.add(t);
   }
   // rehas (may butas sa kanan papuntang mall)
   box3(10,.8,.08,'#cfe0f2',31,Y+.42,-8.04);box3(10,.8,.08,'#cfe0f2',31,Y+.42,-1.96);
   box3(.08,.8,6,'#cfe0f2',36.04,Y+.42,-5);
   box3(.08,.8,2,'#cfe0f2',25.96,Y+.42,-6.5);box3(.08,.8,2,'#cfe0f2',25.96,Y+.42,-3.5);
+  // 🎪 welcome arch + string lights
   box3(.12,2.5,.12,'#ffd34d',26.1,Y+1.25,-2.1,true);box3(.12,2.5,.12,'#ffd34d',35.9,Y+1.25,-2.1,true);
   box3(9.9,.12,.12,'#ffd34d',31,Y+2.5,-2.1,true);
-  mkWallSign('🛒 CYBORG BAZAAR',29,Y+3,-2.15,'#ffd34d',Math.PI,3.4,.62);
-  mkWallSign('🪙 DAILY TASKS → TOKENS + XP',34,Y+3,-2.15,'#7cf7ff',Math.PI,3.2,.55);
+  mkWallSign('🌲 BAGUIO NIGHT MARKET',29,Y+2.95,-2.15,'#ffd34d',Math.PI,4.2,.62);
+  mkWallSign('🛍️ PINDOOT ANG PANINDA → SHOPEE',34,Y+2.95,-2.15,'#7cf7ff',Math.PI,3.2,.5);
+  [-7.4,-4.9,-2.4,.1].forEach(z=>{
+    for(let i=0;i<10;i++){
+      const bulb=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),m3(i%2?'#fff1b8':'#ffb86b',{emissive:i%2?'#ffe9a8':'#ff9d4d',emissiveIntensity:1.4}));
+      bulb.position.set(26.5+i*.98,Y+2.62,z);g.level.add(bulb);
+    }
+  });
   // 🪧 Office wall boards — hindi nakaharang sa conference table
   mkWallSign('📋 DAILY TASKS - E',16.5,1.32,6.38,'#7ee2a8',0,2.5,.5);
   mkWallSign('🚚 DELIVERY DOCK - E',19.5,1.32,8.02,'#ffd34d',Math.PI,2.5,.5);
   mkWallSign('📢 AD PROJECTS - E',21.82,1.32,7.2,'#7cf7ff',-Math.PI/2,2.4,.5);
   if(typeof buildDelivery3d==='function')buildDelivery3d();
   if(typeof buildChristmas3d==='function')buildChristmas3d();
-  const items=(typeof mallItems==='function'?mallItems():((typeof S!=='undefined'&&S&&S.mall)||[])).slice(0,8);
-  const pal=['#e8622c','#2bb3a6','#c9a227','#8f6fd8','#4f8ac9','#ff8fa8','#7cf7ff','#c98ac9'];
+  const items=(typeof mallItems==='function'?mallItems():((typeof S!=='undefined'&&S&&S.mall)||[])).filter(x=>(x.cat||'shopee')==='grocery').slice(0,10);
+  const pal=['#e8622c','#2bb3a6','#c9a227','#8f6fd8','#4f8ac9','#ff8fa8','#7cf7ff','#c98ac9','#f0b429','#5ac98f'];
   items.forEach((it,i)=>{
-    const front=i>=4,sx=28+(i%4)*2.35,sz=front?-3.1:-6.9,col=pal[i%pal.length];
-    box3(1.7,.9,.6,'#6b4423',sx,Y+.45,sz);
-    box3(1.85,.1,.75,col,sx,Y+.96,sz);
-    box3(1.95,.08,.9,col,sx,Y+2.05,sz,true);
-    [-.8,.8].forEach(o=>cyl3(.045,1.1,'#d9e2ee',sx+o,Y+1.5,sz));
-    box3(.42,.42,.42,col,sx,Y+1.22,sz,true);
-    const label=String(it.name||'Paninda').slice(0,16)+(it.price>0?('  ₱'+it.price):'');
-    mkWallSign(label,sx,Y+1.56,sz+(front?-.36:.36),col,front?Math.PI:0,1.75,.4);
-    g.bazaarStalls.push({x:sx,z:sz,item:it,i:i});
+    const front=i>=5,sx=27.2+(i%5)*1.95,sz=front?-3.1:-6.4,col=pal[i%pal.length];
+    box3(1.65,.85,.6,'#6b4423',sx,Y+.43,sz);                        // kahoy na counter
+    box3(1.8,.08,.72,'#a97c52',sx,Y+.9,sz);
+    box3(.85,.55,.55,'#5c432e',sx-.38,Y+.28,sz+(front?-.25:.25)); // crate
+    box3(.85,.55,.55,'#5c432e',sx+.38,Y+.28,sz+(front?-.25:.25));
+    [-.78,.78].forEach(o=>cyl3(.04,1.15,'#d9c9a8',sx+o,Y+1.48,sz));
+    box3(1.9,.07,.95,col,sx,Y+2.02,sz,true);                        // tarpaulin
+    box3(.95,.07,.95,i%2?'#fff4d6':'#ff8fa8',sx-.47,Y+2.05,sz,true);
+    box3(.42,.42,.42,col,sx,Y+1.2,sz,true);                         // product box
+    const label=String(it.name||'Paninda').slice(0,14)+(it.price>0?('\n₱'+it.price):'');
+    mkWallSign(label,sx,Y+1.58,sz+(front?-.38:.38),col,front?Math.PI:0,1.72,.46);
+    g.bazaarStalls.push({x:sx,y:Y,z:sz,item:it,i:i});
   });
-  const L=new THREE.PointLight('#ffd34d',1.1,13);L.position.set(31,Y+2.6,-5);g.level.add(L);
-  const L2=new THREE.PointLight('#7cf7ff',1,12);L2.position.set(34,Y+2.4,-5);g.level.add(L2);
+  const L=new THREE.PointLight('#ffd34d',1.25,13);L.position.set(31,Y+2.6,-5);g.level.add(L);
+  const L2=new THREE.PointLight('#ffb86b',1,12);L2.position.set(34,Y+2.4,-5);g.level.add(L2);
 }
 function bzPodPos(){return {x:20.2,z:12.4};}
 function buildPod3d(){
