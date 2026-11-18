@@ -143,6 +143,11 @@ state.memory = typeof savedState.memory === 'string' ? savedState.memory : '';
 state.chat = Array.isArray(savedState.chat) ? savedState.chat : [];
 state.products = Array.isArray(savedState.products) ? savedState.products : [];
 state.conversations = Array.isArray(savedState.conversations) ? savedState.conversations : [];
+// CYBORG MALL: mga paninda (Shopee affiliate) + orders ng mga bisita
+state.mall = Array.isArray(savedState.mall) ? savedState.mall : [];
+state.orders = Array.isArray(savedState.orders) ? savedState.orders.slice(-200) : [];
+// 🏦 KEEPER: vault ng account links (walang password — links lang, para safe!)
+state.accounts = Array.isArray(savedState.accounts) ? savedState.accounts : [];
 
 function saveConfig() { writeJSON(CONFIG_FILE, state.config); }
 function saveRoutines() { writeJSON(ROUTINES_FILE, state.routines); }
@@ -153,7 +158,9 @@ function saveStateNow() {
     outputs: state.outputs, replyIds: state.replyIds, replyProviders: state.replyProviders,
     tasks: state.tasks, activity: state.activity.slice(0, 200),
     memory: state.memory, chat: state.chat.slice(-100), products: state.products,
-    conversations: state.conversations.slice(-20)
+    conversations: state.conversations.slice(-20),
+    mall: state.mall, orders: state.orders.slice(-200),
+    accounts: state.accounts
   });
 }
 function scheduleSave() {
@@ -232,6 +239,7 @@ async function callProvider(cfg, system, user, maxTokens) {
 
 async function callAI(system, user, maxTokens) {
   const s = settings();
+  if (!/JSON/.test(system)) system += ' Always write in casual TAGLISH — natural Tagalog mixed with English, like Filipino office workers chatting. Use proper Tagalog spelling and grammar. Keep it natural, short, and friendly.';
   const candidates = [s.provider, ...s.failover].filter((v, i, a) => a.indexOf(v) === i);
   if (!s.apiKey && !candidates.some(n => providerCfg(n, s).apiKey)) {
     throw new Error('No API key yet. Open Setup and paste your key.');
@@ -613,6 +621,7 @@ function send(res, code, body, type) {
 }
 function sendJSON(res, code, obj) { send(res, code, JSON.stringify(obj)); }
 function body(req) {
+  if (req._body) return Promise.resolve(req._body);
   return new Promise(resolve => {
     let raw = '';
     req.on('data', c => { raw += c; if (raw.length > 1e6) req.destroy(); });
@@ -628,6 +637,7 @@ function publicState() {
     replyIds: state.replyIds, replyProviders: state.replyProviders,
     agents: AGENT_META, routines: state.routines, layout: state.layout,
     sources: state.sources, memory: state.memory, chat: state.chat, products: state.products,
+    mall: state.mall, orders: state.orders.slice(-50),
     conversations: state.conversations,
     activity: state.activity, stopped: state.stopped, running: state.running,
     setup: { hasKey: !!s.apiKey, model: s.model, provider: s.provider, baseUrl: s.baseUrl,
@@ -637,11 +647,94 @@ function publicState() {
 
 let limitsCache = { at: 0, data: null };
 
+// ===== 🛡️ ANTI-HACKER SHIELD: rate limiting + brute-force lockout (per IP) =====
+const guard = new Map(); // ip -> {n, t0, bad, lastBad}
+const cleanTxt = s => String(s || '').replace(/[<>&"'`]/g, '').trim().slice(0, 80);
+function guardBumpBad(ip) {
+  const h = guard.get(ip) || { n: 0, t0: Date.now(), bad: 0 };
+  h.bad++; h.lastBad = Date.now(); guard.set(ip, h);
+  log('🚨 Wrong password attempt #' + h.bad + ' from ' + ip, 'security');
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost:' + PORT);
   const p = u.pathname;
   try {
+    // ===== 🛡️ ANTI-HACKER SHIELD (hawak ni BANTAY, ang guard bot): flood + brute-force lockout =====
+    const ip = (req.socket.remoteAddress || 'x').toString();
+    const ghOld = guard.get(ip), nowMs = Date.now();
+    if (ghOld && ghOld.bad >= 10 && ghOld.lastBad && nowMs - ghOld.lastBad < 600000) {
+      // locked out: bisita mode lang — PERO ang TOTOONG CEO na may tamang password, papasukin!
+      if (req.method === 'POST' && p !== '/api/orders') {
+        if (p === '/api/unlock') {
+          const b = await body(req);
+          if (String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg')) {
+            log('CEO passed the lockout gate — totoo ang password!', 'security');
+          } else return sendJSON(res, 429, { ok: false, error: '🚨 BANTAY: Blocked! Maraming maling tangka. Subukan ulit mamaya.' });
+        } else return sendJSON(res, 429, { ok: false, error: '🚨 BANTAY: Blocked! Maraming maling tangka. Subukan ulit mamaya.' });
+      }
+    }
+    let gh = ghOld;
+    if (!gh || nowMs - gh.t0 > 60000) gh = { n: 0, t0: nowMs, bad: ghOld ? ghOld.bad : 0 };
+    gh.n++;
+    if (gh.n > 150) { log('🚨 Flood blocked (' + ip + ') — hawak ni BANTAY', 'security'); return sendJSON(res, 429, { ok: false, error: 'Too many requests' }); }
+    guard.set(ip, gh);
+    // ===== SECURITY: password lock sa lahat ng CEO actions (bisita: tingin lang) =====
+    if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders') {
+      const b = await body(req);
+      const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
+      if (String(b.pass || '') !== real) {
+        guardBumpBad(ip);
+        log('Blocked ' + p + ' — wrong or missing CEO password', 'security');
+        return sendJSON(res, 403, { ok: false, error: 'Locked! CEO password required.' });
+      }
+      req._body = b;
+    }
+    if (p === '/api/unlock' && req.method === 'POST') {
+      const b = await body(req);
+      const ok = String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
+      if (ok) log('CEO logged in — office unlocked', 'security');
+      else guardBumpBad(ip);
+      return sendJSON(res, ok ? 200 : 403, { ok });
+    }
+
     if (p === '/api/state' && req.method === 'GET') return sendJSON(res, 200, publicState());
+
+    // ===== CYBORG MALL: paninda + orders ng bisita (walang password ang checkout!) =====
+    if (p === '/api/mall' && req.method === 'GET') return sendJSON(res, 200, { mall: state.mall });
+    if (p === '/api/mall' && req.method === 'POST') {
+      const b = await body(req);
+      const item = {
+        id: 'm' + Date.now(), name: cleanTxt(b.name),
+        price: Math.max(0, Math.min(1e7, Number(b.price) || 0)), emoji: cleanTxt(b.emoji).slice(0, 4) || '🛒',
+        url: String(b.url || '').replace(/[<>"'`]/g, '').trim().slice(0, 500), createdAt: Date.now()
+      };
+      if (!item.name || !item.url) return sendJSON(res, 400, { ok: false, error: 'Name at Shopee URL required' });
+      state.mall.push(item);
+      saveStateNow();
+      log('Added mall item: ' + item.emoji + ' ' + item.name, 'CEO');
+      return sendJSON(res, 200, { ok: true, mall: state.mall });
+    }
+    if (p === '/api/mall/delete' && req.method === 'POST') {
+      const b = await body(req);
+      const i = state.mall.findIndex(x => x.id === b.id);
+      if (i >= 0) { const gone = state.mall.splice(i, 1)[0]; saveStateNow(); log('Removed mall item: ' + gone.name, 'CEO'); }
+      return sendJSON(res, 200, { ok: true, mall: state.mall });
+    }
+    if (p === '/api/orders' && req.method === 'GET') return sendJSON(res, 200, { orders: state.orders.slice(-50) });
+    if (p === '/api/orders' && req.method === 'POST') {
+      const b = await body(req);
+      const items = Array.isArray(b.items) ? b.items.filter(x => x && x.name).slice(0, 30)
+        .map(x => ({ name: cleanTxt(x.name), price: Math.max(0, Math.min(1e7, Number(x.price) || 0)), qty: Math.max(1, Math.min(10, Number(x.qty) || 1)) })) : [];
+      if (!items.length) return sendJSON(res, 400, { ok: false, error: 'Walang laman ang cart!' });
+      const total = items.reduce((s, x) => s + (Number(x.price) || 0) * (Number(x.qty) || 1), 0);
+      const code = 'CB-' + Math.floor(100000 + Math.random() * 900000);
+      const order = { code, items, total, status: 'bayad-na', at: Date.now() };
+      state.orders.push(order); state.orders = state.orders.slice(-200);
+      saveStateNow();
+      log('🧾 Mall order ' + code + ' — ₱' + total + ' (' + items.length + ' item/s) BAYAD NA ✓', 'mall');
+      return sendJSON(res, 200, { ok: true, order });
+    }
 
     if (p === '/api/settings' && req.method === 'POST') {
       const b = await body(req);
