@@ -1052,8 +1052,10 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/unlock' && req.method === 'POST') {
       const b = await body(req);
       const ok = String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
-      if (ok) log('CEO logged in — office unlocked', 'security');
-      else guardBumpBad(ip);
+      if (ok) {
+        const g = guard.get(ip); if (g) { g.bad = 0; g.n = 0; guard.set(ip, g); }
+        log('CEO logged in — office unlocked', 'security');
+      } else guardBumpBad(ip);
       return sendJSON(res, ok ? 200 : 403, { ok });
     }
 
