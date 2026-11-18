@@ -4558,8 +4558,14 @@ const GROCERY=[
 const mallItems=()=>{
   const manual=(typeof S!=='undefined'&&S&&S.mall)||[];
   const prods=(typeof S!=='undefined'&&S&&S.products)||[];
-  const grocery=GROCERY.filter(g=>!manual.some(m=>String(m.name).toLowerCase()===g.name.toLowerCase()));
-  return grocery.concat(manual.map(m=>Object.assign({},m,{cat:m.cat||'shopee'})))
+  // 🛍️ Tunay na affiliate product posts ang mauuna sa Baguio stalls.
+  // Fallback (GROCERY) ay gagamitin lang kapag kulang pa sa 10 ang real posts.
+  const realGrocery=manual.filter(m=>(m.cat||'shopee')==='grocery');
+  const names=new Set(realGrocery.map(m=>String(m.name||'').toLowerCase()));
+  const fallback=GROCERY.filter(g=>!names.has(String(g.name||'').toLowerCase()));
+  const need=Math.max(0,10-realGrocery.length);
+  const grocery=realGrocery.concat(fallback.slice(0,need));
+  return grocery.concat(manual.filter(m=>(m.cat||'shopee')!=='grocery').map(m=>Object.assign({},m,{cat:m.cat||'shopee'})))
     .concat(prods.map(p=>({id:'pr'+p.id,name:(p.title||p.description||'Paninda mula sa content natin').slice(0,60),price:0,emoji:'🛍️',url:p.url,cat:'shopee',content:true})));
 };
 let mallTab='all';
