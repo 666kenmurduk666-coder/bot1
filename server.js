@@ -9,6 +9,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
@@ -148,6 +149,174 @@ state.mall = Array.isArray(savedState.mall) ? savedState.mall : [];
 state.orders = Array.isArray(savedState.orders) ? savedState.orders.slice(-200) : [];
 // 🏦 KEEPER: vault ng account links (walang password — links lang, para safe!)
 state.accounts = Array.isArray(savedState.accounts) ? savedState.accounts : [];
+// 👔 HIRING: mga bagong bot na in-hire (FB applicants) — persisted!
+state.hires = Array.isArray(savedState.hires) ? savedState.hires : [];
+// 🛒 CYBORG BAZAAR: Facebook visitor profiles (coins, XP, daily tasks, desk pod)
+state.visitors = (savedState.visitors && typeof savedState.visitors === 'object' && !Array.isArray(savedState.visitors)) ? savedState.visitors : {};
+state.bazaarSecret = savedState.bazaarSecret || crypto.randomBytes(24).toString('hex');
+// 📣 Share attribution + office earnings mula sa trabaho ng mga bisita
+state.bazaarShares = Array.isArray(savedState.bazaarShares) ? savedState.bazaarShares.slice(-300) : [];
+// 💰 5% assumed affiliate commission; progressibong hatian sa visitor ayon sa level
+const BAZAAR_COMMISSION_RATE = 0.05;
+const LEVEL_CUT = [0.10, 0.15, 0.20, 0.25, 0.30, 0.35];
+// 💼 Sponsored daily tasks: may pumopondong ad budget sa bawat task kaya hindi malugi ang office
+const TASK_SPONSOR_RATE = 3;            // ₱3 bawat reward ng task (pinakamataas na task = 🪙25 = ₱2.5)
+const TASK_BONUS_SPONSOR_RATE = 6;      // ₱6 sa daily completion bonus (🪙30 = ₱3)
+const CAMPAIGN_MARGIN = 1.5;            // advertiser pays 1.5x ng binabayad sa visitor
+state.bazaarStats = Object.assign({ shares: 0, clicks: 0, orders: 0, gross: 0, visitorPaid: 0, officeNet: 0, earned: 0, taskRevenue: 0, taskSponsorSpent: 0, adRevenue: 0 }, savedState.bazaarStats || {});
+// 📢 AD PROJECTS + INSTANT PAYOUTS
+const PAYOUT_TOKENS_PER_PESO = 10;      // 🪙10 = ₱1 cash-out (CEO-adjustable)
+const MIN_PAYOUT_TOKENS = 200;          // minimum withdrawal
+// 🎁 Goods redemption: mas mababang tokens kaysa cash — mas mainam kaysa mag-cash out
+const GOODS_TOKENS_PER_PESO = 10;       // 🪙10 = ₱1 — pareho sa cash, walang loss sa redemption
+const SHIPPING_STAGES = [
+  { id: 'queued', label: 'Queued', where: 'Office Delivery Dock', icon: '📦' },
+  { id: 'packed', label: 'Packed / Na-order', where: 'Office Delivery Dock', icon: '📦' },
+  { id: 'shipped', label: 'Shipped', where: 'Courier Hub', icon: '🚚' },
+  { id: 'out', label: 'Out for delivery', where: 'On the route', icon: '🛵' },
+  { id: 'delivered', label: 'Delivered', where: 'Visitor office pod', icon: '✅' }
+];
+const SHIPPING_NAV = [
+  { id: 'dock', name: 'Office Delivery Dock', x: 19.5, z: 7.55 },
+  { id: 'hub', name: 'Courier Hub', x: 11.5, z: 7.2 },
+  { id: 'route', name: 'Out for Delivery', x: 16, z: 7.2 },
+  { id: 'pod', name: 'Visitor Pod', x: 20.2, z: 12.4 }
+];
+function setShipping(rd, stage, note, courier) {
+  const st = SHIPPING_STAGES.find(s => s.id === stage) || SHIPPING_STAGES[0];
+  rd.shipping = rd.shipping || { history: [] };
+  rd.shipping.stage = st.id;
+  rd.shipping.where = st.where;
+  rd.shipping.at = Date.now();
+  rd.shipping.note = cleanTxt(note || st.label).slice(0, 120);
+  if (courier) rd.shipping.courier = cleanTxt(courier).slice(0, 60);
+  rd.shipping.history = rd.shipping.history || [];
+  rd.shipping.history.push({ stage: st.id, at: Date.now(), note: rd.shipping.note });
+}
+const redemptionItems = () => {
+  const affiliate = (needle, fallback) => {
+    const m = (state.mall || []).find(x => String(x.name || '').toLowerCase().includes(needle));
+    return (m && /^https?:\/\//i.test(String(m.url || ''))) ? String(m.url) : fallback;
+  };
+  const defs = [
+    { id: 'g-rice1', name: 'Bigas 1kg', price: 69, emoji: '🍚', desc: 'Bigas para sa pang-araw-araw — order through our affiliate Shopee link.' },
+    { id: 'g-rice5', name: 'Bigas 5kg', price: 299, emoji: '🍚', desc: '5kg na bigas, de-kalidad at sulit para sa pamilya.' },
+    { id: 'g-sack', name: 'Bigas 1 Sako (25kg)', price: 1450, emoji: '🌾', desc: 'Buong sako ng bigas — malaking tulong para sa bahay.' }
+  ];
+  return defs.map(d => Object.assign({}, d, {
+    tokens: Math.round(d.price * GOODS_TOKENS_PER_PESO),
+    url: affiliate(d.name.toLowerCase().split(' ')[0], 'https://shopee.ph/search?keyword=' + encodeURIComponent(d.name))
+  }));
+};
+const defaultCampaigns = () => [
+  { id: 'c-shopee', name: 'Shopee Grocery Deals', network: 'Shopee', url: 'https://shopee.ph/search?keyword=grocery', desc: 'Mag-share ng grocery deals — qualified clicks ang binabayaran.', rate: 0.05, perShare: 20, budget: 2000, spent: 0, status: 'active', createdAt: Date.now() },
+  { id: 'c-lazada', name: 'Lazada Everyday Deals', network: 'Lazada', url: 'https://www.lazada.com.ph/', desc: 'I-share ang Lazada deals sa FB timeline.', rate: 0.04, perShare: 20, budget: 1500, spent: 0, status: 'active', createdAt: Date.now() },
+  { id: 'c-tiktok', name: 'TikTok Shop Finds', network: 'TikTok Shop', url: 'https://www.tiktok.com/shop', desc: 'I-share ang trending products.', rate: 0.04, perShare: 15, budget: 1000, spent: 0, status: 'active', createdAt: Date.now() },
+  { id: 'c-content', name: 'Cyborg Office Content', network: 'Own Content', url: '/?bazaar=1', desc: 'I-share ang content ng opisina natin.', rate: 0.05, perShare: 25, budget: 1000, spent: 0, status: 'active', createdAt: Date.now() }
+];
+state.campaigns = Array.isArray(savedState.campaigns) ? savedState.campaigns : defaultCampaigns();
+state.payouts = Array.isArray(savedState.payouts) ? savedState.payouts.slice(-300) : [];
+state.redemptions = Array.isArray(savedState.redemptions) ? savedState.redemptions.slice(-300) : [];
+// 🎬 Bot-hosted office commercials (CEO-made, visitor-shareable)
+state.commercials = Array.isArray(savedState.commercials) ? savedState.commercials.slice(-60) : [];
+function fundFromCampaigns(amount) {
+  let need = Math.max(0, Number(amount) || 0), funded = 0;
+  for (const c of state.campaigns) {
+    if (need <= 0) break;
+    if (c.status !== 'active') continue;
+    const left = (Number(c.budget) || 0) - (Number(c.spent) || 0);
+    if (left <= 0) continue;
+    const take = Math.min(left, need);
+    c.spent = Math.round(((Number(c.spent) || 0) + take) * 100) / 100;
+    c.shares = (c.shares || 0); // unchanged; sponsor impression lang ito
+    funded += take; need -= take;
+  }
+  if (need > 0) return 0;
+  funded = Math.round(funded * 100) / 100;
+  state.bazaarStats.taskRevenue = Math.round(((state.bazaarStats.taskRevenue || 0) + funded) * 100) / 100;
+  state.bazaarStats.taskSponsorSpent = Math.round(((state.bazaarStats.taskSponsorSpent || 0) + funded) * 100) / 100;
+  state.bazaarStats.officeNet = Math.round(((state.bazaarStats.officeNet || 0) + funded) * 100) / 100;
+  state.bazaarStats.earned = state.bazaarStats.officeNet;
+  return funded;
+}
+
+/* 🎬 BOT COMMERCIAL STUDIO — hosts promote the office itself */
+const COMMERCIAL_ANGLES = {
+  xmas: {
+    label: '🎄 Christmas office',
+    hook: 'Pumasok sa opisinang may Pasko, may mga bot, at may trabahong tunay!',
+    beats: ['Kita ang Christmas tree, ilaw, at snow sa loob ng HQ.', 'May bazaar, daily tasks, at sariling office pod ang bawat bisita.', 'Walang laban, walang utos — kumikita sa trabaho at affiliate share.'],
+    caption: '🎄 Pasko na sa Cyborg Office! Holiday office tour + bots + affiliate work — subukan mo ang HQ ngayong Pasko.'
+  },
+  tour: {
+    label: '🏢 Office tour',
+    hook: 'Hindi ito larawan lang — may buong opisina ang mga AI agents!',
+    beats: ['Lakaran ang CEO office, open work, conference, pantry, at server bay.', 'Pindutin ang E para makipag-usap sa bots at makipag-share ng produkto.', 'Pwede kang mag-check in, gumawa ng tasks, at mag-build ng pod.'],
+    caption: '🏢 Welcome sa Cyborg Office! Walkable 3D HQ, bot talents, at business-only quests — libreng subukan.'
+  },
+  tasks: {
+    label: '🪙 Daily tasks',
+    hook: 'May trabaho, may tokens, may XP — walang pawis na cash-out.',
+    beats: ['Check-in, bisitahin ang stalls, basahin ang posts, kausapin ang bots.', 'Bawat tapos na task ay may sponsor kaya kumikita rin ang office.', 'Gamitin ang tokens para sa bigas at affiliate products — walang cash payout.'],
+    caption: '🪙 Kumita sa daily tasks sa Cyborg Office. Tokens → affiliate goods lang, walang cash payout.'
+  },
+  bazaar: {
+    label: '🛒 Bazaar',
+    hook: 'May mall tayo sa loob ng opisina — at may tracking link para sa iyo.',
+    beats: ['Pumunta sa 2F mall at pindutin ang E sa bawat stall.', 'Bumasa ng product post bago mag-share — Shopee-compliant.', 'Kapag may order, kumikita ang office at may commission ka ayon sa level.'],
+    caption: '🛒 Cyborg Bazaar: basahin, i-share, kumita. Real affiliate work sa loob ng 3D office.'
+  },
+  product: {
+    label: '⚡ Shopee drop',
+    hook: 'Bagong Shopee affiliate drop — kukunin agad ng bots at ilalagay sa opisina!',
+    beats: ['Pangalan, presyo, at deskripsyon muna — hindi lang hubad na link.', 'Ginawa na ng Product Video Bot ang 6-scene package.', 'I-share ng visitors mula sa office; tracked link ang papuntang Shopee.'],
+    caption: '⚡ Bagong affiliate drop sa Cyborg Office! Bots ang naghanda ng post at video package — i-share mo lang.'
+  }
+};
+const COMMERCIAL_TALENTS = {
+  mgr: { role: 'tour host', style: 'magalang at malinaw' },
+  cos: { role: 'chief guide', style: 'maayos at estratehiko' },
+  social: { role: 'hype host', style: 'masigla at FB-ready' },
+  joker: { role: 'comedy host', style: 'magaan at nakakatawa' },
+  outreach: { role: 'welcome host', style: 'mainit sa bagong visitor' },
+  seo: { role: 'caption host', style: 'maikli at malakas ang hook' },
+  product: { role: 'product walker', style: 'detalyado sa produkto' },
+  post: { role: 'premiere host', style: 'parang trailer' }
+};
+function makeCommercial(b, req) {
+  const comTxt = (s, n) => String(s || '').replace(/[<>&"'`]/g, '').trim().slice(0, n || 160);
+  const bot = AGENT_META.find(a => a.id === b.bot) || AGENT_META.find(a => a.id === 'mgr');
+  const angle = COMMERCIAL_ANGLES[String(b.angle || '')] || COMMERCIAL_ANGLES.xmas;
+  const talent = COMMERCIAL_TALENTS[bot.id] || { role: 'office host', style: 'energetic' };
+  const officeUrl = /^https?:\/\//i.test(String(b.url || '')) ? String(b.url).slice(0, 500) : (reqOrigin(req) + '/?bazaar=1');
+  const title = comTxt(b.title || ('CYBORG OFFICE — ' + angle.label), 90) || 'CYBORG OFFICE';
+  const cta = comTxt(b.cta || 'Subukan na! Pindutin ang link, pumasok, at simulan ang daily tasks.', 120);
+  const featured = b.featured ? {
+    name: comTxt(b.featured.name, 90),
+    price: Math.max(0, Math.round(Number(b.featured.price) || 0)),
+    url: /^https?:\/\//i.test(String(b.featured.url || '')) ? String(b.featured.url).slice(0, 500) : ''
+  } : null;
+  const featLine = featured && featured.name
+    ? ('🛒 ' + featured.name + (featured.price ? (' — ₱' + featured.price) : '') + '\n' + (featured.url || ''))
+    : '';
+  const script = [
+    '0-3s  [' + bot.i + ' ' + bot.n + '] ' + angle.hook,
+    '3-7s  [CAM 1] ' + angle.beats[0],
+    '7-11s [CAM 2] ' + (featured && featured.name ? ('Featured: ' + featured.name + ' — ' + angle.beats[1]) : angle.beats[1]),
+    '11-16s[CAM 3] ' + angle.beats[2],
+    '16-20s[CTA] ' + cta + ' → ' + officeUrl
+  ];
+  const caption = title + '\n' + angle.caption
+    + '\n🎙️ Hosted by ' + bot.i + ' ' + bot.n + ' — ' + talent.role + ' (' + talent.style + ').'
+    + (featLine ? ('\n' + featLine) : '')
+    + '\n' + cta + '\n👉 ' + officeUrl
+    + '\n#CyborgOffice #AIAgents #CyborgBazaar #OfficeTour';
+  return {
+    id: 'cm' + crypto.randomBytes(4).toString('hex'), bot: bot.id, botName: bot.n, botIcon: bot.i,
+    angle: String(b.angle || 'xmas'), title: title, cta: cta, url: officeUrl, featured: featured,
+    hook: angle.hook, script: script, caption: caption, status: 'active', shares: 0, at: Date.now()
+  };
+}
 
 function saveConfig() { writeJSON(CONFIG_FILE, state.config); }
 function saveRoutines() { writeJSON(ROUTINES_FILE, state.routines); }
@@ -160,7 +329,11 @@ function saveStateNow() {
     memory: state.memory, chat: state.chat.slice(-100), products: state.products,
     conversations: state.conversations.slice(-20),
     mall: state.mall, orders: state.orders.slice(-200),
-    accounts: state.accounts
+    accounts: state.accounts, hires: state.hires,
+    visitors: state.visitors, bazaarSecret: state.bazaarSecret,
+    bazaarShares: state.bazaarShares.slice(-300), bazaarStats: state.bazaarStats,
+    campaigns: state.campaigns, payouts: state.payouts.slice(-300),
+    redemptions: state.redemptions.slice(-300), commercials: state.commercials.slice(-60)
   });
 }
 function scheduleSave() {
@@ -379,7 +552,11 @@ async function fetchProductMeta(url) {
     const html = (await r.text()).slice(0, 120000);
     const title = ((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '').replace(/<[^>]+>/g, '').trim();
     const desc = ((html.match(/<meta[^>]+(?:name|property)=["'](?:description|og:description)["'][^>]+content=["']([^"']+)/i) || [])[1] || '').trim();
-    return { title: title.slice(0, 200), description: desc.slice(0, 400) };
+    const priceMeta = html.match(/<meta[^>]+(?:property|name)=["'](?:product:price:amount|og:price:amount)["'][^>]+content=["']([0-9][0-9.,]*)/i)
+      || html.match(/"price"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?/i) || [];
+    const priceRaw = priceMeta[1] || '';
+    const price = Math.max(0, Math.min(1e7, Number(String(priceRaw).replace(/,/g, '')) || 0));
+    return { title: title.slice(0, 200), description: desc.slice(0, 400), price: Math.round(price * 100) / 100 };
   } catch (e) {
     return { title: '', description: 'Fetch failed: ' + e.message };
   }
@@ -419,6 +596,7 @@ async function runProduct(p) {
     const meta = await fetchProductMeta(p.url);
     p.title = meta.title || p.title || p.url.split('/').filter(Boolean).pop().slice(0, 60);
     p.description = meta.description || '';
+    p.price = meta.price || p.price || 0;
     state.productCtx = p;
     p.output = await runAgent('product');
     p.replyId = state.replyIds.product || '';
@@ -605,6 +783,171 @@ setInterval(async () => {
   if (due) await runRoutine(due.id, false);
 }, 10000);
 
+/* ================= 🛒 CYBORG BAZAAR (business-only MMORPG progression) ================= */
+const BAZAAR_LEVELS = [
+  { name: 'Intern',   xp: 0 },
+  { name: 'Clerk',    xp: 100 },
+  { name: 'Manager',  xp: 250 },
+  { name: 'Director', xp: 500 },
+  { name: 'Partner',  xp: 900 },
+  { name: 'Tycoon',   xp: 1500 }
+];
+const BAZAAR_TASKS = [
+  { id: 'checkin', label: 'Daily check-in',        coin: 10, xp: 10, target: 1 },
+  { id: 'stalls',  label: 'Visit 3 market stalls',  coin: 15, xp: 15, target: 3 },
+  { id: 'posts',   label: 'Read 2 product posts',   coin: 15, xp: 15, target: 2 },
+  { id: 'bots',    label: 'Talk to 2 office bots',  coin: 10, xp: 10, target: 2 },
+  { id: 'order',   label: 'Place 1 mall order',     coin: 20, xp: 20, target: 1 },
+  { id: 'share',   label: 'Share 1 affiliate product', coin: 25, xp: 25, target: 1 },
+  { id: 'content', label: 'Share 1 office content',    coin: 25, xp: 25, target: 1 }
+];
+const CORE_TASK_IDS = ['checkin', 'stalls', 'posts', 'bots', 'order'];
+const BAZAAR_BONUS = { coin: 30, xp: 30 };
+const POD_PARTS = { desk: 20, pc: 30, chair: 15, plant: 10, sign: 25, shelf: 30 };
+
+function bazaarDay() {
+  const d = new Date();
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+function fbCfg() {
+  const d = readJSON(SETTINGS_FILE, {});
+  return {
+    id: String(d.fbAppId || process.env.FB_APP_ID || ''),
+    secret: String(d.fbAppSecret || process.env.FB_APP_SECRET || ''),
+    redirect: String(d.fbRedirectUri || process.env.FB_REDIRECT_URI || '')
+  };
+}
+function levelFor(xp) {
+  let idx = 0;
+  BAZAAR_LEVELS.forEach((l, i) => { if ((xp || 0) >= l.xp) idx = i; });
+  const cur = BAZAAR_LEVELS[idx], next = BAZAAR_LEVELS[idx + 1] || null;
+  return {
+    index: idx, name: cur.name, xp: xp || 0, next: next ? next.name : 'MAX',
+    need: next ? next.xp : 0,
+    pct: next ? Math.min(100, Math.round(((xp || 0) - cur.xp) / (next.xp - cur.xp) * 100)) : 100
+  };
+}
+function ensureVisitorDay(v) {
+  const day = bazaarDay();
+  if (!v.day || v.day.date !== day) {
+    v.day = { date: day, progress: { stalls: 0, posts: 0, bots: 0 }, done: {}, ids: {}, claimed: false };
+  }
+  return v.day;
+}
+function getOrCreateVisitor(id, name, picture) {
+  let v = state.visitors[id];
+  if (!v) {
+    v = {
+      id: id, name: String(name || 'Visitor').slice(0, 60), picture: String(picture || '').slice(0, 500),
+      coins: 0, xp: 0, earned: 0, paidOrders: 0, joined: Date.now(), day: null, wish: null,
+      pod: { desk: 0, pc: 0, chair: 0, plant: 0, sign: 0, shelf: 0 }
+    };
+    state.visitors[id] = v;
+    scheduleSave();
+  }
+  return v;
+}
+function visitorView(v) {
+  const d = ensureVisitorDay(v);
+  const tasks = BAZAAR_TASKS.map(t => ({
+    id: t.id, label: t.label, target: t.target,
+    progress: t.id === 'stalls' || t.id === 'posts' || t.id === 'bots' ? (d.progress[t.id] || 0) : (d.done[t.id] ? 1 : 0),
+    done: !!d.done[t.id], coin: t.coin, xp: t.xp
+  }));
+  const lv = levelFor(v.xp);
+  return {
+    id: v.id, name: v.name, picture: v.picture, coins: v.coins || 0,
+    level: lv, commissionCut: LEVEL_CUT[lv.index],
+    earned: v.earned || 0, paidOrders: v.paidOrders || 0,
+    earnings: {
+      total: v.earned || 0, orders: v.paidOrders || 0,
+      shares: state.bazaarShares.filter(s => s.vid === v.id).slice(-8).reverse()
+        .map(s => ({ id: s.id, kind: s.kind, title: s.title, clicks: s.clicks || 0, orders: s.orders || 0, paid: s.paid || 0, at: s.at }))
+    },
+    wallet: { tokens: v.coins || 0, goodsRate: GOODS_TOKENS_PER_PESO,
+      redeemable: Math.round((v.coins || 0) / GOODS_TOKENS_PER_PESO * 100) / 100 },
+    redemptions: state.redemptions.filter(x => x.vid === v.id).slice(-8).reverse(),
+    goodsRate: GOODS_TOKENS_PER_PESO,
+    pod: v.pod || {}, wish: v.wish || null, joined: v.joined,
+    day: d.date, tasks: tasks, bonus: BAZAAR_BONUS,
+    allDone: CORE_TASK_IDS.every(id => d.done[id])
+  };
+}
+function grantVisitor(v, coin, xp) {
+  const before = levelFor(v.xp).name;
+  v.coins = (v.coins || 0) + coin;
+  v.xp = (v.xp || 0) + xp;
+  const after = levelFor(v.xp).name;
+  scheduleSave();
+  return { coin: coin, xp: xp, levelUp: before !== after ? after : null };
+}
+function sponsoredGrant(v, coin, xp, rate) {
+  const funded = fundFromCampaigns(rate);
+  const r = grantVisitor(v, funded > 0 ? coin : 0, xp);
+  r.sponsored = funded;
+  r.unfunded = funded <= 0;
+  return r;
+}
+function markVisitorTask(v, type, key) {
+  const def = BAZAAR_TASKS.find(t => t.id === type);
+  if (!def) return null;
+  const d = ensureVisitorDay(v);
+  // 🛡️ Limit: bisita ay may cap sa actions kada araw — walang spam / farming
+  d.calls = (d.calls || 0) + 1;
+  if (d.calls > 80) return null;
+  if (d.done[type]) return null;
+  let got = null;
+  if (type === 'checkin' || type === 'order') {
+    d.done[type] = true;
+    got = sponsoredGrant(v, def.coin, def.xp, TASK_SPONSOR_RATE);
+  } else {
+    const id = String(key || 'x').slice(0, 80);
+    const k = type + ':' + id;
+    if (d.ids[k]) return null;
+    d.ids[k] = 1;
+    d.progress[type] = (d.progress[type] || 0) + 1;
+    if (d.progress[type] >= def.target) {
+      d.done[type] = true;
+      got = sponsoredGrant(v, def.coin, def.xp, TASK_SPONSOR_RATE);
+    }
+  }
+  let bonus = null;
+  if (!d.claimed && CORE_TASK_IDS.every(id => d.done[id])) {
+    d.claimed = true;
+    bonus = sponsoredGrant(v, BAZAAR_BONUS.coin, BAZAAR_BONUS.xp, TASK_BONUS_SPONSOR_RATE);
+  }
+  scheduleSave();
+  return { reward: got, bonus: bonus };
+}
+function signBazaarToken(obj) {
+  const p = Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const s = crypto.createHmac('sha256', String(state.bazaarSecret || 'cyborg')).update(p).digest('base64url');
+  return p + '.' + s;
+}
+function readBazaarToken(tok) {
+  try {
+    const parts = String(tok || '').split('.');
+    if (parts.length !== 2) return null;
+    const want = crypto.createHmac('sha256', String(state.bazaarSecret || 'cyborg')).update(parts[0]).digest('base64url');
+    if (want !== parts[1]) return null;
+    const o = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    if (!o.id || (o.exp && o.exp < Date.now())) return null;
+    return o;
+  } catch (e) { return null; }
+}
+function visitorIdFrom(req, fallback) {
+  const ck = (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith('bz='));
+  if (ck) {
+    const o = readBazaarToken(decodeURIComponent(ck.slice(3)));
+    if (o && o.id) return o.id;
+  }
+  return fallback ? String(fallback).slice(0, 80) : null;
+}
+function setBazaarCookie(res, id) {
+  const max = 30 * 86400;
+  res.setHeader('Set-Cookie', 'bz=' + encodeURIComponent(signBazaarToken({ id: id, exp: Date.now() + max * 1000 })) + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + max);
+}
+
 /* ---------- HTTP helpers ---------- */
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -635,13 +978,14 @@ function publicState() {
   return {
     config: state.config, outputs: state.outputs, tasks: state.tasks,
     replyIds: state.replyIds, replyProviders: state.replyProviders,
-    agents: AGENT_META, routines: state.routines, layout: state.layout,
+    agents: AGENT_META.concat(state.hires), routines: state.routines, layout: state.layout,
     sources: state.sources, memory: state.memory, chat: state.chat, products: state.products,
     mall: state.mall, orders: state.orders.slice(-50),
     conversations: state.conversations,
     activity: state.activity, stopped: state.stopped, running: state.running,
+    // ⚠️ PUBLIC: hinding-hindi isasama ang aktwal na API keys — CEO lang kumukuha via /api/private
     setup: { hasKey: !!s.apiKey, model: s.model, provider: s.provider, baseUrl: s.baseUrl,
-      keys: s.keys, failover: s.failover }
+      keys: {}, failover: s.failover }
   };
 }
 
@@ -649,7 +993,13 @@ let limitsCache = { at: 0, data: null };
 
 // ===== 🛡️ ANTI-HACKER SHIELD: rate limiting + brute-force lockout (per IP) =====
 const guard = new Map(); // ip -> {n, t0, bad, lastBad}
+const oauthStates = new Map(); // FB OAuth state -> issued at (short-lived)
 const cleanTxt = s => String(s || '').replace(/[<>&"'`]/g, '').trim().slice(0, 80);
+function reqOrigin(req) {
+  const host = String((req.headers && req.headers.host) || ('localhost:' + PORT));
+  const proto = String((req.headers && req.headers['x-forwarded-proto']) || 'http').split(',')[0].trim();
+  return proto + '://' + host;
+}
 function guardBumpBad(ip) {
   const h = guard.get(ip) || { n: 0, t0: Date.now(), bad: 0 };
   h.bad++; h.lastBad = Date.now(); guard.set(ip, h);
@@ -665,7 +1015,7 @@ const server = http.createServer(async (req, res) => {
     const ghOld = guard.get(ip), nowMs = Date.now();
     if (ghOld && ghOld.bad >= 10 && ghOld.lastBad && nowMs - ghOld.lastBad < 600000) {
       // locked out: bisita mode lang — PERO ang TOTOONG CEO na may tamang password, papasukin!
-      if (req.method === 'POST' && p !== '/api/orders') {
+      if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/')) {
         if (p === '/api/unlock') {
           const b = await body(req);
           if (String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg')) {
@@ -680,7 +1030,8 @@ const server = http.createServer(async (req, res) => {
     if (gh.n > 150) { log('🚨 Flood blocked (' + ip + ') — hawak ni BANTAY', 'security'); return sendJSON(res, 429, { ok: false, error: 'Too many requests' }); }
     guard.set(ip, gh);
     // ===== SECURITY: password lock sa lahat ng CEO actions (bisita: tingin lang) =====
-    if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders') {
+    if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders'
+        && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/')) {
       const b = await body(req);
       const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
       if (String(b.pass || '') !== real) {
@@ -699,6 +1050,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/api/state' && req.method === 'GET') return sendJSON(res, 200, publicState());
+    // 🔐 CEO-only private data (keys + vault links) — dumaan sa password gate sa taas
+    if (p === '/api/private' && req.method === 'POST') {
+      const s = settings();
+      return sendJSON(res, 200, { ok: true, keys: s.keys, failover: s.failover, accounts: state.accounts });
+    }
 
     // ===== CYBORG MALL: paninda + orders ng bisita (walang password ang checkout!) =====
     if (p === '/api/mall' && req.method === 'GET') return sendJSON(res, 200, { mall: state.mall });
@@ -707,7 +1063,11 @@ const server = http.createServer(async (req, res) => {
       const item = {
         id: 'm' + Date.now(), name: cleanTxt(b.name),
         price: Math.max(0, Math.min(1e7, Number(b.price) || 0)), emoji: cleanTxt(b.emoji).slice(0, 4) || '🛒',
-        url: String(b.url || '').replace(/[<>"'`]/g, '').trim().slice(0, 500), createdAt: Date.now()
+        url: String(b.url || '').replace(/[<>"'`]/g, '').trim().slice(0, 500),
+        // 📌 SHOPEE RULES: affiliate link = nasa loob ng PRODUCT POST (may pangalan, presyo, deskripsyon)
+        cat: String(b.cat || 'shopee').replace(/[<>"'`]/g, '').trim().slice(0, 24) || 'shopee',
+        caption: String(b.caption || '').replace(/[<>"'`]/g, '').trim().slice(0, 200),
+        createdAt: Date.now()
       };
       if (!item.name || !item.url) return sendJSON(res, 400, { ok: false, error: 'Name at Shopee URL required' });
       state.mall.push(item);
@@ -721,6 +1081,31 @@ const server = http.createServer(async (req, res) => {
       if (i >= 0) { const gone = state.mall.splice(i, 1)[0]; saveStateNow(); log('Removed mall item: ' + gone.name, 'CEO'); }
       return sendJSON(res, 200, { ok: true, mall: state.mall });
     }
+    // ===== 🏦 KEEPER BOT: vault ng account links (LINKS LANG — walang password, para safe!) =====
+    if (p === '/api/accounts' && req.method === 'GET') {
+      if (String(u.searchParams.get('pass') || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
+        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
+      return sendJSON(res, 200, { accounts: state.accounts });
+    }
+    if (p === '/api/accounts' && req.method === 'POST') {
+      const b = await body(req);
+      const acct = {
+        id: 'a' + Date.now(), label: cleanTxt(b.label), platform: cleanTxt(b.platform),
+        url: String(b.url || '').replace(/[<>"'`]/g, '').trim().slice(0, 500),
+        note: cleanTxt(b.note), createdAt: Date.now()
+      };
+      if (!acct.label || !acct.url) return sendJSON(res, 400, { ok: false, error: 'Label at URL required' });
+      state.accounts.push(acct);
+      saveStateNow();
+      log('🏦 KEEPER: idinagdag ang account link — ' + acct.platform + ' / ' + acct.label, 'CEO');
+      return sendJSON(res, 200, { ok: true, accounts: state.accounts });
+    }
+    if (p === '/api/accounts/delete' && req.method === 'POST') {
+      const b = await body(req);
+      const i = state.accounts.findIndex(x => x.id === b.id);
+      if (i >= 0) { const gone = state.accounts.splice(i, 1)[0]; saveStateNow(); log('🏦 KEEPER: tinanggal ang account link — ' + gone.label, 'CEO'); }
+      return sendJSON(res, 200, { ok: true, accounts: state.accounts });
+    }
     if (p === '/api/orders' && req.method === 'GET') return sendJSON(res, 200, { orders: state.orders.slice(-50) });
     if (p === '/api/orders' && req.method === 'POST') {
       const b = await body(req);
@@ -729,10 +1114,33 @@ const server = http.createServer(async (req, res) => {
       if (!items.length) return sendJSON(res, 400, { ok: false, error: 'Walang laman ang cart!' });
       const total = items.reduce((s, x) => s + (Number(x.price) || 0) * (Number(x.qty) || 1), 0);
       const code = 'CB-' + Math.floor(100000 + Math.random() * 900000);
-      const order = { code, items, total, status: 'bayad-na', at: Date.now() };
+      const ref = String(b.ref || '').slice(0, 50);
+      const sr = ref ? state.bazaarShares.find(s => s.id === ref) : null;
+      const order = { code, items, total, status: 'bayad-na', at: Date.now(), ref: sr ? ref : '' };
       state.orders.push(order); state.orders = state.orders.slice(-200);
+      if (sr) {
+        const buyer = sr.vid && state.visitors[sr.vid];
+        const cut = buyer ? LEVEL_CUT[levelFor(buyer.xp).index] : LEVEL_CUT[0];
+        const gross = Math.round(total * BAZAAR_COMMISSION_RATE * 100) / 100;
+        const paid = Math.max(5, Math.round(gross * cut));
+        sr.clicks = (sr.clicks || 0) + 1;
+        sr.orders = (sr.orders || 0) + 1;
+        sr.paid = (sr.paid || 0) + paid;
+        state.bazaarStats.orders++;
+        state.bazaarStats.gross = Math.round((state.bazaarStats.gross + gross) * 100) / 100;
+        state.bazaarStats.visitorPaid += paid;
+        state.bazaarStats.officeNet = Math.round((state.bazaarStats.officeNet + Math.max(0, gross - paid)) * 100) / 100;
+        state.bazaarStats.earned = state.bazaarStats.officeNet;
+        if (buyer) {
+          buyer.earned = (buyer.earned || 0) + paid;
+          buyer.paidOrders = (buyer.paidOrders || 0) + 1;
+          grantVisitor(buyer, paid, 5);
+          markVisitorTask(buyer, 'order', sr.id);
+          log('💰 ' + cleanTxt(buyer.name) + ' earned ' + paid + ' tokens (' + Math.round(cut * 100) + '% cut) from order ' + code, 'bazaar');
+        }
+      }
       saveStateNow();
-      log('🧾 Mall order ' + code + ' — ₱' + total + ' (' + items.length + ' item/s) BAYAD NA ✓', 'mall');
+      log('🧾 Mall order ' + code + ' — ₱' + total + ' (' + items.length + ' item/s) BAYAD NA ✓' + (sr ? ' 👑 ref=' + sr.id : ''), 'mall');
       return sendJSON(res, 200, { ok: true, order });
     }
 
@@ -756,6 +1164,8 @@ const server = http.createServer(async (req, res) => {
 
     // Failover provider keys (Groq, Vyce, OpenAI, OpenRouter, Coarena)
     if (p === '/api/providers' && req.method === 'GET') {
+      if (String(u.searchParams.get('pass') || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
+        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
       const s = settings();
       return sendJSON(res, 200, { keys: s.keys, failover: s.failover, primary: s.provider });
     }
@@ -811,7 +1221,7 @@ const server = http.createServer(async (req, res) => {
       if (!msg) return sendJSON(res, 400, { ok: false, error: 'Empty message' });
       state.chat.push({ role: 'user', text: msg, t: Date.now() });
       const history = state.chat.slice(-12).map(m => (m.role === 'user' ? 'CEO: ' : 'Chief of Staff: ') + m.text).join('\n');
-      const sys = 'You are the Chief of Staff of Cyborg Cheebee Office. Speak directly to the CEO, be concise and useful.';
+      const sys = 'You are the Chief of Staff of Cyborg Cheebee Office. Speak directly to the CEO in casual TAGLISH (Tagalog mixed with English, like a Filipino office worker). Be concise and useful. Use proper Tagalog spelling.';
       const ctx = 'Company memory:\n' + (state.memory || '(none)') +
         '\n\nAgent outputs:\n' + Object.keys(state.outputs).map(k => k + ': ' + String(state.outputs[k]).slice(0, 500)).join('\n') +
         '\n\nTasks: ' + state.tasks.filter(t => t.status !== 'done').map(t => t.title + ' (' + t.status + ')').join('; ') +
@@ -883,6 +1293,43 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { ok: true, products: state.products, results: out.map(r => ({ id: r.id, status: r.status, title: r.title })) });
     }
 
+    // ⚡ SHOPEE AFFILIATE RUSH: paste links → bots generate posts + video + office commercial
+    if (p === '/api/affiliate/ingest' && req.method === 'POST') {
+      const b = await body(req);
+      const raw = Array.isArray(b.urls) ? b.urls : String(b.urls || '').split(/[\r\n\s]+/);
+      const urls = raw.map(s => String(s).trim()).filter(u => /^https?:\/\//i.test(u)).slice(0, 12);
+      if (!urls.length) return sendJSON(res, 200, { ok: false, error: 'Walang valid Shopee affiliate link.' });
+      const posts = [], commercials = [], results = [];
+      for (const u of urls) {
+        let pr = state.products.find(x => x.url === u);
+        if (!pr) {
+          pr = { id: 'p' + Date.now() + '-' + posts.length, url: u, title: '', description: '',
+            price: 0, status: 'queued', output: '', replyId: '', provider: '', createdAt: Date.now() };
+          state.products.push(pr);
+        }
+        if (b.autoRun !== false && pr.status !== 'done') await runProduct(pr);
+        const name = String(pr.title || '').replace(/[<>&"'`]/g, '').trim().slice(0, 90) || 'Shopee Affiliate Find';
+        const caption = String(pr.description || '').replace(/[<>&"'`]/g, '').trim().slice(0, 180)
+          || ('De-kalidad na produkto mula sa affiliate shop natin. Tingnan ang presyo at detalye bago bumili.');
+        if (!state.mall.some(x => x.url === u)) {
+          const post = { id: 'm' + Date.now() + '-' + posts.length, name: name, price: pr.price || 0,
+            emoji: '🛍️', url: u, cat: 'shopee', caption: caption, createdAt: Date.now() };
+          state.mall.push(post); posts.push(post);
+        }
+        const cm = makeCommercial({ bot: 'product', angle: 'product',
+          title: ('CYBORG OFFICE — ' + name), cta: 'Tingnan ang post, i-share, at pumasok sa office.',
+          featured: { name: name, price: pr.price || 0, url: u } }, req);
+        state.commercials.unshift(cm);
+        state.commercials = state.commercials.slice(-60);
+        commercials.push(cm);
+        results.push({ id: pr.id, status: pr.status, title: name, price: pr.price || 0 });
+      }
+      saveStateNow();
+      log('⚡ Affiliate rush: ' + urls.length + ' link(s), ' + posts.length + ' post(s), ' + commercials.length + ' commercial(s)', 'CEO');
+      return sendJSON(res, 200, { ok: true, results: results, posts: posts, commercials: commercials,
+        products: state.products, mall: state.mall });
+    }
+
     if (p === '/api/conversation' && req.method === 'POST') {
       const b = await body(req);
       try { return sendJSON(res, 200, { ok: true, conversation: await generateConversation(Array.isArray(b.agents) ? b.agents : null) }); }
@@ -902,7 +1349,25 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    if (p === '/api/agents' && req.method === 'GET') return sendJSON(res, 200, { agents: AGENT_META });
+    if (p === '/api/agents' && req.method === 'GET') return sendJSON(res, 200, { agents: AGENT_META.concat(state.hires) });
+    // 👔 HIRING: paste ng nicknames mula sa FB → bagong bot sa office!
+    if (p === '/api/hire' && req.method === 'POST') {
+      const b = await body(req);
+      const names = Array.isArray(b.names) ? b.names : String(b.names || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
+      if (!names.length) return sendJSON(res, 400, { ok: false, error: 'Walang pangalan na na-paste!' });
+      const colors = ['#e8622c','#2bb3a6','#c9a227','#8f6fd8','#4a9fd6','#d6607a','#3f9d6a','#7ac74f','#c98ac9','#5ac98f'];
+      const added = [];
+      names.slice(0, 20).forEach((nm, i) => {
+        const id = 'hire_' + Date.now() + '_' + i;
+        const meta = { id, n: cleanTxt(nm).slice(0, 24) || 'Bagong Bot', i: '👤', c: colors[i % colors.length], group: 'staff', room: 'hq', desc: 'In-hire mula sa Facebook applicants!' };
+        if (!meta.n) return;
+        state.hires.push(meta);
+        added.push(meta);
+        log('👔 Hired: ' + meta.n + ' (FB applicant)', 'CEO');
+      });
+      saveStateNow();
+      return sendJSON(res, 200, { ok: true, added, agents: AGENT_META.concat(state.hires) });
+    }
 
     if (p === '/api/routines' && req.method === 'GET') return sendJSON(res, 200, { routines: state.routines });
     if (p === '/api/routines' && req.method === 'POST') {
@@ -1017,6 +1482,570 @@ const server = http.createServer(async (req, res) => {
       } catch (e) {
         return sendJSON(res, 200, { ok: false, error: e.message });
       }
+    }
+
+    /* ========== 🛒 CYBORG BAZAAR — pampublikong API (walang CEO password) ========== */
+    if (p === '/api/bazaar/info' && req.method === 'GET') {
+      const c = fbCfg();
+      return sendJSON(res, 200, {
+        levels: BAZAAR_LEVELS, tasks: BAZAAR_TASKS, bonus: BAZAAR_BONUS, parts: POD_PARTS,
+        goodsRate: GOODS_TOKENS_PER_PESO, cashPayout: false,
+        bots: AGENT_META.map(a => ({ id: a.id, name: a.n, icon: a.i, desc: a.desc })),
+        angles: Object.keys(COMMERCIAL_ANGLES).map(id => ({ id: id, label: COMMERCIAL_ANGLES[id].label })),
+        fbConfigured: !!(c.id && c.secret && c.redirect)
+      });
+    }
+    if (p === '/api/bazaar/commercials' && req.method === 'GET') {
+      const list = state.commercials.filter(x => x.status === 'active').slice(-12).reverse();
+      return sendJSON(res, 200, { ok: true, commercials: list });
+    }
+
+    if (p === '/api/fb/config' && req.method === 'GET') {
+      const c = fbCfg();
+      return sendJSON(res, 200, { configured: !!(c.id && c.secret && c.redirect), appId: c.id ? c.id.slice(0, 6) + '…' : '' });
+    }
+    if (p === '/api/fb/login' && req.method === 'GET') {
+      const c = fbCfg();
+      if (!c.id || !c.secret || !c.redirect) return sendJSON(res, 200, { ok: false, error: 'Facebook login is not configured yet' });
+      const st = crypto.randomBytes(16).toString('hex');
+      oauthStates.set(st, Date.now());
+      const url = 'https://www.facebook.com/v19.0/dialog/oauth?client_id=' + encodeURIComponent(c.id)
+        + '&redirect_uri=' + encodeURIComponent(c.redirect)
+        + '&scope=public_profile,email&response_type=code&state=' + st;
+      res.writeHead(302, { Location: url });
+      return res.end();
+    }
+    if (p === '/api/fb/callback' && req.method === 'GET') {
+      const st = String(u.searchParams.get('state') || ''), code = String(u.searchParams.get('code') || '');
+      const issued = oauthStates.get(st);
+      if (!issued || Date.now() - issued > 10 * 60 * 1000) return sendJSON(res, 400, { ok: false, error: 'Expired Facebook login. Try again.' });
+      oauthStates.delete(st);
+      if (!code) return sendJSON(res, 400, { ok: false, error: 'Facebook login was cancelled.' });
+      const c = fbCfg();
+      try {
+        const tkUrl = 'https://graph.facebook.com/v19.0/oauth/access_token?client_id=' + encodeURIComponent(c.id)
+          + '&client_secret=' + encodeURIComponent(c.secret) + '&redirect_uri=' + encodeURIComponent(c.redirect)
+          + '&code=' + encodeURIComponent(code);
+        const tr = await fetch(tkUrl);
+        const tj = await tr.json();
+        if (!tj.access_token) return sendJSON(res, 400, { ok: false, error: 'Facebook token error' });
+        const mr = await fetch('https://graph.facebook.com/v19.0/me?fields=id,name,picture&access_token=' + encodeURIComponent(tj.access_token));
+        const mj = await mr.json();
+        if (!mj.id) return sendJSON(res, 400, { ok: false, error: 'Facebook profile error' });
+        const pic = (mj.picture && mj.picture.data && mj.picture.data.url) || '';
+        const v = getOrCreateVisitor('fb_' + mj.id, mj.name, pic);
+        setBazaarCookie(res, v.id);
+        log('🛒 FB visitor logged in: ' + cleanTxt(v.name), 'bazaar');
+        res.writeHead(302, { Location: '/?bazaar=1' });
+        return res.end();
+      } catch (e) { return sendJSON(res, 500, { ok: false, error: e.message }); }
+    }
+    if (p === '/api/fb/me' && req.method === 'GET') {
+      const id = visitorIdFrom(req);
+      const v = id && state.visitors[id];
+      return sendJSON(res, 200, { visitor: v ? visitorView(v) : null, configured: !!(fbCfg().id && fbCfg().secret && fbCfg().redirect) });
+    }
+    if (p === '/api/fb/logout' && req.method === 'POST') {
+      res.setHeader('Set-Cookie', 'bz=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+      return sendJSON(res, 200, { ok: true });
+    }
+
+    if (p === '/api/bazaar/profile' && req.method === 'GET') {
+      const id = visitorIdFrom(req);
+      const v = id && state.visitors[id];
+      return sendJSON(res, 200, { visitor: v ? visitorView(v) : null });
+    }
+    // 🩺 VISITOR CONTROL PING — bot nagche-check kung OK ang controls ng bisita
+    if (p === '/api/bazaar/ping' && req.method === 'POST') {
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'No visitor' });
+      const b = await body(req);
+      const keys = Array.isArray(b.keys) ? b.keys.map(x => String(x).slice(0, 12)).slice(0, 24) : [];
+      const num = n => Math.max(0, Math.min(1000000, Math.floor(Number(n) || 0)));
+      const prev = v.controls || {};
+      const pos = b.pos && Number.isFinite(Number(b.pos.x)) ? {
+        x: Math.round(Number(b.pos.x) * 10) / 10,
+        y: Math.round(Number(b.pos.y) * 10) / 10,
+        z: Math.round(Number(b.pos.z) * 10) / 10
+      } : null;
+      v.controls = {
+        version: String(b.version || '1').slice(0, 20),
+        three: !!b.three, webgl: !!b.webgl,
+        keys: Array.from(new Set((prev.keys || []).concat(keys))).slice(-24),
+        move: Math.max(num(prev.move), num(b.move)),
+        interact: Math.max(num(prev.interact), num(b.interact)),
+        chat: Math.max(num(prev.chat), num(b.chat)),
+        errors: num(b.errors), lastError: String(b.lastError || '').slice(0, 160),
+        pos: pos || prev.pos || null, grounded: !!b.grounded,
+        pings: num(prev.pings) + 1,
+        firstSeen: prev.firstSeen || Date.now(), lastPing: Date.now()
+      };
+      scheduleSave();
+      return sendJSON(res, 200, { ok: true, pings: v.controls.pings });
+    }
+    if (p === '/api/bazaar/demo' && req.method === 'POST') {
+      const c = fbCfg();
+      if (c.id && c.secret && c.redirect) return sendJSON(res, 200, { ok: false, error: 'Demo is off — use Facebook login.' });
+      const b = await body(req);
+      const name = cleanTxt(b.name || 'Guest') || 'Guest';
+      const id = 'demo_' + crypto.createHash('sha1').update('bazaar:' + name.toLowerCase()).digest('hex').slice(0, 12);
+      const v = getOrCreateVisitor(id, name, '');
+      setBazaarCookie(res, v.id);
+      return sendJSON(res, 200, { ok: true, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/checkin' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const d = ensureVisitorDay(v);
+      if (d.done.checkin) return sendJSON(res, 200, { ok: true, already: true, visitor: visitorView(v) });
+      const r = markVisitorTask(v, 'checkin', 'checkin');
+      log('🛒 ' + cleanTxt(v.name) + ' checked in (Day ' + d.date + ')', 'bazaar');
+      return sendJSON(res, 200, { ok: true, result: r, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/task' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const type = String(b.type || '');
+      if (!BAZAAR_TASKS.some(t => t.id === type)) return sendJSON(res, 200, { ok: false, error: 'Unknown task' });
+      const r = markVisitorTask(v, type, b.key);
+      return sendJSON(res, 200, { ok: true, result: r, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/upgrade' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const part = String(b.part || '');
+      if (!Object.prototype.hasOwnProperty.call(POD_PARTS, part)) return sendJSON(res, 200, { ok: false, error: 'Unknown upgrade' });
+      const d = ensureVisitorDay(v);
+      d.upgrades = (d.upgrades || 0) + 1;
+      if (d.upgrades > 6) return sendJSON(res, 200, { ok: false, error: 'Limit sa upgrade kada araw (6).' });
+      const cur = (v.pod && v.pod[part]) || 0;
+      if (cur >= 3) return sendJSON(res, 200, { ok: false, error: 'Max level na ang ' + part });
+      const cost = POD_PARTS[part] * (cur + 1);
+      if ((v.coins || 0) < cost) return sendJSON(res, 200, { ok: false, error: 'Kulang ang coins (kailangan: ' + cost + ')' });
+      v.pod = v.pod || {};
+      v.pod[part] = cur + 1;
+      v.coins -= cost;
+      scheduleSave();
+      log('🛒 ' + cleanTxt(v.name) + ' upgraded ' + part + ' → Lv' + (cur + 1), 'bazaar');
+      return sendJSON(res, 200, { ok: true, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/wish' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const part = String(b.part || '');
+      if (!Object.prototype.hasOwnProperty.call(POD_PARTS, part)) return sendJSON(res, 200, { ok: false, error: 'Unknown wish' });
+      const d = ensureVisitorDay(v);
+      d.wishCalls = (d.wishCalls || 0) + 1;
+      if (d.wishCalls > 3) return sendJSON(res, 200, { ok: false, error: 'Limit sa wish kada araw (3).' });
+      v.wish = { part: part, note: cleanTxt(b.note || '').slice(0, 120), at: Date.now(), status: 'pending' };
+      scheduleSave();
+      log('🛒 Wish ni ' + cleanTxt(v.name) + ': ' + part, 'bazaar');
+      return sendJSON(res, 200, { ok: true, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/share' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const kind = String(b.kind || 'product') === 'content' ? 'content' : 'product';
+      const url = String(b.url || '').trim();
+      if (!/^https?:\/\//i.test(url)) return sendJSON(res, 200, { ok: false, error: 'Kailangan ng valid URL.' });
+      const title = cleanTxt(b.title || 'Cyborg Office find').slice(0, 80);
+      const price = Math.max(0, Math.min(1e7, Number(b.price) || 0));
+      const desc = cleanTxt(b.desc || 'De-kalidad na paninda mula sa Cyborg Office.').slice(0, 140);
+      const sid = 'sh' + crypto.randomBytes(6).toString('hex');
+      const rec = {
+        id: sid, vid: v.id, by: cleanTxt(v.name), kind: kind, key: String(b.key || '').slice(0, 60),
+        title: title, price: price, desc: desc, url: url.slice(0, 1000),
+        shareUrl: '/r/' + sid, at: Date.now(), clicks: 0, orders: 0
+      };
+      state.bazaarShares.push(rec);
+      state.bazaarShares = state.bazaarShares.slice(-300);
+      state.bazaarStats.shares++;
+      const caption = '🛒 ' + title + (price ? ' — ₱' + price : '') + '\n' + desc
+        + '\n📣 Shared by ' + cleanTxt(v.name) + ' mula sa Cyborg Office\n' + url;
+      // 📌 'product' shares complete the 'share' daily task; 'content' shares complete 'content'
+      const taskType = kind === 'content' ? 'content' : 'share';
+      const result = markVisitorTask(v, taskType, String(b.key || sid));
+      scheduleSave();
+      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax; Max-Age=' + (30 * 86400));
+      log('📣 ' + cleanTxt(v.name) + ' shared ' + kind + ': ' + title, 'bazaar');
+      return sendJSON(res, 200, { ok: true, share: rec, caption: caption, result: result, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/pods' && req.method === 'GET') {
+      const list = Object.keys(state.visitors).slice(-30).map(id => {
+        const v = state.visitors[id];
+        return { name: v.name, level: levelFor(v.xp).name, pod: v.pod || {} };
+      });
+      return sendJSON(res, 200, { pods: list });
+    }
+
+    // 📣 Referral click tracker — pumupunta sa Shopee/content, may attribution
+    if (p.startsWith('/r/') && req.method === 'GET') {
+      const sid = p.slice(3).slice(0, 50);
+      const sr = state.bazaarShares.find(s => s.id === sid);
+      if (!sr) return sendJSON(res, 404, { ok: false, error: 'Link not found' });
+      sr.clicks = (sr.clicks || 0) + 1;
+      state.bazaarStats.clicks++;
+      scheduleSave();
+      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax; Max-Age=' + (30 * 86400));
+      const loc = /^https?:\/\//i.test(sr.url) ? sr.url : (String(sr.url || '/').startsWith('/') ? sr.url : '/');
+      res.writeHead(302, { Location: loc });
+      return res.end();
+    }
+
+    /* ===== 📢 AD PROJECTS + WALLET (visitor-safe) ===== */
+    if (p === '/api/bazaar/campaigns' && req.method === 'GET') {
+      const list = state.campaigns.filter(c => c.status === 'active').map(c => ({
+        id: c.id, name: c.name, network: c.network, desc: c.desc, rate: c.rate,
+        perShare: c.perShare, left: Math.max(0, Math.round((c.budget - c.spent) * 100) / 100),
+        shares: c.shares || 0, clicks: c.clicks || 0
+      }));
+      return sendJSON(res, 200, { ok: true, campaigns: list, goodsRate: GOODS_TOKENS_PER_PESO });
+    }
+    if (p === '/api/bazaar/campaign/share' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const c = state.campaigns.find(x => x.id === String(b.id || ''));
+      if (!c || c.status !== 'active') return sendJSON(res, 200, { ok: false, error: 'Campaign unavailable' });
+      const left = (c.budget || 0) - (c.spent || 0);
+      const cost = (c.perShare || 20) / PAYOUT_TOKENS_PER_PESO;
+      if (left < cost) return sendJSON(res, 200, { ok: false, error: 'Budget naubos na ang campaign.' });
+      const d = ensureVisitorDay(v);
+      d.campaignShares = (d.campaignShares || 0) + 1;
+      if (d.campaignShares > 12) return sendJSON(res, 200, { ok: false, error: 'Limit sa campaign shares kada araw (12).' });
+      const sid = 'ad' + crypto.randomBytes(6).toString('hex');
+      const target = /^https?:\/\//i.test(c.url) ? c.url : (String(c.url || '/').startsWith('/') ? String(c.url) : '/');
+      const rec = {
+        id: sid, vid: v.id, by: cleanTxt(v.name), kind: 'campaign', campaign: c.id,
+        title: cleanTxt(c.name), price: 0, desc: cleanTxt(c.desc || 'Cyborg Office campaign').slice(0, 140),
+        url: target, shareUrl: '/c/' + sid, at: Date.now(), clicks: 0, orders: 0, paid: c.perShare || 20
+      };
+      state.bazaarShares.push(rec);
+      state.bazaarShares = state.bazaarShares.slice(-300);
+      c.spent = Math.round(((c.spent || 0) + cost) * 100) / 100;
+      c.shares = (c.shares || 0) + 1;
+      state.bazaarStats.shares++;
+      const instant = grantVisitor(v, c.perShare || 20, 10);
+      const result = markVisitorTask(v, 'share', 'ad' + c.id);
+      // 💼 Advertiser pays a 50% margin on top of the visitor payout — hindi tayo malulugi
+      const adRevenue = Math.round(cost * CAMPAIGN_MARGIN * 100) / 100;
+      state.bazaarStats.visitorPaid += (c.perShare || 20);
+      state.bazaarStats.adRevenue = Math.round(((state.bazaarStats.adRevenue || 0) + adRevenue) * 100) / 100;
+      state.bazaarStats.officeNet = Math.round((state.bazaarStats.officeNet + adRevenue - cost) * 100) / 100;
+      state.bazaarStats.earned = state.bazaarStats.officeNet;
+      scheduleSave();
+      const caption = '📢 ' + cleanTxt(c.name) + '\n' + cleanTxt(c.desc || 'Cyborg Office campaign')
+        + '\n👍 Shared by ' + cleanTxt(v.name) + ' mula sa Cyborg Office\n' + (target.startsWith('/') ? reqOrigin(req) + target : target);
+      log('📢 ' + cleanTxt(v.name) + ' joined campaign ' + cleanTxt(c.name) + ' (+' + (c.perShare || 20) + ' tokens)', 'bazaar');
+      return sendJSON(res, 200, { ok: true, share: rec, caption: caption, instant: instant, result: result, visitor: visitorView(v) });
+    }
+    if (p === '/api/bazaar/payout/request' && req.method === 'POST') {
+      return sendJSON(res, 200, { ok: false, error: 'Walang cash payout. Gamitin ang 🍚 Redeem ng affiliate products.' });
+    }
+    if (p === '/api/bazaar/redemptions' && req.method === 'GET') {
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      return sendJSON(res, 200, {
+        ok: true, items: redemptionItems(), rate: GOODS_TOKENS_PER_PESO,
+        stages: SHIPPING_STAGES, nav: SHIPPING_NAV,
+        mine: v ? state.redemptions.filter(x => x.vid === v.id).slice(-8).reverse() : []
+      });
+    }
+    if (p === '/api/bazaar/redeem' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
+      const item = redemptionItems().find(x => x.id === String(b.id || ''));
+      if (!item) return sendJSON(res, 200, { ok: false, error: 'Produkto not found.' });
+      const pending = state.redemptions.filter(x => x.vid === v.id && x.status === 'pending').length;
+      if (pending >= 2) return sendJSON(res, 200, { ok: false, error: 'May 2 pending ka pang redeemed items.' });
+      if ((v.coins || 0) < item.tokens) return sendJSON(res, 200, { ok: false, error: 'Kulang ang tokens. Kailangan 🪙' + item.tokens + ', meron ka 🪙' + (v.coins || 0) + '.' });
+      const rec = {
+        id: 'rd' + crypto.randomBytes(5).toString('hex'), vid: v.id, name: cleanTxt(v.name),
+        itemId: item.id, item: cleanTxt(item.name), emoji: item.emoji || '🎁',
+        price: item.price, tokens: item.tokens, url: String(item.url || '').slice(0, 1000),
+        status: 'pending', ref: '', at: Date.now(), fulfilledAt: 0,
+        shipping: {
+          stage: 'queued', at: Date.now(), where: 'Office Delivery Dock',
+          note: 'Hintay na ma-order ni CEO sa Shopee affiliate link.', courier: '',
+          history: [{ stage: 'queued', at: Date.now(), note: 'Request na-receive sa office.' }]
+        }
+      };
+      v.coins = (v.coins || 0) - item.tokens;
+      state.redemptions.push(rec);
+      state.redemptions = state.redemptions.slice(-300);
+      scheduleSave();
+      log('🎁 Redemption ' + rec.id + ' — ' + cleanTxt(v.name) + ' → ' + rec.item + ' (🪙' + rec.tokens + ')', 'bazaar');
+      return sendJSON(res, 200, { ok: true, redemption: rec, visitor: visitorView(v) });
+    }
+    if (p === '/api/proof' && req.method === 'GET') {
+      const goods = state.redemptions.filter(x => x.status === 'fulfilled' && x.ref).slice(-30).reverse();
+      return sendJSON(res, 200, {
+        ok: true,
+        totalRedeemed: Math.round(goods.reduce((s, x) => s + (x.price || 0), 0) * 100) / 100,
+        redeemedCount: goods.length,
+        goods: goods.map(x => ({ id: x.id, name: x.name, item: x.item, price: x.price, at: x.fulfilledAt || x.at, ref: x.ref,
+          stage: (x.shipping && x.shipping.stage) || 'shipped', where: (x.shipping && x.shipping.where) || 'Courier Hub' })),
+        shippingStages: SHIPPING_STAGES, nav: SHIPPING_NAV,
+        campaigns: state.campaigns.filter(c => c.status === 'active').length
+      });
+    }
+    if (p.startsWith('/c/') && req.method === 'GET') {
+      const sid = p.slice(3).slice(0, 50);
+      const sr = state.bazaarShares.find(s => s.id === sid);
+      if (!sr) return sendJSON(res, 404, { ok: false, error: 'Campaign link not found' });
+      sr.clicks = (sr.clicks || 0) + 1;
+      const c = state.campaigns.find(x => x.id === sr.campaign);
+      if (c) c.clicks = (c.clicks || 0) + 1;
+      state.bazaarStats.clicks++;
+      scheduleSave();
+      const loc = /^https?:\/\//i.test(sr.url) ? sr.url : (String(sr.url || '/').startsWith('/') ? sr.url : '/');
+      res.writeHead(302, { Location: loc });
+      return res.end();
+    }
+
+    /* ===== 👑 CEO-ONLY bazaar controls (password-gated; hindi abot ng bisita) ===== */
+    // 🤖 BOT CONTROL AUDIT — sinusuri ng mga bot kung gumagana ang WASD/Space/E/Enter ng bawat visitor
+    if (p === '/api/ceo/monitor' && req.method === 'POST') {
+      const CHECKERS = [
+        { id: 'mgr', name: 'Bot Manager', icon: '🧭' },
+        { id: 'cos', name: 'Chief of Staff', icon: '🧠' },
+        { id: 'social', name: 'Social Media Manager', icon: '📱' },
+        { id: 'scraper', name: 'Community Scraper', icon: '🕸' },
+        { id: 'outreach', name: 'Client Outreach', icon: '📨' },
+        { id: 'product', name: 'Product Video Bot', icon: '🎬' }
+      ];
+      const now = Date.now();
+      const visitors = Object.keys(state.visitors).map(id => {
+        const v = state.visitors[id], c = v.controls || {}, keys = c.keys || [];
+        const has = arr => arr.some(k => keys.indexOf(k) >= 0);
+        const pingAge = c.lastPing ? Math.round((now - c.lastPing) / 1000) : -1;
+        const checks = [
+          { name: '3D / WebGL', ok: !!c.three, detail: c.three ? 'Loaded' : 'Hindi pa loaded' },
+          { name: 'WASD / Arrow', ok: has(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']), detail: 'Lakad' },
+          { name: 'Space (jump)', ok: has([' ']), detail: 'Jump' },
+          { name: 'E (interact)', ok: has(['e']) || (c.interact || 0) > 0, detail: 'Interact' },
+          { name: 'Enter (chat)', ok: has(['enter']) || (c.chat || 0) > 0, detail: 'World chat' },
+          { name: 'Walang error', ok: (c.errors || 0) === 0, detail: (c.errors || 0) + ' error' },
+          { name: 'Online ping', ok: pingAge >= 0 && pingAge < 90, detail: pingAge < 0 ? 'Never' : pingAge + 's ago' }
+        ];
+        const warn = checks.filter(x => !x.ok);
+        const seed = Array.from(id).reduce((s, ch) => s + ch.charCodeAt(0), 0);
+        return {
+          id: v.id, name: v.name, level: levelFor(v.xp).name,
+          checker: CHECKERS[seed % CHECKERS.length],
+          status: warn.length ? 'warn' : 'ok', checks: warn, warnings: warn.map(x => x.name),
+          controls: {
+            keys: keys.slice(-12), move: c.move || 0, interact: c.interact || 0, chat: c.chat || 0,
+            errors: c.errors || 0, pings: c.pings || 0, lastPing: c.lastPing || 0,
+            pos: c.pos || null, grounded: !!c.grounded, since: c.firstSeen || 0
+          }
+        };
+      }).sort((a, b) => (b.controls.lastPing || 0) - (a.controls.lastPing || 0));
+      return sendJSON(res, 200, {
+        ok: true, visitors: visitors, checkers: CHECKERS, checkedAt: now,
+        summary: {
+          total: visitors.length,
+          ok: visitors.filter(x => x.status === 'ok').length,
+          warn: visitors.filter(x => x.status === 'warn').length,
+          active: visitors.filter(x => x.controls.lastPing && now - x.controls.lastPing < 90000).length
+        }
+      });
+    }
+    // 🔌 CEO CONNECTIONS — status lang ang ipinapadala; secrets hindi lumalabas sa browser
+    if (p === '/api/ceo/connections' && req.method === 'POST') {
+      const cfg = readJSON(SETTINGS_FILE, {});
+      const dep = readJSON(path.join(DATA, 'deploy.json'), {});
+      const env = process.env;
+      const has = (...vals) => vals.some(x => String(x || '').trim().length > 0);
+      const fb = fbCfg();
+      const connections = [
+        { id: 'facebook', name: 'Facebook Login', icon: '🔵', color: '#1877f2',
+          url: 'https://developers.facebook.com/apps/',
+          hint: 'FB App ID · App Secret · Redirect URI', ready: !!(fb.id && fb.secret && fb.redirect) },
+        { id: 'youtube', name: 'YouTube / Google', icon: '▶️', color: '#ff4e45',
+          url: 'https://console.cloud.google.com/apis/credentials',
+          hint: 'Google OAuth Client ID · Secret o refresh token',
+          ready: has(cfg.youtubeClientId, env.YOUTUBE_CLIENT_ID) && has(cfg.youtubeClientSecret, env.YOUTUBE_CLIENT_SECRET, cfg.youtubeRefreshToken, env.YOUTUBE_REFRESH_TOKEN) },
+        { id: 'shopee', name: 'Shopee Affiliate', icon: '🛍️', color: '#ee4d2d',
+          url: 'https://seller.shopee.ph/edu/pwb/affiliate',
+          hint: 'Affiliate ID / token + mga product link',
+          ready: has(cfg.shopeeAffId, env.SHOPEE_AFF_ID, cfg.shopeeAffToken, env.SHOPEE_AFF_TOKEN) },
+        { id: 'tiktok', name: 'TikTok Business', icon: '🎵', color: '#25f4ee',
+          url: 'https://ads.tiktok.com/business/creativecenter/',
+          hint: 'TikTok Client Key · Client Secret',
+          ready: has(cfg.tiktokClientKey, env.TIKTOK_CLIENT_KEY) && has(cfg.tiktokClientSecret, env.TIKTOK_CLIENT_SECRET) },
+        { id: 'render', name: 'Render Deploy', icon: '🚀', color: '#46e3b7',
+          url: 'https://dashboard.render.com/',
+          hint: 'Render account o Deploy Hook sa data/deploy.json',
+          ready: has(dep.deployHook, env.RENDER_DEPLOY_HOOK, dep.serviceId, env.RENDER_SERVICE_ID) },
+        { id: 'github', name: 'GitHub Repo', icon: '🐙', color: '#a371f7',
+          url: 'https://github.com/',
+          hint: 'GitHub login o token para ma-update ang repo',
+          ready: has(cfg.githubToken, env.GITHUB_TOKEN, cfg.githubRepo, env.GITHUB_REPO) },
+        { id: 'ai', name: 'AI Provider', icon: '🧠', color: '#c9a227',
+          url: '/?view=settings',
+          hint: 'Coarena / Groq / iba pang API key',
+          ready: has(cfg.apiKey, env.COARENA_API_KEY, cfg.keys && cfg.keys.groq && cfg.keys.groq.apiKey, env.GROQ_API_KEY) }
+      ];
+      return sendJSON(res, 200, {
+        ok: true, connections: connections,
+        note: 'Walang password ang itinatago dito. OAuth/token lang; server-side lang ang mga values.'
+      });
+    }
+    if (p === '/api/ceo/bazaar/list' && req.method === 'POST') {
+      const list = Object.keys(state.visitors).map(id => {
+        const v = state.visitors[id];
+        return Object.assign(visitorView(v), { name: v.name });
+      }).sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 50);
+      return sendJSON(res, 200, { ok: true, visitors: list, parts: POD_PARTS });
+    }
+    if (p === '/api/ceo/bazaar/stats' && req.method === 'POST') {
+      return sendJSON(res, 200, {
+        ok: true, stats: state.bazaarStats,
+        shares: state.bazaarShares.slice(-40).reverse(),
+        commissionRate: BAZAAR_COMMISSION_RATE, levelCut: LEVEL_CUT,
+        goodsRate: GOODS_TOKENS_PER_PESO, redemptions: state.redemptions.slice(-20).reverse()
+      });
+    }
+    if (p === '/api/ceo/campaigns' && req.method === 'POST') {
+      const b = await body(req), act = String(b.action || 'list');
+      if (act === 'create') {
+        const name = cleanTxt(b.name || '');
+        const url = String(b.url || '').trim().slice(0, 1000);
+        if (!name) return sendJSON(res, 200, { ok: false, error: 'Kailangan ang campaign name.' });
+        if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) return sendJSON(res, 200, { ok: false, error: 'Kailangan ang valid URL.' });
+        const c = {
+          id: 'c' + crypto.randomBytes(4).toString('hex'), name: name,
+          network: cleanTxt(b.network || 'Own Content') || 'Own Content',
+          url: url, desc: cleanTxt(b.desc || 'Cyborg Office campaign').slice(0, 140),
+          rate: Math.max(0, Math.min(1, Number(b.rate) || 0.05)),
+          perShare: Math.max(1, Math.min(1000, Math.floor(Number(b.perShare) || 20))),
+          budget: Math.max(0, Math.min(1e7, Number(b.budget) || 1000)),
+          spent: 0, shares: 0, clicks: 0, status: 'active', createdAt: Date.now()
+        };
+        state.campaigns.push(c); scheduleSave();
+        log('📢 CEO created ad project: ' + name + ' (🪙' + c.perShare + '/share)', 'CEO');
+        return sendJSON(res, 200, { ok: true, campaign: c, campaigns: state.campaigns });
+      }
+      if (act === 'update' || act === 'delete') {
+        const c = state.campaigns.find(x => x.id === String(b.id || ''));
+        if (!c) return sendJSON(res, 200, { ok: false, error: 'Campaign not found' });
+        if (act === 'delete') {
+          state.campaigns = state.campaigns.filter(x => x !== c);
+          scheduleSave();
+          log('📢 CEO deleted ad project: ' + cleanTxt(c.name), 'CEO');
+          return sendJSON(res, 200, { ok: true, campaigns: state.campaigns });
+        }
+        if (Object.prototype.hasOwnProperty.call(b, 'name')) c.name = cleanTxt(b.name) || c.name;
+        if (Object.prototype.hasOwnProperty.call(b, 'network')) c.network = cleanTxt(b.network) || c.network;
+        if (Object.prototype.hasOwnProperty.call(b, 'url')) {
+          const nu = String(b.url || '').trim().slice(0, 1000);
+          if (/^https?:\/\//i.test(nu) || nu.startsWith('/')) c.url = nu;
+        }
+        if (Object.prototype.hasOwnProperty.call(b, 'desc')) c.desc = cleanTxt(b.desc).slice(0, 140);
+        if (Object.prototype.hasOwnProperty.call(b, 'rate')) c.rate = Math.max(0, Math.min(1, Number(b.rate) || 0));
+        if (Object.prototype.hasOwnProperty.call(b, 'perShare')) c.perShare = Math.max(1, Math.min(1000, Math.floor(Number(b.perShare) || 1)));
+        if (Object.prototype.hasOwnProperty.call(b, 'budget')) c.budget = Math.max(c.spent || 0, Math.min(1e7, Number(b.budget) || 0));
+        if (b.status === 'active' || b.status === 'paused') c.status = b.status;
+        scheduleSave();
+        log('📢 CEO updated ad project: ' + cleanTxt(c.name) + ' (' + c.status + ')', 'CEO');
+        return sendJSON(res, 200, { ok: true, campaign: c, campaigns: state.campaigns });
+      }
+      return sendJSON(res, 200, { ok: true, campaigns: state.campaigns, stats: state.bazaarStats });
+    }
+    if (p === '/api/ceo/commercials' && req.method === 'POST') {
+      const b = await body(req), act = String(b.action || 'list');
+      if (act === 'create') {
+        const cm = makeCommercial(b, req);
+        state.commercials.unshift(cm);
+        state.commercials = state.commercials.slice(-60);
+        saveStateNow();
+        log('🎬 CEO created bot commercial: ' + cm.title + ' (' + cm.botName + ')', 'CEO');
+        return sendJSON(res, 200, { ok: true, commercial: cm, commercials: state.commercials });
+      }
+      if (act === 'update' || act === 'delete') {
+        const cm = state.commercials.find(x => x.id === String(b.id || ''));
+        if (!cm) return sendJSON(res, 200, { ok: false, error: 'Commercial not found' });
+        if (act === 'delete') {
+          state.commercials = state.commercials.filter(x => x !== cm);
+          saveStateNow();
+          return sendJSON(res, 200, { ok: true, commercials: state.commercials });
+        }
+        if (b.status === 'active' || b.status === 'paused') cm.status = b.status;
+        saveStateNow();
+        return sendJSON(res, 200, { ok: true, commercial: cm, commercials: state.commercials });
+      }
+      return sendJSON(res, 200, { ok: true, commercials: state.commercials.slice(-30).reverse() });
+    }
+    if (p === '/api/ceo/payouts' && req.method === 'POST') {
+      return sendJSON(res, 200, { ok: true, disabled: true, payouts: [], pending: [] });
+    }
+    if (p === '/api/ceo/redemptions' && req.method === 'POST') {
+      const b = await body(req), act = String(b.action || 'list');
+      const rd = state.redemptions.find(x => x.id === String(b.id || ''));
+      if (act === 'fulfill') {
+        if (!rd) return sendJSON(res, 200, { ok: false, error: 'Redemption not found' });
+        if (rd.status !== 'pending') return sendJSON(res, 200, { ok: false, error: 'Redemption ay ' + rd.status + ' na.' });
+        const ref = cleanTxt(b.ref || '');
+        if (!ref) return sendJSON(res, 200, { ok: false, error: 'Kailangan ang Shopee order reference.' });
+        rd.status = 'fulfilled'; rd.ref = ref; rd.fulfilledAt = Date.now(); rd.fulfilledBy = 'CEO';
+        setShipping(rd, 'packed', 'Na-order na sa Shopee. Hintay ng pickup ng courier.', '');
+        // 🎁 Ang goods fulfillment ay actual affiliate order din — idagdag sa office earnings
+        const gross = Math.round((Number(rd.price) || 0) * BAZAAR_COMMISSION_RATE * 100) / 100;
+        state.bazaarStats.orders++;
+        state.bazaarStats.gross = Math.round((state.bazaarStats.gross + gross) * 100) / 100;
+        state.bazaarStats.officeNet = Math.round((state.bazaarStats.officeNet + gross) * 100) / 100;
+        state.bazaarStats.earned = state.bazaarStats.officeNet;
+        scheduleSave();
+        log('🎁 CEO FULFILLED ' + rd.id + ' — ' + cleanTxt(rd.item) + ' ₱' + rd.price + ' ref=' + ref, 'CEO');
+        return sendJSON(res, 200, { ok: true, redemption: rd });
+      }
+      if (act === 'ship') {
+        if (!rd) return sendJSON(res, 200, { ok: false, error: 'Redemption not found' });
+        if (rd.status !== 'fulfilled') return sendJSON(res, 200, { ok: false, error: 'Na-fulfill pa lang ang redemption.' });
+        const stage = String(b.stage || '');
+        if (!SHIPPING_STAGES.some(s => s.id === stage)) return sendJSON(res, 200, { ok: false, error: 'Unknown shipping stage' });
+        setShipping(rd, stage, b.note || '', b.courier || '');
+        if (stage === 'delivered') rd.deliveredAt = Date.now();
+        scheduleSave();
+        log('🚚 Shipping update ' + rd.id + ' → ' + stage + ' (' + rd.ref + ')', 'CEO');
+        return sendJSON(res, 200, { ok: true, redemption: rd });
+      }
+      if (act === 'cancel') {
+        if (!rd) return sendJSON(res, 200, { ok: false, error: 'Redemption not found' });
+        if (rd.status !== 'pending') return sendJSON(res, 200, { ok: false, error: 'Redemption ay ' + rd.status + ' na.' });
+        rd.status = 'cancelled'; rd.ref = cleanTxt(b.ref || 'Cancelled'); rd.fulfilledAt = Date.now();
+        if (state.visitors[rd.vid]) state.visitors[rd.vid].coins = (state.visitors[rd.vid].coins || 0) + (rd.tokens || 0);
+        scheduleSave();
+        log('🎁 CEO CANCELLED redemption ' + rd.id + ' — tokens refunded', 'CEO');
+        return sendJSON(res, 200, { ok: true, redemption: rd });
+      }
+      const list = state.redemptions.slice(-60).reverse();
+      return sendJSON(res, 200, { ok: true, redemptions: list, pending: list.filter(x => x.status === 'pending') });
+    }
+    if (p === '/api/ceo/bazaar/grant' && req.method === 'POST') {
+      const b = await body(req);
+      const id = String(b.id || ''), v = state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Visitor not found' });
+      const coin = Math.max(0, Math.min(9999, Number(b.coins) || 0));
+      const xp = Math.max(0, Math.min(99999, Number(b.xp) || 0));
+      const part = String(b.part || '');
+      let applied = null;
+      if (coin || xp) grantVisitor(v, coin, xp);
+      if (part && Object.prototype.hasOwnProperty.call(POD_PARTS, part)) {
+        v.pod = v.pod || {};
+        const cur = v.pod[part] || 0;
+        if (cur < 3) { v.pod[part] = cur + 1; applied = part + ' → Lv' + (cur + 1); }
+      }
+      if (v.wish && v.wish.status === 'pending') v.wish.status = 'granted';
+      scheduleSave();
+      log('👑 CEO granted ' + cleanTxt(v.name) + ': +' + coin + ' tokens, +' + xp + ' XP' + (applied ? ', ' + applied : ''), 'CEO');
+      return sendJSON(res, 200, { ok: true, visitor: visitorView(v), applied: applied });
     }
 
     /* static files */
