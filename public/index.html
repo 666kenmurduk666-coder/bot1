@@ -37,6 +37,13 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .gold{background:#8a6a20;border-color:#b8892c;font-weight:600}
 .danger{border-color:var(--bad);color:#ff9b97}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.officeBar{margin:8px 0 6px}
+.officeBar .ob-main{background:linear-gradient(135deg,#233457,#18253f);border:1px solid #3a5a95;color:#e6ecf7;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:12px}
+.officeBar .ob-main:hover{border-color:#7fc7ff}
+.officeBar .ob-more{margin-left:auto;background:linear-gradient(135deg,#1f6f6f,#2a8a7a);border:1px solid #4fc9b5;color:#fff;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;font-size:12px}
+.officeMorePanel{background:rgba(14,22,40,.92);border:1px solid #2f5fa8;border-radius:11px;padding:6px 10px;margin:0 0 10px;box-shadow:0 6px 20px #0006}
+.officeMorePanel .bar{margin:5px 0}
+.officeMorePanel button{font-size:11.5px;padding:5px 9px}
 .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .card{background:var(--panel);border:1px solid #2a3040;border-radius:13px;padding:13px}
 .card h2{font-size:14px;margin:0 0 8px}
@@ -76,6 +83,7 @@ body.ui-hidden #oc3d #jumpPanel,
 body.ui-hidden #oc3d #mmoChat,
 body.ui-hidden #gameHud,
 body.ui-hidden #bzPanel,
+body.ui-hidden #bzQuestPanel,
 body.ui-hidden #ceoFab,
 body.ui-hidden #lockFab,
 body.ui-hidden .bub3d{display:none!important}
@@ -188,7 +196,32 @@ dialog::backdrop{background:#000a}
       </div>
     </div>
       <canvas id="oc" width="900" height="520"></canvas>
-      <div class="bar"><button id="v1f">🏢 Main Office</button><button id="mallBtn">🛍️ Mall</button><button id="officeLinkBtn" title="Pindutin ang opisina sa 3D o dito para mag-paste ng Shopee link">🔗 Office Links</button><button id="vaultBtn" class="ceoOnly">🏦 Vault</button><button id="hireBtn" class="ceoOnly">👔 Hire</button><button id="liveBtn">🎬 Live</button><button id="ceoModeBtn" style="background:linear-gradient(135deg,#8a6a20,#c9a227);color:#fff;border-color:#e8c04a;font-weight:700">🎮 Maglaro</button><button id="ticketBtn">🎫 Ticket</button><button id="partyBtn">🎉 Party</button><button id="rainBtn">☔ Ulan</button><button id="nightBtn">🌙 Gabi</button><button id="auto" class="ceoOnly">▶️ 24/7 Mode</button><button id="xray">👁 Silip</button><button id="sfx">🔊 Sounds</button><span class="hint" id="officeInfo"></span><span class="hint" style="color:#c7d4ee">🗺️ <b style="color:#c9a227">👑 HQ OPIS</b> (gitna-kaliwa) · <b style="color:#e8622c">🛍️ MALL</b> (2F resort) · <b style="color:#2bb3a6">🌊 POOL</b> (gitna-taas) · <b style="color:#b89ff2">🧪 LAB</b> (kanan-taas) · <b style="color:#9fb2d0">🛡️ SECURITY</b> (harap)</span></div>
+      <div class="bar officeBar">
+        <button id="v1f" class="ob-main">🏢 Office</button>
+        <button id="mallBtn" class="ob-main">🛍️ Mall</button>
+        <button id="ceoModeBtn" class="ob-main" style="background:linear-gradient(135deg,#8a6a20,#c9a227);color:#fff;border-color:#e8c04a;font-weight:700">🎮 Maglaro</button>
+        <button id="liveBtn" class="ob-main">🎬 Live</button>
+        <button id="careBtn" class="ob-main" style="background:linear-gradient(135deg,#1f7a4d,#2a8a7a);color:#fff;border-color:#4fc9b5">🌱 Care</button>
+        <span class="sp"></span>
+        <span class="hint" id="officeInfo"></span>
+        <button id="officeMoreBtn" class="ob-more" title="I-click para makita ang lahat ng controls">⚙️ Controls ▾</button>
+      </div>
+      <div id="officeMorePanel" class="officeMorePanel" style="display:none">
+        <div class="bar" style="flex-wrap:wrap">
+          <button id="officeLinkBtn" title="Pindutin ang opisina sa 3D o dito para mag-paste ng Shopee link">🔗 Office Links</button>
+          <button id="vaultBtn" class="ceoOnly">🏦 Vault</button>
+          <button id="hireBtn" class="ceoOnly">👔 Hire</button>
+          <button id="ticketBtn">🎫 Ticket</button>
+          <button id="partyBtn">🎉 Party</button>
+          <button id="rainBtn">☔ Ulan</button>
+          <button id="nightBtn">🌙 Gabi</button>
+          <button id="auto" class="ceoOnly">▶️ 24/7 Mode</button>
+          <button id="xray">👁 Silip</button>
+          <button id="sfx">🔊 Sounds</button>
+        </div>
+        <div class="bar" id="officeTools" style="flex-wrap:wrap"></div>
+        <div class="hint" style="color:#9fb2d0;font-size:11px">🗺️ <b style="color:#c9a227">👑 HQ OPIS</b> · <b style="color:#e8622c">🛍️ MALL</b> · <b style="color:#2bb3a6">🌊 POOL</b> · <b style="color:#b89ff2">🧪 LAB</b></div>
+      </div>
     </div>
     <div class="grid" style="margin-top:12px">
       <div class="card"><h2>Office status</h2><div id="officeStatus" class="hint"></div></div>
@@ -419,7 +452,7 @@ dialog::backdrop{background:#000a}
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
-const ITEMS=[['desk','🪑 Desk'],['ceo_desk','💼 CEO desk'],['holo','🔮 Holo core'],['portal','🚪 Portal'],['stage','🎤 Stage'],['neon','✨ Neon strip'],['table','🍽️ Table'],['coffee','☕ Coffee'],['counter','✨ Counter'],['vending','✨ Vending'],['pool','✨ Pool'],['arcade','✨ Arcade'],['hoop','✨ Hoop'],['beanbag','✨ Beanbag'],['plant','✨ Plant'],['server','✨ Server'],['whiteboard','✨ Whiteboard'],['sofa','✨ Sofa'],['bookshelf','✨ Shelf'],['monitor','✨ Monitor']];
+const ITEMS=[['desk','🪑 Desk'],['ceo_desk','💼 CEO desk'],['holo','🔮 Holo core'],['portal','🚪 Portal'],['stage','🎤 Stage'],['neon','✨ Neon strip'],['table','🍽️ Table'],['chair','🪑 Chair'],['coffee','☕ Coffee'],['counter','✨ Counter'],['vending','✨ Vending'],['pool','✨ Pool'],['arcade','✨ Arcade'],['hoop','✨ Hoop'],['court','🏀 Court'],['bench','🛋️ Bench'],['treadmill','🏃 Treadmill'],['weights','🏋️ Weights'],['beanbag','✨ Beanbag'],['plant','✨ Plant'],['server','✨ Server'],['whiteboard','✨ Whiteboard'],['sofa','✨ Sofa'],['bookshelf','✨ Shelf'],['monitor','✨ Monitor']];
 const MENU=[
  {s:'WORK',items:[['office','▣','Office'],['chat','💬','CEO Chat']]},
  {s:'TEAM',items:[['workflows','⚙','My Workflows'],['agents','♙','My AI Agents'],['products','🎬','Product Videos']]},
@@ -522,6 +555,7 @@ function setView(v){
   const all=MENU.flatMap(g=>g.items);
   const f=all.find(i=>i[0]===v);$('title').textContent=f?f[2]:v;
   renderMenu();renderView();
+  if(typeof syncQuestPanel==='function')syncQuestPanel();
   if(v==='office'||v==='boardroom'){
     if(typeof THREE!=='undefined')init3D();
     officeOn=true;officeLoop();
@@ -778,6 +812,12 @@ const xrayApply=()=>{
 };
 $('xray').onclick=()=>{xrayOn=!xrayOn;$('xray').textContent=xrayOn?'👁 Normal view':'👁 Silip';xrayApply();toast(xrayOn?'X-ray: makikita mo na ang loob ng mga building!':'Balik sa normal view')};
 $('sfx').onclick=()=>{soundOn=!soundOn;$('sfx').textContent=soundOn?'🔊 Sounds':'🔇 Mute';toast(soundOn?'Sound effects: ON! ✨':'Sound effects: mute ✨')};
+// ⚙️ Controls — iisa ang toggle, hindi na puno ang bar sa baba
+$('officeMoreBtn').onclick=()=>{
+  const p=$('officeMorePanel'),open=p.style.display!=='none';
+  p.style.display=open?'none':'block';
+  $('officeMoreBtn').textContent=open?'⚙️ Controls ▾':'⚙️ Controls ▴';
+};
 // floor view: isang pindot, kita lahat sa LOOB — transparent ang mga pader + wide-angle lens!
 const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(11,fy+1.2,7);cam3d.phi=.58;cam3d.theta=.5;cam3d.r=26;cam3d.lastUser=Date.now();
   camera3d.fov=58;camera3d.updateProjectionMatrix();
@@ -800,6 +840,20 @@ function drawItem(it){
     case 'desk': box(a,b,1.5,.9,13,'#c77f3b');{const p=P(a+.7,b+.4,13);x.fillStyle='#8fe3ff';x.fillRect(p[0]-7,p[1]-11,14,9)}break;
     case 'ceo_desk': box(a,b,1.5,1,12,'#6b4423');{const p=P(a+.75,b+.5,18);x.fillStyle='#ffd34d';x.fillRect(p[0]-9,p[1]-8,18,6);x.fillRect(p[0]-9,p[1]-11,4,4);x.fillRect(p[0]-2,p[1]-11,4,4);x.fillRect(p[0]+5,p[1]-11,4,4)}break;
     case 'table': box(a,b,2,1.4,8,'#7a5a34');break;
+    case 'chair': box(a,b,.5,.5,9,'#565e6e');box(a,b,.5,.5,13,'#6b7488',9);break;
+    case 'court': {
+      const p1=P(a,b),p2=P(a+13,b),p3=P(a+13,b+9),p4=P(a,b+9);
+      poly([p1,p2,p3,p4],'#c8863c');
+      x.strokeStyle='#fff5dc';x.lineWidth=2;x.beginPath();
+      x.moveTo(p1[0],p1[1]);x.lineTo(p2[0],p2[1]);x.lineTo(p3[0],p3[1]);x.lineTo(p4[0],p4[1]);x.closePath();x.stroke();
+      const c1=P(a+6.5,b),c2=P(a+6.5,b+9),cc=P(a+6.5,b+4.5);
+      x.beginPath();x.moveTo(c1[0],c1[1]);x.lineTo(c2[0],c2[1]);x.stroke();
+      x.beginPath();x.ellipse(cc[0],cc[1],26,13,0,0,7);x.stroke();x.lineWidth=1;
+      break;
+    }
+    case 'bench': box(a,b,2,.5,9,'#8b5a2b');box(a,b,2,.16,12,'#b07a3c',9);break;
+    case 'treadmill': box(a,b,.8,1.8,8,'#3a4256');box(a+.1,b+.2,.6,1.2,12,'#1d2330',8);box(a+.15,b-.3,.5,.25,14,'#565e6e',8);break;
+    case 'weights': box(a,b,2,.6,9,'#3a4256');[-.4,0,.4].forEach(d=>{const p=P(a+.4+d,b+.3,16);x.fillStyle='#9aa4b8';x.fillRect(p[0]-5,p[1]-5,10,5)});break;
     case 'coffee': box(a,b,.9,2.4,9,'#c87a32');box(a,b,.3,2.4,22,'#c87a32');box(a+.2,b+.6,.3,.9,16,'#2bb3c6',9);break;
     case 'pool': poly([P(a,b),P(a+4,b),P(a+4,b+3.4),P(a,b+3.4)],'#e8c030');poly([P(a+.2,b+.2),P(a+3.8,b+.2),P(a+3.8,b+3.2),P(a+.2,b+3.2)],'#1e7fa0');break;
     case 'arcade': box(a,b,.9,.9,36,'#6a4aa8');{const p=P(a+.45,b+.9,24);x.fillStyle='#8fe3ff';x.fillRect(p[0]-7,p[1]-6,14,10)}break;
@@ -1518,12 +1572,20 @@ function drawEditor(){
   lay.width=r.w*cell+32;lay.height=r.h*cell+32;
   lx.fillStyle='#121622';lx.fillRect(0,0,lay.width,lay.height);
   for(let a=0;a<r.w;a++)for(let b=0;b<r.h;b++){lx.fillStyle=(a+b)%2?'#1b2233':'#1f2940';lx.fillRect(ox+a*cell,oy+b*cell,cell-1,cell-1)}
+  // Pixel-style wall border — maayos na harang, hindi sabog ang itsura
+  lx.strokeStyle='#0b0f18';lx.lineWidth=6;lx.strokeRect(ox-3,oy-3,r.w*cell+6,r.h*cell+6);
+  lx.strokeStyle='#3a4a68';lx.lineWidth=2;lx.strokeRect(ox-1,oy-1,r.w*cell+2,r.h*cell+2);
   (r.items||[]).forEach(it=>{
     const px=ox+it.a*cell,py=oy+it.b*cell;
-    lx.fillStyle=({desk:'#c77f3b',ceo_desk:'#e8b04a',table:'#7a5a34',coffee:'#c87a32',pool:'#1e7fa0',arcade:'#6a4aa8',hoop:'#ff7a3a',beanbag:'#2bb3d6',plant:'#3fa34a',server:'#3a4256',whiteboard:'#dde6f5',sofa:'#8a4a7a',bookshelf:'#7a5230',monitor:'#4b8dff',holo:'#66d9ff',portal:'#7cf7ff',stage:'#2a3a63',neon:'#bff4ff',counter:'#a86a34',vending:'#2b6fa8'})[it.type]||'#888';
-    const w=({pool:4*cell,table:2*cell,desk:1.5*cell,ceo_desk:1.5*cell,coffee:2.4*cell})[it.type]||cell;
-    const h=({pool:3.4*cell,table:1.4*cell,coffee:cell})[it.type]||cell;
+    lx.fillStyle=({desk:'#c77f3b',ceo_desk:'#e8b04a',table:'#7a5a34',chair:'#6b7488',court:'#c8863c',bench:'#b07a3c',treadmill:'#3a4256',weights:'#9aa4b8',coffee:'#c87a32',pool:'#1e7fa0',arcade:'#6a4aa8',hoop:'#ff7a3a',beanbag:'#2bb3d6',plant:'#3fa34a',server:'#3a4256',whiteboard:'#dde6f5',sofa:'#8a4a7a',bookshelf:'#7a5230',monitor:'#4b8dff',holo:'#66d9ff',portal:'#7cf7ff',stage:'#2a3a63',neon:'#bff4ff',counter:'#a86a34',vending:'#2b6fa8'})[it.type]||'#888';
+    const w=({pool:4*cell,court:13*cell,table:2*cell,bench:2*cell,weights:2*cell,desk:1.5*cell,ceo_desk:1.5*cell,coffee:2.4*cell})[it.type]||cell;
+    const h=({pool:3.4*cell,court:9*cell,table:1.4*cell,treadmill:1.8*cell,coffee:cell})[it.type]||cell;
     lx.globalAlpha=.85;lx.fillRect(px,py,w-3,h-3);lx.globalAlpha=1;
+    if(it.type==='court'){
+      lx.strokeStyle='#fff5dc';lx.lineWidth=2;lx.strokeRect(px+6,py+6,w-15,h-15);
+      lx.beginPath();lx.moveTo(px+w/2,py+6);lx.lineTo(px+w/2,py+h-9);lx.stroke();
+      lx.beginPath();lx.arc(px+w/2,py+h/2,cell*.8,0,7);lx.stroke();lx.lineWidth=1;
+    }
     lx.fillStyle='#fff';lx.font='10px sans-serif';lx.fillText(it.type+' '+(it.label||''),px+3,py+12);
     if(selEditItem===it){lx.strokeStyle='#ffd34d';lx.lineWidth=2;lx.strokeRect(px-1,py-1,w-1,h-1)}
   });
@@ -2433,6 +2495,12 @@ function buildRoom3d(id){
     const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,opacity:.9,depthWrite:false}));
     sp.scale.set(1.9,.48,1);sp.position.set(0,1.95,0);c.group.add(sp);
     c.workHolo={cv:cv,tx:tx,last:0};
+    // 🐾 maliit na care badge sa ibabaw — mood + battery, hindi humaharang sa view
+    const ccv=document.createElement('canvas');ccv.width=192;ccv.height=44;
+    const ctx=new THREE.CanvasTexture(ccv);
+    const csp=new THREE.Sprite(new THREE.SpriteMaterial({map:ctx,transparent:true,opacity:.92,depthWrite:false}));
+    csp.scale.set(1.35,.31,1);csp.position.set(0,2.42,0);c.group.add(csp);
+    c.careHolo={cv:ccv,tx:ctx,last:0};
   });
 }
 let cam3d=null,orbitBound=false,cityMovers3d=[],escArr=[],esc2Steps=[],liftCage=null,followBot=null,xrayOn=false,xrayAuto=false;
@@ -2519,10 +2587,10 @@ function buildFarm3d(){
       if(kind<.4){
         const stalk=new THREE.Mesh(new THREE.ConeGeometry(.18,.55,6),m3('#7ac74f'));stalk.position.set(x-2.4+c2*1.6,.4,z-2.2+r*2.2);stalk.castShadow=true;g.level.add(stalk);
         const corn=cyl3(.06,.22,'#ffd34d',x-2.4+c2*1.6,.6,z-2.2+r*2.2);corn.rotation.z=.5;
-        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,state:'ready',mesh:stalk});
+        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:stalk});
       } else {
         const veg=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),m3(kind<.7?'#3f9d6a':'#c94f8a'));veg.position.set(x-2.4+c2*1.6,.2,z-2.2+r*2.2);veg.castShadow=true;g.level.add(veg);
-        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,state:'ready',mesh:veg});
+        farmPlots.push({x:x-2.4+c2*1.6,z:z-2.2+r*2.2,idx:fi%3,state:'ready',mesh:veg});
       }
     }
     // bakod: poste + riles (harap bukas)
@@ -3916,6 +3984,20 @@ function frame3D(){
     x.fillStyle='#bff6ff';x.font='bold 23px sans-serif';x.textAlign='center';x.fillText(txt,128,41);
     c.workHolo.tx.needsUpdate=true;
   });
+  // 🐾 refresh ng mood/battery badge (tuwing ~9 segundo, magaan lang)
+  chars3d.forEach(c=>{
+    if(!c.careHolo||Date.now()-c.careHolo.last<9000)return;
+    c.careHolo.last=Date.now();
+    const st=(CARE_STATE.bots||[]).find(b=>b.id===(c.agent&&(c.agent.id||c.agent.n)));
+    const b=st?st.battery:100;
+    const x=c.careHolo.cv.getContext('2d');x.clearRect(0,0,192,44);
+    x.fillStyle='rgba(8,20,38,.62)';x.fillRect(0,0,192,44);
+    x.font='bold 22px sans-serif';x.textAlign='left';x.fillText(st?st.face:'🙂',5,30);
+    x.fillStyle='#0b1730';x.fillRect(38,12,104,12);
+    x.fillStyle=b>=65?'#5fd48a':b>=35?'#ffd34d':'#ff6b5e';x.fillRect(38,12,104*b/100,12);
+    x.fillStyle='#cfe0ff';x.font='bold 15px sans-serif';x.textAlign='right';x.fillText(b+'%',186,24);
+    c.careHolo.tx.needsUpdate=true;
+  });
   // glass elevator: sumusunod sa bot na nasa lift route
   if(liftCage){
     const rider=chars3d.find(c=>c.route&&c.route.length&&c.route[0].lift);
@@ -4616,20 +4698,14 @@ function interactFarm(){
   const px=playerMode&&player?player.x:cam3d.target.x;
   const pz=playerMode&&player?player.z:cam3d.target.z;
   for(const p of farmPlots){const d=Math.hypot(p.x-px,p.z-pz);if(d<bestD){bestD=d;best=p;}}
-  if(!best){toast('📍 Lumapit ka sa bukid para mag-harvest! (WASD)');return;}
-  if(best.state==='ready'){
-    coins+=10;updateHud();
-    if(best.mesh){g.level.remove(best.mesh);try{best.mesh.geometry.dispose();best.mesh.material.dispose();}catch(e){}best.mesh=null;}
-    best.state='growing';
-    toast('🌾 Na-harvest! +10 coins (total: '+coins+')');
-    setTimeout(()=>{if(best.state!=='growing')return;
-      const m=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),m3(Math.random()<.5?'#3f9d6a':'#c94f8a'));
-      m.position.set(best.x,.2,best.z);m.castShadow=true;g.level.add(m);best.mesh=m;best.state='ready';
-      toast('🌱 Tumubo na! Pwede na i-harvest (E).');
-    },5000);
-  } else {
-    toast('⏳ Nag-ggrow pa... hintay lang (5 sec)!');
-  }
+  if(!best){toast('📍 Lumapit ka sa bukid para mag-alaga! (WASD)');return;}
+  const idx=Math.max(0,Math.min(2,((Math.round((best.x-2)/10)%3)+3)%3));
+  const st=(CARE_STATE.farm||[])[idx];
+  if(!st){toast('🌱 Naglo-load ang farm status...');return;}
+  if(st.dead)careAct('replant',null,idx);
+  else if(st.ready)careAct('harvest',null,idx);
+  else if(st.needWater)careAct('water',null,idx);
+  else toast('🌿 '+st.crop+': busog pa · growth '+st.growth+'%. Balik mamaya!');
 }
 function groundYAt(x,z,y){
   if(x>=9.5&&x<=36&&z>=-8&&z<=-2&&y>3.2)return 4; // 2F resort deck: bar + pool + mall + bazaar
@@ -4808,6 +4884,9 @@ function tryBotTalk(){
   if(!best)return false;
   questProgress('talk',1);
   const nm=(best.agent&&(best.agent.n||best.agent.name))||'Bot';
+  const bid=best.agent&&(best.agent.id||best.agent.n);
+  const st=(CARE_STATE.bots||[]).find(b=>b.id===bid);
+  if(st&&st.needCharge){careAct('charge',st.id,0);return true;}
   if(typeof bazaarTask==='function')bazaarTask('bots',nm);
   toast('💬 '+nm+': '+TALK_LINES[Math.floor(Math.random()*TALK_LINES.length)]);
   return true;
@@ -4997,22 +5076,59 @@ function createBzPanel(){
   let el=document.getElementById('bzPanel');
   if(el)return el;
   el=document.createElement('div');el.id='bzPanel';
-  el.style.cssText='position:fixed;top:70px;right:10px;z-index:55;width:238px;max-width:92vw;background:rgba(9,17,35,.62);border:1px solid rgba(201,162,39,.8);border-radius:11px;padding:7px;color:#e9edf7;font-size:10.5px;box-shadow:0 4px 18px #0007;backdrop-filter:blur(2px)';
-  el.innerHTML='<div style="display:flex;align-items:center;gap:5px;font-weight:700;color:#ffd34d;cursor:pointer;font-size:10.5px" id="bzHead">🛒 CYBORG BAZAAR<span style="flex:1"></span><span id="bzMin" title="Hide / show" style="font-size:12px">–</span></div><div id="bzBody" style="margin-top:5px"></div>';
+  el.style.cssText='position:fixed;top:70px;right:10px;z-index:55;width:186px;max-width:90vw;background:rgba(9,17,35,.40);border:1px solid rgba(201,162,39,.45);border-radius:10px;padding:5px 6px;color:#e9edf7;font-size:10px;box-shadow:0 3px 12px #0005;backdrop-filter:blur(1px)';
+  el.innerHTML='<div style="display:flex;align-items:center;gap:5px;font-weight:700;color:#ffd34d;cursor:pointer;font-size:10px" id="bzHead">🛒 BAZAAR<span style="flex:1"></span><span id="bzMin" title="Hide / show" style="font-size:11px">–</span></div><div id="bzBody" style="margin-top:4px"></div>';
   document.body.appendChild(el);
-  document.getElementById('bzHead').onclick=()=>{const b=document.getElementById('bzBody');b.style.display=(b.style.display==='none')?'block':'none';};
+  document.getElementById('bzHead').onclick=()=>{
+    const b=document.getElementById('bzBody'),q=document.getElementById('bzQuestPanel');
+    const hide=b.style.display!=='none';b.style.display=hide?'none':'block';
+    if(q)q.style.display=hide?'none':'block';
+  };
   bzPanelBody=document.getElementById('bzBody');
+  createBzQuestPanel();
   return el;
+}
+/* 📋 QUEST STRIP — nasa LEFT side, translucent, nasa loob ng office view */
+function createBzQuestPanel(){
+  let q=document.getElementById('bzQuestPanel');
+  if(q)return q;
+  q=document.createElement('div');q.id='bzQuestPanel';
+  q.style.cssText='position:fixed;left:10px;top:70px;z-index:54;width:174px;max-width:46vw;background:rgba(9,17,35,.26);border:1px solid rgba(127,199,255,.18);border-radius:8px;padding:4px 5px;color:#e9edf7;font-size:9.5px;box-shadow:none;backdrop-filter:blur(1px)';
+  q.innerHTML='<div style="display:flex;align-items:center;gap:4px;color:#8fd0e8;font-weight:700;font-size:9.5px;margin-bottom:4px;border-bottom:1px solid rgba(127,199,255,.18);padding-bottom:3px">📜 QUESTS<span style="flex:1"></span><span id="bzQuestCoin" style="color:#ffd34d">🪙0</span></div><div id="bzQuestList"></div>';
+  document.body.appendChild(q);
+  return q;
+}
+function renderBzQuests(v){
+  createBzQuestPanel();
+  const list=document.getElementById('bzQuestList'),coin=document.getElementById('bzQuestCoin');
+  if(!list)return;
+  if(coin)coin.textContent='🪙'+(v?(v.coins||0):0);
+  if(!v){list.innerHTML='<div style="color:#9fb2d0;font-size:9px;line-height:1.35">🔵 Facebook login para sa quest at rewards.</div>';return;}
+  const short={checkin:'Check-in',stalls:'Market stalls',posts:'Product posts',bots:'Office bots',order:'Mall order',share:'Affiliate post',content:'Office content'};
+  const icons={checkin:'📅',stalls:'🛍️',posts:'📖',bots:'🤖',order:'🧾',share:'📣',content:'🎬'};
+  const tasks=v.tasks||[];
+  list.innerHTML=tasks.map(t=>{
+    const done=!!t.done;
+    const prog=t.target>1?(' '+t.progress+'/'+t.target):'';
+    return '<button data-task="'+bzEsc(t.id)+'" title="'+bzEsc(t.label)+'" style="width:100%;display:flex;gap:5px;align-items:center;font-size:9px;color:'+(done?'#7ee2a8':'#dbe6f8')+';background:'+(done?'rgba(43,74,63,.22)':'rgba(10,20,42,.26)')+';border:0;border-left:2px solid '+(done?'#2b4a3f':'#2f5fa8')+';border-radius:4px;padding:3px 4px;margin-bottom:2px;cursor:'+(done?'default':'pointer')+';text-align:left;box-sizing:border-box">'+
+      '<span style="width:19px;height:19px;display:flex;align-items:center;justify-content:center;background:rgba(47,95,168,.30);border-radius:4px;font-size:11px">'+(done?'✅':(icons[t.id]||'📌'))+'</span>'+
+      '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(done?'text-decoration:line-through;opacity:.8':'')+'">'+bzEsc(short[t.id]||t.label)+prog+'</span>'+
+      '<span style="color:'+(done?'#7ee2a8':'#ffd34d')+';font-size:8.5px;font-weight:700">'+(done?'DONE':'+'+(t.coin||0))+'</span></button>';
+  }).join('')+
+    '<div style="color:#8494b4;font-size:8px;margin-top:3px;line-height:1.3">👆 I-click lang ang quest — auto reward.</div>';
+  list.querySelectorAll('[data-task]').forEach(btn=>btn.onclick=()=>bzOneClickTask(btn.dataset.task));
+  const qc=document.getElementById('bzQuickCheck');if(qc)qc.onclick=bzCheckin;
 }
 function renderBzPanel(){
   createBzPanel();const b=bzPanelBody;if(!b)return;
+  renderBzQuests(bzVisitor);
   if(!bzVisitor){
     const cfg=!!(BAZAAR_INFO&&BAZAAR_INFO.fbConfigured);
-    b.innerHTML='<div style="color:#b9c8e0;line-height:1.5;margin-bottom:7px">Mag-login para kumita ng <b style="color:#ffd34d">reward tokens</b> + XP, at makapag-build ng sarili mong office pod.</div>'+
-      '<a href="/api/fb/login" style="display:block;text-align:center;text-decoration:none;background:#1877f2;color:#fff;border-radius:8px;padding:7px;font-weight:700;font-size:11px">🔵 Facebook Login</a>'+
-      (cfg?'':'<button id="bzDemo" style="width:100%;margin-top:6px;background:#2f5fa8;color:#fff;border:1px solid #4d7fc0;border-radius:8px;padding:6px;font-size:11px;cursor:pointer">🎮 Demo Visitor (local testing)</button>'+
-        '<div style="color:#8494b4;font-size:9px;margin-top:6px;line-height:1.4">⚙️ Para sa tunay na FB login: ilagay ang <b>fbAppId</b>, <b>fbAppSecret</b>, at <b>fbRedirectUri</b> sa <code>data/settings.json</code> ng server. Lihim ang secret — hindi lumalabas sa browser.</div>')+
-      '<div style="color:#8494b4;font-size:9px;margin-top:6px">Walang utos, walang laban — business tasks lang. 👑 CEO lang ang may powers.</div>';
+    b.innerHTML='<div style="color:#b9c8e0;line-height:1.35;margin-bottom:5px;font-size:9px">Mag-login para sa <b style="color:#ffd34d">tokens</b>, XP, care at farm.</div>'+
+      '<a href="/api/fb/login" style="display:block;text-align:center;text-decoration:none;background:#1877f2;color:#fff;border-radius:7px;padding:6px;font-weight:700;font-size:10px">🔵 Facebook Login</a>'+
+      (cfg?'':'<button id="bzDemo" style="width:100%;margin-top:5px;background:#2f5fa8;color:#fff;border:1px solid #4d7fc0;border-radius:7px;padding:5px;font-size:9px;cursor:pointer">🎮 Demo Visitor</button>'+
+        '<div style="color:#8494b4;font-size:8px;margin-top:5px;line-height:1.3">⚙️ FB credentials nasa server lang — hindi lumalabas sa browser.</div>')+
+      '<div style="color:#8494b4;font-size:8px;margin-top:5px">Business tasks lang. 👑 CEO lang ang may powers.</div>';
     const d=document.getElementById('bzDemo');
     if(d)d.onclick=async()=>{
       const name=(prompt('Pangalan ng demo visitor:','Guest')||'').trim();if(!name)return;
@@ -5023,21 +5139,15 @@ function renderBzPanel(){
     return;
   }
   const v=bzVisitor,L=bzLevel(),tasks=(v.tasks||[]);
-  b.innerHTML='<div style="display:flex;align-items:center;gap:7px">'+
-      (v.picture?'<img src="'+bzEsc(v.picture)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #7fc7ff">':'<span style="font-size:24px">🧑‍💼</span>')+
-      '<div style="flex:1;min-width:0"><b style="font-size:12px;color:#fff">'+bzEsc(v.name)+'</b><div style="color:#8fd0e8;font-size:10px">'+bzEsc(L.name)+' · Lv '+(L.index+1)+'</div></div>'+
-      '<span style="color:#ffd34d;font-weight:700;font-size:11px">🪙 '+(v.coins||0)+'</span></div>'+
-    '<div style="background:#0b1730;border:1px solid #2f5fa8;border-radius:6px;height:9px;margin:6px 0 3px;overflow:hidden"><div style="height:100%;width:'+(L.pct||0)+'%;background:linear-gradient(90deg,#2bb3a6,#ffd34d)"></div></div>'+
-    '<div style="color:#8494b4;font-size:9px;margin-bottom:6px">XP '+(L.xp||0)+(L.next!=='MAX'?(' / '+L.need+' → '+L.next):' · MAX')+'</div>'+
-    '<div style="color:#8fd0e8;font-size:9px;margin-bottom:5px">💰 Commission mo: <b style="color:#7ee2a8">'+Math.round((bzVisitor.commissionCut||0)*100)+'%</b> ng affiliate earnings</div>'+
-    '<div style="display:flex;gap:5px;margin-bottom:5px">'+
-      '<div style="flex:1;background:#0b1730;border:1px solid #2f5fa8;border-radius:7px;padding:4px;text-align:center"><div style="color:#8494b4;font-size:8px">🪙 KITA</div><b style="color:#7ee2a8;font-size:12px">'+(bzVisitor.earned||0)+'</b></div>'+
-      '<div style="flex:1;background:#0b1730;border:1px solid #2f5fa8;border-radius:7px;padding:4px;text-align:center"><div style="color:#8494b4;font-size:8px">🧾 ORDER</div><b style="color:#ffd34d;font-size:12px">'+(bzVisitor.paidOrders||0)+'</b></div>'+
-    '</div>'+
-    '<div style="border-top:1px solid rgba(34,58,99,.8);padding-top:4px;max-height:104px;overflow:auto">'+
-      tasks.map(t=>{const short={checkin:'Check-in',stalls:'Stalls',posts:'Posts',bots:'Bots',order:'Order',share:'Share',content:'Content'};return '<button data-task="'+bzEsc(t.id)+'" title="1 click = tapos na" style="width:100%;display:flex;align-items:center;gap:4px;line-height:1.3;font-size:9px;color:'+(t.done?'#7ee2a8':'#c7d4ee')+';background:'+(t.done?'rgba(43,74,63,.5)':'rgba(18,32,64,.8)')+';border:1px solid '+(t.done?'#2b4a3f':'#2f5fa8')+';border-radius:5px;padding:3px 4px;margin-bottom:2px;cursor:'+(t.done?'default':'pointer')+';text-align:left"><span>'+(t.done?'✅':'👉')+'</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+bzEsc(short[t.id]||t.label)+'</span><span>'+(t.done?'DONE':(t.target>1?(t.progress+'/'+t.target):'1 CLICK'))+'</span></button>'}).join('')+
-    '</div>'+
-    '<div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">'+
+  b.innerHTML='<div style="display:flex;align-items:center;gap:5px">'+
+      (v.picture?'<img src="'+bzEsc(v.picture)+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid #7fc7ff">':'<span style="font-size:18px">🧑‍💼</span>')+
+      '<div style="flex:1;min-width:0"><b style="display:block;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+bzEsc(v.name)+'</b><div style="color:#8fd0e8;font-size:8.5px">'+bzEsc(L.name)+' · 🪙 '+(v.coins||0)+'</div></div></div>'+
+    '<div style="background:#0b1730;border:1px solid #2f5fa8;border-radius:5px;height:6px;margin:4px 0 1px;overflow:hidden"><div style="height:100%;width:'+(L.pct||0)+'%;background:linear-gradient(90deg,#2bb3a6,#ffd34d)"></div></div>'+
+    '<div style="color:#8494b4;font-size:8px;margin-bottom:2px">XP '+(L.xp||0)+(L.next!=='MAX'?(' / '+L.need):' · MAX')+' · 💰 '+Math.round((bzVisitor.commissionCut||0)*100)+'% commission</div>'+
+    '<button id="bzCareBtn" style="width:100%;margin-top:5px;background:linear-gradient(135deg,#1f7a4d,#2a8a7a);color:#fff;border:0;border-radius:6px;padding:4px;font-size:9px;font-weight:700;cursor:pointer">🌱🐾 Care & Farm</button>'+
+    '<button id="bzMoreBtn" style="width:100%;margin-top:4px;background:transparent;color:#8fd0e8;border:1px solid rgba(47,95,168,.6);border-radius:6px;padding:4px;font-size:9px;cursor:pointer">⚙️ More ▾</button>'+
+    '<div id="bzMore" style="display:none">'+
+    '<div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">'+
       '<button id="bzGo" style="flex:1;min-width:70px;background:#e8622c;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">📍 Bazaar</button>'+
       '<button id="bzPod" style="flex:1;min-width:70px;background:#2f5fa8;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">🪑 Office</button>'+
       '<button id="bzWish" style="flex:1;min-width:70px;background:#8f6fd8;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">🎁 Wish</button>'+
@@ -5046,8 +5156,8 @@ function renderBzPanel(){
       '<button id="bzAds" style="flex:1;min-width:70px;background:#d97736;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">📢 Ads</button>'+
       '<button id="bzWallet" style="flex:1;min-width:70px;background:#2bb37a;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">🍚 Redeem</button>'+
       '<button id="bzProof" style="flex:1;min-width:70px;background:#6b7fae;color:#fff;border:0;border-radius:7px;padding:5px;font-size:10px;cursor:pointer">🛡️ Proof</button>'+
-    '</div>'+
-    '<button id="bzCheck" style="width:100%;margin-top:5px;background:'+(tasks[0]&&tasks[0].done?'#2b4a3f':'#c9a227')+';color:#fff;border:0;border-radius:7px;padding:6px;font-size:10px;font-weight:700;cursor:pointer">'+(tasks[0]&&tasks[0].done?'✅ Checked in today':'📅 Daily Check-in (+10 🪙 +10 XP)')+'</button>'+
+    '</div></div>'+
+    '<button id="bzCheck" style="width:100%;margin-top:5px;background:'+(tasks[0]&&tasks[0].done?'#2b4a3f':'#c9a227')+';color:#fff;border:0;border-radius:6px;padding:4px;font-size:9px;font-weight:700;cursor:pointer">'+(tasks[0]&&tasks[0].done?'✅ Checked in today':'📅 Check-in +10 🪙')+'</button>'+
     '<button id="bzOut" style="width:100%;margin-top:5px;background:transparent;color:#8494b4;border:1px solid #2f5fa8;border-radius:7px;padding:4px;font-size:9px;cursor:pointer">🚪 Logout</button>';
   document.getElementById('bzGo').onclick=goBazaar;
   document.getElementById('bzPod').onclick=()=>{goPod();openPodDialog()};
@@ -5058,7 +5168,9 @@ function renderBzPanel(){
   document.getElementById('bzWallet').onclick=openWalletDialog;
   document.getElementById('bzProof').onclick=openProofDialog;
   document.getElementById('bzCheck').onclick=bzCheckin;
-  b.querySelectorAll('[data-task]').forEach(btn=>btn.onclick=()=>bzOneClickTask(btn.dataset.task));
+  const bm=document.getElementById('bzMoreBtn'),more=document.getElementById('bzMore');
+  if(bm&&more)bm.onclick=()=>{const open=more.style.display!=='none';more.style.display=open?'none':'block';bm.textContent=open?'⚙️ More ▾':'⚙️ More ▴';};
+  const bc=document.getElementById('bzCareBtn');if(bc)bc.onclick=()=>openCareDialog();
   document.getElementById('bzOut').onclick=async()=>{await pubApi('/api/fb/logout',{method:'POST',body:'{}'});bzVisitor=null;renderBzPanel();toast('👋 Logout na.')};
 }
 async function refreshBz(){
@@ -5146,6 +5258,87 @@ function bzMakeDialog(id,title,width){
   d.querySelector('[data-close]').onclick=()=>d.close();
   return d;
 }
+/* ========== 🐾 CARE & RETURN — bot battery/mood + FarmVille garden ========== */
+let CARE_STATE={bots:[],farm:[],day:{acts:0,rewarded:0,cap:8,rewardCap:5}};
+function syncQuestPanel(){const q=document.getElementById('bzQuestPanel');if(q)q.style.display=(view==='office')?'block':'none';}
+async function loadCare(silent){
+  try{
+    const r=await pubApi('/api/care/state');
+    if(r&&r.ok){CARE_STATE=r;updateCareHud();applyFarmVisuals();return r;}
+  }catch(e){}
+  if(!silent)toast('⚠ Hindi ma-load ang care state');
+  return null;
+}
+function updateCareHud(){
+  const btn=document.getElementById('careBtn');if(!btn)return;
+  const bots=CARE_STATE.bots||[],farm=CARE_STATE.farm||[];
+  const n=bots.filter(b=>b.needCharge).length+farm.filter(p=>p.needWater&&!p.dead).length+farm.filter(p=>p.dead).length;
+  btn.textContent=n?('🌱 Care '+n+'!'):'🌱 Care';
+  btn.style.boxShadow=n?'0 0 11px rgba(255,211,77,.7)':'';
+}
+function applyFarmVisuals(){
+  (farmPlots||[]).forEach(p=>{
+    const st=(CARE_STATE.farm||[])[p.idx];if(!st||!p.mesh)return;
+    const col=st.dead?'#7a6a52':st.stage==='ready'?'#ffd34d':st.thirsty?'#c9a227':'#3f9d6a';
+    try{p.mesh.material.color.set(col);p.mesh.scale.setScalar(st.dead?.5:st.stage==='ready'?1.15:1);p.state=st.stage;}catch(e){}
+  });
+}
+function careBar(pct,color){
+  return '<div style="height:6px;background:#0b1730;border:1px solid #2f5fa8;border-radius:5px;overflow:hidden;margin-top:3px"><div style="height:100%;width:'+pct+'%;background:'+(color||'#5fd48a')+'"></div></div>';
+}
+function openCareDialog(){
+  const d=bzMakeDialog('careDlg','🐾🌱 BOT CARE & FARM','min(500px,92vw)'),body=document.getElementById('careDlgBody');
+  const day=CARE_STATE.day||{},bots=CARE_STATE.bots||[],farm=CARE_STATE.farm||[];
+  const low=bots.filter(b=>b.needCharge).length,dry=farm.filter(p=>p.needWater&&!p.dead).length,dead=farm.filter(p=>p.dead).length;
+  body.innerHTML='<div style="color:#9fb2d0;font-size:10px;margin-bottom:7px;line-height:1.4">'+
+      'Araw-araw na alaga: <b style="color:#ffd34d">'+(day.acts||0)+'/'+(day.cap||8)+'</b> care actions · rewarded '+(day.rewarded||0)+'/'+(day.rewardCap||5)+
+      ' · 🪙 '+(bzVisitor?(bzVisitor.coins||0):0)+'<br>'+
+      '<span style="color:#7ee2a8">'+(low?'⚡ '+low+' bot lowbat':'✅ Bots OK')+'</span> · '+
+      '<span style="color:#ffd34d">'+(dry?'💧 '+dry+' uhaw':'✅ Halaman busog')+'</span>'+
+      (dead?' · <span style="color:#ff6b5e">💀 '+dead+' patay — i-replant!</span>':'')+'</div>'+
+    '<div style="font-weight:700;color:#8fd0e8;font-size:11px;margin:6px 0 4px">🤖 BOT MOOD & BATTERY</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;max-height:190px;overflow:auto">'+
+      bots.map(b=>{
+        const a=(S&&S.agents||[]).find(z=>z.id===b.id)||{n:b.id,i:'🤖'};
+        const col=b.battery>=65?'#5fd48a':b.battery>=35?'#ffd34d':'#ff6b5e';
+        return '<div style="border:1px solid '+(b.needCharge?'#ff6b5e':'#2f5fa8')+';border-radius:7px;padding:5px;background:rgba(10,20,42,.45)">'+
+          '<div style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="font-size:15px">'+b.face+'</span><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(a.i||'🤖')+' '+bzEsc(a.n||b.id)+'</b></div>'+
+          '<div style="color:#9fb2d0;font-size:8.5px">Mood: '+b.label+' · 🔋 '+b.battery+'%</div>'+
+          careBar(b.battery,col)+
+          '<button data-charge="'+bzEsc(b.id)+'" '+(b.battery>=95?'disabled':'')+' style="width:100%;margin-top:4px;background:'+(b.needCharge?'#ff6b5e':'#2f5fa8')+';color:#fff;border:0;border-radius:5px;padding:3px;font-size:9px;cursor:'+(b.battery>=95?'default':'pointer')+'">'+(b.battery>=95?'⚡ Full':(b.needCharge?'⚡ CHARGE NA!':'⚡ Charge +45'))+'</button></div>';
+      }).join('')+'</div>'+
+    '<div style="font-weight:700;color:#8fd0e8;font-size:11px;margin:9px 0 4px">🌱 MY FARM (FarmVille style)</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">'+
+      farm.map((p,i)=>{
+        const col=p.dead?'#ff6b5e':p.thirsty?'#ffd34d':'#7ee2a8';
+        const act=p.dead?['replant','🌱 Replant']:p.ready?['harvest','🌾 Harvest +8']:p.needWater?['water','💧 Diligan +4']:null;
+        return '<div style="border:1px solid '+col+';border-radius:7px;padding:5px;background:rgba(10,20,42,.45);text-align:center">'+
+          '<div style="font-size:24px">'+p.face+'</div><div style="font-size:9.5px;color:#fff">'+bzEsc(p.crop)+'</div>'+
+          '<div style="font-size:8.5px;color:'+col+'">'+p.stage+' · health '+p.health+'%</div>'+
+          careBar(p.growth,'#7ac74f')+
+          '<div style="font-size:8px;color:#9fb2d0;margin-top:2px">growth '+p.growth+'%</div>'+
+          (act?'<button data-farm="'+i+'" data-kind="'+act[0]+'" style="width:100%;margin-top:4px;background:'+(p.dead?'#8f6fd8':p.thirsty?'#ffb03a':'#2bb3a6')+';color:#fff;border:0;border-radius:5px;padding:4px;font-size:9px;font-weight:700;cursor:pointer">'+act[1]+'</button>':'<div style="color:#8494b4;font-size:8px;margin-top:4px">Busog pa 💧</div>')+
+          '</div>';
+      }).join('')+'</div>'+
+    '<div style="color:#8494b4;font-size:8.5px;margin-top:8px;line-height:1.4">💡 Umuhaw ang halaman pag 20 oras hindi diniligan; natutuyo pag 36 oras. Bumalik araw-araw para hindi mamatay — lowbat din ang bots pag 12 oras. May cap araw-araw; walang cash payout, goods/tokens lang.</div>'+
+    '<button id="careRefresh" style="width:100%;margin-top:6px;background:#4f8ac9;color:#fff;border:0;border-radius:6px;padding:5px;font-size:10px;cursor:pointer">🔄 Refresh status</button>';
+  body.querySelectorAll('[data-charge]').forEach(x=>x.onclick=()=>careAct('charge',x.dataset.charge,0));
+  body.querySelectorAll('[data-farm]').forEach(x=>x.onclick=()=>careAct(x.dataset.kind,null,Number(x.dataset.farm)));
+  document.getElementById('careRefresh').onclick=async()=>{await loadCare();openCareDialog();};
+  if(!d.open)d.showModal();
+}
+async function careAct(kind,id,plot){
+  const r=await pubApi('/api/care/act',{method:'POST',body:JSON.stringify({kind:kind,id:id,plot:plot})});
+  if(!r||!r.ok){toast('⚠ '+((r&&r.error)||'Hindi ma-execute ang care'));return r;}
+  if(r.bots)CARE_STATE.bots=r.bots;
+  if(r.farm)CARE_STATE.farm=r.farm;
+  if(r.day)CARE_STATE.day=r.day;
+  if(r.visitor&&typeof bzVisitor!=='undefined'){bzVisitor=r.visitor;if(typeof renderBzPanel==='function')renderBzPanel();}
+  updateCareHud();applyFarmVisuals();
+  toast(r.msg||'🐾 Alaga done!');
+  if(document.getElementById('careDlg')&&document.getElementById('careDlg').open)openCareDialog();
+  return r;
+}
 /* 🎄 CHRISTMAS OFFICE EFFECT — nasa sulok lang, hindi humaharang sa daan/conference/pod/dock */
 let xmasOn=true;
 function buildChristmas3d(){
@@ -5201,7 +5394,7 @@ function updateXmas3d(){
 }
 function createXmasBtn(){
   if(document.getElementById('bzXmasBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzXmasBtn';btn.className='ceoOnly';btn.textContent='🎄 Pasko';
   btn.style.cssText='background:linear-gradient(135deg,#1f7a4d,#c9384f);color:#fff;font-weight:700';
   btn.onclick=toggleXmas;bar.appendChild(btn);
@@ -5622,7 +5815,7 @@ async function openContentShare(){
 /* ---------- 📢 CEO ADS & PAYOUT CONTROLS (password-gated) ---------- */
 function createCeoAdsBtn(){
   if(document.getElementById('bzCeoAdsBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzCeoAdsBtn';btn.className='ceoOnly';btn.textContent='📢 Ads / Goods';
   btn.style.cssText='background:linear-gradient(135deg,#a85b25,#d97736);color:#fff;font-weight:700';
   btn.onclick=openCeoAds;bar.appendChild(btn);
@@ -5631,7 +5824,7 @@ function createCeoAdsBtn(){
 /* 🤖 BOT CONTROL AUDIT — CEO lang ang nakakakita */
 function createCeoMonitorBtn(){
   if(document.getElementById('bzCeoMonBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzCeoMonBtn';btn.className='ceoOnly';btn.textContent='🤖 Bot Check';
   btn.style.cssText='background:linear-gradient(135deg,#2b6fa8,#3fa9c9);color:#fff;font-weight:700';
   btn.onclick=openBotMonitor;bar.appendChild(btn);
@@ -5668,7 +5861,7 @@ async function openBotMonitor(){
 /* 🎬 BOT COMMERCIAL STUDIO — bot talents gumawa ng FB commercial ng office */
 function createCeoStudioBtn(){
   if(document.getElementById('bzCeoStudioBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzCeoStudioBtn';btn.className='ceoOnly';btn.textContent='🎬 Bot Studio';
   btn.style.cssText='background:linear-gradient(135deg,#6b3fa0,#b06fd8);color:#fff;font-weight:700';
   btn.onclick=openBotStudio;bar.appendChild(btn);
@@ -5734,7 +5927,7 @@ async function openBotStudio(){
 /* 🔌 CONNECTIONS — Facebook, YouTube, Shopee, TikTok, Render, GitHub, AI */
 function createCeoConnectionsBtn(){
   if(document.getElementById('bzCeoConnBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzCeoConnBtn';btn.className='ceoOnly';btn.textContent='🔌 Connections';
   btn.style.cssText='background:linear-gradient(135deg,#2f5fa8,#7ac74f);color:#fff;font-weight:700';
   btn.onclick=openConnections;bar.appendChild(btn);
@@ -5818,7 +6011,7 @@ function openFbSetup(){
 /* 👁 HIDE UI — iisa ang pindutan para mawala ang lahat ng floating panels (H key din) */
 function createUiHideBtn(){
   if(document.getElementById('uiHideBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const b=document.createElement('button');b.id='uiHideBtn';b.title='Itago / ipakita ang floating panels (shortcut: H)';
   b.onclick=()=>toggleUiHide();bar.appendChild(b);
   try{if(localStorage.getItem('uiHidden')==='1')document.body.classList.add('ui-hidden');}catch(e){}
@@ -5935,7 +6128,7 @@ async function openCeoAds(){
 /* ---------- 👑 CEO WISHLIST (password-gated sa server) ---------- */
 function createCeoWishBtn(){
   if(document.getElementById('bzCeoBtn'))return;
-  const bar=document.querySelector('.bar');if(!bar)return;
+  const bar=document.getElementById('officeTools');if(!bar)return;
   const btn=document.createElement('button');btn.id='bzCeoBtn';btn.className='ceoOnly';btn.textContent='🎁 Wishlist';
   btn.style.cssText='background:linear-gradient(135deg,#6b3fa0,#8f6fd8);color:#fff;font-weight:700';
   btn.onclick=openCeoWish;bar.appendChild(btn);
@@ -5980,8 +6173,11 @@ async function openCeoWish(){
   try{const j=await pubApi('/api/bazaar/profile');if(j&&j.visitor)bzVisitor=j.visitor;}catch(e){}
   createBzPanel();renderBzPanel();createCeoWishBtn();createCeoAdsBtn();createCeoMonitorBtn();createCeoStudioBtn();createXmasBtn();createCeoConnectionsBtn();createUiHideBtn();
   try{if(g.level){buildBazaar3d();buildPod3d();}}catch(e){}
+  const cbtn=document.getElementById('careBtn');if(cbtn)cbtn.onclick=()=>openCareDialog();
+  await loadCare(true);syncQuestPanel();
   bzPingControls(true);
   setInterval(async()=>{try{if(bzVisitor)await refreshBz()}catch(e){}},60000);
+  setInterval(async()=>{try{await loadCare(true)}catch(e){}},90000);
   setInterval(()=>{bzPingControls(false)},12000);
 })();
 </script>
