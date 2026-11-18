@@ -1856,6 +1856,26 @@ const server = http.createServer(async (req, res) => {
         }
       });
     }
+    // 🔑 CEO FACEBOOK SETUP — server-side lang sinusulat; hindi ibinabalik ang secret sa browser
+    if (p === '/api/ceo/setup-fb' && req.method === 'POST') {
+      const b = await body(req);
+      const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
+      if (String(b.pass || '') !== real) return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
+      const cur = readJSON(SETTINGS_FILE, {});
+      const id = String(b.fbAppId || '').trim();
+      const secret = String(b.fbAppSecret || '').trim();
+      const redirect = String(b.fbRedirectUri || '').trim();
+      if (id) cur.fbAppId = id;
+      if (secret) cur.fbAppSecret = secret;
+      if (redirect) cur.fbRedirectUri = redirect;
+      writeJSON(SETTINGS_FILE, cur);
+      log('🔵 Facebook login credentials updated (server-side only)', 'CEO');
+      return sendJSON(res, 200, {
+        ok: true,
+        configured: !!(cur.fbAppId && cur.fbAppSecret && cur.fbRedirectUri),
+        redirect: cur.fbRedirectUri || ''
+      });
+    }
     // 🔌 CEO CONNECTIONS — status lang ang ipinapadala; secrets hindi lumalabas sa browser
     if (p === '/api/ceo/connections' && req.method === 'POST') {
       const cfg = readJSON(SETTINGS_FILE, {});
