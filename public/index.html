@@ -79,8 +79,8 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #mmoChat.min #mmoChatBody{display:none}
 #mmoChat.min #mmoChatResize{display:none}
 #mmoChatResize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;z-index:3;background:linear-gradient(135deg,transparent 46%,#7fc7ff 50%,transparent 55%,transparent 68%,#7fc7ff 72%,transparent 77%);opacity:.75;touch-action:none}
-/* 🎮 Laging Roblox mode — itinago ang mode toggle buttons */
-#playBtn,#ceoModeBtn{display:none!important}
+/* 🎮 Laging Roblox mode — ceoModeBtn lang ang itinago; playBtn makikita para sa CEO */
+#ceoModeBtn{display:none!important}
 /* 👁 Hide UI — itinatago ang floating panels para walang humaharang sa view */
 body.ui-hidden #oc3d #jumpPanel,
 body.ui-hidden #oc3d #mmoChat,
@@ -4620,6 +4620,7 @@ setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;
 function applyLock(){
   const locked=!ceoPass;
   document.querySelectorAll('.ceoOnly').forEach(el=>el.style.display=locked?'none':'');
+  const pb=$('playBtn'); if(pb)pb.style.display=locked?'none':'block';
   const lf=$('lockFab');
   if(lf){lf.textContent=locked?'🔒':'👑';lf.style.background=locked?'#4a5568':'#2bb37a';lf.title=locked?'CEO Login — pindutin para i-unlock ang powers':'CEO mode: ON — pindutin para mag-logout';}
   if(locked){const p=$('ceoChat');if(p)p.classList.remove('open');}
@@ -5074,9 +5075,15 @@ function despawnPlayer(){
   toast('🎮 CEO Mode OFF — normal camera na!');
 }
 $('jumpToggle').onclick=()=>{const l=$('jumpList');l.style.display=(l.style.display==='grid')?'none':'grid';};
-$('playBtn').onclick=$('ceoModeBtn').onclick=()=>{
+$('playBtn').onclick=()=>{
+  playerMode=true;
+  if(typeof view!=='undefined'&&view!=='office')setView('office');
+  if(typeof player==='undefined'||!player)spawnPlayer();
+  toast('🎮 Roblox Mode ON — WASD gumalaw, Space jump, E interact!');
+};
+$('ceoModeBtn').onclick=()=>{
   playerMode=!playerMode;
-  const _t=playerMode?'🎮 Playing... (click to stop)':'🎮 Maglaro (Roblox Mode)';$('ceoModeBtn').textContent=_t;$('playBtn').textContent=_t;
+  const _t=playerMode?'🎮 Playing... (click to stop)':'🎮 Maglaro (Roblox Mode)';$('ceoModeBtn').textContent=_t;
   if(playerMode){ if(view!=='office'){setView('office');} spawnPlayer(); }
   else despawnPlayer();
 };
