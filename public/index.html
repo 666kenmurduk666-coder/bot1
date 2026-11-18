@@ -72,7 +72,10 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .bub3d:after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-6px;border:6px solid transparent;border-top-color:#182032}
 /* MMORPG world chat */
 #mmoChat{position:absolute;left:10px;bottom:10px;width:min(300px,60%);height:124px;min-width:200px;max-width:min(560px,90%);min-height:96px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
-#mmoChat.min{height:25px!important}
+#mmoChat.min{height:24px!important;width:auto!important;min-width:0!important;max-width:none!important}
+#mmoChat.min #mmoChatHead{padding:2px 6px;font-size:11px}
+#mmoChat.min #mmoChatFull,#mmoChat.min #mmoChatHint,#mmoChat.min #mmoChatSize,#mmoChat.min #mmoChatMin,#mmoChat.min #mmoChatBody,#mmoChat.min #mmoChatResize{display:none}
+#mmoChat.min #mmoChatTiny{display:inline}
 #mmoChat.min #mmoChatBody{display:none}
 #mmoChat.min #mmoChatResize{display:none}
 #mmoChatResize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;z-index:3;background:linear-gradient(135deg,transparent 46%,#7fc7ff 50%,transparent 55%,transparent 68%,#7fc7ff 72%,transparent 77%);opacity:.75;touch-action:none}
@@ -176,7 +179,7 @@ dialog::backdrop{background:#000a}
       <button id="playBtn" title="Roblox-style controls: WASD = lakad, Space = jump, E = harvest" style="display:block;position:absolute;left:10px;bottom:10px;z-index:9999;background:linear-gradient(135deg,#e8622c,#f0723c);color:#fff;border:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px #0008;opacity:.95">🎮 Maglaro (Roblox Mode)</button>
       <div id="jumpPanel" style="position:absolute;right:10px;bottom:10px;z-index:9999;background:rgba(10,18,40,.9);padding:6px;border-radius:10px;border:2px solid #2f5fa8;pointer-events:auto;box-shadow:0 4px 20px #0008">
         <button id="jumpToggle" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:8px">📍 Views</button>
-        <button id="liveZoneBtn" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:8px;margin-left:4px">🎬 LIVE OFFICE · I-on</button>
+        <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:8px;margin-left:4px">🎬 LIVE OFFICE · 1-CLICK</button>
         <div id="jumpList" style="display:none;flex-direction:column;gap:5px;margin-top:6px">
           <button id="jHq" style="font-size:12px;padding:5px 8px;cursor:pointer">🏢 Office</button>
           <button id="jMall" style="font-size:12px;padding:5px 8px;cursor:pointer">🛍️ Mall</button>
@@ -188,11 +191,11 @@ dialog::backdrop{background:#000a}
           <button id="jGym" style="font-size:12px;padding:5px 8px;cursor:pointer">💪 Gym</button>
           <button id="liveOffBtn" style="display:none;font-size:11px;padding:5px 8px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:8px">⏹ I-off ang Live</button>
         </div>
-        <div style="color:#9fb2d0;font-size:9px;margin-top:4px;line-height:1.3">Click ang 🎬 kiosk sa office · auto lahat ng view</div>
+        <div style="color:#9fb2d0;font-size:9px;margin-top:4px;line-height:1.3">1 click sa 🎬 kiosk/button = LIVE CAM + FB Studio · ikaw pipindot ng Go Live</div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
-      <div id="mmoChat">
-        <div id="mmoChatHead" title="Click para itago / ipakita"><span>💬 WORLD CHAT</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
+      <div id="mmoChat" class="min">
+        <div id="mmoChatHead" title="Click para buksan ang chat"><span id="mmoChatFull">💬 WORLD CHAT</span><span id="mmoChatTiny" style="display:none">💬</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
         <div id="mmoChatBody">
           <div id="mmoChatLog"></div>
           <div id="mmoChatFoot"><input id="mmoChatIn" maxlength="120" placeholder="Mag-type ng mensahe..." autocomplete="off"><button id="mmoChatSend" title="I-send">➤</button></div>
@@ -205,7 +208,7 @@ dialog::backdrop{background:#000a}
         <button id="v1f" class="ob-main">🏢 Office</button>
         <button id="mallBtn" class="ob-main">🛍️ Mall</button>
         <button id="ceoModeBtn" class="ob-main" style="background:linear-gradient(135deg,#8a6a20,#c9a227);color:#fff;border-color:#e8c04a;font-weight:700">🎮 Maglaro</button>
-        <button id="liveBtn" class="ob-main">🎬 Live</button>
+        <button id="liveBtn" class="ob-main" title="1 click = LIVE CAM ON + FB Live Studio">🎬 1-CLICK LIVE</button>
         <button id="careBtn" class="ob-main" style="background:linear-gradient(135deg,#1f7a4d,#2a8a7a);color:#fff;border-color:#4fc9b5">🌱 Care</button>
         <span class="sp"></span>
         <span class="hint" id="officeInfo"></span>
@@ -2337,7 +2340,7 @@ function buildRoom3d(id){
     dom.addEventListener('mousedown',e=>{if(e.button!==0)return;drag=true;lx=e.clientX;ly=e.clientY;sx=e.clientX;sy=e.clientY;if(cam3d)cam3d.lastUser=Date.now()});
     window.addEventListener('mouseup',e=>{
       if(drag&&Math.abs(e.clientX-sx)<6&&Math.abs(e.clientY-sy)<6){
-        if(pickLiveZone(e.clientX,e.clientY))toggleLiveOffice(true);
+        if(pickLiveZone(e.clientX,e.clientY))oneClickLive();
         else{
           const b=pickBot(e.clientX,e.clientY);
           if(b)setFollow(b);
@@ -4260,7 +4263,7 @@ function frame3D(){
   const hud=$('gameHud'); if(hud) hud.style.display=(view==='office')?'block':'none';
   (function(){
     const h=$('gameHud');if(!h||h._dragReady)return;h._dragReady=true;
-    const t=$('hudToggle');if(t)t.onclick=e=>{e.stopPropagation();const tips=$('hudTips');tips.style.display=(tips.style.display==='block')?'none':'block';};
+    const t=$('hudToggle');if(t)t.onclick=e=>{e.stopPropagation();const ex=$('hudExtra');ex.style.display=(ex.style.display==='block')?'none':'block';};
     let drag=false,ox=0,oy=0;
     h.addEventListener('pointerdown',e=>{if(e.target.id==='hudToggle')return;drag=true;const r=h.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.style.cursor='grabbing';});
     window.addEventListener('pointermove',e=>{if(!drag)return;h.style.left=Math.max(0,e.clientX-ox)+'px';h.style.top=Math.max(0,e.clientY-oy)+'px';h.style.right='auto';});
@@ -4677,13 +4680,22 @@ $('vaultAdd').onclick=async()=>{
 /* ✨ LIVE CAM: auto-cycling camera para sa Streamlabs / Facebook Live! */
 function toggleLiveOffice(force){
   liveOn=(typeof force==='boolean')?force:!liveOn;
-  $('liveBtn').textContent=liveOn?'🎬 Live ON':'🎬 Live';
-  const zb=$('liveZoneBtn');if(zb)zb.textContent=liveOn?'🎬 LIVE OFFICE · ON':'🎬 LIVE OFFICE · I-on';
+  $('liveBtn').textContent=liveOn?'🎬 LIVE ON':'🎬 1-CLICK LIVE';
+  const zb=$('liveZoneBtn');if(zb)zb.textContent=liveOn?'🎬 LIVE OFFICE · ON':'🎬 LIVE OFFICE · 1-CLICK';
   const off=$('liveOffBtn');if(off)off.style.display=liveOn?'block':'none';
-  if(liveOn){liveShot=0;liveNext=0;if(cam3d)cam3d.lastUser=0;toast('🎬 LIVE OFFICE ON — bots + lahat ng view, auto-showcase para sa Facebook!')}
+  if(liveOn){liveShot=0;liveNext=0;if(cam3d)cam3d.lastUser=0;}
   else toast('🎬 LIVE OFFICE OFF — manual control na!');
 }
-$('liveBtn').onclick=()=>toggleLiveOffice();
+/* 🎬 ONE-CLICK LIVE — LIVE CAM + FB Live Studio; ang "Go Live" ay nasa FB account mo pa rin */
+function oneClickLive(e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  const studio='https://www.facebook.com/live/producer/';
+  let win=null;
+  try{win=window.open(studio,'_blank');if(win){try{win.opener=null}catch(err){}}}catch(err){}
+  toggleLiveOffice(true);
+  toast(win?'🎬 LIVE CAM ON + 📘 FB Live Studio binuksan — ikaw pa rin pipindot ng Go Live!':'📘 FB Live Studio: https://www.facebook.com/live/producer/ — ikaw pipindot ng Go Live.');
+}
+$('liveBtn').onclick=oneClickLive;
 /* ✨ HIRING: paste ng nicknames ? bagong bot sa office! */
 $('hireBtn').onclick=()=>{ $('hire').showModal(); };
 $('hireRun').onclick=async()=>{
@@ -4712,7 +4724,7 @@ const JUMP_VIEWS={
 function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
 $('jHq').onclick=e=>{e.stopPropagation();jumpTo('hq')};$('jMall').onclick=e=>{e.stopPropagation();jumpTo('mall')};$('jFarm').onclick=e=>{e.stopPropagation();jumpTo('farm')};$('jPark').onclick=e=>{e.stopPropagation();jumpTo('park')};$('jPool').onclick=e=>{e.stopPropagation();jumpTo('resort')};$('jLab').onclick=e=>{e.stopPropagation();jumpTo('lab')};
 $('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
-$('liveZoneBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(true)};
+$('liveZoneBtn').onclick=oneClickLive;
 $('liveOffBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(false)};
 /* ✨ ROBLOX-STYLE: WASD = lakad, Space = jump, E = harvest pananim! */
 window.addEventListener('keydown',e=>{
@@ -4724,7 +4736,7 @@ window.addEventListener('keydown',e=>{
     return;
   }
   const k=e.key.toLowerCase();
-  if(k==='enter'&&view==='office'){bzCtrl().chat++;const ci=$('mmoChatIn');if(ci){ci.focus();e.preventDefault();}return;}
+  if(k==='enter'&&view==='office'){bzCtrl().chat++;const box=$('mmoChat');if(box)box.classList.remove('min');const ci=$('mmoChatIn');if(ci){ci.focus();e.preventDefault();}return;}
   if(k==='w'||k==='arrowup'){moveKeys.w=true;bzCtrl().move++;}
   if(k==='s'||k==='arrowdown'){moveKeys.s=true;bzCtrl().move++;}
   if(k==='a'||k==='arrowleft'){moveKeys.a=true;bzCtrl().move++;}
@@ -4840,7 +4852,7 @@ setInterval(async()=>{
   }catch(e){}
 },5000);
 </script>
-<div id="gameHud" style="position:fixed;top:70px;left:10px;z-index:50;background:rgba(10,18,40,.85);color:#e6ecf7;padding:6px 8px;border-radius:9px;border:1px solid #2f5fa8;font-size:12px;display:none;cursor:move;box-shadow:0 3px 12px #0007"><span style="font-weight:700">💰 <span id="coinTxt">0</span></span><button id="hudToggle" title="Controls" style="padding:2px 6px;font-size:11px;margin-left:4px">ⓘ</button><button id="outfitBtn" title="Palette ng karakter" style="padding:2px 6px;font-size:11px;margin-left:3px">🎨</button><div id="questLine" style="font-size:10px;color:#ffd06b;margin-top:3px;line-height:1.35">🎯 Daily quest: 0/4</div><div id="hudTips" style="display:block;font-size:10px;color:#9fb2d0;margin-top:3px;line-height:1.45">WASD = lakad · Space = jump<br>E = harvest/shoot/approve · Enter = chat</div></div>
+<div id="gameHud" style="position:fixed;top:70px;left:10px;z-index:50;background:rgba(10,18,40,.72);color:#e6ecf7;padding:4px 6px;border-radius:8px;border:1px solid rgba(47,95,168,.6);font-size:11px;display:none;cursor:move;box-shadow:none;backdrop-filter:blur(1px)"><span style="font-weight:700">💰 <span id="coinTxt">0</span></span><button id="hudToggle" title="Controls (WASD / Space / E / Enter)" style="padding:1px 5px;font-size:10px;margin-left:4px">ⓘ</button><button id="outfitBtn" title="Palette ng karakter" style="padding:1px 5px;font-size:10px;margin-left:3px">🎨</button><div id="hudExtra" style="display:none"><div id="questLine" style="font-size:10px;color:#ffd06b;margin-top:3px;line-height:1.35">🎯 Daily quest: 0/4</div><div id="hudTips" style="font-size:10px;color:#9fb2d0;margin-top:3px;line-height:1.45">WASD = lakad · Space = jump<br>E = harvest/shoot/approve · Enter = chat</div></div></div>
 <script>
 /* ================= 🎮 EXTRA GAME FEATURES ================= */
 function esc2(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -5149,20 +5161,23 @@ function createBzQuestPanel(){
   let q=document.getElementById('bzQuestPanel');
   if(q)return q;
   q=document.createElement('div');q.id='bzQuestPanel';
-  q.style.cssText='position:fixed;left:10px;top:70px;z-index:54;width:174px;max-width:46vw;background:rgba(9,17,35,.26);border:1px solid rgba(127,199,255,.18);border-radius:8px;padding:4px 5px;color:#e9edf7;font-size:9.5px;box-shadow:none;backdrop-filter:blur(1px)';
-  q.innerHTML='<div style="display:flex;align-items:center;gap:4px;color:#8fd0e8;font-weight:700;font-size:9.5px;margin-bottom:4px;border-bottom:1px solid rgba(127,199,255,.18);padding-bottom:3px">📜 QUESTS<span style="flex:1"></span><span id="bzQuestCoin" style="color:#ffd34d">🪙0</span></div><div id="bzQuestList"></div>';
+  q.style.cssText='position:fixed;left:132px;top:70px;z-index:54;width:auto;max-width:46vw;background:rgba(9,17,35,.26);border:1px solid rgba(127,199,255,.18);border-radius:8px;padding:4px 6px;color:#e9edf7;font-size:9.5px;box-shadow:none;backdrop-filter:blur(1px);cursor:pointer';
+  q.innerHTML='<div id="bzQuestHead" title="Click para buksan ang quests" style="display:flex;align-items:center;gap:5px;color:#8fd0e8;font-weight:700;font-size:9.5px;white-space:nowrap">📜 <span id="bzQuestCount">0/0</span><span id="bzQuestCoin" style="color:#ffd34d">🪙0</span><span id="bzQuestCaret" style="color:#9fb2d0">▸</span></div><div id="bzQuestBody" style="display:none;margin-top:4px;min-width:160px"><div id="bzQuestList"></div></div>';
   document.body.appendChild(q);
+  const head=document.getElementById('bzQuestHead');
+  head.onclick=e=>{e.stopPropagation();const b=document.getElementById('bzQuestBody'),c=document.getElementById('bzQuestCaret');const show=b.style.display!=='block';b.style.display=show?'block':'none';c.textContent=show?'▾':'▸';};
   return q;
 }
 function renderBzQuests(v){
   createBzQuestPanel();
-  const list=document.getElementById('bzQuestList'),coin=document.getElementById('bzQuestCoin');
+  const list=document.getElementById('bzQuestList'),coin=document.getElementById('bzQuestCoin'),cnt=document.getElementById('bzQuestCount');
   if(!list)return;
   if(coin)coin.textContent='🪙'+(v?(v.coins||0):0);
-  if(!v){list.innerHTML='<div style="color:#9fb2d0;font-size:9px;line-height:1.35">🔵 Facebook login para sa quest at rewards.</div>';return;}
+  if(!v){if(cnt)cnt.textContent='—';list.innerHTML='<div style="color:#9fb2d0;font-size:9px;line-height:1.35">🔵 Facebook login para sa quest at rewards.</div>';return;}
   const short={checkin:'Check-in',stalls:'Market stalls',posts:'Product posts',bots:'Office bots',order:'Mall order',share:'Affiliate post',content:'Office content'};
   const icons={checkin:'📅',stalls:'🛍️',posts:'📖',bots:'🤖',order:'🧾',share:'📣',content:'🎬'};
   const tasks=v.tasks||[];
+  if(cnt)cnt.textContent=tasks.filter(t=>t.done).length+'/'+tasks.length;
   list.innerHTML=tasks.map(t=>{
     const done=!!t.done;
     const prog=t.target>1?(' '+t.progress+'/'+t.target):'';
