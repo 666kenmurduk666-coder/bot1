@@ -2135,6 +2135,24 @@ const server = http.createServer(async (req, res) => {
         redirect: cur.fbRedirectUri || ''
       });
     }
+    // 🛍️ SHOPEE AFFILIATE — Affiliate ID / token, server-side lang; hindi binabalik sa browser
+    if (p === '/api/ceo/setup-shopee' && req.method === 'POST') {
+      const b = await body(req);
+      if (String(b.pass || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
+        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
+      const cur = readJSON(SETTINGS_FILE, {});
+      const id = String(b.shopeeAffId || '').trim().slice(0, 64);
+      const token = String(b.shopeeAffToken || '').trim().slice(0, 256);
+      if (id) cur.shopeeAffId = id;
+      if (token) cur.shopeeAffToken = token;
+      writeJSON(SETTINGS_FILE, cur);
+      log('🛍️ Shopee Affiliate credentials updated (server-side only)', 'CEO');
+      return sendJSON(res, 200, {
+        ok: true,
+        configured: !!(cur.shopeeAffId || cur.shopeeAffToken),
+        affiliateIdSet: !!cur.shopeeAffId
+      });
+    }
     // 🔌 CEO CONNECTIONS — status lang ang ipinapadala; secrets hindi lumalabas sa browser
     if (p === '/api/ceo/connections' && req.method === 'POST') {
       const cfg = readJSON(SETTINGS_FILE, {});
@@ -2151,8 +2169,8 @@ const server = http.createServer(async (req, res) => {
           hint: 'Google OAuth Client ID · Secret o refresh token',
           ready: has(cfg.youtubeClientId, env.YOUTUBE_CLIENT_ID) && has(cfg.youtubeClientSecret, env.YOUTUBE_CLIENT_SECRET, cfg.youtubeRefreshToken, env.YOUTUBE_REFRESH_TOKEN) },
         { id: 'shopee', name: 'Shopee Affiliate', icon: '🛍️', color: '#ee4d2d',
-          url: 'https://seller.shopee.ph/edu/pwb/affiliate',
-          hint: 'Affiliate ID / token + mga product link',
+          url: 'https://affiliate.shopee.ph/',
+          hint: 'Affiliate ID (Account Settings) + mga product link',
           ready: has(cfg.shopeeAffId, env.SHOPEE_AFF_ID, cfg.shopeeAffToken, env.SHOPEE_AFF_TOKEN) },
         { id: 'tiktok', name: 'TikTok Business', icon: '🎵', color: '#25f4ee',
           url: 'https://ads.tiktok.com/business/creativecenter/',
