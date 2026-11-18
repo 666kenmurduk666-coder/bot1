@@ -87,9 +87,15 @@ body.ui-hidden #oc3d #mmoChat,
 body.ui-hidden #gameHud,
 body.ui-hidden #bzPanel,
 body.ui-hidden #bzQuestPanel,
+body.ui-hidden #oc3d #eventShowCard,
 body.ui-hidden #ceoFab,
 body.ui-hidden #lockFab,
+body.ui-hidden #mtgDialog,
 body.ui-hidden .bub3d{display:none!important}
+#eventShowCard{pointer-events:none}
+#eventShowCard b{font-variant-numeric:tabular-nums}
+.jz{font-size:10px;line-height:1.15;padding:4px 2px;min-height:34px;cursor:pointer;background:#16213c;color:#e9edf7;border:1px solid #2f5fa8;border-radius:6px}
+.jz:hover{background:#20406e;color:#fff}
 #uiHideBtn{background:linear-gradient(135deg,#3f5f8a,#2f5fa8);color:#fff;font-weight:700}
 #mmoChatHead{display:flex;align-items:center;gap:4px;padding:3px 6px;background:linear-gradient(90deg,#16325d,#102342);color:#cfe0ff;font-size:10px;font-weight:700;cursor:pointer;user-select:none}
 #mmoChatBody{flex:1;display:flex;flex-direction:column;min-height:0}
@@ -184,20 +190,28 @@ dialog::backdrop{background:#000a}
       <div id="jumpPanel" style="display:none;position:absolute;right:8px;bottom:8px;z-index:9999;background:rgba(10,18,40,.82);padding:4px;border-radius:7px;border:1px solid rgba(47,95,168,.7);pointer-events:auto;box-shadow:none">
         <button id="jumpToggle" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:6px">📍 Zones</button>
         <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:6px;margin-left:3px">🎬 LIVE</button>
-        <div id="jumpList" style="display:none;flex-direction:column;gap:3px;margin-top:4px">
-          <button id="jHq" style="font-size:11px;padding:3px 6px;cursor:pointer">🏢 Office</button>
-          <button id="jConf" style="font-size:11px;padding:3px 6px;cursor:pointer">🧠 Conference</button>
-          <button id="jCafeteria" style="font-size:11px;padding:3px 6px;cursor:pointer">☕ Cafeteria</button>
-          <button id="jFun" style="font-size:11px;padding:3px 6px;cursor:pointer">🛋️ Fun Room</button>
-          <button id="jMall" style="font-size:11px;padding:3px 6px;cursor:pointer">🛍️ Mall</button>
-          <button id="jFarm" style="font-size:11px;padding:3px 6px;cursor:pointer">🌱 Farm</button>
-          <button id="jPark" style="font-size:11px;padding:3px 6px;cursor:pointer">🚙 Parking</button>
-          <button id="jPool" style="font-size:11px;padding:3px 6px;cursor:pointer">🌊🍹 2F Resort</button>
-          <button id="jLab" style="font-size:11px;padding:3px 6px;cursor:pointer">🧪 Lab</button>
-          <button id="jCourt" style="font-size:11px;padding:3px 6px;cursor:pointer">🏀 Court</button>
-          <button id="jEvent" style="font-size:11px;padding:3px 6px;cursor:pointer">🎤 Event Stage</button>
-          <button id="jGym" style="font-size:11px;padding:3px 6px;cursor:pointer">💪 Gym</button>
-          <button id="liveOffBtn" style="display:none;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
+        <div id="jumpList" style="display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-top:4px;width:318px">
+          <div style="grid-column:1/-1;text-align:center;color:#8fd0e8;font-weight:700;font-size:10px;letter-spacing:.5px">🏢 MGA OFFICE — 3×3 HANAY</div>
+          <button id="jCeo" class="jz">👑 COMMAND<br>CENTER</button>
+          <button id="jWork" class="jz">💻 OPERATIONS<br>HUB</button>
+          <button id="jConf" class="jz">🤝 MEETING<br>ROOM</button>
+          <button id="jFun" class="jz">🎨 CREATIVE<br>STUDIO</button>
+          <button id="jPantry" class="jz">🍿 PANTRY &amp;<br>GAME LOUNGE</button>
+          <button id="jBay" class="jz">🧠 THE<br>BRAIN!</button>
+          <button id="jSleep" class="jz">😴 SLEEP<br>QUARTERS</button>
+          <button id="jCourt" class="jz">🏓 PICKLEBALL<br>COURT</button>
+          <button id="jGym" class="jz">💪 GYM</button>
+          <div style="grid-column:1/-1;text-align:center;color:#ffd34d;font-weight:700;font-size:10px;margin-top:3px">📍 IBA PANG ZONE</div>
+          <button id="jMeeting" class="jz" style="color:#7ee2a8;border-color:#2bb37a">🤝 ONLINE<br>MEETING</button>
+          <button id="jMall" class="jz">🛍️ MALL</button>
+          <button id="jEvent" class="jz">🎤 EVENT</button>
+          <button id="jFarm" class="jz">🌱 FARM</button>
+          <button id="jPark" class="jz">🚙 PARKING</button>
+          <button id="jPool" class="jz">🌊 2F RESORT</button>
+          <button id="jWCafe" class="jz">☕ WING CAFE</button>
+          <button id="jLab" class="jz">🧪 LAB</button>
+          <button id="jWFun" class="jz">🛋️ WING FUN</button>
+          <button id="liveOffBtn" style="display:none;grid-column:1/-1;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
         </div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
@@ -210,6 +224,11 @@ dialog::backdrop{background:#000a}
         <div id="mmoChatResize" title="I-drag para baguhin ang laki"></div>
       </div>
     </div>
+      <div id="eventShowCard" style="display:none;position:absolute;right:10px;bottom:52px;z-index:14;width:220px;max-width:62vw;background:rgba(9,17,35,.78);border:1px solid rgba(201,162,39,.65);border-radius:10px;padding:7px 9px;color:#e9edf7;font-size:10px;box-shadow:0 3px 14px #0007">
+        <div style="font-weight:700;color:#ffd34d;font-size:10px">🎤 LIVE EVENT STAGE</div>
+        <div id="eventShowLine" style="margin-top:3px;line-height:1.35"></div>
+        <div id="eventShowHost" style="margin-top:3px;color:#8fd0e8"></div>
+      </div>
       <canvas id="oc" width="900" height="520"></canvas>
       <div class="bar officeBar">
         <button id="v1f" class="ob-main">🏢 Office</button>
@@ -219,6 +238,7 @@ dialog::backdrop{background:#000a}
         <button id="careBtn" class="ob-main" style="background:linear-gradient(135deg,#1f7a4d,#2a8a7a);color:#fff;border-color:#4fc9b5">🌱 Care</button>
         <button id="zonesBtn" class="ob-main" title="Mga zone / punta sa ibang view">📍 Zones</button>
         <button id="chatBtn" class="ob-main" title="Buksan ang world chat">💬 Chat</button>
+        <button id="meetingBtn" class="ob-main" title="Online Meeting — Taglish chat at utos sa mga bots" style="background:linear-gradient(135deg,#2a6b6b,#2a8a7a);color:#fff;border-color:#4fc9b5">🤝 Meeting</button>
         <button id="fsBtn" class="ob-main" title="Full screen ang office">⛶ Full</button>
         <span class="sp"></span>
         <span class="hint" id="officeInfo"></span>
@@ -227,6 +247,7 @@ dialog::backdrop{background:#000a}
       <div id="officeMorePanel" class="officeMorePanel" style="display:none">
         <div class="bar" style="flex-wrap:wrap">
           <button id="officeLinkBtn" title="Pindutin ang opisina sa 3D o dito para mag-paste ng Shopee link">🔗 Office Links</button>
+          <button id="ceoToolsBtn" class="ceoOnly" title="CEO: Shopee analytics at Event Stage auto-show">📊 CEO Tools</button>
           <button id="vaultBtn" class="ceoOnly">🏦 Vault</button>
           <button id="hireBtn" class="ceoOnly">👔 Hire</button>
           <button id="ticketBtn">🎫 Ticket</button>
@@ -427,6 +448,25 @@ dialog::backdrop{background:#000a}
     <div class="bar" style="margin-top:6px"><input id="opName" placeholder="Pangalan ng product" style="flex:1;min-width:150px"><input id="opPrice" type="number" placeholder="₱ Presyo" style="width:95px"><input id="opEmoji" placeholder="🛍️" style="width:52px"></div>
     <div class="bar" style="margin-top:6px"><input id="opCaption" placeholder="Deskripsyon / promo (para sa post)" maxlength="200" style="flex:1;min-width:180px"></div>
     <div class="bar" style="margin-top:6px"><input id="opUrl" placeholder="Paste ang Shopee affiliate link..." maxlength="500" style="flex:1;min-width:200px"><button id="opSave" class="run">💾 I-post</button></div>
+  </div>
+</dialog>
+<dialog id="ceoToolsDialog" class="ceoOnly" style="width:520px;max-width:95vw;padding:14px;border-radius:14px;border:2px solid #2f5fa8;background:#111a2e;color:#e6ecf7">
+  <div class="bar" style="justify-content:space-between;margin:0"><b style="color:#8fd0e8">📊 CEO Tools — Shopee Analytics &amp; Event Stage</b><button onclick="this.closest('dialog').close()" style="padding:4px 10px">✖</button></div>
+  <div style="font-size:11px;color:#9fb2d0;margin:6px 0 10px">Analytics mula sa actual na stall clicks at product views. Goods-only pa rin ang rewards — walang cash payout.</div>
+  <div id="anSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+  <div style="font-weight:700;color:#ffd34d;font-size:11px;margin:8px 0 4px">🔥 Pinaka-tiningnan na products</div>
+  <div id="anItems" style="max-height:130px;overflow:auto;font-size:11px;color:#d9e6ff"></div>
+  <div style="font-weight:700;color:#ffd34d;font-size:11px;margin:8px 0 4px">🕐 Busiest hours (Manila time)</div>
+  <div id="anHours" style="font-size:11px;color:#d9e6ff"></div>
+  <div style="border-top:1px solid #2f5fa8;margin-top:12px;padding-top:10px">
+    <b style="color:#8fd0e8">🎤 Event Stage Auto-Show</b>
+    <div class="bar" style="margin-top:6px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:11px"><input type="checkbox" id="eventShowEnabled"> Auto-show ON</label>
+      <select id="eventShowInterval" style="font-size:11px"><option value="3">Every 3 min</option><option value="5">Every 5 min</option><option value="10">Every 10 min</option><option value="15">Every 15 min</option></select>
+      <button id="eventShowSave" class="run">💾 Save</button>
+      <button onclick="this.closest('dialog').close()">Close</button>
+    </div>
+    <div id="eventShowStatus" style="font-size:11px;color:#9fb2d0;margin-top:6px"></div>
   </div>
 </dialog>
 <dialog id="receipt"><div style="text-align:center"><div style="font-size:44px">🧾</div><h2 style="margin:4px 0" id="rcpH">RESIBO — BAYAD NA ✓</h2></div>
@@ -1975,12 +2015,12 @@ function buildRoom3d(id){
   const W=22,H=14;
   // ===== IISANG PALAPAG: maayos na hanay ng opisina, may harang bawat isa =====
   const ROOMS=[
-    {id:'ceo',  name:'CEO OFFICE 👑',  x1:.4,x2:6.2, z1:8.1,z2:13.6, f1:'#b7945c',f2:'#c2a06b',wall:'#d8b46a'},
-    {id:'work', name:'OPEN WORK 💻',   x1:6.2,x2:15,  z1:8.1,z2:13.6, f1:'#a9c8c2',f2:'#b6d2cd',wall:'#5f9e92'},
-    {id:'conf', name:'CONFERENCE 🧠',  x1:15,x2:21.6,z1:8.1,z2:13.6, f1:'#a9bcd8',f2:'#b7c8e0',wall:'#5d7fb5'},
-    {id:'fun',  name:'SALA 🛋️',       x1:.4,x2:7.5, z1:.4,z2:6.3,   f1:'#d8b7cd',f2:'#e0c5d7',wall:'#b36f9c'},
-    {id:'pantry',name:'PANTRY ☕',      x1:7.5,x2:13.5,z1:.4,z2:6.3,  f1:'#dccfae',f2:'#e5d9bd',wall:'#b8a165'},
-    {id:'bay',  name:'SERVER BAY 🖥️',  x1:13.5,x2:21.6,z1:.4,z2:6.3, f1:'#bfc6d2',f2:'#ccd2dc',wall:'#7c8ba3'}
+    {id:'ceo',  name:'COMMAND CENTER 👑',  x1:.4,x2:6.2, z1:8.1,z2:13.6, f1:'#b7945c',f2:'#c2a06b',wall:'#d8b46a'},
+    {id:'work', name:'OPERATIONS HUB 💻',  x1:6.2,x2:15,  z1:8.1,z2:13.6, f1:'#a9c8c2',f2:'#b6d2cd',wall:'#5f9e92'},
+    {id:'conf', name:'MEETING ROOM 🤝',   x1:15,x2:21.6,z1:8.1,z2:13.6, f1:'#a9bcd8',f2:'#b7c8e0',wall:'#5d7fb5'},
+    {id:'fun',  name:'CREATIVE STUDIO 🎨',x1:.4,x2:7.5, z1:.4,z2:6.3,   f1:'#d8b7cd',f2:'#e0c5d7',wall:'#b36f9c'},
+    {id:'pantry',name:'PANTRY & GAME LOUNGE 🍿',x1:7.5,x2:13.5,z1:.4,z2:6.3, f1:'#dccfae',f2:'#e5d9bd',wall:'#b8a165'},
+    {id:'bay',  name:'THE BRAIN! 🧠',     x1:13.5,x2:21.6,z1:.4,z2:6.3, f1:'#bfc6d2',f2:'#ccd2dc',wall:'#7c8ba3'}
   ];
   const CORR={z1:6.3,z2:8.1};
   const roomAt=(x,z)=>{
@@ -2377,7 +2417,10 @@ function buildRoom3d(id){
         if(pickLiveZone(e.clientX,e.clientY))oneClickLive();
         else{
           const st=pickStall(e.clientX,e.clientY);
-          if(st&&typeof showShopFrame==='function')showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''),st.item.price);
+          if(st&&typeof showShopFrame==='function'){
+            showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''),st.item.price,st.item.id);
+            if(typeof trackShop==='function')trackShop('stall_click',st.item.id,String(st.item.name||'Paninda'));
+          }
           else{
             const b=pickBot(e.clientX,e.clientY);
             if(b)setFollow(b);
@@ -2412,7 +2455,10 @@ function buildRoom3d(id){
       if(touchD&&cam3d&&e.touches.length===0){const tc=e.changedTouches[0];
         if(Math.abs(tc.clientX-touchD.x)<8&&Math.abs(tc.clientY-touchD.y)<8){
           const st=pickStall(tc.clientX,tc.clientY);
-          if(st&&typeof showShopFrame==='function')showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''),st.item.price);
+          if(st&&typeof showShopFrame==='function'){
+            showShopFrame(st.item.url,String(st.item.name||'Paninda'),String(st.item.caption||''),st.item.price,st.item.id);
+            if(typeof trackShop==='function')trackShop('stall_click',st.item.id,String(st.item.name||'Paninda'));
+          }
           else{
             const b=pickBot(tc.clientX,tc.clientY);
             if(b)setFollow(b);else{const room=pickOffice(tc.clientX,tc.clientY);if(room)openOfficeDialog(room.id);else if(followBot)setFollow(null);}
@@ -3036,24 +3082,25 @@ function buildOfficeWing3d(){
     [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,.04,z,true));
     mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
   };
-  // 🧠 CONFERENCE — INILIPAT sa likod-kaliwa ng wing, malayo sa Cafeteria!
+  // 😴 SLEEP QUARTERS — likod-kaliwa ng wing (dating Conference), malayo sa pantry
   const CX=28, AX=33.4, FX=40.8, LX=40, CZ=27;
-  zone(CX,CZ,8,5,'#2d3b57','CONFERENCE 🧠');
+  zone(CX,CZ,8,5,'#2d3b57','SLEEP QUARTERS 😴');
+  [-2.4,2.4].forEach(dx=>box3(1.5,.22,1.9,'#dfe6f0',CX+dx,.11,CZ+1.2));
   box3(4,.16,1.6,'#8a6238',CX,.28,CZ);box3(3.4,.08,.9,'#2d3b57',CX,.17,CZ);
   [-1.5,0,1.5].forEach(dx=>{box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,CZ-1.4);box3(.55,.75,.55,'#2f5fa8',CX+dx,.38,CZ+1.4);});
   box3(2.4,1.3,.1,'#102342',CX,1.25,CZ+2.4);box3(2.1,1.05,.03,'#66d9ff',CX,1.25,CZ+2.34,true);
   // ☕ CAFETERIA
-  zone(AX,20,7,7,'#4a3c32','CAFETERIA ☕');
+  zone(AX,20,7,7,'#4a3c32','PANTRY & GAME LOUNGE 🍿');
   box3(3,.9,.7,'#6b4a32',AX,.45,17.4);box3(2.8,.12,.5,'#d8c6a8',AX,.95,17.4);
   [-.9,.9].forEach(dx=>cyl3(.16,.25,'#d8c6a8',AX+dx,1.1,17.4));
   [-1.6,1.6].forEach(dx=>{box3(.9,.12,.9,'#8a6238',AX+dx,.36,21.5);cyl3(.1,.5,'#9aa4b8',AX+dx,.55,21.5);});
   // 🛋️ FUN ROOM
-  zone(FX,20,7,7,'#45385c','FUN ROOM 🛋️');
+  zone(FX,20,7,7,'#45385c','CREATIVE STUDIO 🎨');
   [-1.4,1.4].forEach(dx=>{box3(1.4,.5,1,'#7a5aa8',FX+dx,.25,21.5);box3(1.4,.7,.2,'#9a7ac8',FX+dx,.6,22);});
   box3(3,1.6,.12,'#16213c',FX,1.35,17.4);box3(2.7,1.3,.03,'#ff7ac8',FX,1.35,17.34,true);
   box3(.7,.3,.5,'#e8622c',FX,.15,19);
   // 🧪 LAB — sariling zone sa likod ng wing, hindi na walang-laman
-  zone(LX,27,7,5,'#2f4d4a','LAB 🧪');
+  zone(LX,27,7,5,'#2f4d4a','THE BRAIN! 🧠');
   [-1.6,0,1.6].forEach(dx=>{
     box3(1.3,.75,.7,'#9aa4b8',LX+dx,.38,26.3);
     box3(1.05,.5,.04,'#66d9ff',LX+dx,.85,25.94,true);
@@ -3559,7 +3606,7 @@ function buildBasketball3d(){
     seam.rotation.y=r;ball.add(seam);
   });
   ball.position.set(cx,-.42,cz);g.level.add(ball);g.ball=ball;
-  mkLabel('BASKETBALL COURT 🏀',cx,cz-W/2-1.1,1.9,'#c9a227');
+  mkLabel('PICKLEBALL COURT 🏓',cx,cz-W/2-1.1,1.9,'#c9a227');
 }
 /* ===== 🏀 COURT BOTS: maliliit na round bots na naglalaro ng basketball ===== */
 function buildCourtBots3d(){
@@ -4158,6 +4205,8 @@ function frame3D(){
   }
   try{tickGuideBot(t,dt)}catch(e){}
   try{tickQuestFields()}catch(e){}
+  try{if(typeof updateEventShow==='function')updateEventShow(t,dt)}catch(e){}
+  try{if(typeof updateBadgeZones==='function')updateBadgeZones(t,dt)}catch(e){}
   // HOLOGRAM: i-refresh ang work feed at ang trabaho ng bawat bot
   if(g.holoRedraw&&Date.now()-(g.holoT||0)>3000){g.holoT=Date.now();g.holoRedraw();if(g.approvalRedraw)g.approvalRedraw();if(g.boardRedraw)g.boardRedraw()}
   tickAttendance();
@@ -4618,7 +4667,32 @@ const mallItems=()=>{
     .concat(prods.map(p=>({id:'pr'+p.id,name:(p.title||p.description||'Paninda mula sa content natin').slice(0,60),price:0,emoji:'🛍️',url:p.url,cat:'shopee',content:true})));
 };
 let mallTab='all';
-function showShopFrame(u,title,caption,price){
+/* 📊 SHOPEE ANALYTICS — visitor-safe tracking, hindi nakaka-change ng layout/settings */
+let shopPopupItem={id:'',name:''};
+function trackShop(kind,itemId,itemName,zone){
+  try{
+    if(typeof fetch!=='function')return;
+    fetch('/api/bazaar/track',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({kind:kind,itemId:String(itemId||'').slice(0,80),itemName:String(itemName||'').slice(0,80),zone:String(zone||'').slice(0,40)})})
+      .then(r=>r.json()).then(j=>{
+        if(j&&j.awarded&&typeof handleBadgeAward==='function')handleBadgeAward(j.awarded);
+      }).catch(()=>{});
+  }catch(e){}
+}
+function shopItemId(title){
+  const n=String(title||'').replace(/^[^A-Za-z0-9]+/,'').toLowerCase();
+  if(!n)return '';
+  const list=typeof mallItems==='function'?mallItems():[];
+  const it=list.find(m=>String(m.name||'').toLowerCase()===n)||
+           list.find(m=>n.indexOf(String(m.name||'').toLowerCase())>=0&&String(m.name||'').length>3);
+  return it?(it.id||''):'';
+}
+(function bindShopNewTab(){
+  const nt=$('shopNewTab');if(!nt||nt.dataset.tracked)return;
+  nt.dataset.tracked='1';
+  nt.addEventListener('click',()=>trackShop('newtab',shopPopupItem.id,shopPopupItem.name));
+})();
+function showShopFrame(u,title,caption,price,id){
   if(!/^https?:\/\//i.test(u)){toast('Walang valid Shopee link ang item');return;}
   const label=String(title||'🛍️ Shopee')+(Number(price)>0?(' — ₱'+Number(price).toLocaleString('en-PH')):'');
   $('shopTitle').textContent=label;
@@ -4627,16 +4701,18 @@ function showShopFrame(u,title,caption,price){
   $('shopFrame').src=u;
   $('shopNewTab').href=u;
   $('shopPopup').showModal();
+  shopPopupItem={id:String(id||shopItemId(title)),name:String(title||'')};
+  trackShop('product_view',shopPopupItem.id,shopPopupItem.name);
 }
 function openShop(it){
   const u=(it&&it.url)||'';
   if(!/^https?:\/\//i.test(u)){toast('Walang valid Shopee link ang item');return;}
-  showShopFrame(u,(it.emoji||'🛍️')+' '+(it.name||'Shopee'),it.caption||it.note||'',it.price);
+  showShopFrame(u,(it.emoji||'🛍️')+' '+(it.name||'Shopee'),it.caption||it.note||'',it.price,it&&it.id);
   cart.push(it);updateCart();
   toast('🛍️ '+(it.name||'Item')+' — nasa game ka pa rin!');
 }
 /* 🏬 PER-OFFICE PRODUCT POSTS — Shopee-compliant (link nasa loob ng post) */
-const OFFICE_NAMES={ceo:'👑 CEO OFFICE',work:'💻 OPEN WORK',conf:'🧠 CONFERENCE',fun:'🛋️ SALA',pantry:'☕ PANTRY',bay:'🖥️ SERVER BAY'};
+const OFFICE_NAMES={ceo:'👑 COMMAND CENTER',work:'💻 OPERATIONS HUB',conf:'🤝 MEETING ROOM',fun:'🎨 CREATIVE STUDIO',pantry:'🍿 PANTRY & GAME LOUNGE',bay:'🧠 THE BRAIN!'};
 function officePosts(id){return ((S&&S.mall)||[]).filter(m=>(m.cat||'shopee')==='office:'+id);}
 function openOfficeDialog(id){
   const dlg=$('officePostDialog');if(!dlg)return;
@@ -4857,6 +4933,13 @@ $('hireRun').onclick=async()=>{
 /* ✨? JUMP TO LOCATION: isang pindot, diretso sa lugar! */
 const JUMP_VIEWS={
   hq:{t:[20,1.2,14],phi:.6,theta:.5,r:44},
+  ceo:{t:[3.3,1.2,10.85],phi:.55,theta:.3,r:12},
+  work:{t:[10.6,1.2,10.85],phi:.55,theta:.3,r:13},
+  conf:{t:[18.3,1.2,10.85],phi:.55,theta:.3,r:12},
+  fun:{t:[3.95,1.2,3.35],phi:.55,theta:.3,r:12},
+  pantry:{t:[10.5,1.2,3.35],phi:.55,theta:.3,r:11},
+  bay:{t:[17.55,1.2,3.35],phi:.55,theta:.3,r:12},
+  sleep:{t:[28,1.5,27],phi:.55,theta:.3,r:14},
   mall:{t:[23.8,5,-5],phi:.5,theta:.3,r:14},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
@@ -4866,14 +4949,19 @@ const JUMP_VIEWS={
   court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
   gym:{t:[54,1.5,26],phi:.55,theta:.3,r:18},
-  conf:{t:[28,1.5,27],phi:.55,theta:.3,r:14},
   cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
-  fun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
+  wfun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
 };
 function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
-$('jHq').onclick=e=>{e.stopPropagation();jumpTo('hq')};$('jMall').onclick=e=>{e.stopPropagation();jumpTo('mall')};$('jFarm').onclick=e=>{e.stopPropagation();jumpTo('farm')};$('jPark').onclick=e=>{e.stopPropagation();jumpTo('park')};$('jPool').onclick=e=>{e.stopPropagation();jumpTo('resort')};$('jLab').onclick=e=>{e.stopPropagation();jumpTo('lab')};
-$('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jEvent').onclick=e=>{e.stopPropagation();jumpTo('event')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
-$('jConf').onclick=e=>{e.stopPropagation();jumpTo('conf')};$('jCafeteria').onclick=e=>{e.stopPropagation();jumpTo('cafeteria')};$('jFun').onclick=e=>{e.stopPropagation();jumpTo('fun')};
+function bindJump(id,key){const b=$(id);if(b)b.onclick=e=>{e.stopPropagation();jumpTo(key)};}
+/* 3x3 HANAY NG MGA OFFICE */
+bindJump('jCeo','ceo');bindJump('jWork','work');bindJump('jConf','conf');
+bindJump('jFun','fun');bindJump('jPantry','pantry');bindJump('jBay','bay');
+bindJump('jSleep','sleep');bindJump('jCourt','court');bindJump('jGym','gym');
+/* IBA PANG ZONE */
+bindJump('jMall','mall');bindJump('jEvent','event');bindJump('jFarm','farm');
+bindJump('jPark','park');bindJump('jPool','resort');bindJump('jWCafe','cafeteria');
+bindJump('jLab','lab');bindJump('jWFun','wfun');
 $('liveZoneBtn').onclick=oneClickLive;
 $('liveOffBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(false)};
 /* ✨ ROBLOX-STYLE: WASD = lakad, Space = jump, E = harvest pananim! */
@@ -4963,7 +5051,7 @@ function despawnPlayer(){
   player=null;
   toast('🎮 CEO Mode OFF — normal camera na!');
 }
-$('jumpToggle').onclick=()=>{const l=$('jumpList');l.style.display=(l.style.display==='flex')?'none':'flex';};
+$('jumpToggle').onclick=()=>{const l=$('jumpList');l.style.display=(l.style.display==='grid')?'none':'grid';};
 $('playBtn').onclick=$('ceoModeBtn').onclick=()=>{
   playerMode=!playerMode;
   const _t=playerMode?'🎮 Playing... (click to stop)':'🎮 Maglaro (Roblox Mode)';$('ceoModeBtn').textContent=_t;$('playBtn').textContent=_t;
@@ -5258,6 +5346,121 @@ async function pubApi(p,o){
   catch(e){toast('Server error: '+e.message);return {ok:false}}
 }
 
+/* 🎤 EVENT STAGE AUTO-SHOW — server-time driven, countdown + bot hosts */
+var eventShowState={tick:0,index:-1,data:null,enabled:true,intervalMin:5};
+function eventShowHostSay(sh,idx){
+  if(!sh)return;
+  const hosts=Array.isArray(sh.hosts)&&sh.hosts.length?sh.hosts:['🤖 HOST BOT','🛍️ DEMO BOT','🎧 DJ BOT'];
+  const i=Math.abs(idx||0)%hosts.length,who=hosts[i],p=sh.product;
+  const line=p?('Next on stage: '+(p.emoji||'🛍️')+' '+p.name+' — ₱'+Number(p.price||0).toLocaleString('en-PH')+'. Pindutin ang stall para makita ang product post!'):'Welcome sa Cyborg Live Event Stage! Abangan ang susunod na demo.';
+  let actor=null;
+  try{
+    const crew=((g&&g.sportsBots)||[]).filter(b=>['pitcher','batter','fielder'].indexOf(b.role)>=0);
+    if(crew.length)actor=crew[i%crew.length].grp;
+  }catch(e){}
+  try{mmoSay(who,'🎤 '+who,line,actor||undefined)}catch(e){}
+}
+function updateEventShow(t,dt){
+  const s=eventShowState,now=Date.now();
+  if(now-(s.tick||0)>12000){
+    s.tick=now;
+    try{
+      fetch('/api/event/show',{cache:'no-store'}).then(r=>r.json()).then(j=>{
+        if(!j||!j.ok)return;
+        s.enabled=j.enabled!==false;s.intervalMin=j.intervalMin||5;
+        const sh=j.show||null;
+        if(sh&&sh.index!==s.index){s.index=sh.index;s.data=sh;try{eventShowHostSay(sh,sh.index||0)}catch(e){}}
+      }).catch(()=>{});
+    }catch(e){}
+  }
+  const card=$('eventShowCard');if(!card)return;
+  if(!s.enabled||!s.data||document.body.classList.contains('ui-hidden')){card.style.display='none';return;}
+  card.style.display='block';
+  const sh=s.data,left=Math.max(0,Math.ceil((sh.nextAt-now)/1000));
+  const mm=String(Math.floor(left/60)).padStart(2,'0'),ss=String(left%60).padStart(2,'0');
+  const p=sh.product;
+  const line=$('eventShowLine'),host=$('eventShowHost');
+  if(line)line.innerHTML='<b style="color:#ffd34d">⏱ '+mm+':'+ss+'</b> · '+(p?esc((p.emoji||'🛍️')+' '+p.name+' — ₱'+Number(p.price||0).toLocaleString('en-PH')):'Walang naka-set na product.');
+  if(host)host.textContent='🎙️ '+((sh.hosts||[])[Math.abs(sh.index||0)%Math.max(1,(sh.hosts||[]).length)]||'HOST BOT');
+}
+
+/* 🏆 VISITOR BADGES — zone visits, goods-only rewards (walang cash) */
+var BADGE_ZONES=[
+  {id:'ceo',x:3.3,z:10.85,n:'COMMAND CENTER'},{id:'work',x:10.6,z:10.85,n:'OPERATIONS HUB'},
+  {id:'conf',x:18.3,z:10.85,n:'MEETING ROOM'},{id:'fun',x:3.95,z:3.35,n:'CREATIVE STUDIO'},
+  {id:'pantry',x:10.5,z:3.35,n:'PANTRY & GAME LOUNGE'},{id:'bay',x:17.55,z:3.35,n:'THE BRAIN!'},
+  {id:'sleep',x:28,z:27,n:'SLEEP QUARTERS'},{id:'court',x:30,z:8,n:'PICKLEBALL COURT'},
+  {id:'gym',x:54,z:26,n:'GYM'},{id:'mall',x:23.8,z:-5,n:'Mall'},
+  {id:'event',x:46,z:-22,n:'Event Stage'},{id:'park',x:15,z:42,n:'Park'},
+  {id:'farm',x:22,z:56,n:'Farm'}
+];
+var badgeZoneState={sent:{},last:0,vid:''};
+function handleBadgeAward(a){
+  if(!a)return;
+  toast('🏆 Badge unlocked: '+(a.emoji||'')+' '+(a.name||'Badge')+' — +'+(a.coins||0)+' tokens, +'+(a.xp||0)+' XP (Shopee goods only)');
+  try{mmoLog('🏆 SYSTEM','Badge unlocked: '+(a.name||'')+' — goods-only rewards','#ffd34d')}catch(e){}
+  try{renderBzBadges()}catch(e){}
+  try{if(bzVisitor)refreshBz()}catch(e){}
+}
+async function renderBzBadges(){
+  const box=document.getElementById('bzBadges');if(!box)return;
+  if(!bzVisitor){box.innerHTML='<div style="color:#9fb2d0">🏆 Badges: 🔵 Facebook login muna</div>';return;}
+  let j=null;try{j=await pubApi('/api/bazaar/badges')}catch(e){}
+  if(!j||!j.ok||!Array.isArray(j.badges))return;
+  box.innerHTML='<div style="color:#ffd34d;font-weight:700;margin-bottom:2px">🏆 Visitor badges</div>'+
+    j.badges.map(b=>'<div title="'+bzEsc(b.desc||'')+'" style="display:flex;align-items:center;gap:4px;margin:2px 0">'+
+      '<span>'+(b.earned?b.emoji:'🔒')+'</span><span style="flex:1;color:'+(b.earned?'#e9edf7':'#9fb2d0')+'">'+bzEsc(b.name)+'</span>'+
+      '<span style="font-size:9px">'+(b.earned?'✓':(b.progress||0)+'/'+b.need)+'</span></div>').join('')+
+    '<div style="margin-top:3px;font-size:9px;color:#9fb2d0">Rewards = tokens para sa Shopee goods. Walang cash.</div>';
+}
+function updateBadgeZones(t,dt){
+  if(typeof playerMode==='undefined'||!playerMode||!player)return;
+  if(typeof bzVisitor==='undefined'||!bzVisitor)return;
+  const now=Date.now(),vid=bzVisitor.id||'';
+  if(badgeZoneState.vid!==vid){badgeZoneState.vid=vid;badgeZoneState.sent={};badgeZoneState.last=0;}
+  if(now-(badgeZoneState.last||0)<900)return;
+  badgeZoneState.last=now;
+  for(const z of BADGE_ZONES){
+    if(badgeZoneState.sent[z.id])continue;
+    if(Math.hypot(player.x-z.x,player.z-z.z)<6){badgeZoneState.sent[z.id]=1;trackShop('zone_visit','',z.n,z.id);}
+  }
+}
+
+/* 📊 CEO TOOLS — analytics + event settings (CEO-only) */
+async function openCeoTools(){
+  if(!ceoPass){toast('👑 CEO login muna!');return;}
+  const d=$('ceoToolsDialog');if(!d)return;
+  try{d.showModal()}catch(e){}
+  const sum=$('anSummary'),items=$('anItems'),hours=$('anHours');
+  if(sum)sum.innerHTML='<span style="color:#9fb2d0">⏳ Naglo-load...</span>';
+  let r=null;try{r=await api('/api/ceo/shopee-analytics',{method:'POST',body:'{}'})}catch(e){}
+  if(!r||!r.ok){if(sum)sum.innerHTML='<span style="color:#ff7b7b">❌ '+bzEsc((r&&r.error)||'Hindi makuha ang analytics')+'</span>';return;}
+  const k=r.byKind||{};
+  if(sum)sum.innerHTML=[['🛍️ Stall clicks',k.stall_click||0],['📖 Product views',k.product_view||0],['🔗 New tab',k.newtab||0],['📍 Zone visits',k.zone_visit||0],['👥 Visitors',r.uniqueVisitors||0]]
+    .map(x=>'<span style="background:#16213c;border:1px solid #2f5fa8;border-radius:8px;padding:4px 7px">'+x[0]+': <b style="color:#ffd34d">'+(x[1]||0)+'</b></span>').join('');
+  if(items)items.innerHTML=(r.topItems||[]).length?r.topItems.map(x=>'<div style="border-bottom:1px solid #22325a;padding:2px 0">'+bzEsc(x.name||x.id)+' — <b style="color:#8fd0e8">'+(x.clicks||0)+' clicks</b> · '+(x.views||0)+' views · '+(x.newtab||0)+' new tab</div>').join(''):'<span style="color:#9fb2d0">Wala pang data. Pindutin ang mga stall sa Baguio market.</span>';
+  if(hours)hours.innerHTML=(r.busiestHours||[]).length?r.busiestHours.map(x=>'<span style="display:inline-block;background:#16213c;border:1px solid #2f5fa8;border-radius:7px;padding:3px 6px;margin:2px">'+(x.hour||'–')+':00 · '+x.n+'</span>').join(''):'<span style="color:#9fb2d0">Wala pang data.</span>';
+  try{
+    const st=await api('/api/ceo/event',{method:'POST',body:'{}'});
+    if(st&&st.ok){
+      const cb=$('eventShowEnabled'),sel=$('eventShowInterval'),info=$('eventShowStatus');
+      if(cb)cb.checked=st.enabled!==false;
+      if(sel)sel.value=String(st.intervalMin||5);
+      if(info)info.textContent='Auto-show: '+(st.enabled!==false?'ON':'OFF')+' · bawat '+(st.intervalMin||5)+' min · countdown ay nasa Event Stage card sa 3D.';
+    }
+  }catch(e){}
+}
+(function bindCeoTools(){
+  const b=$('ceoToolsBtn');if(b)b.onclick=openCeoTools;
+  const save=$('eventShowSave');
+  if(save)save.onclick=async()=>{
+    const cb=$('eventShowEnabled'),sel=$('eventShowInterval');
+    const r=await api('/api/ceo/event',{method:'POST',body:JSON.stringify({action:'set',enabled:!!(cb&&cb.checked),intervalMin:Number(sel&&sel.value)||5})});
+    toast(r&&r.ok?'✅ Event Stage show na-save!':'⚠ Hindi ma-save');
+    eventShowState.tick=0;
+  };
+})();
+
 /* ---------- 🩺 VISITOR CONTROL MONITOR (bots check controls) ---------- */
 var bzControlStats=null;
 function bzCtrl(){
@@ -5295,7 +5498,7 @@ function createBzPanel(){
   if(el)return el;
   el=document.createElement('div');el.id='bzPanel';
   el.style.cssText='position:fixed;top:70px;right:10px;z-index:55;width:186px;max-width:90vw;background:rgba(9,17,35,.40);border:1px solid rgba(201,162,39,.45);border-radius:10px;padding:5px 6px;color:#e9edf7;font-size:10px;box-shadow:0 3px 12px #0005;backdrop-filter:blur(1px)';
-  el.innerHTML='<div style="display:flex;align-items:center;gap:5px;font-weight:700;color:#ffd34d;cursor:pointer;font-size:10px" id="bzHead">🛒 BAZAAR<span style="flex:1"></span><span id="bzMin" title="Hide / show" style="font-size:11px">–</span></div><div id="bzBody" style="margin-top:4px"></div>';
+  el.innerHTML='<div style="display:flex;align-items:center;gap:5px;font-weight:700;color:#ffd34d;cursor:pointer;font-size:10px" id="bzHead">🛒 BAZAAR<span style="flex:1"></span><span id="bzMin" title="Hide / show" style="font-size:11px">–</span></div><div id="bzBody" style="margin-top:4px"></div><div id="bzBadges" style="margin-top:5px;border-top:1px solid rgba(201,162,39,.35);padding-top:4px"></div>';
   document.body.appendChild(el);
   document.getElementById('bzHead').onclick=()=>{
     const b=document.getElementById('bzBody');
@@ -5388,6 +5591,7 @@ async function refreshBz(){
   const r=await pubApi('/api/bazaar/profile');
   if(r&&r.visitor)bzVisitor=r.visitor;
   renderBzPanel();
+  try{renderBzBadges()}catch(e){}
   if(typeof buildPod3d==='function')buildPod3d();
   if(bzVisitor)await bzPingControls(false);
 }
@@ -5395,6 +5599,7 @@ async function bzTask(type,key){
   if(!bzVisitor)return null;
   const r=await pubApi('/api/bazaar/task',{method:'POST',body:JSON.stringify({type:type,key:key})});
   if(r&&r.visitor){bzVisitor=r.visitor;renderBzPanel();if(typeof buildPod3d==='function')buildPod3d();}
+  if(r&&r.awarded)handleBadgeAward(r.awarded);
   const x=r&&r.result;
   if(x&&x.reward)toast('🎁 +'+x.reward.coin+' reward tokens · +'+x.reward.xp+' XP'+(x.reward.levelUp?(' · LEVEL UP: '+x.reward.levelUp+'!'):''));
   if(x&&x.bonus)toast('🏆 Daily tasks complete! +'+x.bonus.coin+' tokens · +'+x.bonus.xp+' XP!');
@@ -5404,6 +5609,7 @@ async function bzCheckin(){
   if(!bzVisitor){toast('🔵 Facebook login muna!');return;}
   const r=await pubApi('/api/bazaar/checkin',{method:'POST',body:'{}'});
   if(r&&r.visitor){bzVisitor=r.visitor;renderBzPanel();}
+  if(r&&r.awarded)handleBadgeAward(r.awarded);
   if(r&&r.already){toast('✅ Checked in ka na today.');return;}
   if(r&&r.result&&r.result.reward)toast('📅 Check-in! +'+r.result.reward.coin+' tokens · +'+r.result.reward.xp+' XP');
   if(!r||!r.ok)toast('⚠ '+((r&&r.error)||'Hindi ma-check in'));
@@ -6448,7 +6654,7 @@ async function openCeoWish(){
 (async function(){
   try{BAZAAR_INFO=await pubApi('/api/bazaar/info')||{};}catch(e){}
   try{const j=await pubApi('/api/bazaar/profile');if(j&&j.visitor)bzVisitor=j.visitor;}catch(e){}
-  createBzPanel();renderBzPanel();createCeoWishBtn();createCeoAdsBtn();createCeoMonitorBtn();createCeoStudioBtn();createXmasBtn();createCeoConnectionsBtn();createUiHideBtn();
+  createBzPanel();renderBzPanel();try{renderBzBadges()}catch(e){}createCeoWishBtn();createCeoAdsBtn();createCeoMonitorBtn();createCeoStudioBtn();createXmasBtn();createCeoConnectionsBtn();createUiHideBtn();
   try{if(g.level){buildBazaar3d();buildPod3d();}}catch(e){}
   const cbtn=document.getElementById('careBtn');if(cbtn)cbtn.onclick=()=>openCareDialog();
   await loadCare(true);syncQuestPanel();
@@ -6456,6 +6662,209 @@ async function openCeoWish(){
   setInterval(async()=>{try{if(bzVisitor)await refreshBz()}catch(e){}},60000);
   setInterval(async()=>{try{await loadCare(true)}catch(e){}},90000);
   setInterval(()=>{bzPingControls(false)},12000);
+})();
+</script>
+<script>
+/* ========== 🤝 ONLINE MEETING — Taglish chat + nauutusan na bots ==========
+   VISITOR-SAFE: local camera/visual actions lang. Walang server save,
+   walang layout/settings/commands na binabago, walang CEO password. */
+(function(){
+  var IDS=['mgr','cos','seo','joker'];
+  var FALLBACK=[
+    {id:'mgr',n:'Bot Manager',i:'🧭'},
+    {id:'cos',n:'Chief of Staff',i:'🧠'},
+    {id:'seo',n:'SEO Caption Bot',i:'🔵'},
+    {id:'joker',n:'Office Jester',i:'🤡'}
+  ];
+  var st={turn:0,timers:[],started:false};
+  function bots(){
+    var all=(typeof S!=='undefined'&&S&&S.agents)||[];
+    return IDS.map(function(id,i){
+      var a=null;for(var k=0;k<all.length;k++){if(all[k].id===id){a=all[k];break;}}
+      a=a||FALLBACK[i];
+      return {id:id,n:a.n||a.name||FALLBACK[i].n,i:a.i||FALLBACK[i].i};
+    });
+  }
+  function actor(b){
+    var arr=(typeof chars3d!=='undefined'&&chars3d)||[];
+    for(var k=0;k<arr.length;k++){var c=arr[k];if(c.agent&&c.agent.id===b.id)return c;}
+    return null;
+  }
+  function mlog(who,text,color){
+    var el=document.getElementById('mtgLog');if(!el)return;
+    var d=document.createElement('div');d.style.cssText='margin:3px 0;word-break:break-word;line-height:1.35';
+    d.innerHTML='<b style="color:'+(color||'#8fd0e8')+'">'+esc(who)+'</b>: '+esc(text);
+    el.appendChild(d);while(el.children.length>60)el.removeChild(el.firstChild);
+    el.scrollTop=el.scrollHeight;
+  }
+  /* Isang bot ang magsasalita — lumalabas din ang bubble sa 3D via mmoSay */
+  function say(i,text){
+    var list=bots(),b=list[i%list.length];st.turn=(i+1)%list.length;
+    mlog((b.i||'🤖')+' '+b.n,text,'#ffd34d');
+    try{var a=actor(b);mmoSay(b.id,(b.i||'🤖')+' '+b.n,text,a||undefined);}catch(e){}
+  }
+  var ZONES=[
+    {re:/command center|\bhq\b|opisina|office/,key:'ceo',n:'COMMAND CENTER'},
+    {re:/operations|work hub|\bwork\b/,key:'work',n:'OPERATIONS HUB'},
+    {re:/meeting|boardroom/,key:'conf',n:'MEETING ROOM'},
+    {re:/creative|studio/,key:'fun',n:'CREATIVE STUDIO'},
+    {re:/pantry|game lounge|lounge|kape/,key:'pantry',n:'PANTRY & GAME LOUNGE'},
+    {re:/brain|\blab\b|server/,key:'bay',n:'THE BRAIN!'},
+    {re:/sleep|quarters|dorm/,key:'sleep',n:'SLEEP QUARTERS'},
+    {re:/pickle|court|basket/,key:'court',n:'PICKLEBALL COURT'},
+    {re:/\bgym\b|workout/,key:'gym',n:'GYM'},
+    {re:/mall|shopee|bili/,key:'mall',n:'MALL'},
+    {re:/event|stage/,key:'event',n:'EVENT STAGE'},
+    {re:/farm|bukid/,key:'farm',n:'FARM'},
+    {re:/pool|resort|beach/,key:'resort',n:'2F RESORT'}
+  ];
+  var MOVE=/punta|puntahan|pumunta|goto|go to|dalhin|samahan|sundan|tayo na|bring|lead|visitan|ipakita/;
+  var REPORT=[
+    'Tapos na ang report ko, CEO — walang pending na isyu. ✅',
+    'Ok ang numbers! Patuloy lang tayo sa Shopee posts at tasks. 📊',
+    'May 3 bagong product posts na naka-ready para sa mall. 🛍️',
+    'All systems go! Handa na ang team para sa susunod na meeting. 🤖'
+  ];
+  var TASK=[
+    'Opo, gagawin ko na po yan ngayon din. 🔧',
+    'Copy, CEO! Ilalagay ko sa task list at ia-update kita. ✅',
+    'Sige, ako na ang bahala — tapos ko bago matapos ang araw. ⏰',
+    'Nai-queue ko na. Ping kita pag tapos na! 💬'
+  ];
+  var GREET=[
+    'Kumusta, CEO! 👋 Andito na ang buong team sa meeting.',
+    'Hi! Sige, nakinig na ako. Ano ang agenda natin? ✨',
+    'Hello po! Handa na akong makipag-usap at tumanggap ng utos. 🤝'
+  ];
+  var DEFAULT=[
+    'Sige, CEO! 👍 Naintindihan ko ang sinabi mo.',
+    'Opo, tatalakayin natin yan sa meeting na to. 💬',
+    'Copy that! Itutuloy ko ang trabaho. ✨',
+    'Gets ko, CEO — sabihin mo lang kung may gusto ka pang utusan. 🤖'
+  ];
+  function pick(a){return a[Math.floor(Math.random()*a.length)];}
+  /* === COMMAND PARSER — whitelist ng LIGTAS at lokal na utos lang === */
+  function handle(txt){
+    var s=String(txt||'').toLowerCase().trim();
+    /* Stop / pause */
+    if(/tigil|tumahimik|stop|quit|hintay muna|pause/.test(s)){
+      st.timers.forEach(clearTimeout);st.timers=[];
+      say(st.turn,'Sige, titigil muna ako. Sabihin mo lang ulit kung kailangan mo ako. 🤐');return;
+    }
+    /* Sumunod / follow (camera lang, walang save) */
+    if(/sumunod|follow|sundan|samahan mo ako/.test(s)){
+      var a=actor(bots()[st.turn]);
+      if(a){try{followBot=a;if(cam3d)cam3d.r=Math.min(cam3d.r,16);}catch(e){}
+        say(st.turn,'Sumunod na ako sa'+(typeof ceoPass!=='undefined'&&ceoPass?' CEO':'yo')+'! 🤝 I-click mo lang ako para bitawan.');}
+      else say(st.turn,'Nandito lang ako sa MEETING ROOM, sama na ako! 🤝');
+      return;
+    }
+    /* Party / sayaw */
+    if(/sayaw|party|dance|celebrate|celebration/.test(s)){
+      try{partyUntil=Date.now()+15000;var cs=(typeof chars3d!=='undefined'&&chars3d)||[];
+        cs.forEach(function(c){c.act='dance';c.actT=13000;c.actLine='💃 Sayaw tayo!';});}catch(e){}
+      say(3,'Party mode na! Sayaw tayo, team! 💃🎉');return;
+    }
+    /* Ulan */
+    if(/ulan|rain|tag-ulan/.test(s)){
+      try{rainOn=!rainOn;var rb=document.getElementById('rainBtn');if(rb)rb.textContent=rainOn?'☔ Tumitila':'☔ Ulan';}catch(e){}
+      say(st.turn,rainOn?'Umuulan na sa campus! ☔ Mag-ingat sa paglakad.':'Tumigil na ang ulan, araw na ulit! 🌤️');return;
+    }
+    /* Gabi / araw */
+    if(/gabi|night|umaga|araw mode|day mode/.test(s)){
+      try{nightManual=nightManual===true?false:true;var nb=document.getElementById('nightBtn');if(nb)nb.textContent=nightManual?'🌙 Araw':'🌙 Gabi';}catch(e){}
+      say(st.turn,nightManual?'Gabi mode na! 🌙 City of lights!':'Araw na ulit! ☀️');return;
+    }
+    /* Live — manwal pa rin ang FB Go Live */
+    if(/live|stream|facebook|go live/.test(s)){
+      say(st.turn,'Live Cam pwede, pero ang FB Go Live ay manual: pindutin ang 🎬 LIVE button, tapos pindutin ang Go Live sa Facebook Studio. 🎬');return;
+    }
+    /* Status / report */
+    if(/report|status|update|ano ang ginagawa|progress|balita|update mo/.test(s)){
+      say(1,pick(REPORT));return;
+    }
+    /* Task / utos sa trabaho */
+    if(/task|trabaho|gawin|gawin mo|utos|assign|work mo/.test(s)){
+      say(2,pick(TASK));return;
+    }
+    /* Punta sa zone */
+    var zone=null;for(var i=0;i<ZONES.length;i++){if(ZONES[i].re.test(s)){zone=ZONES[i];break;}}
+    if(MOVE.test(s)&&zone){
+      try{jumpTo(zone.key);}catch(e){}
+      say(0,'Sige, punta tayo sa '+zone.n+'! Sumunod ka na! 🏃');return;
+    }
+    /* Kumusta */
+    if(/hi|hello|hey|kumusta|good morning|yo\b/.test(s)){say(st.turn,pick(GREET));return;}
+    /* Salamat */
+    if(/salamat|thanks|ty\b/.test(s)){say(st.turn,pick(['Welcome po! 🙌','Salamat din! 💛','Happy to help, CEO! ✨']));return;}
+    /* Default */
+    say(st.turn,pick(DEFAULT));
+  }
+  /* === UI === */
+  function intros(){
+    var lines=[
+      'Meeting na tayo! Ako si Bot Manager — ako ang bahala sa schedule at pagpunta sa zones. 🧭',
+      'Chief of Staff ako. Agenda natin: status, tasks, at mga susunod na hakbang. 🧠',
+      'SEO Caption Bot ako — pag-usapan natin ang content at Shopee product posts. 🔵',
+      'Office Jester ako! Pagod? Sabihin mo lang, magpa-party tayo! 🤡🎉'
+    ];
+    bots().forEach(function(b,i){
+      st.timers.push(setTimeout(function(){say(i,lines[i]);},450+i*700));
+    });
+  }
+  function build(){
+    var d=bzMakeDialog('mtgDialog','🤝 ONLINE MEETING — Taglish sa mga Bots','min(500px,94vw)');
+    var body=document.getElementById('mtgDialogBody');if(!body)return d;
+    if(!document.getElementById('mtgLog')){
+      var cards=bots().map(function(b){
+        return '<div style="flex:1;min-width:100px;background:rgba(18,32,64,.85);border:1px solid #2f5fa8;border-radius:8px;padding:6px;text-align:center">'+
+          '<div style="font-size:20px">'+(b.i||'🤖')+'</div>'+
+          '<div style="color:#e9edf7;font-size:10px;font-weight:700;line-height:1.2">'+esc(b.n)+'</div>'+
+          '<div style="color:#7ee2a8;font-size:9px">● ONLINE</div></div>';
+      }).join('');
+      var chips=[['👋 Kumusta','kumusta'],['📊 Status','status report'],['🛍️ Punta Mall','punta tayo sa mall'],
+        ['🏋️ Punta Gym','punta tayo sa gym'],['🎉 Party','sayaw tayo'],['☔ Ulan','ulan'],['🌙 Gabi','gabi'],
+        ['🤝 Sumunod','sumunod'],['🛑 Tigil','tigil']].map(function(c){
+        return '<button data-cmd="'+c[1]+'" style="font-size:10px;padding:3px 7px;cursor:pointer;background:#16213c;color:#c9e8ff;border:1px solid #2f5fa8;border-radius:12px">'+c[0]+'</button>';
+      }).join('');
+      body.innerHTML=
+        '<div style="display:flex;gap:5px;margin-bottom:8px">'+cards+'</div>'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px">'+chips+'</div>'+
+        '<div id="mtgLog" style="height:190px;overflow-y:auto;background:rgba(6,14,32,.85);border:1px solid #223a63;border-radius:9px;padding:7px;font-size:11px;color:#dfe8f7"></div>'+
+        '<div style="display:flex;gap:5px;margin-top:8px">'+
+          '<input id="mtgIn" maxlength="160" placeholder="Mag-type ng message o utos sa Taglish..." autocomplete="off" style="flex:1;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:8px;padding:7px;font-size:11px">'+
+          '<button id="mtgSend" style="background:linear-gradient(135deg,#2bb37a,#2a8a7a);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer">➤ Send</button></div>'+
+        '<div style="color:#9fb2d0;font-size:9px;margin-top:6px">💬 Taglish ang usapan · Utos: punta, sayaw, ulan, gabi, sumunod, status, task, tigil · Local lang, walang binabagong saved settings.</div>';
+      body.querySelectorAll('[data-cmd]').forEach(function(btn){
+        btn.onclick=function(){var i=document.getElementById('mtgIn');if(i){i.value=btn.getAttribute('data-cmd');send();}};
+      });
+      document.getElementById('mtgSend').onclick=send;
+      document.getElementById('mtgIn').addEventListener('keydown',function(e){
+        if(e.key==='Enter'){e.preventDefault();e.stopPropagation();send();}
+      });
+      mlog('🌐 SYSTEM','Meeting started. Mag-type ka o pindutin ang command chips. Sumasagot ang bots sa Taglish!','#c9a227');
+    }
+    return d;
+  }
+  function send(){
+    var inp=document.getElementById('mtgIn');if(!inp)return;
+    var txt=inp.value.trim().slice(0,160);if(!txt)return;
+    inp.value='';
+    mlog(typeof ceoPass!=='undefined'&&ceoPass?'👑 CEO':'🧑 Visitor',txt,'#8fd0e8');
+    st.timers.push(setTimeout(function(){handle(txt);},420+Math.random()*420));
+  }
+  function openMeeting(){
+    var d=build();if(!d)return;
+    if(!d.open){try{d.showModal();}catch(e){}}
+    try{if(typeof jumpTo==='function')jumpTo('conf');}catch(e){}
+    var inp=document.getElementById('mtgIn');if(inp)setTimeout(function(){inp.focus();},120);
+    if(!st.started){st.started=true;intros();}
+  }
+  /* Wire buttons */
+  function wire(id,fn){var b=document.getElementById(id);if(b)b.onclick=fn;}
+  wire('meetingBtn',function(e){e.stopPropagation();openMeeting();});
+  wire('jMeeting',function(e){e.stopPropagation();openMeeting();});
+  window.openMeeting=openMeeting;
 })();
 </script>
 </body>
