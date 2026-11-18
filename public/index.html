@@ -90,7 +90,6 @@ body.ui-hidden #bzQuestPanel,
 body.ui-hidden #oc3d #eventShowCard,
 body.ui-hidden #ceoFab,
 body.ui-hidden #lockFab,
-body.ui-hidden #mtgDialog,
 body.ui-hidden .bub3d{display:none!important}
 #eventShowCard{pointer-events:none}
 #eventShowCard b{font-variant-numeric:tabular-nums}
@@ -6502,6 +6501,12 @@ function createUiHideBtn(){
 }
 function toggleUiHide(force){
   const on=(typeof force==='boolean')?force:!document.body.classList.contains('ui-hidden');
+  if(on){
+    /* Modal dialog Hindi pwede itago lang — kailangang isara, kundi ma-i-inert ang buong page (WASD hindi gumagana). */
+    try{document.querySelectorAll('dialog[open]').forEach(function(d){if(typeof d.close==='function')d.close();});}catch(e){}
+    try{if(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))document.activeElement.blur();}catch(e){}
+    try{var cv=document.querySelector('#oc3d canvas');if(cv&&cv.focus)cv.focus();}catch(e){}
+  }
   document.body.classList.toggle('ui-hidden',on);
   try{localStorage.setItem('uiHidden',on?'1':'0');}catch(e){}
   updateUiHideBtn();
@@ -6815,6 +6820,13 @@ async function openCeoWish(){
   function build(){
     var d=bzMakeDialog('mtgDialog','🤝 ONLINE MEETING — Taglish sa mga Bots','min(500px,94vw)');
     var body=document.getElementById('mtgDialogBody');if(!body)return d;
+    if(!d.dataset.closeWired){
+      d.dataset.closeWired='1';
+      d.addEventListener('close',function(){
+        var i=document.getElementById('mtgIn');if(i)i.blur();
+        try{var cv=document.querySelector('#oc3d canvas');if(cv&&cv.focus)cv.focus();}catch(e){}
+      });
+    }
     if(!document.getElementById('mtgLog')){
       var cards=bots().map(function(b){
         return '<div style="flex:1;min-width:100px;background:rgba(18,32,64,.85);border:1px solid #2f5fa8;border-radius:8px;padding:6px;text-align:center">'+
@@ -6834,12 +6846,13 @@ async function openCeoWish(){
         '<div style="display:flex;gap:5px;margin-top:8px">'+
           '<input id="mtgIn" maxlength="160" placeholder="Mag-type ng message o utos sa Taglish..." autocomplete="off" style="flex:1;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:8px;padding:7px;font-size:11px">'+
           '<button id="mtgSend" style="background:linear-gradient(135deg,#2bb37a,#2a8a7a);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer">➤ Send</button></div>'+
-        '<div style="color:#9fb2d0;font-size:9px;margin-top:6px">💬 Taglish ang usapan · Utos: punta, sayaw, ulan, gabi, sumunod, status, task, tigil · Local lang, walang binabagong saved settings.</div>';
+        '<div style="color:#9fb2d0;font-size:9px;margin-top:6px">💬 Taglish ang usapan · Utos: punta, sayaw, ulan, gabi, sumunod, status, task, tigil · Pindutin ang × o Escape para makalakad ulit (WASD). · Local lang, walang binabagong saved settings.</div>';
       body.querySelectorAll('[data-cmd]').forEach(function(btn){
         btn.onclick=function(){var i=document.getElementById('mtgIn');if(i){i.value=btn.getAttribute('data-cmd');send();}};
       });
       document.getElementById('mtgSend').onclick=send;
       document.getElementById('mtgIn').addEventListener('keydown',function(e){
+        if(e.key==='Escape'){e.preventDefault();e.stopPropagation();d.close();return;}
         if(e.key==='Enter'){e.preventDefault();e.stopPropagation();send();}
       });
       mlog('🌐 SYSTEM','Meeting started. Mag-type ka o pindutin ang command chips. Sumasagot ang bots sa Taglish!','#c9a227');
