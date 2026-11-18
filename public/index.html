@@ -95,6 +95,13 @@ body.ui-hidden .bub3d{display:none!important}
 #eventShowCard b{font-variant-numeric:tabular-nums}
 .jz{font-size:10px;line-height:1.15;padding:4px 2px;min-height:34px;cursor:pointer;background:#16213c;color:#e9edf7;border:1px solid #2f5fa8;border-radius:6px}
 .jz:hover{background:#20406e;color:#fff}
+.zoneCard{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 3px;background:#16213c;color:#e9edf7;border:1px solid #2f5fa8;border-radius:8px;cursor:pointer;min-width:0}
+.zoneCard:hover{background:#20406e;transform:translateY(-1px)}
+.zoneCard:active{transform:translateY(0)}
+.zoneImg{width:100%;height:36px;display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px;box-shadow:inset 0 0 0 1px #ffffff18,0 2px 5px #0006}
+.zoneName{font-size:8.5px;line-height:1.15;font-weight:700;text-align:center;letter-spacing:.2px;min-height:20px;display:flex;align-items:center;justify-content:center}
+.zoneCard.small .zoneImg{height:26px;font-size:17px}
+.zoneCard.small .zoneName{font-size:8px;min-height:18px}
 #uiHideBtn{background:linear-gradient(135deg,#3f5f8a,#2f5fa8);color:#fff;font-weight:700}
 #mmoChatHead{display:flex;align-items:center;gap:4px;padding:3px 6px;background:linear-gradient(90deg,#16325d,#102342);color:#cfe0ff;font-size:10px;font-weight:700;cursor:pointer;user-select:none}
 #mmoChatBody{flex:1;display:flex;flex-direction:column;min-height:0}
@@ -189,27 +196,27 @@ dialog::backdrop{background:#000a}
       <div id="jumpPanel" style="display:none;position:absolute;right:8px;bottom:8px;z-index:9999;background:rgba(10,18,40,.82);padding:4px;border-radius:7px;border:1px solid rgba(47,95,168,.7);pointer-events:auto;box-shadow:none">
         <button id="jumpToggle" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:6px">📍 Zones</button>
         <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:6px;margin-left:3px">🎬 LIVE</button>
-        <div id="jumpList" style="display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-top:4px;width:318px">
-          <div style="grid-column:1/-1;text-align:center;color:#8fd0e8;font-weight:700;font-size:10px;letter-spacing:.5px">🏢 MGA OFFICE — 3×3 HANAY</div>
-          <button id="jCeo" class="jz">👑 COMMAND<br>CENTER</button>
-          <button id="jWork" class="jz">💻 OPERATIONS<br>HUB</button>
-          <button id="jConf" class="jz">🤝 MEETING<br>ROOM</button>
-          <button id="jFun" class="jz">🎨 CREATIVE<br>STUDIO</button>
-          <button id="jPantry" class="jz">🍿 PANTRY &amp;<br>GAME LOUNGE</button>
-          <button id="jBay" class="jz">🧠 THE<br>BRAIN!</button>
-          <button id="jSleep" class="jz">😴 SLEEP<br>QUARTERS</button>
-          <button id="jCourt" class="jz">🏓 PICKLEBALL<br>COURT</button>
-          <button id="jGym" class="jz">💪 GYM</button>
+        <div id="jumpList" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:5px;width:330px">
+          <div style="grid-column:1/-1;text-align:center;color:#8fd0e8;font-weight:700;font-size:10px;letter-spacing:.5px">🏢 MGA OFFICE — GRID NG ZONES</div>
+          <button id="jCeo" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#3a2c5e,#5b3f8c)">👑</span><span class="zoneName">COMMAND CENTER</span></button>
+          <button id="jWork" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#1e3a5f,#2d5f8c)">💻</span><span class="zoneName">OPERATIONS HUB</span></button>
+          <button id="jConf" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#2b4a4a,#31736b)">🤝</span><span class="zoneName">MEETING ROOM</span></button>
+          <button id="jFun" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#5b2f52,#8c3f6b)">🎨</span><span class="zoneName">CREATIVE STUDIO</span></button>
+          <button id="jPantry" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#5c4520,#8c6a2d)">🍿</span><span class="zoneName">PANTRY &amp; GAME LOUNGE</span></button>
+          <button id="jBay" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#243a63,#35589c)">🧠</span><span class="zoneName">THE BRAIN!</span></button>
+          <button id="jSleep" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#2c2f52,#454a80)">😴</span><span class="zoneName">SLEEP QUARTERS</span></button>
+          <button id="jCourt" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#2e4a34,#4b7a44)">🏓</span><span class="zoneName">PICKLEBALL COURT</span></button>
+          <button id="jGym" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#5a2b2b,#8c4242)">💪</span><span class="zoneName">GYM</span></button>
           <div style="grid-column:1/-1;text-align:center;color:#ffd34d;font-weight:700;font-size:10px;margin-top:3px">📍 IBA PANG ZONE</div>
-          <button id="jMeeting" class="jz" style="color:#7ee2a8;border-color:#2bb37a">🤝 ONLINE<br>MEETING</button>
-          <button id="jMall" class="jz">🛍️ MALL</button>
-          <button id="jEvent" class="jz">🎤 EVENT</button>
-          <button id="jFarm" class="jz">🌱 FARM</button>
-          <button id="jPark" class="jz">🚙 PARKING</button>
-          <button id="jPool" class="jz">🌊 2F RESORT</button>
-          <button id="jWCafe" class="jz">☕ WING CAFE</button>
-          <button id="jLab" class="jz">🧪 LAB</button>
-          <button id="jWFun" class="jz">🛋️ WING FUN</button>
+          <button id="jMeeting" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#1e4a3a,#2b7a55)">🤝</span><span class="zoneName">ONLINE MEETING</span></button>
+          <button id="jMall" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#4a2c5e,#733f8c)">🛍️</span><span class="zoneName">MALL</span></button>
+          <button id="jEvent" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#5c2b2b,#8c4242)">🎤</span><span class="zoneName">EVENT</span></button>
+          <button id="jFarm" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#2e4a24,#4b7a34)">🌱</span><span class="zoneName">FARM</span></button>
+          <button id="jPark" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#33383f,#555e6a)">🚙</span><span class="zoneName">PARKING</span></button>
+          <button id="jPool" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#1e435c,#2d7296)">🌊</span><span class="zoneName">2F RESORT</span></button>
+          <button id="jWCafe" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#4a3520,#7a5a2d)">☕</span><span class="zoneName">WING CAFE</span></button>
+          <button id="jLab" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#1e4a4a,#2d8080)">🧪</span><span class="zoneName">LAB</span></button>
+          <button id="jWFun" class="zoneCard small"><span class="zoneImg" style="background:linear-gradient(135deg,#4a2c4a,#7a4170)">🛋️</span><span class="zoneName">WING FUN</span></button>
           <button id="liveOffBtn" style="display:none;grid-column:1/-1;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
         </div>
       </div>
