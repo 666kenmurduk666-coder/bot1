@@ -1507,17 +1507,32 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/fb/login' && req.method === 'GET') {
       const c = fbCfg();
       if (!c.id || !c.secret || !c.redirect) return sendJSON(res, 200, { ok: false, error: 'Facebook login is not configured yet' });
-      const st = crypto.randomBytes(16).toString('hex');
+      const nonce = crypto.randomBytes(16).toString('hex');
+      const ts = Date.now().toString(36);
+      const sig = crypto.createHmac('sha256', c.secret).update(ts + '.' + nonce).digest('hex').slice(0, 32);
+      const st = ts + '.' + nonce + '.' + sig;
       oauthStates.set(st, Date.now());
       const url = 'https://www.facebook.com/v19.0/dialog/oauth?client_id=' + encodeURIComponent(c.id)
         + '&redirect_uri=' + encodeURIComponent(c.redirect)
-        + '&scope=public_profile&response_type=code&state=' + st;
+        + '&scope=public_profile,email&response_type=code&state=' + st;
       res.writeHead(302, { Location: url });
       return res.end();
     }
     if (p === '/api/fb/callback' && req.method === 'GET') {
       const st = String(u.searchParams.get('state') || ''), code = String(u.searchParams.get('code') || '');
-      const issued = oauthStates.get(st);
+      let issued = oauthStates.get(st);
+      // stateless fallback: signed state survives server restarts / multiple instances
+      if (!issued) {
+        const parts = st.split('.');
+        if (parts.length === 3) {
+          const c0 = fbCfg();
+          const expect = crypto.createHmac('sha256', c0.secret).update(parts[0] + '.' + parts[1]).digest('hex').slice(0, 32);
+          if (expect === parts[2] && /^[0-9a-z]+$/i.test(parts[0])) {
+            const t = parseInt(parts[0], 36);
+            if (Number.isFinite(t) && Date.now() - t <= 10 * 60 * 1000) issued = t;
+          }
+        }
+      }
       if (!issued || Date.now() - issued > 10 * 60 * 1000) return sendJSON(res, 400, { ok: false, error: 'Expired Facebook login. Try again.' });
       oauthStates.delete(st);
       if (!code) return sendJSON(res, 400, { ok: false, error: 'Facebook login was cancelled.' });
