@@ -76,20 +76,34 @@ const state = {
 
 function defaultLayout() {
   return { rooms: [
-    { id:'hq', name:'Main HQ', w:13, h:13, floor:'hq', items:[
-      {id:'core',type:'holo',a:6,b:6,label:'Core'},
-      {id:'d1',type:'desk',a:2,b:2,label:'Drop'},
-      {id:'d2',type:'desk',a:5,b:1.5,label:'Editor'},
-      {id:'d3',type:'desk',a:9,b:2,label:'Revise'},
-      {id:'d4',type:'desk',a:1.5,b:6,label:'SEO'},
-      {id:'d5',type:'desk',a:10,b:6,label:'Scheduler'},
-      {id:'d6',type:'desk',a:2,b:10,label:'Posting'},
-      {id:'stage',type:'stage',a:5.5,b:10,label:'Demo stage'},
-      {id:'ceo',type:'ceo_desk',a:9,b:9,label:'CEO'},
-      {id:'portal',type:'portal',a:6,b:12,label:'Entry'},
-      {id:'n1',type:'neon',a:3.5,b:4,label:''},
-      {id:'n2',type:'neon',a:9,b:4,label:''},
-      {id:'srv',type:'server',a:12,b:2,label:'Servers'}
+    { id:'hq', name:'PIXEL OFFICE 🏢', w:20, h:14, floor:'hq', items:[
+      // maayos na hanay ng workstations (Pixel-style: kaliwang bahagi)
+      {id:'pw1',type:'desk',a:1,b:2,label:'Dev'},
+      {id:'pw2',type:'desk',a:3.5,b:2,label:'Editor'},
+      {id:'pw3',type:'desk',a:6,b:2,label:'Revise'},
+      {id:'pw4',type:'desk',a:8.5,b:2,label:'SEO'},
+      {id:'pw5',type:'desk',a:1,b:5,label:'Research'},
+      {id:'pw6',type:'desk',a:3.5,b:5,label:'Writer'},
+      {id:'pw7',type:'desk',a:6,b:5,label:'Scheduler'},
+      {id:'pw8',type:'desk',a:8.5,b:5,label:'Posting'},
+      {id:'pwb',type:'whiteboard',a:1,b:.4,label:'Sprint board'},
+      {id:'pbk',type:'bookshelf',a:8.5,b:.4,label:'Library'},
+      // lounge corner (kanan: sofa + coffee + halaman)
+      {id:'ps1',type:'sofa',a:13,b:2,label:''},
+      {id:'ps2',type:'sofa',a:16,b:2,label:''},
+      {id:'pct',type:'coffee',a:14.5,b:4,label:''},
+      {id:'pbb1',type:'beanbag',a:12,b:5,label:''},
+      {id:'pbb2',type:'beanbag',a:18,b:5,label:''},
+      {id:'pp1',type:'plant',a:11.5,b:1,label:''},
+      {id:'pp2',type:'plant',a:19,b:1,label:''},
+      {id:'pp3',type:'plant',a:11.5,b:12.5,label:''},
+      // core, CEO, servers, entry
+      {id:'pholo',type:'holo',a:10,b:8,label:'Core'},
+      {id:'pceo',type:'ceo_desk',a:15,b:10,label:'CEO'},
+      {id:'psrv',type:'server',a:18.5,b:10,label:'Servers'},
+      {id:'pport',type:'portal',a:10,b:13,label:'Entry'},
+      {id:'pn1',type:'neon',a:3,b:8,label:''},
+      {id:'pn2',type:'neon',a:8,b:8,label:''}
     ]},
     { id:'cafeteria', name:'Cafeteria', w:10, h:9, floor:'cafe', items:[
       {id:'c1',type:'coffee',a:1,b:1,label:'Coffee'},
@@ -114,6 +128,43 @@ function defaultLayout() {
       {id:'wb2',type:'whiteboard',a:7,b:1,label:'Strategy'},
       {id:'bk',type:'bookshelf',a:7,b:5,label:'Library'},
       {id:'mn',type:'monitor',a:1,b:6,label:'Dashboard'}
+    ]},
+    { id:'meeting', name:'MEETING ROOM 🧠', w:12, h:9, floor:'conf', items:[
+      {id:'mt1',type:'table',a:3,b:3,label:''},
+      {id:'mt2',type:'table',a:5.5,b:3,label:''},
+      {id:'mt3',type:'table',a:8,b:3,label:''},
+      {id:'mc1',type:'chair',a:3,b:1.5,label:''},
+      {id:'mc2',type:'chair',a:5.5,b:1.5,label:''},
+      {id:'mc3',type:'chair',a:8,b:1.5,label:''},
+      {id:'mc4',type:'chair',a:3,b:5,label:''},
+      {id:'mc5',type:'chair',a:5.5,b:5,label:''},
+      {id:'mc6',type:'chair',a:8,b:5,label:''},
+      {id:'mwb',type:'whiteboard',a:4.5,b:.2,label:'Agenda'},
+      {id:'mmon',type:'monitor',a:9,b:.4,label:'Dashboard'},
+      {id:'mbk',type:'bookshelf',a:.4,b:4,label:'Notes'},
+      {id:'mpl',type:'plant',a:10.5,b:7.5,label:''}
+    ]},
+    { id:'court', name:'COURT 🏀', w:14, h:10, floor:'fun', items:[
+      {id:'cf',type:'court',a:.5,b:.5,label:'Court A'},
+      {id:'ch1',type:'hoop',a:1.2,b:5,label:''},
+      {id:'ch2',type:'hoop',a:12.6,b:5,label:''},
+      {id:'cb1',type:'bench',a:5,b:.2,label:'Team A'},
+      {id:'cb2',type:'bench',a:9,b:.2,label:'Team B'},
+      {id:'cm',type:'monitor',a:6.5,b:.2,label:'Score'},
+      {id:'cp1',type:'plant',a:.5,b:9,label:''},
+      {id:'cp2',type:'plant',a:13,b:9,label:''}
+    ]},
+    { id:'gym', name:'GYM 💪', w:12, h:9, floor:'fun', items:[
+      {id:'gt1',type:'treadmill',a:1,b:1,label:'Tread 1'},
+      {id:'gt2',type:'treadmill',a:3,b:1,label:'Tread 2'},
+      {id:'gt3',type:'treadmill',a:5,b:1,label:'Tread 3'},
+      {id:'gw1',type:'weights',a:1,b:4,label:'Dumbbells'},
+      {id:'gw2',type:'weights',a:3.5,b:4,label:'Rack'},
+      {id:'gb1',type:'bench',a:6,b:4,label:'Bench'},
+      {id:'gb2',type:'bench',a:8.5,b:4,label:'Bench 2'},
+      {id:'gma',type:'monitor',a:10,b:1,label:'TV'},
+      {id:'gp1',type:'plant',a:11,b:7.5,label:''},
+      {id:'gp2',type:'plant',a:.5,b:7.5,label:''}
     ]}
   ]};
 }
@@ -131,6 +182,21 @@ const savedRoutines = readJSON(ROUTINES_FILE, null);
 state.routines = Array.isArray(savedRoutines) ? savedRoutines.slice() : DEFAULT_ROUTINES.slice();
 DEFAULT_ROUTINES.forEach(d => { if (!state.routines.some(r => r.id === d.id)) state.routines.push(d); });
 state.layout = readJSON(LAYOUT_FILE, null) || defaultLayout();
+// 🔄 Pixel-style layout migration: idagdag ang bagong rooms kahit may lumang saved layout.
+// Hindi binubura ang custom layout — idinadagdag lang ang kulang, at i-u-update ang HQ kung halatang old default pa ito.
+(function migratePixelLayout(){
+  try {
+    const fresh = defaultLayout();
+    (fresh.rooms || []).forEach(fr => {
+      const cur = (state.layout.rooms || []).find(r => r.id === fr.id);
+      if (!cur) { state.layout.rooms.push(fr); return; }
+      if (fr.id === 'hq' && (cur.items || []).some(it => it.id === 'd1' || it.id === 'core')
+          && !(cur.items || []).some(it => it.id === 'pw1')) {
+        cur.w = fr.w; cur.h = fr.h; cur.name = fr.name; cur.items = fr.items;
+      }
+    });
+  } catch (e) { console.warn('Pixel layout migrate skipped:', e.message); }
+})();
 state.sources = Array.isArray(state.config.sources) ? state.config.sources : [];
 
 // Restore volatile-looking state from disk so restarts keep history.
@@ -335,7 +401,8 @@ function saveStateNow() {
     visitors: state.visitors, bazaarSecret: state.bazaarSecret,
     bazaarShares: state.bazaarShares.slice(-300), bazaarStats: state.bazaarStats,
     campaigns: state.campaigns, payouts: state.payouts.slice(-300),
-    redemptions: state.redemptions.slice(-300), commercials: state.commercials.slice(-60)
+    redemptions: state.redemptions.slice(-300), commercials: state.commercials.slice(-60),
+    botCare: state.botCare
   });
 }
 function scheduleSave() {
@@ -659,6 +726,23 @@ const AGENT_META = [
   {id:'joker',n:'Office Jester',i:'🤡',c:'#f472b6',group:'staff',room:'fun',desc:'Keeps morale high with clean jokes and memes.'}
 ];
 
+/* 🐾 CARE & RETURN — Tamagotchi bot battery/mood + FarmVille-style visitor garden.
+   Time-based decay ay kinakalculate sa read, kaya walang timer na kailangang tumakbo.
+   Kapag bumalik ang bisita, lowbat ang bots at uhaw/patuyo ang halaman → may dahilan magbalik. */
+const CARE = {
+  botFullMs: 12 * 3600 * 1000,       // 12 oras para maubos ang battery
+  botMoodMs: 18 * 3600 * 1000,       // mas mabagal ang mood kaysa battery
+  waterWindowMs: 20 * 3600 * 1000,   // 20 oras bago mauhaw
+  witherMs: 36 * 3600 * 1000,        // 36 oras bago matuyo/mamatay
+  minWaterGapMs: 30 * 60 * 1000,     // 30 minuto gap per plot (anti-spam)
+  dailyCap: 8, dailyRewardCap: 5,
+  crops: ['🌱 Sprout', '🍓 Cheebee Berry', '🌽 Data Corn']
+};
+state.botCare = (savedState.botCare && typeof savedState.botCare === 'object') ? savedState.botCare : {};
+AGENT_META.forEach(a => {
+  if (!state.botCare[a.id]) state.botCare[a.id] = { battery: 100, mood: 100, lastCharge: Date.now() };
+});
+
 async function runAll() {
   if (state.running || state.stopped) return { ok: false, reason: state.stopped ? 'stopped' : 'busy' };
   state.running = true;
@@ -890,6 +974,60 @@ function sponsoredGrant(v, coin, xp, rate) {
   r.unfunded = funded <= 0;
   return r;
 }
+
+/* ---------- 🐾 CARE & RETURN helpers ---------- */
+function careClamp(n) { return Math.max(0, Math.min(100, Math.round(Number(n) || 0))); }
+function careDay(v) {
+  const d = ensureVisitorDay(v);
+  if (!d.care || typeof d.care !== 'object') d.care = { acts: 0, rewarded: 0 };
+  return d.care;
+}
+function botCareView(id, now) {
+  now = now || Date.now();
+  const c = state.botCare[id] || { battery: 100, mood: 100, lastCharge: now };
+  const lc = Number(c.lastCharge) || now;
+  const e = Math.max(0, now - lc);
+  const battery = careClamp((c.battery == null ? 100 : Number(c.battery)) - e / CARE.botFullMs * 100);
+  const mood = careClamp((c.mood == null ? 100 : Number(c.mood)) - e / CARE.botMoodMs * 100);
+  const face = battery >= 65 ? '😄' : battery >= 35 ? '🙂' : battery >= 15 ? '😟' : '😵';
+  const label = battery >= 65 ? 'Masaya' : battery >= 35 ? 'OK lang' : battery >= 15 ? 'Lowbat na!' : 'Kailangan ng charge!';
+  return { id: id, battery: battery, mood: mood, face: face, label: label,
+    needCharge: battery < 35, lastCharge: lc };
+}
+function plotView(p, now) {
+  now = now || Date.now();
+  const planted = Number(p.planted) || now, watered = Number(p.watered) || planted;
+  const dry = Math.max(0, now - watered);
+  const health = dry <= CARE.waterWindowMs ? 100
+    : careClamp(100 - (dry - CARE.waterWindowMs) / (CARE.witherMs - CARE.waterWindowMs) * 100);
+  const growth = careClamp(p.growth || 0);
+  const stage = health <= 0 ? 'dead' : growth >= 100 ? 'ready' : growth >= 66 ? 'mature' : growth >= 33 ? 'growing' : 'sprout';
+  const ci = Math.max(0, Math.min(CARE.crops.length - 1, Number(p.crop) || 0));
+  const face = health <= 0 ? '💀' : dry > CARE.waterWindowMs ? '🥀' : dry > CARE.waterWindowMs * .6 ? '😟' : stage === 'ready' ? '🌾' : '🌿';
+  return { crop: CARE.crops[ci], health: health, growth: growth, stage: stage, face: face,
+    dryMs: dry, dead: health <= 0, ready: stage === 'ready',
+    needWater: health > 0 && dry >= CARE.minWaterGapMs,
+    thirsty: dry > CARE.waterWindowMs * .6 };
+}
+function ensureVisitorFarm(v) {
+  if (!v.farm || !Array.isArray(v.farm.plots)) {
+    const now = Date.now();
+    // Unang pasok: may uhaw at may halos matuyo na — may agad na aalagaan.
+    v.farm = { plots: [
+      { crop: 0, planted: now - 26 * 3600e3, watered: now - 14 * 3600e3, growth: 20 },
+      { crop: 1, planted: now - 40 * 3600e3, watered: now - 23 * 3600e3, growth: 55 },
+      { crop: 2, planted: now - 8 * 3600e3,  watered: now - 3 * 3600e3,  growth: 70 }
+    ] };
+    scheduleSave();
+  }
+  return v.farm;
+}
+function careReward(v, coin, xp) {
+  const c = careDay(v);
+  if (c.rewarded >= CARE.dailyRewardCap) return { capped: true };
+  c.rewarded++;
+  return sponsoredGrant(v, coin, xp, TASK_SPONSOR_RATE);
+}
 function markVisitorTask(v, type, key) {
   const def = BAZAAR_TASKS.find(t => t.id === type);
   if (!def) return null;
@@ -1023,7 +1161,7 @@ const server = http.createServer(async (req, res) => {
     const ghOld = guard.get(ip), nowMs = Date.now();
     if (ghOld && ghOld.bad >= 10 && ghOld.lastBad && nowMs - ghOld.lastBad < 600000) {
       // locked out: bisita mode lang — PERO ang TOTOONG CEO na may tamang password, papasukin!
-      if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/')) {
+      if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
         if (p === '/api/unlock') {
           const b = await body(req);
           if (String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg')) {
@@ -1039,7 +1177,7 @@ const server = http.createServer(async (req, res) => {
     guard.set(ip, gh);
     // ===== SECURITY: password lock sa lahat ng CEO actions (bisita: tingin lang) =====
     if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders'
-        && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/')) {
+        && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
       const b = await body(req);
       const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
       if (String(b.pass || '') !== real) {
@@ -1565,11 +1703,16 @@ const server = http.createServer(async (req, res) => {
           const fe = tj.error || {};
           const detail = [fe.type, fe.code, fe.error_subcode].filter(Boolean).join('/');
           log('⚠️ FB token exchange failed: ' + String(fe.message || 'unknown').slice(0, 160) + ' [' + detail + ']', 'bazaar');
-          // code already consumed by a prior callback (e.g. browser reload): if user is
-          // already logged in via cookie, just send them to the office instead of an error
-          if (String(fe.message || '').indexOf('used') >= 0 && visitorIdFrom(req)) {
-            res.writeHead(302, { Location: '/?bazaar=1' });
-            return res.end();
+          // code already consumed by a prior callback (browser prefetch/reload or a
+          // simultaneous retry): reuse the cached result or an existing login cookie
+          if (String(fe.message || '').indexOf('used') >= 0) {
+            const again = fbCodeCache.get(code);
+            const cv = again ? getOrCreateVisitor(again.id, again.name, again.picture) : null;
+            if (cv) setBazaarCookie(res, cv.id, cv.name, cv.picture);
+            if (cv || visitorIdFrom(req)) {
+              res.writeHead(302, { Location: '/?bazaar=1' });
+              return res.end();
+            }
           }
           return sendJSON(res, 400, { ok: false, error: 'Facebook token error: ' + String(fe.message || 'unknown').slice(0, 120) });
         }
@@ -1600,6 +1743,76 @@ const server = http.createServer(async (req, res) => {
       const id = visitorIdFrom(req);
       const v = id && state.visitors[id];
       return sendJSON(res, 200, { visitor: v ? visitorView(v) : null });
+    }
+    /* ===== 🐾 CARE & RETURN — pampublikong API (walang CEO password) ===== */
+    if (p === '/api/care/state' && req.method === 'GET') {
+      const now = Date.now();
+      const bots = AGENT_META.concat(state.hires || []).map(a => botCareView(a.id, now));
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      const farm = v ? ensureVisitorFarm(v).plots.map(pl => plotView(pl, now)) : null;
+      const c = v ? careDay(v) : { acts: 0, rewarded: 0 };
+      return sendJSON(res, 200, {
+        ok: true, bots: bots, farm: farm,
+        day: { acts: c.acts || 0, rewarded: c.rewarded || 0, cap: CARE.dailyCap, rewardCap: CARE.dailyRewardCap },
+        serverNow: now
+      });
+    }
+    if (p === '/api/care/act' && req.method === 'POST') {
+      const b = await body(req);
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna para mag-alaga.' });
+      const c = careDay(v);
+      if ((c.acts || 0) >= CARE.dailyCap)
+        return sendJSON(res, 200, { ok: false, error: 'Limit na sa pag-aalaga kada araw (' + CARE.dailyCap + '). Balik bukas! 🌅' });
+      const kind = String(b.kind || ''), now = Date.now();
+      let msg = '', bot = null;
+      if (kind === 'charge') {
+        const botId = String(b.id || '').slice(0, 40);
+        if (!AGENT_META.some(a => a.id === botId) && !(state.hires || []).some(a => a.id === botId))
+          return sendJSON(res, 200, { ok: false, error: 'Unknown bot' });
+        const cur = botCareView(botId, now);
+        if (cur.battery >= 95) return sendJSON(res, 200, { ok: false, error: 'Full battery na ang bot! ⚡' });
+        const st = state.botCare[botId] || (state.botCare[botId] = {});
+        st.battery = careClamp(cur.battery + 45);
+        st.mood = careClamp(cur.mood + 30);
+        st.lastCharge = now;
+        c.acts++;
+        careReward(v, 3, 3);
+        bot = botCareView(botId, now);
+        msg = '⚡ Na-charge ang bot! +' + 45 + ' battery';
+      } else if (kind === 'water' || kind === 'harvest' || kind === 'replant') {
+        const idx = Math.max(0, Math.min(2, Number(b.plot) || 0));
+        const farm = ensureVisitorFarm(v), pl = farm.plots[idx], pv = plotView(pl, now);
+        if (kind === 'water') {
+          if (pv.dead) return sendJSON(res, 200, { ok: false, error: 'Patay na ang halaman. I-replant muna!' });
+          if (!pv.needWater) return sendJSON(res, 200, { ok: false, error: 'Busog pa ang halaman. Balik mamaya! 💧' });
+          pl.watered = now;
+          pl.growth = careClamp((pl.growth || 0) + 34);
+          c.acts++;
+          careReward(v, 4, 4);
+          msg = '💧 Na-diligan! Tumubo ang ' + pv.crop;
+        } else if (kind === 'harvest') {
+          if (!pv.ready) return sendJSON(res, 200, { ok: false, error: 'Hinog pa lang ang ' + pv.crop + '. Hintayin ang 🌾!' });
+          pl.growth = 0; pl.planted = now; pl.watered = now;
+          pl.crop = ((Number(pl.crop) || 0) + 1) % CARE.crops.length;
+          c.acts++;
+          careReward(v, 8, 8);
+          msg = '🌾 Na-harvest! +8 reward tokens';
+        } else {
+          if (!pv.dead) return sendJSON(res, 200, { ok: false, error: 'Buhay pa ang halaman.' });
+          pl.planted = now; pl.watered = now; pl.growth = 10;
+          c.acts++;
+          msg = '🌱 Naitanim ulit! Alagaan mong mabuti.';
+        }
+      } else return sendJSON(res, 200, { ok: false, error: 'Unknown care action' });
+      log('🐾 ' + cleanTxt(v.name) + ' — ' + msg, 'bazaar');
+      const t = Date.now();
+      return sendJSON(res, 200, {
+        ok: true, msg: msg, bot: bot,
+        bots: AGENT_META.concat(state.hires || []).map(a => botCareView(a.id, t)),
+        farm: ensureVisitorFarm(v).plots.map(pl => plotView(pl, t)),
+        day: careDay(v), visitor: visitorView(v)
+      });
     }
     // 🩺 VISITOR CONTROL PING — bot nagche-check kung OK ang controls ng bisita
     if (p === '/api/bazaar/ping' && req.method === 'POST') {
