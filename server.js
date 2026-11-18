@@ -287,6 +287,10 @@ state.payouts = Array.isArray(savedState.payouts) ? savedState.payouts.slice(-30
 state.redemptions = Array.isArray(savedState.redemptions) ? savedState.redemptions.slice(-300) : [];
 // 🎬 Bot-hosted office commercials (CEO-made, visitor-shareable)
 state.commercials = Array.isArray(savedState.commercials) ? savedState.commercials.slice(-60) : [];
+// 📊 Shopee stall analytics — visitor-exempt tracking, CEO-only viewing
+state.shopAnalytics = Array.isArray(savedState.shopAnalytics) ? savedState.shopAnalytics.slice(-1200) : [];
+// 🎤 Event Stage auto-show settings (CEO-adjustable, server-time driven)
+state.eventShow = Object.assign({ enabled: true, intervalMin: 5 }, savedState.eventShow || {});
 function fundFromCampaigns(amount) {
   let need = Math.max(0, Number(amount) || 0), funded = 0;
   for (const c of state.campaigns) {
@@ -402,6 +406,7 @@ function saveStateNow() {
     bazaarShares: state.bazaarShares.slice(-300), bazaarStats: state.bazaarStats,
     campaigns: state.campaigns, payouts: state.payouts.slice(-300),
     redemptions: state.redemptions.slice(-300), commercials: state.commercials.slice(-60),
+    shopAnalytics: state.shopAnalytics.slice(-1200), eventShow: state.eventShow,
     botCare: state.botCare
   });
 }
@@ -890,6 +895,39 @@ const BAZAAR_TASKS = [
 const CORE_TASK_IDS = ['checkin', 'stalls', 'posts', 'bots', 'order'];
 const BAZAAR_BONUS = { coin: 30, xp: 30 };
 const POD_PARTS = { desk: 20, pc: 30, chair: 15, plant: 10, sign: 25, shelf: 30 };
+// 🏆 Visitor badges — goods-only rewards (tokens for Shopee goods, never cash)
+const VISITOR_BADGES = [
+  { id: 'explorer', name: 'Explorer',   emoji: '🧭', desc: 'Bisitahin ang 3 zones',        coins: 15, xp: 10, need: 3 },
+  { id: 'shopper',  name: 'Shopper',    emoji: '🛍️', desc: 'Pindutin ang 3 Shopee stalls', coins: 20, xp: 12, need: 3 },
+  { id: 'regular',  name: 'Regular',    emoji: '⭐', desc: 'Mag-check-in ng 3 araw',       coins: 30, xp: 20, need: 3 },
+  { id: 'vip',      name: 'VIP',        emoji: '👑', desc: 'Tapusin lahat ng daily tasks', coins: 50, xp: 30, need: 1 }
+];
+const EVENT_HOSTS = ['🤖 HOST BOT', '🛍️ DEMO BOT', '🎧 DJ BOT'];
+function ensureVisitorBadges(v) {
+  v.zones = Array.isArray(v.zones) ? v.zones.slice(-40) : [];
+  v.badgeStalls = Array.isArray(v.badgeStalls) ? v.badgeStalls.slice(-60) : [];
+  v.badgeDays = Array.isArray(v.badgeDays) ? v.badgeDays.slice(-60) : [];
+  v.badges = Array.isArray(v.badges) ? v.badges : [];
+  return v;
+}
+function badgeProgress(v, id) {
+  ensureVisitorBadges(v);
+  if (id === 'explorer') return v.zones.length;
+  if (id === 'shopper') return v.badgeStalls.length;
+  if (id === 'regular') return v.badgeDays.length;
+  if (id === 'vip') { const d = ensureVisitorDay(v); return CORE_TASK_IDS.every(x => d.done[x]) ? 1 : 0; }
+  return 0;
+}
+function awardBadge(v, id) {
+  const def = VISITOR_BADGES.find(x => x.id === id);
+  if (!def || (v.badges || []).includes(id)) return null;
+  if (badgeProgress(v, id) < def.need) return null;
+  v.badges = (v.badges || []).concat(id);
+  const g = sponsoredGrant(v, def.coins, def.xp, def.coins / GOODS_TOKENS_PER_PESO);
+  log('🏆 ' + cleanTxt(v.name) + ' earned ' + def.emoji + ' ' + def.name + ' badge', 'bazaar');
+  scheduleSave();
+  return { id: def.id, name: def.name, emoji: def.emoji, coins: def.coins, xp: def.xp, sponsored: g.sponsored };
+}
 
 function bazaarDay() {
   const d = new Date();
@@ -926,7 +964,8 @@ function getOrCreateVisitor(id, name, picture) {
     v = {
       id: id, name: String(name || 'Visitor').slice(0, 60), picture: String(picture || '').slice(0, 500),
       coins: 0, xp: 0, earned: 0, paidOrders: 0, joined: Date.now(), day: null, wish: null,
-      pod: { desk: 0, pc: 0, chair: 0, plant: 0, sign: 0, shelf: 0 }
+      pod: { desk: 0, pc: 0, chair: 0, plant: 0, sign: 0, shelf: 0 },
+      zones: [], badgeStalls: [], badgeDays: [], badges: []
     };
     state.visitors[id] = v;
     scheduleSave();
@@ -956,7 +995,9 @@ function visitorView(v) {
     goodsRate: GOODS_TOKENS_PER_PESO,
     pod: v.pod || {}, wish: v.wish || null, joined: v.joined,
     day: d.date, tasks: tasks, bonus: BAZAAR_BONUS,
-    allDone: CORE_TASK_IDS.every(id => d.done[id])
+    allDone: CORE_TASK_IDS.every(id => d.done[id]),
+    badges: (ensureVisitorBadges(v).badges || []).slice(),
+    badgeProgress: Object.fromEntries(VISITOR_BADGES.map(b => [b.id, Math.min(b.need, badgeProgress(v, b.id))]))
   };
 }
 function grantVisitor(v, coin, xp) {
@@ -1647,6 +1688,26 @@ const server = http.createServer(async (req, res) => {
       const list = state.commercials.filter(x => x.status === 'active').slice(-12).reverse();
       return sendJSON(res, 200, { ok: true, commercials: list });
     }
+    // 🎤 Event Stage auto-show — deterministic schedule from server time
+    if (p === '/api/event/show' && req.method === 'GET') {
+      const intervalMin = Math.max(1, Math.min(60, Number(state.eventShow.intervalMin) || 5));
+      const intervalMs = intervalMin * 60000;
+      const now = Date.now();
+      const idx = Math.floor(now / intervalMs);
+      const nextAt = (idx + 1) * intervalMs;
+      const pool = (state.mall || []).filter(x => (x.cat || 'shopee') === 'grocery');
+      const items = (pool.length ? pool : state.mall || []).slice(0, 10);
+      const it = items.length ? items[idx % items.length] : null;
+      return sendJSON(res, 200, {
+        ok: true, enabled: state.eventShow.enabled !== false, intervalMin,
+        show: {
+          index: idx, startedAt: idx * intervalMs, nextAt,
+          secondsLeft: Math.max(0, Math.ceil((nextAt - now) / 1000)),
+          product: it ? { id: it.id, name: it.name, price: it.price, emoji: it.emoji || '🛍️', url: it.url || '', caption: it.caption || '' } : null,
+          hosts: EVENT_HOSTS
+        }
+      });
+    }
 
     if (p === '/api/fb/config' && req.method === 'GET') {
       const c = fbCfg();
@@ -1842,6 +1903,43 @@ const server = http.createServer(async (req, res) => {
       scheduleSave();
       return sendJSON(res, 200, { ok: true, pings: v.controls.pings });
     }
+    // 📊 Shopee analytics + zone visits (bisita-safe, capped, walang cash)
+    if (p === '/api/bazaar/track' && req.method === 'POST') {
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'No visitor' });
+      const b = await body(req);
+      const kind = String(b.kind || '');
+      if (!['stall_click', 'product_view', 'newtab', 'zone_visit'].includes(kind))
+        return sendJSON(res, 200, { ok: false, error: 'Unknown kind' });
+      ensureVisitorBadges(v);
+      const itemId = String(b.itemId || '').slice(0, 80);
+      const itemName = cleanTxt(b.itemName || '');
+      const zone = String(b.zone || '').slice(0, 40);
+      state.shopAnalytics.push({ kind, itemId, itemName, zone, vid: v.id, by: String(v.name || '').slice(0, 60), at: Date.now() });
+      if (state.shopAnalytics.length > 1200) state.shopAnalytics.splice(0, state.shopAnalytics.length - 1200);
+      let awarded = null;
+      if (kind === 'zone_visit' && zone && !v.zones.includes(zone)) {
+        v.zones.push(zone);
+        awarded = awardBadge(v, 'explorer');
+      }
+      if (kind === 'stall_click' && itemId && !v.badgeStalls.includes(itemId)) {
+        v.badgeStalls.push(itemId);
+        awarded = awardBadge(v, 'shopper') || awarded;
+      }
+      scheduleSave();
+      return sendJSON(res, 200, { ok: true, awarded, visitor: visitorView(v) });
+    }
+    // 🏆 Badge shelf — definitions + progress para sa kasalukuyang bisita
+    if (p === '/api/bazaar/badges' && req.method === 'GET') {
+      const id = visitorIdFrom(req), v = id && state.visitors[id];
+      if (!v) return sendJSON(res, 200, { ok: false, error: 'No visitor' });
+      ensureVisitorBadges(v);
+      const badges = VISITOR_BADGES.map(d => ({
+        id: d.id, name: d.name, emoji: d.emoji, desc: d.desc, coins: d.coins, xp: d.xp,
+        need: d.need, progress: Math.min(d.need, badgeProgress(v, d.id)), earned: v.badges.includes(d.id)
+      }));
+      return sendJSON(res, 200, { ok: true, badges, earned: v.badges.slice() });
+    }
     if (p === '/api/bazaar/demo' && req.method === 'POST') {
       const c = fbCfg();
       if (c.id && c.secret && c.redirect) return sendJSON(res, 200, { ok: false, error: 'Demo is off — use Facebook login.' });
@@ -1859,8 +1957,11 @@ const server = http.createServer(async (req, res) => {
       const d = ensureVisitorDay(v);
       if (d.done.checkin) return sendJSON(res, 200, { ok: true, already: true, visitor: visitorView(v) });
       const r = markVisitorTask(v, 'checkin', 'checkin');
+      ensureVisitorBadges(v);
+      if (!v.badgeDays.includes(d.date)) v.badgeDays.push(d.date);
+      const awarded = awardBadge(v, 'regular');
       log('🛒 ' + cleanTxt(v.name) + ' checked in (Day ' + d.date + ')', 'bazaar');
-      return sendJSON(res, 200, { ok: true, result: r, visitor: visitorView(v) });
+      return sendJSON(res, 200, { ok: true, result: r, awarded, visitor: visitorView(v) });
     }
     if (p === '/api/bazaar/task' && req.method === 'POST') {
       const b = await body(req);
@@ -1869,7 +1970,8 @@ const server = http.createServer(async (req, res) => {
       const type = String(b.type || '');
       if (!BAZAAR_TASKS.some(t => t.id === type)) return sendJSON(res, 200, { ok: false, error: 'Unknown task' });
       const r = markVisitorTask(v, type, b.key);
-      return sendJSON(res, 200, { ok: true, result: r, visitor: visitorView(v) });
+      const awarded = awardBadge(v, 'vip');
+      return sendJSON(res, 200, { ok: true, result: r, awarded, visitor: visitorView(v) });
     }
     if (p === '/api/bazaar/upgrade' && req.method === 'POST') {
       const b = await body(req);
@@ -2208,6 +2310,44 @@ const server = http.createServer(async (req, res) => {
         commissionRate: BAZAAR_COMMISSION_RATE, levelCut: LEVEL_CUT,
         goodsRate: GOODS_TOKENS_PER_PESO, redemptions: state.redemptions.slice(-20).reverse()
       });
+    }
+    // 📊 CEO Shopee analytics — aggregated stall clicks / product views / new-tab intent
+    if (p === '/api/ceo/shopee-analytics' && req.method === 'POST') {
+      const ev = state.shopAnalytics || [];
+      const byKind = { stall_click: 0, product_view: 0, newtab: 0, zone_visit: 0 };
+      const byItem = {}, byHour = {}, byVisitor = {};
+      for (const e of ev) {
+        byKind[e.kind] = (byKind[e.kind] || 0) + 1;
+        if (e.kind === 'stall_click' || e.kind === 'product_view' || e.kind === 'newtab') {
+          const key = e.itemId || e.itemName || 'unknown';
+          if (!byItem[key]) byItem[key] = { id: key, name: e.itemName || key, clicks: 0, views: 0, newtab: 0 };
+          if (e.kind === 'stall_click') byItem[key].clicks++;
+          else if (e.kind === 'product_view') byItem[key].views++;
+          else byItem[key].newtab++;
+        }
+        const hr = new Date(e.at).toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false });
+        byHour[hr] = (byHour[hr] || 0) + 1;
+        if (e.vid) byVisitor[e.vid] = (byVisitor[e.vid] || 0) + 1;
+      }
+      const topItems = Object.values(byItem).sort((a, b) => (b.clicks + b.views) - (a.clicks + a.views)).slice(0, 10);
+      const busiestHours = Object.entries(byHour).map(([hour, n]) => ({ hour, n })).sort((a, b) => b.n - a.n).slice(0, 6);
+      return sendJSON(res, 200, {
+        ok: true, total: ev.length, byKind,
+        uniqueVisitors: Object.keys(byVisitor).length,
+        topItems, busiestHours,
+        recent: ev.slice(-30).reverse()
+      });
+    }
+    // 🎤 CEO Event Stage show settings
+    if (p === '/api/ceo/event' && req.method === 'POST') {
+      const b = await body(req), act = String(b.action || 'get');
+      if (act === 'set') {
+        if (typeof b.enabled === 'boolean') state.eventShow.enabled = b.enabled;
+        if (b.intervalMin !== undefined) state.eventShow.intervalMin = Math.max(1, Math.min(60, Number(b.intervalMin) || 5));
+        scheduleSave();
+        log('🎤 Event Stage show ' + (state.eventShow.enabled ? 'ON' : 'OFF') + ' (every ' + state.eventShow.intervalMin + ' min)', 'CEO');
+      }
+      return sendJSON(res, 200, { ok: true, enabled: state.eventShow.enabled !== false, intervalMin: state.eventShow.intervalMin });
     }
     if (p === '/api/ceo/campaigns' && req.method === 'POST') {
       const b = await body(req), act = String(b.action || 'list');
