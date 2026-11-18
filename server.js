@@ -1511,7 +1511,7 @@ const server = http.createServer(async (req, res) => {
       oauthStates.set(st, Date.now());
       const url = 'https://www.facebook.com/v19.0/dialog/oauth?client_id=' + encodeURIComponent(c.id)
         + '&redirect_uri=' + encodeURIComponent(c.redirect)
-        + '&scope=public_profile,email&response_type=code&state=' + st;
+        + '&scope=public_profile&response_type=code&state=' + st;
       res.writeHead(302, { Location: url });
       return res.end();
     }
