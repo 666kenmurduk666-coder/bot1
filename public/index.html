@@ -175,15 +175,20 @@ dialog::backdrop{background:#000a}
     <div id="oc3d" style="display:none;position:relative">
       <button id="playBtn" title="Roblox-style controls: WASD = lakad, Space = jump, E = harvest" style="display:block;position:absolute;left:10px;bottom:10px;z-index:9999;background:linear-gradient(135deg,#e8622c,#f0723c);color:#fff;border:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px #0008;opacity:.95">🎮 Maglaro (Roblox Mode)</button>
       <div id="jumpPanel" style="position:absolute;right:10px;bottom:10px;z-index:9999;background:rgba(10,18,40,.9);padding:6px;border-radius:10px;border:2px solid #2f5fa8;pointer-events:auto;box-shadow:0 4px 20px #0008">
-        <button id="jumpToggle" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:8px">📍 Punta</button>
+        <button id="jumpToggle" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:8px">📍 Views</button>
+        <button id="liveZoneBtn" style="font-size:11px;padding:4px 8px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:8px;margin-left:4px">🎬 LIVE OFFICE · I-on</button>
         <div id="jumpList" style="display:none;flex-direction:column;gap:5px;margin-top:6px">
-          <button id="jHq" style="font-size:12px;padding:5px 8px;cursor:pointer">🏠 HQ</button>
+          <button id="jHq" style="font-size:12px;padding:5px 8px;cursor:pointer">🏢 Office</button>
           <button id="jMall" style="font-size:12px;padding:5px 8px;cursor:pointer">🛍️ Mall</button>
-          <button id="jFarm" style="font-size:12px;padding:5px 8px;cursor:pointer">🌾 Farm</button>
+          <button id="jFarm" style="font-size:12px;padding:5px 8px;cursor:pointer">🌱 Farm</button>
           <button id="jPark" style="font-size:12px;padding:5px 8px;cursor:pointer">🚙 Parking</button>
           <button id="jPool" style="font-size:12px;padding:5px 8px;cursor:pointer">🌊🍹 2F Resort</button>
           <button id="jLab" style="font-size:12px;padding:5px 8px;cursor:pointer">🧪 Lab</button>
+          <button id="jCourt" style="font-size:12px;padding:5px 8px;cursor:pointer">🏀 Court</button>
+          <button id="jGym" style="font-size:12px;padding:5px 8px;cursor:pointer">💪 Gym</button>
+          <button id="liveOffBtn" style="display:none;font-size:11px;padding:5px 8px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:8px">⏹ I-off ang Live</button>
         </div>
+        <div style="color:#9fb2d0;font-size:9px;margin-top:4px;line-height:1.3">Click ang 🎬 kiosk sa office · auto lahat ng view</div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
       <div id="mmoChat">
@@ -2061,6 +2066,12 @@ function buildRoom3d(id){
   cabinet3d(20.8,5.6);
   // watercooler sa corridor
   box3(.55,1.3,.55,'#dfe5ee',12.2,.65,7.2);cyl3(.22,.4,'#8fd0e8',12.2,1.45,7.2,true);
+  // 🎬 STREAMLABS LIVE ZONE — clickable kiosk para i-on ang LIVE CAM (office bots + lahat ng view)
+  box3(1.3,1.05,.65,'#1b2436',14.6,.52,7.2);
+  box3(1.05,.62,.06,'#e8622c',14.6,.95,6.85,true);
+  box3(.78,.4,.04,'#ff4d4d',14.6,.95,6.8,true);
+  cyl3(.05,.85,'#565e6e',14.6,.42,7.3);
+  mkWallSign('🎬 LIVE OFFICE',14.6,1.75,6.38,'#e8622c',0,2.2,.48);
   // ===== SLABS (3 floors + may butas para sa glass elevator sa x 10.9-12.1, z 2.9-4.1) =====
   const slabHole=yc=>{
     box3(10.9,.4,8.4,'#cfd6e2',5.45,yc,4.2);
@@ -2240,6 +2251,7 @@ function buildRoom3d(id){
   buildCoffeeCart3d();
   buildPlayground3d();
   buildSports3d();
+  buildGym3d();
   buildSportsBots3d();
   buildPoleLights3d();
   buildSunRays3d();
@@ -2312,12 +2324,25 @@ function buildRoom3d(id){
       });
       return best;
     };
+    // 🎬 pindutin ang LIVE OFFICE kiosk para i-on ang auto-showcase
+    const pickLiveZone=(cx,cy)=>{
+      if(!camera3d)return false;
+      const r=dom.getBoundingClientRect();
+      const nx=((cx-r.left)/r.width)*2-1,ny=-((cy-r.top)/r.height)*2+1;
+      return [[14.6,1.75,6.38],[14.6,.95,6.85],[14.6,.5,7.2]].some(p=>{
+        const v=new THREE.Vector3(p[0],p[1],p[2]).project(camera3d);
+        return Math.hypot(v.x-nx,v.y-ny)<.13;
+      });
+    };
     dom.addEventListener('mousedown',e=>{if(e.button!==0)return;drag=true;lx=e.clientX;ly=e.clientY;sx=e.clientX;sy=e.clientY;if(cam3d)cam3d.lastUser=Date.now()});
     window.addEventListener('mouseup',e=>{
       if(drag&&Math.abs(e.clientX-sx)<6&&Math.abs(e.clientY-sy)<6){
-        const b=pickBot(e.clientX,e.clientY);
-        if(b)setFollow(b);
-        else{const room=pickOffice(e.clientX,e.clientY);if(room){openOfficeDialog(room.id);}else if(followBot)setFollow(null);}
+        if(pickLiveZone(e.clientX,e.clientY))toggleLiveOffice(true);
+        else{
+          const b=pickBot(e.clientX,e.clientY);
+          if(b)setFollow(b);
+          else{const room=pickOffice(e.clientX,e.clientY);if(room){openOfficeDialog(room.id);}else if(followBot)setFollow(null);}
+        }
       }
       drag=false;
     });
@@ -2515,7 +2540,8 @@ let playerVelY=0,playerOnGround=true,coins=0;
 let farmPlots=[]; // ✨ GROW A GARDEN: mga pananim sa farm!
 let lastInteract=0;
 let liveOn=false,liveShot=0,liveNext=0; // ✨ LIVE CAM: auto-cycling camera para sa Streamlabs
-const LIVE_SHOTS=[[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[11,1.5,7,.4,.5,24],[21.5,1.5,16.5,.45,.9,10],[17,5.4,-5,.45,2.4,14],[12.5,5.4,-5,.5,.2,12],[23.8,5.4,-5,.45,.5,13]];
+// 🎬 Lahat ng view — office bots muna, sunod ang court/gym/mall/farm/park/pool/lab
+const LIVE_SHOTS=[[11,1.5,7,.4,.5,24],[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[21.5,1.5,16.5,.45,.9,10],[30,1.5,8,.5,.3,16],[30,1.5,26,.55,.3,18],[23.8,5.4,-5,.45,.5,13],[17,5.4,-5,.45,2.4,14],[13,1.5,23,.55,2.6,18],[31,1.5,-9,.55,.3,18],[22,1,56,.55,.2,28],[15,1,42,.6,.3,24]];
 let nightManual=null; // ✨ night mode: null=auto (18:00-6:00 PH), true/false=manual
 let rainOn=false,rainDrops=[],rainNoise=null; // ☔ ulan
 function spawnRainDrops(){
@@ -2915,6 +2941,28 @@ function buildSports3d(){
   mkLabel('BASEBALL FIELD ⚾',bx,bz-15,1.9,'#c9a227');
   const bb=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),m3('#fff8e8'));bb.castShadow=true;g.level.add(bb);
   g.sportsBalls.push({m:bb,kind:'baseball',hx:bx,hz:bz});
+}
+/* ===== 💪 GYM — treadmills + weights malapit sa basketball court ===== */
+function buildGym3d(){
+  const gx=30,gz=26;
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(11,8),m3('#3a4256'));
+  floor.rotation.x=-Math.PI/2;floor.position.set(gx,-.684,gz);floor.receiveShadow=true;g.level.add(floor);
+  [[gx,gz-3.9],[gx,gz+3.9]].forEach(z=>box3(11,.02,.1,'#f2f6ff',gx,-.66,z,true));
+  [-5.4,5.4].forEach(dx=>box3(.1,.02,8,'#f2f6ff',gx+dx,-.66,gz,true));
+  mkLabel('GYM 💪',gx,gz-5.2,1.9,'#c9a227');
+  // treadmill row
+  [-3.4,-1.1,1.2,3.5].forEach(dx=>{
+    box3(.85,.35,1.9,'#222b3d',gx+dx,.18,gz-1.4);
+    box3(.72,.12,1.5,'#3a4256',gx+dx,.42,gz-1.4);
+    box3(.6,.45,.06,'#8fe3ff',gx+dx,.9,gz-2.15,true);
+  });
+  // weights area
+  [-2.4,0,2.4].forEach(dx=>{
+    box3(1.5,.12,.7,'#565e6e',gx+dx,.06,gz+2);
+    [-.5,.5].forEach(off=>cyl3(.16,.16,'#9aa4b8',gx+dx+off,.2,gz+2));
+  });
+  box3(2.2,1,.18,'#223a63',gx,.55,gz+3.5);
+  box3(1.8,.62,.04,'#7ee2a8',gx,.6,gz+3.4,true);
 }
 /* ===== 🏃 SPORTS BOTS: mga round bot na naglalaro sa bawat field ===== */
 function makeSportBot3d(col,x,z){
@@ -4626,13 +4674,16 @@ $('vaultAdd').onclick=async()=>{
   if(r.ok){const j=await api('/api/state');if(S)S.accounts=j.accounts;renderVault();$('vaultLabel').value='';$('vaultUrl').value='';$('vaultNote').value='';toast('🔒 Nasa vault na! KEEPER nagbabantay!')}
   else toast('Error: '+(r.error||'hindi na-save'));
 };
-/* ✨ LIVE CAM: auto-cycling camera para sa Streamlabs 24/7 stream! */
-$('liveBtn').onclick=()=>{
-  liveOn=!liveOn;
+/* ✨ LIVE CAM: auto-cycling camera para sa Streamlabs / Facebook Live! */
+function toggleLiveOffice(force){
+  liveOn=(typeof force==='boolean')?force:!liveOn;
   $('liveBtn').textContent=liveOn?'🎬 Live ON':'🎬 Live';
-  if(liveOn){liveShot=0;liveNext=0;if(cam3d)cam3d.lastUser=0;toast('🎬 LIVE CAM ON — auto-showcase para sa Streamlabs! I-off kapag gusto mong kontrolin.')}
-  else toast('🎬 LIVE CAM OFF — manual control na!');
-};
+  const zb=$('liveZoneBtn');if(zb)zb.textContent=liveOn?'🎬 LIVE OFFICE · ON':'🎬 LIVE OFFICE · I-on';
+  const off=$('liveOffBtn');if(off)off.style.display=liveOn?'block':'none';
+  if(liveOn){liveShot=0;liveNext=0;if(cam3d)cam3d.lastUser=0;toast('🎬 LIVE OFFICE ON — bots + lahat ng view, auto-showcase para sa Facebook!')}
+  else toast('🎬 LIVE OFFICE OFF — manual control na!');
+}
+$('liveBtn').onclick=()=>toggleLiveOffice();
 /* ✨ HIRING: paste ng nicknames ? bagong bot sa office! */
 $('hireBtn').onclick=()=>{ $('hire').showModal(); };
 $('hireRun').onclick=async()=>{
@@ -4654,10 +4705,15 @@ const JUMP_VIEWS={
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
   pool:{t:[13,1.5,23],phi:.55,theta:2.6,r:18},
   lab:{t:[31,1.5,-9],phi:.55,theta:.3,r:18},
-  resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20}
+  resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
+  court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
+  gym:{t:[30,1.5,26],phi:.55,theta:.3,r:18}
 };
 function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
 $('jHq').onclick=e=>{e.stopPropagation();jumpTo('hq')};$('jMall').onclick=e=>{e.stopPropagation();jumpTo('mall')};$('jFarm').onclick=e=>{e.stopPropagation();jumpTo('farm')};$('jPark').onclick=e=>{e.stopPropagation();jumpTo('park')};$('jPool').onclick=e=>{e.stopPropagation();jumpTo('resort')};$('jLab').onclick=e=>{e.stopPropagation();jumpTo('lab')};
+$('jCourt').onclick=e=>{e.stopPropagation();jumpTo('court')};$('jGym').onclick=e=>{e.stopPropagation();jumpTo('gym')};
+$('liveZoneBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(true)};
+$('liveOffBtn').onclick=e=>{e.stopPropagation();toggleLiveOffice(false)};
 /* ✨ ROBLOX-STYLE: WASD = lakad, Space = jump, E = harvest pananim! */
 window.addEventListener('keydown',e=>{
   bzCtrlKey(e.key);
