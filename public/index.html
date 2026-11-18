@@ -3013,22 +3013,21 @@ function buildGym3d(){
 }
 /* ===== 🏢 OFFICE WING — malawak na dagdag na opisina, maayos na zones (Pixel-style) ===== */
 function buildOfficeWing3d(){
-  // malaking sahig ng bagong wing (kanan ng opisina, malayo sa court)
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(23,.1,17),m3('#cfd4da'));
-  deck.position.set(33,-.05,21.5);deck.receiveShadow=true;g.level.add(deck);
+  // malaking sahig ng bagong wing — nagsisimula sa z=14.2 (HINDI nakapatong sa HQ!)
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(23.2,.1,15.8),m3('#cfd4da'));
+  deck.position.set(32.9,-.05,22.1);deck.receiveShadow=true;g.level.add(deck);
   // connecting walkway mula sa lumang opisina papunta sa wing
-  const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,7.2),m3('#dfe4ec'));
-  link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,16.6);link.receiveShadow=true;g.level.add(link);
+  const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,6.4),m3('#dfe4ec'));
+  link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,17.4);link.receiveShadow=true;g.level.add(link);
   // daan papuntang gym (kanan ng wing)
   const gymLink=new THREE.Mesh(new THREE.PlaneGeometry(4.6,4),m3('#dfe4ec'));
   gymLink.rotation.x=-Math.PI/2;gymLink.position.set(46.5,.02,26);gymLink.receiveShadow=true;g.level.add(gymLink);
   mkLabel('💪 GYM →',46.5,26,.8,'#c9a227');
   // low glass railings — may butas sa office link at gym link
-  box3(23,.5,.09,'#a8d8ff',33,.25,29.9);                     // likod
-  box3(20.3,.5,.09,'#a8d8ff',34.25,.25,13.1);                 // harap (butas sa link)
-  box3(.09,.5,2.4,'#a8d8ff',21.6,.25,14.2);                   // kaliwa, itaas ng link
-  box3(.09,.5,11.4,'#a8d8ff',21.6,.25,24.3);                  // kaliwa, ibaba ng link
-  box3(.09,.5,11,'#a8d8ff',44.4,.25,18.5);                    // kanan, bago ang gym link
+  box3(23.2,.5,.09,'#a8d8ff',32.9,.25,30);                   // likod
+  box3(20.3,.5,.09,'#a8d8ff',34.25,.25,14.2);                 // harap (butas sa link)
+  box3(.09,.5,9.4,'#a8d8ff',21.6,.25,25.3);                   // kaliwa, pagkatapos ng link gap
+  box3(.09,.5,9.8,'#a8d8ff',44.4,.25,19.1);                   // kanan, bago ang gym link
   box3(.09,.5,2,'#a8d8ff',44.4,.25,29);                       // kanan, pagkatapos ng gym link
   const zone=(x,z,w,d,col,label)=>{
     const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
@@ -3359,7 +3358,7 @@ function buildBermudaGrass3d(){
     if(Math.hypot(x-50,z-12)<4)return true;                   // fountain (bagong posisyon)
     if(x>=36&&x<=40&&z>=9&&z<=12)return true;                // coffee cart (bagong posisyon)
     if(x>=8&&x<=16&&z>=25&&z<=31)return true;                // playground
-    if(x>=21.5&&x<=44.5&&z>=13&&z<=30)return true;           // office wing deck
+    if(x>=21.3&&x<=44.5&&z>=14.2&&z<=30)return true;          // office wing deck (hindi nakapatong sa HQ)
     if(x>=44.2&&x<=48.8&&z>=24&&z<=28)return true;           // gym link
     if(x>=48.5&&x<=59.5&&z>=22&&z<=30)return true;           // gym
     if(x>=1&&x<=23&&z>=-36&&z<=-4)return true;                // soccer field
