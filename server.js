@@ -153,7 +153,9 @@ state.accounts = Array.isArray(savedState.accounts) ? savedState.accounts : [];
 state.hires = Array.isArray(savedState.hires) ? savedState.hires : [];
 // 🛒 CYBORG BAZAAR: Facebook visitor profiles (coins, XP, daily tasks, desk pod)
 state.visitors = (savedState.visitors && typeof savedState.visitors === 'object' && !Array.isArray(savedState.visitors)) ? savedState.visitors : {};
-state.bazaarSecret = savedState.bazaarSecret || crypto.randomBytes(24).toString('hex');
+// Stable cookie signing key: must survive Render restarts / redeploys,
+// otherwise every visitor login cookie becomes invalid on restart.
+state.bazaarSecret = 'cyborg-bz-stable-v1';
 // 📣 Share attribution + office earnings mula sa trabaho ng mga bisita
 state.bazaarShares = Array.isArray(savedState.bazaarShares) ? savedState.bazaarShares.slice(-300) : [];
 // 💰 5% assumed affiliate commission; progressibong hatian sa visitor ayon sa level
@@ -939,13 +941,18 @@ function visitorIdFrom(req, fallback) {
   const ck = (req.headers.cookie || '').split(';').map(s => s.trim()).find(s => s.startsWith('bz='));
   if (ck) {
     const o = readBazaarToken(decodeURIComponent(ck.slice(3)));
-    if (o && o.id) return o.id;
+    if (o && o.id) {
+      // self-heal: rebuild visitor from signed cookie after a server restart wipes state
+      if (!state.visitors[o.id]) getOrCreateVisitor(o.id, o.name || 'Visitor', o.picture || '');
+      return o.id;
+    }
   }
   return fallback ? String(fallback).slice(0, 80) : null;
 }
-function setBazaarCookie(res, id) {
+function setBazaarCookie(res, id, name, picture) {
   const max = 30 * 86400;
-  res.setHeader('Set-Cookie', 'bz=' + encodeURIComponent(signBazaarToken({ id: id, exp: Date.now() + max * 1000 })) + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + max);
+  const v = state.visitors[id] || {};
+  res.setHeader('Set-Cookie', 'bz=' + encodeURIComponent(signBazaarToken({ id: id, name: String(name || v.name || '').slice(0, 60), picture: String(picture || v.picture || '').slice(0, 500), exp: Date.now() + max * 1000 })) + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + max);
 }
 
 /* ---------- HTTP helpers ---------- */
@@ -1549,7 +1556,7 @@ const server = http.createServer(async (req, res) => {
         if (!mj.id) return sendJSON(res, 400, { ok: false, error: 'Facebook profile error' });
         const pic = (mj.picture && mj.picture.data && mj.picture.data.url) || '';
         const v = getOrCreateVisitor('fb_' + mj.id, mj.name, pic);
-        setBazaarCookie(res, v.id);
+        setBazaarCookie(res, v.id, v.name, v.picture);
         log('🛒 FB visitor logged in: ' + cleanTxt(v.name), 'bazaar');
         res.writeHead(302, { Location: '/?bazaar=1' });
         return res.end();
@@ -1605,7 +1612,7 @@ const server = http.createServer(async (req, res) => {
       const name = cleanTxt(b.name || 'Guest') || 'Guest';
       const id = 'demo_' + crypto.createHash('sha1').update('bazaar:' + name.toLowerCase()).digest('hex').slice(0, 12);
       const v = getOrCreateVisitor(id, name, '');
-      setBazaarCookie(res, v.id);
+      setBazaarCookie(res, v.id, v.name, v.picture);
       return sendJSON(res, 200, { ok: true, visitor: visitorView(v) });
     }
     if (p === '/api/bazaar/checkin' && req.method === 'POST') {
