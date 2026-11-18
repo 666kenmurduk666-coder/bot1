@@ -1087,14 +1087,21 @@ function drawOffice(){
 let officeOn=false;
 function officeLoop(){
   if(!officeOn)return;
-  const use3d=selRoom==='hq'&&init3D();
-  const host=$('oc3d'),oc=$('oc');
-  if(host)host.style.display=use3d?'block':'none';
-  if(oc)oc.style.display=use3d?'none':'block';
-  if(use3d){frame3D();const info=$('officeInfo');if(info)info.textContent='3D 🖱️ drag = ikot · 🖱️ scroll = zoom · 👆 pindutin ang bot = sunod!'}
-  else if(selRoom==='hq')drawBuilding();
-  else drawOffice();
+  // Schedule the NEXT frame first: even if drawing throws below, the game
+  // keeps animating instead of freezing forever. Count errors for diagnostics.
   requestAnimationFrame(officeLoop);
+  try{
+    const use3d=selRoom==='hq'&&init3D();
+    const host=$('oc3d'),oc=$('oc');
+    if(host)host.style.display=use3d?'block':'none';
+    if(oc)oc.style.display=use3d?'none':'block';
+    if(use3d){frame3D();const info=$('officeInfo');if(info)info.textContent='3D 🖱️ drag = ikot · 🖱️ scroll = zoom · 👆 pindutin ang bot = sunod!'}
+    else if(selRoom==='hq')drawBuilding();
+    else drawOffice();
+  }catch(err){
+    officeLoop._errors=(officeLoop._errors||0)+1;
+    if(!officeLoop._warned){officeLoop._warned=true;try{console.warn('officeLoop recovered:',err&&err.message)}catch(e){}}
+  }
 }
 
 /* ---------- Tycoon HQ: one building floor, all rooms, glass partitions ---------- */
@@ -4472,7 +4479,16 @@ function frame3D(){
   const ch=actorRef||chars3d.find(c=>c.agent.id===speaker);
   if(ch&&line){
     if(line.length>64)line=line.slice(0,64).replace(/\s+\S*$/,'')+'…';
-    const v=new THREE.Vector3();ch.group.getWorldPosition(v);v.y+=2.5;v.project(camera3d);
+    const v=new THREE.Vector3();
+    // FIX: actorRef can be a real char ({group}) OR a raw THREE.Object3D
+    // (player.group / mmoAnchor from mmoSay). Never let bubble math crash
+    // the render loop — one throw here freezes the entire 3D game.
+    try{
+      const obj=(ch&&ch.group)||ch;
+      if(obj&&typeof obj.getWorldPosition==='function')obj.getWorldPosition(v);
+      else if(ch&&typeof ch.x==='number')v.set(ch.x,0,(typeof ch.z==='number')?ch.z:0);
+    }catch(err){}
+    v.y+=2.5;v.project(camera3d);
     const host=$('oc3d'),w=host.clientWidth||900;
     if(bub3d.dataset.who!==speaker||bub3d.dataset.line!==line){
       bub3d.dataset.who=speaker;bub3d.dataset.line=line;bub3d.dataset.t0=t;
