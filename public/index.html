@@ -222,7 +222,7 @@ dialog::backdrop{background:#000a}
           <button id="jCourt" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#2e4a34,#4b7a44)">🏓</span><span class="zoneName">PICKLEBALL COURT</span></button>
           <button id="jGym" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#5a2b2b,#8c4242)">💪</span><span class="zoneName">GYM</span></button>
           <button id="jMeeting" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#1e4a3a,#2b7a55)">🤝</span><span class="zoneName">ONLINE MEETING</span></button>
-          <button id="jMall" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#4a2c5e,#733f8c)">🛍️</span><span class="zoneName">MALL</span></button>
+          <button id="jMall" class="zoneCard"><span class="zoneImg" style="background:linear-gradient(135deg,#4a2c5e,#733f8c)">☕</span><span class="zoneName">KAFE</span></button>
           <button id="liveOffBtn" style="display:none;grid-column:1/-1;font-size:10px;padding:3px 6px;cursor:pointer;color:#ffb0b0;background:#552233;border:1px solid #a04444;border-radius:6px">⏹ Live Off</button>
         </div>
       </div>
@@ -2187,26 +2187,17 @@ function buildRoom3d(id){
   cyl3(.05,.35,'#5a4028',3.2,4.18,3.6);cyl3(.05,.35,'#5a4028',4.4,4.18,3.6);cyl3(.05,.35,'#5a4028',3.8,4.18,4.2);
   mkLabel('☕ KAFE LOUNGE',3.8,3.9,5.5,'#c9a227');
   // ===== THIRD FLOOR (top y=7.2): Recording Studio (kaliwa) + Lounge (kanan) =====
-  for(let a=1;a<10;a+=.62)box3(.5,.75,.12,a,8.15,.14);
-  box3(2.6,.75,1.2,'#7a4a22',5,7.58,3.4);
-  [[4.3,4.4],[5.7,4.4]].forEach(ch=>box3(.5,.9,.5,'#565e6e',ch[0],7.65,ch[1]));
-  cyl3(.06,.55,'#2a2f3a',4.4,8.25,3.05);cyl3(.1,.14,'#9aa0ac',4.4,8.58,3.05);
-  cyl3(.06,.55,'#2a2f3a',5.6,8.25,3.05);cyl3(.1,.14,'#9aa0ac',5.6,8.58,3.05);
-  cyl3(.06,1.5,'#565e6e',7.4,7.95,2);box3(.08,.08,1.5,'#565e6e',7.4,8.7,2.7);cyl3(.07,.2,'#2a2f3a',7.4,8.5,3.4);
-  cyl3(.05,.95,'#565e6e',8.3,7.67,4.7);box3(.55,.38,.4,'#222b3d',8.3,8.32,4.7);cyl3(.12,.16,'#10151f',8.3,8.32,4.4,true);
-  box3(1.1,.4,.12,'#5a1e1e',6.9,8.95,.22);box3(.92,.24,.05,'#ff4d4d',6.9,8.95,.3,true);
-  box3(3,.65,1,'#8a5a7a',13.8,7.52,1.6);box3(3,.55,.25,'#7a4a6a',13.8,8.1,1.15);
-  box3(1,.65,2.4,'#8a5a7a',3.5,7.52,3.6);box3(.25,.55,2.4,'#7a4a6a',10.85,8.1,3.6);
-  box3(1.7,.4,1,'#9fd8ff',13.9,7.42,3.8,true);
-  box3(.75,1.05,.65,'#2b6fa8',17,7.72,1.7);cyl3(.09,.18,'#ff8f5a',16.8,8.35,1.7,true);cyl3(.09,.18,'#8fe3ff',17.2,8.35,1.7,true);
-  [[12.4,6.2],[14.6,6.4]].forEach((bg3,i)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),m3(['#2bb3a6','#c9a227'][i]));m.position.set(bg3[0],7.55,bg3[1]);m.scale.y=.7;m.castShadow=true;g.level.add(m)});
-  // nap pods + speakers sa lounge (dito nagbabreak at nagsasayaw ang bots)
-  [[18.5,4.8],[20,4.8]].forEach(p3=>{
-    box3(1.1,.3,1.1,'#565e6e',p3[0],7.35,p3[1]);glass(1,.55,.95,p3[0],7.5,p3[1]);box3(.7,.12,.6,'#dfe6f0',p3[0],7.52,p3[1]);
+  // ☕ KAFE LOUNGE (floor 3) — puro kape at sofa, walang studio/lounge
+  box3(4.6,1,.9,'#6b4423',5,7.58,1.4);box3(4.2,.13,.8,'#d8c6a8',5,8.14,1.4); // coffee counter
+  box3(.8,1.3,.6,'#3a4256',7.9,7.9,1.4);box3(.5,.55,.05,'#8fe3ff',7.9,8.2,1.73,true); // coffee machine
+  [[3,4.2,'#8a4a7a'],[6.5,4.2,'#6a8a9a'],[3,6.6,'#6a8a9a'],[6.5,6.6,'#c9a227']].forEach(s=>{
+    box3(2,.42,.9,s[2],s[0],7.4,s[1]);box3(2,.4,.2,s[2],s[0],7.8,s[1]-.35);
+    box3(.25,.5,.9,s[2],s[0]-.9,7.65,s[1]);box3(.25,.5,.9,s[2],s[0]+.9,7.65,s[1]);
   });
-  [[12.5,4.8],[17.5,4.8]].forEach(s3=>{
-    box3(.5,1,.5,'#222b3d',s3[0],7.7,s3[1]);cyl3(.3,.05,'#8fe3ff',s3[0],8.24,s3[1],true);
-  });
+  const crug3=new THREE.Mesh(new THREE.PlaneGeometry(5.6,4.2),m3('#2b7d78'));crug3.rotation.x=-Math.PI/2;crug3.position.set(4.7,7.22,5.4);crug3.receiveShadow=true;g.level.add(crug3);
+  box3(1.6,.08,.9,'#7a5a34',4.7,7.55,5.4); // coffee table
+  cyl3(.05,.35,'#5a4028',4.1,7.38,5.1);cyl3(.05,.35,'#5a4028',5.3,7.38,5.1);cyl3(.05,.35,'#5a4028',4.7,7.38,5.7);
+  mkLabel('☕ KAFE LOUNGE',4.7,5.4,9.0,'#c9a227');
   // ===== GLASS ELEVATOR (x 11.5, z 3.5) =====
   glass(.06,10.7,1.2,10.9,5.4,3.5);glass(.06,10.7,1.2,12.1,5.4,3.5);glass(1.2,10.7,.06,11.5,5.4,2.9);
   [[10.9,2.9],[12.1,2.9],[10.9,4.1],[12.1,4.1]].forEach(p=>box3(.1,10.8,.1,'#e8eef8',p[0],5.4,p[1]));
@@ -2229,12 +2220,14 @@ function buildRoom3d(id){
   for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,3.5,.25)}
   for(let a=0;a<H;a+=.95){const z=a+.45;if(z>5.6&&z<8.4)continue;glass(.06,.95,.9,.25,3.5,z);glass(.06,.95,.9,W-.25,3.5,z)}
   for(let a=0;a<W;a+=.95){const x=a+.45;if(x>11.6&&x<14.4)continue;glass(.9,.95,.06,x,3.5,H-.25)}
-  [[3,2.2],[3,12.2],[19,2.2]].forEach(bp=>box3(2,.5,.65,'#8a6a44',bp[0],11.05,bp[1]));
-  cyl3(.07,1.1,'#565e6e',16.5,3.55,3);const tel=new THREE.Mesh(new THREE.CylinderGeometry(.14,.08,1,10),m3('#37415a'));tel.rotation.z=Math.PI/3;tel.position.set(16.5,11.95,3);tel.castShadow=true;g.level.add(tel);
-  box3(1.2,.7,.9,'#a8b0bc',19.8,11.15,5.4);box3(1.2,.7,.9,'#a8b0bc',19.8,11.15,6.6);cyl3(.35,.06,'#565e6e',19.8,11.55,6,true);
-  cyl3(.7,.9,'#8a95a8',2.2,11.75,5.2);[[1.7,4.9],[2.7,4.9],[1.7,5.5],[2.7,5.5]].forEach(l=>cyl3(.06,.7,'#565e6e',l[0],11.15,l[1]));
-  for(let x=1;x<W-1;x+=1.2){const d=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),m3('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9}));d.position.set(x,11.85,.4);g.level.add(d)}
-  for(let z=1;z<H-1;z+=1.2){const d=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),m3('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9}));d.position.set(W-.4,11.85,z);g.level.add(d)}
+  // ☕ ROOFTOP KAFE (top deck) — puro sofa at kapehan
+  box3(3,.42,.9,'#8a4a7a',4,11.15,2.4);box3(3,.4,.2,'#8a4a7a',4,11.55,2.05);
+  box3(.25,.5,.9,'#8a4a7a',3.1,11.4,2.4);box3(.25,.5,.9,'#8a4a7a',4.9,11.4,2.4);
+  box3(3,.42,.9,'#6a8a9a',9,11.15,2.4);box3(3,.4,.2,'#6a8a9a',9,11.55,2.05);
+  box3(.25,.5,.9,'#6a8a9a',8.1,11.4,2.4);box3(.25,.5,.9,'#6a8a9a',9.9,11.4,2.4);
+  box3(1.6,.08,.9,'#7a5a34',6.5,11.35,4.6); // coffee table
+  cyl3(.05,.3,'#5a4028',6,11.2,4.3);cyl3(.05,.3,'#5a4028',7,11.2,4.3);cyl3(.05,.3,'#5a4028',6.5,11.2,4.9);
+  mkLabel('☕ ROOFTOP KAFE',6.5,6.7,13.4,'#c9a227');
   // ===== LUMANG SATELLITE TOWERS + ROOFTOPS + BRIDGES TINANGGAL =====
   // (ghost wall shells, walang sahig/bubong - bar/pool/mall nasa 2F resort na lang)
   // room labels ginawa na sa bagong layout (itaas) — iwasang mag-doble
@@ -2543,42 +2536,19 @@ function buildRoom3d(id){
     box3(.07,.75,.9,'#cfe0f2',DX1+.05,DY+.42,z+.45);
     if(z!==-5&&z!==-4)box3(.07,.75,.9,'#cfe0f2',DX2-.05,DY+.42,z+.45); // 🛒 butas papuntang bazaar
   }
-  // --- BAR / TAMBAYAN ---
-  box3(3.6,1.05,.8,'#5b3a22',12.6,DY+.53,-7.2);box3(3.8,.1,.95,'#a86a34',12.6,DY+1.1,-7.2);
-  ['#8fe3ff','#ff8f5a','#c9a227','#2bb3a6','#c98ac9'].forEach((bc,i)=>cyl3(.09,.42,bc,11.3+i*.62,DY+1.38,-7.2,true));
-  [11.2,12.5,13.8].forEach(sx=>{cyl3(.1,.7,'#7c8ba3',sx,DY+.35,-5.9);cyl3(.28,.12,'#e8622c',sx,DY+.74,-5.9)});
-  mkWallSign('BAR 🍹 TAMBAYAN (2F)',12.5,DY+2.1,-2.4,'#ff8f5a',0,2.9,.55);
-  // --- POOL (inaangat sa 2F) ---
-  const PX1=15.8,PX2=21.6,PZ1=-8,PZ2=-3;
-  box3(PX2-PX1,.12,PZ2-PZ1,'#d9e2ee',(PX1+PX2)/2,DY+.02,(PZ1+PZ2)/2);
-  const water=new THREE.Mesh(new THREE.PlaneGeometry(PX2-PX1-.8,PZ2-PZ1-.8),new THREE.MeshStandardMaterial({color:'#2bb3d6',transparent:true,opacity:.82,roughness:.18,metalness:.25}));
-  water.rotation.x=-Math.PI/2;water.position.set((PX1+PX2)/2,DY+.09,(PZ1+PZ2)/2);g.level.add(water);g.poolWater=water;
-  [[PX1+.6,PZ1+.6],[PX2-.6,PZ1+.6],[PX1+.6,PZ2-.6],[PX2-.6,PZ2-.6]].forEach(p=>cyl3(.14,.8,'#c9d6e6',p[0],DY+.4,p[1]));
-  [[16.7,-6.4],[20.2,-4.6]].forEach(p=>{
-    box3(1.5,.12,.65,'#e8d7a1',p[0],DY+.3,p[1]);box3(1.5,.1,.16,'#e8d7a1',p[0],DY+.55,p[1]+.3);
-    cyl3(.05,.7,'#8b5a2b',p[0]+.8,DY+.4,p[1]-.5);
-  });
-  mkWallSign('POOL 🌊 (2F)',18.7,DY+1.8,-2.4,'#2bb3a6',0,2.5,.55);
-  // --- CYBORG MALL 2F (mall strip, katabi ng pool) ---
-  mkWallSign('🛍️ CYBORG MALL (2F)',23.8,DY+2.1,-2.5,'#e8622c',0,3,.55);
-  box3(2.4,.9,.7,'#6b4423',22.9,DY+.45,-7.2);box3(2.6,.08,.85,'#a86a34',22.9,DY+.95,-7.2);
-  box3(.5,.5,.1,'#e8622c',22.9,DY+1.25,-7.2,true);
-  const m2shelf=(sx,sz)=>{box3(.5,.08,6,'#8a5a2e',sx,DY+.85,sz);box3(.5,.08,6,'#8a5a2e',sx,DY+1.75,sz);box3(.08,2,.08,'#5a3a1e',sx-.22,DY+1.1,sz-3.05);box3(.08,2,.08,'#5a3a1e',sx-.22,DY+1.1,sz+3.05)};
-  m2shelf(23.5,-5.4);m2shelf(25.4,-5.4);
-  const m2pal=['#e8622c','#2bb3a6','#c9a227','#8f6fd8','#4f8ac9'];
-  ((S&&S.mall)||[]).slice(0,8).forEach((it,i)=>{
-    const col=m2pal[i%5],row=i%2?DY+1.15:DY+2.05,sx=i<4?23.5:25.4,sz=-7+(i%4)*1.1;
-    box3(.5,.5,.7,col,sx,row,sz);
-  });
-  // --- ILAW: buong 2F puno ng effects ---
-  g.partyLights=[];
-  [[10.7,-6.8],[13,-3.4],[15,-6.5],[18.7,-5.5],[21,-3.5],[23.5,-6],[25.5,-3.5]].forEach((p,i)=>{
-    const L=new THREE.PointLight(['#ff5a7a','#7cf7ff','#c9a227','#ff8f5a','#2bb3a6','#c98ac9','#8fe3ff'][i%7],1.4,10);L.position.set(p[0],DY+2.2,p[1]);g.level.add(L);g.partyLights.push(L);
-  });
-  const ball=new THREE.Mesh(new THREE.SphereGeometry(.4,16,12),m3('#dfe6f0',{emissive:'#7cf7ff',emissiveIntensity:.9,metalness:.6}));
-  ball.position.set(12.6,DY+2.8,-5);g.level.add(ball);g.deckBall=ball;
-  for(let i=0;i<5;i++)box3(.08,.06,5.4,['#ff5a7a','#7cf7ff','#c9a227','#2bb3a6','#c98ac9'][i],10.55+i*1.05,DY+.72,-5,true);
-  for(let i=0;i<4;i++)box3(.08,.06,5.4,['#8fe3ff','#ff8f5a','#c9a227','#c98ac9'][i],21.6+i*.95,DY+.72,-5.5,true);
+  // ☕ KAFE DECK (2F) — escalator arrival, puro kape at sofa (wala nang bar/pool/mall)
+  box3(4.6,1,.9,'#6b4423',13,DY+.53,-7.2);box3(4.2,.13,.8,'#d8c6a8',13,DY+1.1,-7.2); // coffee counter
+  box3(.9,1.5,.7,'#3a4256',16.2,DY+.8,-7.2);box3(.6,.8,.05,'#8fe3ff',16.2,DY+.95,-6.83,true); // coffee machine
+  const kafeSofa=(x,z,col)=>{box3(2,.42,.9,col,x,DY+.35,z);box3(2,.4,.2,col,x,DY+.75,z-.35);box3(.25,.5,.9,col,x-.9,DY+.6,z);box3(.25,.5,.9,col,x+.9,DY+.6,z)};
+  kafeSofa(12,-4.6,'#8a4a7a');kafeSofa(16,-4.6,'#6a8a9a');kafeSofa(12,-2.6,'#6a8a9a');kafeSofa(21,-4.6,'#c9a227');
+  const kafeRug=new THREE.Mesh(new THREE.PlaneGeometry(10,4),m3('#2b7d78'));kafeRug.rotation.x=-Math.PI/2;kafeRug.position.set(16.5,DY+.02,-4.4);kafeRug.receiveShadow=true;g.level.add(kafeRug);
+  box3(1.6,.08,.9,'#7a5a34',14,DY+.35,-4.2);box3(1.6,.08,.9,'#7a5a34',18.5,DY+.35,-4.2); // coffee tables
+  cyl3(.05,.4,'#5a4028',13.3,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',14.7,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',17.8,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',19.2,DY+.22,-4.6);
+  mkWallSign('☕ KAFE DECK (2F)',12.6,DY+2.1,-2.35,'#c9a227',0,3.1,.55);
+  // kaunting greenery sa tabi (hindi bar/pool)
+  cyl3(.16,.9,'#8b5a2b',23.8,DY+.45,-7.2);cyl3(.16,.9,'#8b5a2b',10.6,DY+.45,-2.6);
+  const kp1=new THREE.Mesh(new THREE.ConeGeometry(.6,1.4,8),m3('#3fa34a'));kp1.position.set(23.8,DY+1.25,-7.2);kp1.castShadow=true;g.level.add(kp1);
+  const kp2=new THREE.Mesh(new THREE.ConeGeometry(.6,1.4,8),m3('#3fa34a'));kp2.position.set(10.6,DY+1.25,-2.6);kp2.castShadow=true;g.level.add(kp2);
   // ===== HOLOGRAM: ipinapakita ang ginagawa nilang trabaho =====
   const hcv=document.createElement('canvas');hcv.width=512;hcv.height=256;
   const htx=new THREE.CanvasTexture(hcv);
@@ -2620,7 +2590,7 @@ function buildRoom3d(id){
   drawApprovals();g.approvalRedraw=drawApprovals;
   if(typeof buildLeaderboard3d==='function')buildLeaderboard3d();
   g.guide=null;if(typeof buildGuideBot==='function')buildGuideBot();
-  if(typeof buildBazaar3d==='function')buildBazaar3d();
+  // if(typeof buildBazaar3d==='function')buildBazaar3d(); // tinanggal — puro Kafe Deck na lang (walang mall)
   chars3d.forEach(c=>{
     const cv=document.createElement('canvas');cv.width=256;cv.height=64;
     const tx=new THREE.CanvasTexture(cv);
@@ -4925,7 +4895,7 @@ const JUMP_VIEWS={
   pantry:{t:[10.5,1.2,3.35],phi:.55,theta:.3,r:11},
   bay:{t:[17.55,1.2,3.35],phi:.55,theta:.3,r:12},
   sleep:{t:[28,1.5,13],phi:.55,theta:.3,r:14},
-  mall:{t:[23.8,5,-5],phi:.5,theta:.3,r:14},
+  mall:{t:[17,5.2,-5],phi:.62,theta:2.4,r:18},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
   pool:{t:[18.7,5.5,-5],phi:.55,theta:2.6,r:16},
