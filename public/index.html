@@ -540,7 +540,7 @@ dialog::backdrop{background:#000a}
   <div class="bar"><button class="run" id="saveProfile">Save</button><button onclick="this.closest('dialog').close()">Close</button></div></dialog>
 <div class="toast" id="toast" style="display:none"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js" onerror="this.onerror=null;this.src='/three.min.js';"></script>
+<script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1125,6 +1125,14 @@ function officeLoop(){
   // Schedule the NEXT frame first: even if drawing throws below, the game
   // keeps animating instead of freezing forever. Count errors for diagnostics.
   requestAnimationFrame(officeLoop);
+  /* Perf guard (2026-11-20): the 3D office used to redraw at full display rate
+     (60+ FPS) with 2x pixel ratio and shadows. On weak GPUs / old AMD drivers
+     that saturated the GPU and made the whole browser feel hung. Cap to ~30
+     FPS and skip drawing completely while the tab is hidden. */
+  if(document.hidden)return;
+  const _now=performance.now();
+  if(_now-(officeLoop._lastFrame||0)<33)return;
+  officeLoop._lastFrame=_now;
   try{
     const use3d=selRoom==='hq'&&init3D();
     const host=$('oc3d'),oc=$('oc');
@@ -1758,10 +1766,13 @@ let renderer3d=null,scene3d=null,camera3d=null,level3d=null,chars3d=[],bub3d=nul
 function init3D(){
   if(typeof THREE==='undefined'||renderer3d)return !!renderer3d;
   const host=$('oc3d');if(!host)return false;
-  renderer3d=new THREE.WebGLRenderer({antialias:true});
-  renderer3d.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  /* Lightweight renderer: no MSAA, 1x pixel ratio, no shadow map. The old
+     settings (antialias + up to 2x DPR + 1024px soft shadows) filled the
+     8 GB RX 6600 and caused system-wide stutter. */
+  renderer3d=new THREE.WebGLRenderer({antialias:false});
+  renderer3d.setPixelRatio(1);
   renderer3d.setSize(host.clientWidth||900,host.clientHeight||520);
-  renderer3d.shadowMap.enabled=true;renderer3d.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer3d.shadowMap.enabled=false;
   renderer3d.toneMapping=THREE.ACESFilmicToneMapping;renderer3d.toneMappingExposure=1.35;
   host.appendChild(renderer3d.domElement);
   scene3d=new THREE.Scene();

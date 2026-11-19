@@ -529,8 +529,16 @@ function endpointFor(cfg) {
   if (cfg.provider === 'openrouter') return 'https://openrouter.ai/api/v1/chat/completions';
   return 'https://api.openai.com/v1/chat/completions';
 }
+/* Local model servers (Ollama / LM Studio / llama.cpp) behave differently from
+   cloud APIs: reasoning models spend the whole token budget on hidden
+   "thinking" and return an EMPTY message, and they unload the model after a few
+   idle minutes, so the next request waits ~30s for a reload. */
+function isLocalAI(cfg) {
+  return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(String(cfg.baseUrl || ''));
+}
 async function callProvider(cfg, system, user, maxTokens) {
   if (!cfg.apiKey) throw new Error('No key for ' + cfg.provider);
+  const local = isLocalAI(cfg);
   const systemText = (state.memory ? 'Company memory (shared context):\n' + state.memory + '\n\n' : '') + system;
   const headers = { 'Authorization': 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' };
   if (cfg.provider === 'openrouter') {
@@ -543,8 +551,29 @@ async function callProvider(cfg, system, user, maxTokens) {
     max_tokens: cfg.provider === 'coarena' ? (maxTokens || 800) * 2 : (maxTokens || 800),
     temperature: 0.7
   };
+  if (local) {
+    // gemma4/qwen3/deepseek-style models put the answer in `reasoning` and leave
+    // `content` empty unless thinking is disabled. Ollama honours
+    // reasoning_effort on its OpenAI-compatible endpoint. keep_alive stops the
+    // 5-minute auto-unload (that reload is the ~30s "hang").
+    payload.reasoning_effort = 'none';
+    payload.keep_alive = '30m';
+  }
+  const timeoutMs = local ? 300000 : 60000;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await fetch(endpointFor(cfg), { method: 'POST', headers, body: JSON.stringify(payload) });
+    const startedAt = Date.now();
+    let res;
+    try {
+      res = await fetch(endpointFor(cfg), {
+        method: 'POST', headers, body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+    } catch (e) {
+      if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
+        throw new Error(cfg.provider + ' timed out after ' + Math.round(timeoutMs / 1000) + 's (model still loading or too slow - try a smaller model)');
+      }
+      throw e;
+    }
     const raw = await res.text();
     let j;
     try { j = JSON.parse(raw); } catch (e) { throw new Error('AI returned non-JSON: ' + raw.slice(0, 180)); }
@@ -555,10 +584,19 @@ async function callProvider(cfg, system, user, maxTokens) {
       continue;
     }
     if (!res.ok) throw new Error((j.error && j.error.message) || (cfg.provider + ' HTTP ' + res.status));
-    const content = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    const msg = (j.choices && j.choices[0] && j.choices[0].message) || {};
+    let content = String(msg.content || '').trim();
+    if (!content) {
+      // Last resort for reasoning models that ignore reasoning_effort: use the
+      // tail of the visible reasoning instead of failing the whole request.
+      const thought = String(msg.reasoning_content || msg.reasoning || '').trim();
+      if (thought) content = thought.split(/\n+/).map(s => s.trim()).filter(Boolean).pop() || thought;
+    }
     if (!content) throw new Error('AI returned empty content');
+    const took = Date.now() - startedAt;
+    if (took > 20000) log('AI ' + cfg.provider + ' / ' + cfg.model + ' replied in ' + Math.round(took / 1000) + 's', 'system');
     return {
-      text: content.trim(),
+      text: content,
       id: j.id || res.headers.get('x-coarena-request-id') || '',
       provider: cfg.provider
     };

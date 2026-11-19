@@ -440,7 +440,13 @@
     try { dockEl.className = 'cb-dock'; hudEl.className = 'cb-pill cb-main'; panel.className = 'cb-panel'; } catch (e) {}
     function panels() { try { return doc.querySelectorAll ? doc.querySelectorAll('.cb-panel') : []; } catch (e) { return []; } }
     function openPanel() { var ps = panels(); for (var i = 0; i < ps.length; i++) if (ps[i].style && ps[i].style.display === 'block') return ps[i]; return null; }
+    /* Perf fix (2026-11-20): this observer used to fire on sync()'s OWN DOM
+       writes (bd.style.display, dot()'s innerHTML, aria attributes), creating an
+       endless MutationObserver loop that froze the whole page. Disconnect while
+       applying changes, then re-observe for genuine external changes. */
+    var mo = null, OBS = { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] };
     function sync() {
+      if (mo) { try { mo.disconnect(); } catch (e) {} }
       try {
         var p = openPanel(), ps = panels();
         for (var i = 0; i < ps.length; i++) { if (!ps[i].getAttribute('role')) ps[i].setAttribute('role', 'dialog'); if (!ps[i].getAttribute('aria-label')) ps[i].setAttribute('aria-label', 'Panel'); ps[i].setAttribute('aria-modal', 'true'); ps[i].setAttribute('tabindex', '-1'); }
@@ -451,6 +457,7 @@
         for (var j = 0; j < dockEl.children.length; j++) { var c = dockEl.children[j]; if (c !== tog && (c.className || '').indexOf('cb-main') < 0) addC(c, 'cb-more'); }
         dot();
       } catch (e) {}
+      if (mo) { try { mo.observe(doc.body, OBS); } catch (e) {} }
     }
     function dot() {
       if (!tog) return;
@@ -475,8 +482,8 @@
     } catch (e) {}
     try {
       if (typeof MutationObserver === 'function') {
-        var mo = new MutationObserver(sync);
-        mo.observe(doc.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+        mo = new MutationObserver(sync);
+        mo.observe(doc.body, OBS);
       } else setInterval(sync, 500);
     } catch (e) {}
     try {
