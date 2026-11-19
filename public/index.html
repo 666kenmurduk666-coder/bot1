@@ -2324,7 +2324,7 @@ function buildRoom3d(id){
   // 🏢 OFFICE WING — i-align sa HQ (itaas na hanay ng grid)
   const _oldLevel=g.level, _wingGrp=new THREE.Group();
   g.level=_wingGrp; buildOfficeWing3d();
-  g.level=_oldLevel; _wingGrp.position.set(4,0,-14); g.level.add(_wingGrp);
+  g.level=_oldLevel; _wingGrp.position.set(8,0,-14); g.level.add(_wingGrp);
   if(typeof buildZonePartitions3d==='function')buildZonePartitions3d();
   // buildSportsBots3d(); // tinanggal — walang sports bots, office lang
   buildPoleLights3d();
@@ -3047,7 +3047,7 @@ function buildSports3d(){
 /* ===== 💪 GYM — treadmills + weights malapit sa basketball court ===== */
 function buildGym3d(){
   // inilipat sa kanan ng office wing (x=54) — hindi na kinakain ang conference/cafeteria/fun room
-  const gx=5,gz=26;
+  const gx=8,gz=26;
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(11,8),m3('#3a4256'));
   floor.rotation.x=-Math.PI/2;floor.position.set(gx,-.684,gz);floor.receiveShadow=true;g.level.add(floor);
   [[gx,gz-3.9],[gx,gz+3.9]].forEach(z=>box3(11,.02,.1,'#f2f6ff',gx,-.66,z,true));
@@ -3156,7 +3156,7 @@ function buildZonePartitions3d(){
   runZ(37.05,2.5,9.5,6,'#c9a227',0);        // cafeteria | fun room
   runX(10,37.3,44.3,40.8,'#c98ac9',0);      // fun room | lab
   // 🏃 Sports — gym lang (tennis/soccer/event tinanggal)
-  rect(0,11,22,30,{side:'west',at:26},'#7ee2a8',-.68); // gym
+  rect(3,14,22,30,{side:'west',at:26},'#7ee2a8',-.68); // gym
   // 🌊🍹 2F resort — bar | pool | mall
   runZ(15.8,-8,-3,-5.5,'#ff8f5a',4);
   runZ(21.6,-8,-3,-5.5,'#7cf7ff',4);
@@ -3562,7 +3562,7 @@ function drawScoreboard(){
 }
 /* ===== 🏀 BASKETBALL COURT sa gilid (kanan ng HQ) ===== */
 function buildBasketball3d(){
-  const cx=26,cz=26,L=12,W=7;
+  const cx=30,cz=26,L=12,W=7;
   g.court={cx,cz,L,W};
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(L,W),m3('#3f6f9c',{roughness:.9}));
   floor.rotation.x=-Math.PI/2;floor.position.set(cx,-.685,cz);floor.receiveShadow=true;g.level.add(floor);
@@ -3639,9 +3639,9 @@ function buildCourtBots3d(){
     p.scale.setScalar(.9);p.position.set(x,-.7,z);g.level.add(p);
     g.courtBots.push({grp:p,legs,arms,role,ph,hx:x,hz:z});
   };
-  make('#e8622c',26,26,'handler',0);
-  make('#4b8dff',30,25.6,'shooter',2.1);
-  make('#2bb3a6',22,26.4,'defender',4.2);
+  make('#e8622c',30,26,'handler',0);
+  make('#4b8dff',34,25.6,'shooter',2.1);
+  make('#2bb3a6',26,26.4,'defender',4.2);
 }
 /* ===== ☕ COFFEE CART sa tabi ng court + bots na bumibili ===== */
 function buildCoffeeCart3d(){
@@ -3758,10 +3758,10 @@ function buildCity3d(){
   // 🛣️ MALIIT NA KALSADA — nag-uugnay sa lahat ng structures
   const roadMat=m3('#3a3f4a');
   const mkRoad=(w,d,x,z)=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);r.rotation.x=-Math.PI/2;r.position.set(x,-.685,z);r.receiveShadow=true;g.level.add(r)};
-  mkRoad(3,22,24,1);   // vertical road sa pagitan ng HQ at Wing
+  mkRoad(3,22,26,1);   // vertical road sa pagitan ng HQ at Wing
   mkRoad(46,3,13,19);  // horizontal road sa pagitan ng rows
   // maliliit na dashes (madilim, hindi puting guhit)
-  for(let z=-9;z<12;z+=2.4){const d=new THREE.Mesh(new THREE.PlaneGeometry(.18,1.1),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(24,-.68,z);g.level.add(d);}
+  for(let z=-9;z<12;z+=2.4){const d=new THREE.Mesh(new THREE.PlaneGeometry(.18,1.1),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(26,-.68,z);g.level.add(d);}
   for(let x=-9;x<36;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
 }
 function frame3D(){
@@ -4930,9 +4930,9 @@ const JUMP_VIEWS={
   pool:{t:[18.7,5.5,-5],phi:.55,theta:2.6,r:16},
   lab:{t:[40,1.5,13],phi:.55,theta:.3,r:14},
   resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
-  court:{t:[26,1.5,26],phi:.55,theta:.3,r:16},
+  court:{t:[30,1.5,26],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
-  gym:{t:[5,1.5,26],phi:.55,theta:.3,r:18},
+  gym:{t:[8,1.5,26],phi:.55,theta:.3,r:18},
   cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
   wfun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
 };
