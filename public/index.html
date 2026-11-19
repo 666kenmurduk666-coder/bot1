@@ -1746,7 +1746,7 @@ function init3D(){
   scene3d.fog=new THREE.Fog('#c9d6ea',40,200);
   camera3d=new THREE.PerspectiveCamera(45,(host.clientWidth||900)/(host.clientHeight||520),.1,500);
   camera3d.position.set(9,11,16);camera3d.lookAt(6,0,6);
-  const amb=new THREE.AmbientLight(0xfff4e0,.75);scene3d.add(amb);g.amb=amb;
+  const amb=new THREE.AmbientLight(0xfff4e0,.95);scene3d.add(amb);g.amb=amb;
   const dl=new THREE.DirectionalLight(0xfff8e8,1.15);dl.position.set(12,18,8);dl.castShadow=true;
   dl.shadow.mapSize.width=1024;dl.shadow.mapSize.height=1024;
   dl.shadow.camera.left=-15;dl.shadow.camera.right=15;dl.shadow.camera.top=15;dl.shadow.camera.bottom=-15;
@@ -2209,10 +2209,10 @@ function buildRoom3d(id){
   const lamp=new THREE.Mesh(new THREE.BoxGeometry(.3,.05,.3),m3('#ffe9a8',{emissive:'#ffe9a8',emissiveIntensity:.9}));lamp.position.y=1.78;liftCage.add(lamp);
   liftCage.position.set(11.5,.06,3.5);g.level.add(liftCage);
   // ===== HQ ROOFTOP (top y=10.8) — garden na paikot =====
-  box3(10.9,.4,14,'#c2c9d6',5.45,10.6,7);
-  box3(9.9,.4,14,'#c2c9d6',17.05,10.6,7);
-  box3(1.2,.4,2.9,'#c2c9d6',11.5,10.6,1.45);
-  box3(1.2,.4,9.9,'#c2c9d6',11.5,10.6,9.05);
+  box3(10.9,.4,14,'#e2e6ec',5.45,10.6,7);
+  box3(9.9,.4,14,'#e2e6ec',17.05,10.6,7);
+  box3(1.2,.4,2.9,'#e2e6ec',11.5,10.6,1.45);
+  box3(1.2,.4,9.9,'#e2e6ec',11.5,10.6,9.05);
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     if(holeAt(a,b))continue;
     const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#9aa3ad'));
@@ -2241,7 +2241,7 @@ function buildRoom3d(id){
   box3(.16,.5,2.6,'#cfd6e0',10.7,.45,17.5);box3(.16,.5,2.6,'#cfd6e0',13.3,.45,17.5); // magkabilang gilid
   glass(2.2,.9,.06,12,1.15,16.3); // bintana sa likod
   glass(.06,.9,2.2,10.7,1.15,17.5);glass(.06,.9,2.2,13.3,1.15,17.5); // gilid windows
-  box3(2.6,.12,2.6,'#c2c9d6',12,2.75,17.5); // bubong ng booth
+  box3(2.6,.12,2.6,'#e2e6ec',12,2.75,17.5); // bubong ng booth
   box3(1.8,.75,.5,'#6b4423',12,.8,16.6); // desk ni Bantay
   box3(.6,.45,.08,'#10151f',12,1.45,16.6,true); // monitor (may hacks!)
   const guardLight=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8),m3('#ff2a2a',{emissive:'#ff2a2a',emissiveIntensity:.25}));
@@ -2551,8 +2551,8 @@ function buildRoom3d(id){
   mkWallSign('🛤️ ESCALATOR (LABAS)',6.5,1.6,-3.9,'#e8622c',0,3,.56);
   // ===== 2F RESORT DECK: BAR + POOL + CYBORG MALL (iisang sahig, walang pintuan) =====
   const DX1=9.5,DX2=26,DZ1=-8,DZ2=-2;
-  box3(DX2-DX1,.35,DZ2-DZ1,'#b8c0cc',(DX1+DX2)/2,DY-.18,(DZ1+DZ2)/2);
-  const deckFloor=new THREE.Mesh(new THREE.PlaneGeometry(DX2-DX1,DZ2-DZ1),m3('#26304a'));
+  box3(DX2-DX1,.35,DZ2-DZ1,'#e2e6ec',(DX1+DX2)/2,DY-.18,(DZ1+DZ2)/2);
+  const deckFloor=new THREE.Mesh(new THREE.PlaneGeometry(DX2-DX1,DZ2-DZ1),m3('#3f4a5a'));
   deckFloor.rotation.x=-Math.PI/2;deckFloor.position.set((DX1+DX2)/2,DY+.01,(DZ1+DZ2)/2);deckFloor.receiveShadow=true;g.level.add(deckFloor);
   [[DX1+.4,DZ1+.4],[DX2-.4,DZ1+.4],[DX1+.4,DZ2-.4],[DX2-.4,DZ2-.4]].forEach(p=>cyl3(.18,DY,'#7c8ba3',p[0],DY/2,p[1]));
   for(let x=DX1;x<DX2;x+=1){if(x<11.2)continue;box3(.9,.75,.07,'#cfe0f2',x+.45,DY+.42,DZ2-.05)}
@@ -2790,7 +2790,7 @@ function buildParking3d(){
     }
   }
   // ticket booth + barrier sa entrance!
-  box3(1.2,1.5,1.2,'#cfd6e0',40,.15,z+2.6);box3(1.4,.15,1.4,'#c2c9d6',40,1,z+2.6);
+  box3(1.2,1.5,1.2,'#cfd6e0',40,.15,z+2.6);box3(1.4,.15,1.4,'#e2e6ec',40,1,z+2.6);
   box3(.5,.4,.06,'#ffd34d',40,.7,z+3.2,true); // ✨ sign
   const arm=new THREE.Mesh(new THREE.BoxGeometry(3.2,.08,.08),m3('#ff2a2a'));arm.position.set(38.4,.75,z+1.1);g.level.add(arm); // barrier
   mkLabel('🎫 TICKET',40,z+4.4,1.5);
@@ -2814,7 +2814,7 @@ function towerShort(x0,z0){
   });
 };
 function roofShort(x0,z0,gaps){
-  box3(10.4,.4,10.4,'#c2c9d6',x0+5,3.4,z0+5);
+  box3(10.4,.4,10.4,'#e2e6ec',x0+5,3.4,z0+5);
   for(let a=0;a<10;a+=.95){const x=x0+a+.45;
     const gx=gaps.find(gg=>gg[0]==='x'&&x>gg[1]&&x<gg[2]);
     if(!gx){glass(.9,.35,.06,x,3.5,z0+.25);glass(.9,.35,.06,x,3.5,z0+9.75)}
