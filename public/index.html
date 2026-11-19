@@ -2201,7 +2201,7 @@ function buildRoom3d(id){
   mkLabel('☕ KAFE LOUNGE',4.7,5.4,9.0,'#c9a227');
   // ===== GLASS ELEVATOR (x 11.5, z 3.5) =====
   glass(.06,10.7,1.2,10.9,5.4,3.5);glass(.06,10.7,1.2,12.1,5.4,3.5);glass(1.2,10.7,.06,11.5,5.4,2.9);
-  [[10.9,2.9],[12.1,2.9],[10.9,4.1],[12.1,4.1]].forEach(p=>box3(.1,10.8,.1,'#e8eef8',p[0],5.4,p[1]));
+  // elevator posts tinanggal — walang pole sa loob ng structures
   liftCage=new THREE.Group();
   const plate=new THREE.Mesh(new THREE.BoxGeometry(1,.08,1),m3('#dfe6f0'));plate.castShadow=true;liftCage.add(plate);
   [-.49,.49].forEach(px=>{const p=new THREE.Mesh(new THREE.BoxGeometry(.04,1.7,.94),glassMat);p.position.set(px,.9,0);liftCage.add(p)});
@@ -2327,7 +2327,7 @@ function buildRoom3d(id){
   g.level=_oldLevel; _wingGrp.position.set(8,0,-14); g.level.add(_wingGrp);
   if(typeof buildZonePartitions3d==='function')buildZonePartitions3d();
   // buildSportsBots3d(); // tinanggal — walang sports bots, office lang
-  buildPoleLights3d();
+  // buildPoleLights3d(); // tinanggal — walang pole sa loob ng structures
   buildSunRays3d();
   buildAttendance3d();
   buildLivingWorld3d();
