@@ -80,7 +80,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #mmoChat.min #mmoChatResize{display:none}
 #mmoChatResize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;z-index:3;background:linear-gradient(135deg,transparent 46%,#7fc7ff 50%,transparent 55%,transparent 68%,#7fc7ff 72%,transparent 77%);opacity:.75;touch-action:none}
 /* 🎮 Laging Roblox mode — ceoModeBtn lang ang itinago; playBtn makikita para sa CEO */
-#ceoModeBtn{display:none!important}
+#ceoModeBtn,#playBtn{display:none!important}
 /* 👁 Hide UI — itinatago ang floating panels para walang humaharang sa view */
 body.ui-hidden #oc3d #jumpPanel,
 body.ui-hidden #oc3d #mmoChat,
@@ -91,6 +91,20 @@ body.ui-hidden #oc3d #eventShowCard,
 body.ui-hidden #ceoFab,
 body.ui-hidden #lockFab,
 body.ui-hidden .bub3d{display:none!important}
+/* 🎬 REFERENCE IMAGE MODE — full-screen 3D, walang HUD (H = ibalik ang UI) */
+body.ui-hidden .sidebar,
+body.ui-hidden .topbar,
+body.ui-hidden #officeQuestStrip,
+body.ui-hidden #v-office > .grid,
+body.ui-hidden #v-office > .card:last-child,
+body.ui-hidden #v-office .officeBar,
+body.ui-hidden #v-office #officeMorePanel{display:none!important}
+body.ui-hidden .app{grid-template-columns:1fr!important}
+body.ui-hidden .main{padding:0!important;min-height:100vh}
+body.ui-hidden #v-office{display:block!important}
+body.ui-hidden #v-office > .card{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0!important}
+body.ui-hidden #oc3d{height:100vh!important;width:100vw!important;border-radius:0!important;box-shadow:none!important}
+body.ui-hidden #oc3d canvas{width:100%!important;height:100%!important}
 #eventShowCard{pointer-events:none}
 #eventShowCard b{font-variant-numeric:tabular-nums}
 .jz{font-size:10px;line-height:1.15;padding:4px 2px;min-height:34px;cursor:pointer;background:#16213c;color:#e9edf7;border:1px solid #2f5fa8;border-radius:6px}
@@ -160,7 +174,7 @@ dialog::backdrop{background:#000a}
 .tileLabel{position:absolute;left:8px;top:8px;background:#0d1b38d9;border:1px solid #3a6bb5;border-radius:6px;padding:3px 8px;font-size:10px}
 </style>
 </head>
-<body>
+<body class="ui-hidden">
 <div class="app">
 <aside class="sidebar">
   <div class="profile">
@@ -1724,13 +1738,13 @@ function init3D(){
   const host=$('oc3d');if(!host)return false;
   renderer3d=new THREE.WebGLRenderer({antialias:true});
   renderer3d.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer3d.setSize(host.clientWidth||900,520);
+  renderer3d.setSize(host.clientWidth||900,host.clientHeight||520);
   renderer3d.shadowMap.enabled=true;renderer3d.shadowMap.type=THREE.PCFSoftShadowMap;
   host.appendChild(renderer3d.domElement);
   scene3d=new THREE.Scene();
   scene3d.background=new THREE.Color('#e3e7ee');
   scene3d.fog=new THREE.Fog('#c9d6ea',40,200);
-  camera3d=new THREE.PerspectiveCamera(45,(host.clientWidth||900)/520,.1,500);
+  camera3d=new THREE.PerspectiveCamera(45,(host.clientWidth||900)/(host.clientHeight||520),.1,500);
   camera3d.position.set(9,11,16);camera3d.lookAt(6,0,6);
   const amb=new THREE.AmbientLight(0xfff4e0,.75);scene3d.add(amb);g.amb=amb;
   const dl=new THREE.DirectionalLight(0xfff8e8,1.15);dl.position.set(12,18,8);dl.castShadow=true;
@@ -1740,7 +1754,7 @@ function init3D(){
   const pl=new THREE.PointLight(0x4b8dff,.9,22);pl.position.set(6,6,6);scene3d.add(pl);g.blueLamp=pl;
   const rim=new THREE.DirectionalLight(0xffe8c8,.35);rim.position.set(-10,8,-12);scene3d.add(rim);g.rim=rim;
   bub3d=document.createElement('div');bub3d.className='bub3d';bub3d.style.display='none';host.appendChild(bub3d);
-  window.addEventListener('resize',()=>{const w=host.clientWidth||900;renderer3d.setSize(w,520);camera3d.aspect=w/520;camera3d.updateProjectionMatrix()});
+  window.addEventListener('resize',()=>{const w=host.clientWidth||900,h=host.clientHeight||520;renderer3d.setSize(w,h);camera3d.aspect=w/h;camera3d.updateProjectionMatrix()});
   threeReady=true;return true;
 }
 function m3(color,opts){return new THREE.MeshStandardMaterial(Object.assign({color:color,roughness:.75,metalness:.06},opts||{}))}
@@ -2015,8 +2029,8 @@ function buildRoom3d(id){
   dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));
   const dustMat=new THREE.PointsMaterial({color:0xffffff,size:.06,transparent:true,opacity:.35,sizeAttenuation:true});
   const dust=new THREE.Points(dustGeo,dustMat);g.level.add(dust);g.dust=dust;room3dId=id;escArr=[];
-  scene3d.background=new THREE.Color('#e3e7ee');
-  scene3d.fog=new THREE.Fog('#e3e7ee',60,260);
+  scene3d.background=new THREE.Color('#0e1726');
+  scene3d.fog=new THREE.Fog('#0e1726',80,220);
   const W=22,H=14;
   // ===== IISANG PALAPAG: maayos na hanay ng opisina, may harang bawat isa =====
   const ROOMS=[
@@ -2068,11 +2082,11 @@ function buildRoom3d(id){
   const wallX=(x,z1,z2,col,gaps)=>{let cur=z1;(gaps||[]).forEach(g=>{solidX(x,cur,g[0]-.72,col);cur=g[0]+.72;});solidX(x,cur,z2,col);(gaps||[]).forEach(g=>doorAt(x,g[0],true))};
   const wallZ=(z,x1,x2,col,gaps)=>{let cur=x1;(gaps||[]).forEach(g=>{solidZ(z,cur,g[0]-.72,col);cur=g[0]+.72;});solidZ(z,cur,x2,col);(gaps||[]).forEach(g=>doorAt(g[0],z,false))};
   // building slab + ground
-  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#c2c9d6'));
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#8a94a8'));
   slab.position.set(W/2,-.36,H/2);slab.receiveShadow=true;level3d.add(slab);
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#a9bd93'));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#1c2433'));
   ground.rotation.x=-Math.PI/2;ground.position.set(17,-.72,13);ground.receiveShadow=true;level3d.add(ground);
-  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#cfd4da'));
+  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#2c3444'));
   walk.rotation.x=-Math.PI/2;walk.position.set(W/2,-.7,H/2);walk.receiveShadow=true;level3d.add(walk);
   // sahig: ibang kulay bawat opisina + gitnang corridor
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
@@ -2161,23 +2175,17 @@ function buildRoom3d(id){
   // glass railing sa gilid ng mga slab, may butas para sa escalator (floor 2 lang)
   for(let a=0;a<W;a+=.95){const x=a+.45;if(x>7.5&&x<11.2)continue;glass(.9,.95,.06,x,4.1,8.25)}
   for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,7.7,8.25)}
-  // fun room furniture (floor 2, kaliwa)
-  box3(2.6,.8,1.6,'#7a4a22',3.1,4,2.6);box3(2.3,.1,1.3,'#2e8a4e',3.1,4.45,2.6);
-  box3(.9,1.9,.9,'#a03a6a',5.9,4.55,1.6);box3(.6,.45,.06,'#ff8fd0',5.9,4.85,2.1,true);
-  box3(.9,1.9,.9,'#5a3aa0',5.9,4.55,2.9);box3(.6,.45,.06,'#9f8fff',5.9,4.85,3.4,true);
-  [[2,7],[3.6,7.3],[1.2,6.2]].forEach((bg2,i)=>{
-    const m=new THREE.Mesh(new THREE.SphereGeometry(.55,16,12),m3([['#2bb3a6'],['#7a4a8a'],['#c9a227']][i][0]));
-    m.position.set(bg2[0],3.95,bg2[1]);m.scale.y=.7;m.castShadow=true;g.level.add(m);
+  // ☕ KAFE LOUNGE (floor 2, may escalator) — puro kape at sofa
+  box3(4.2,1,.9,'#6b4423',14,4.1,1.4);box3(3.9,.13,.8,'#d8c6a8',14,4.66,1.4); // coffee counter
+  box3(.8,1.4,.6,'#3a4256',16.8,4.5,1.4);box3(.5,.55,.05,'#8fe3ff',16.8,4.8,1.73,true); // coffee machine
+  [[2.4,2.2,'#8a4a7a'],[5.2,2.2,'#6a8a9a'],[2.4,5.6,'#6a8a9a'],[5.2,5.6,'#c9a227']].forEach(s=>{
+    box3(2,.42,.9,s[2],s[0],4.1,s[1]);box3(2,.4,.2,s[2],s[0],4.5,s[1]-.35);
+    box3(.25,.5,.9,s[2],s[0]-.9,4.35,s[1]);box3(.25,.5,.9,s[2],s[0]+.9,4.35,s[1]);
   });
-  box3(1.6,.9,.12,'#222b3d',6.8,5.3,.35);box3(.7,.42,.04,'#8fe3ff',6.8,5.3,.43,true);
-  // cafeteria furniture (floor 2, kanan)
-  box3(3.6,1,.9,'#a86a34',13.8,4.1,1.4);box3(3.8,.12,.95,'#e2cfa8',13.8,4.66,1.4);
-  box3(.9,2,.7,'#2b6fa8',16.6,4.6,3.4);box3(.6,1,.06,'#8fe3ff',16.6,4.85,3.78,true);
-  [[13.6,5.4],[15.6,6.6],[13.2,7.4]].forEach(t=>{
-    cyl3(.08,.78,'#8b5a2b',t[0],3.99,t[1]);
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.09,20),m3('#e8d7a1'));top.position.set(t[0],4.42,t[1]);top.castShadow=true;g.level.add(top);
-    [[-.95,-.3],[.95,-.3],[0,.8]].forEach(st=>{cyl3(.2,.55,'#8a6238',t[0]+st[0],3.88,t[1]+st[1])});
-  });
+  const crug=new THREE.Mesh(new THREE.PlaneGeometry(5.6,4.2),m3('#2b7d78'));crug.rotation.x=-Math.PI/2;crug.position.set(3.8,4.02,3.9);crug.receiveShadow=true;g.level.add(crug);
+  box3(1.6,.08,.9,'#7a5a34',3.8,4.35,3.9); // coffee table
+  cyl3(.05,.35,'#5a4028',3.2,4.18,3.6);cyl3(.05,.35,'#5a4028',4.4,4.18,3.6);cyl3(.05,.35,'#5a4028',3.8,4.18,4.2);
+  mkLabel('☕ KAFE LOUNGE',3.8,3.9,5.5,'#c9a227');
   // ===== THIRD FLOOR (top y=7.2): Recording Studio (kaliwa) + Lounge (kanan) =====
   for(let a=1;a<10;a+=.62)box3(.5,.75,.12,a,8.15,.14);
   box3(2.6,.75,1.2,'#7a4a22',5,7.58,3.4);
@@ -2309,25 +2317,28 @@ function buildRoom3d(id){
   g.pet={group:pg,shadow:psh,tail:tail,tx:11,tz:9,wait:2000};
   // city environment
   buildCity3d();
-  buildBermudaGrass3d();
-  buildScenery3d();
-  buildExtraScenery3d();
-  buildAnimals3d();
+  // buildBermudaGrass3d(); // tinanggal — malinis na campus grid
+  // buildScenery3d(); // tinanggal — walang mountains/river/waterfall
+  // buildExtraScenery3d(); // tinanggal — walang rainbow/balloon/fountain
+  // buildAnimals3d(); // tinanggal — walang animals sa campus
   buildBasketball3d();
   buildCourtBots3d();
-  buildCoffeeCart3d();
-  buildPlayground3d();
-  buildSports3d();
+  // buildCoffeeCart3d(); // tinanggal — puro office campus layout
+  // buildPlayground3d(); // tinanggal — puro office campus layout
+  // buildSports3d(); // tinanggal — walang tennis/soccer/event, office lang
   buildGym3d();
-  buildOfficeWing3d();
+  // 🏢 OFFICE WING — i-align sa HQ (itaas na hanay ng grid)
+  const _oldLevel=g.level, _wingGrp=new THREE.Group();
+  g.level=_wingGrp; buildOfficeWing3d();
+  g.level=_oldLevel; _wingGrp.position.set(0,0,-14); g.level.add(_wingGrp);
   if(typeof buildZonePartitions3d==='function')buildZonePartitions3d();
-  buildSportsBots3d();
+  // buildSportsBots3d(); // tinanggal — walang sports bots, office lang
   buildPoleLights3d();
   buildSunRays3d();
   buildAttendance3d();
   buildLivingWorld3d();
   // orbit camera
-  cam3d={target:new THREE.Vector3(20,1.2,14),theta:.5,phi:.6,r:44,lastUser:0};
+  cam3d={target:new THREE.Vector3(24,1.2,15),theta:.55,phi:.58,r:48,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
@@ -2628,7 +2639,7 @@ let cam3d=null,orbitBound=false,cityMovers3d=[],escArr=[],esc2Steps=[],liftCage=
 let guardBlinkUntil=0; // pulang ilaw ng booth ni BANTAY kapag may security event
 let partyUntil=0,confetti=[]; // ✨ party mode + confetti particles
 let moveKeys={w:false,a:false,s:false,d:false,space:false,e:false};
-let player=null,playerMode=true; // ✨ ROBLOX-STYLE: laging ON, walang toggle
+let player=null,playerMode=true; // ✨ ROBLOX-STYLE: locked ON agad — nakatago na ang Maglaro buttons
 let escRide=null; // escalator ride state
 let escCooldown=0; // escalator re-trigger cooldown
 let lastGreet=0; // greeting cooldown
@@ -3042,7 +3053,7 @@ function buildSports3d(){
 /* ===== 💪 GYM — treadmills + weights malapit sa basketball court ===== */
 function buildGym3d(){
   // inilipat sa kanan ng office wing (x=54) — hindi na kinakain ang conference/cafeteria/fun room
-  const gx=54,gz=26;
+  const gx=5,gz=18;
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(11,8),m3('#3a4256'));
   floor.rotation.x=-Math.PI/2;floor.position.set(gx,-.684,gz);floor.receiveShadow=true;g.level.add(floor);
   [[gx,gz-3.9],[gx,gz+3.9]].forEach(z=>box3(11,.02,.1,'#f2f6ff',gx,-.66,z,true));
@@ -3070,10 +3081,7 @@ function buildOfficeWing3d(){
   // connecting walkway mula sa lumang opisina papunta sa wing
   const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,6.4),m3('#dfe4ec'));
   link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,17.4);link.receiveShadow=true;g.level.add(link);
-  // daan papuntang gym (kanan ng wing)
-  const gymLink=new THREE.Mesh(new THREE.PlaneGeometry(4.6,4),m3('#dfe4ec'));
-  gymLink.rotation.x=-Math.PI/2;gymLink.position.set(46.5,.02,26);gymLink.receiveShadow=true;g.level.add(gymLink);
-  mkLabel('💪 GYM →',46.5,26,.8,'#c9a227');
+  // (inalis ang gymLink — gym na naka-grid sa ibaba, hindi sa kanan)
   // low glass railings — may butas sa office link at gym link
   box3(23.2,.5,.09,'#a8d8ff',32.9,.25,30);                   // likod
   box3(20.3,.5,.09,'#a8d8ff',34.25,.25,14.2);                 // harap (butas sa link)
@@ -3149,14 +3157,12 @@ function buildZonePartitions3d(){
     runX(z1,x1,x2,gate&&gate.side==='south'?gate.at:null,col,y);
     runX(z2,x1,x2,gate&&gate.side==='north'?gate.at:null,col,y);
   };
-  // 🏢 Office wing — harang sa pagitan ng magkakasunod na kwarto
-  runX(24,24,32,28,'#7cf7ff',0);            // conference (likod-kaliwa) | cafeteria
-  runZ(37.05,16.5,23.5,20,'#c9a227',0);   // cafeteria | fun room
-  runX(24,37.3,44.3,40.8,'#c98ac9',0);    // fun room | lab
-  // 🏃 Sports + event — mababang harang na may pintuan
-  rect(48.5,59.5,22,30,{side:'west',at:26},'#7ee2a8',-.68); // gym
-  rect(58,70,-4,20,{side:'west',at:8},'#7cf7ff',-.68);       // tennis
-  rect(37,55,-28,-16,{side:'north',at:46},'#ffd34d',-.55);   // event stage
+  // 🏢 Office wing — harang (in-align sa grid, z -14)
+  runX(10,10,18,12,'#7cf7ff',0);            // sleep | cafeteria
+  runZ(37.05,2.5,9.5,6,'#c9a227',0);        // cafeteria | fun room
+  runX(10,37.3,44.3,40.8,'#c98ac9',0);      // fun room | lab
+  // 🏃 Sports — gym lang (tennis/soccer/event tinanggal)
+  rect(0,11,14,22,{side:'west',at:18},'#7ee2a8',-.68); // gym
   // 🌊🍹 2F resort — bar | pool | mall
   runZ(15.8,-8,-3,-5.5,'#ff8f5a',4);
   runZ(21.6,-8,-3,-5.5,'#7cf7ff',4);
@@ -3207,12 +3213,8 @@ function buildSportsBots3d(){
 function buildPoleLights3d(){
   g.poleLights=[];
   const pts=[
-    [23,3.5],[37,3.5],[23,12.5],[37,12.5],                     // basketball
-    [1,-5],[23,-5],[1,-35],[23,-35],[1,-20],[23,-20],           // soccer
-    [57,-5],[71,-5],[57,21],[71,21],                            // tennis (inilipat sa x=64)
-    [30,-38],[62,-38],[30,-6],[62,-6],[38,-40],[54,-40],        // event stage area
-    [-11,2],[-11,20],[-11,32],[38,32],[56,32],[24,32],[4,32],   // roads
-    [7,24],[17,32],[46,19],[20,24]                              // playground / lab / wing (hindi sa loob ng room)
+    [23,3.5],[37,3.5],[23,12.5],[37,12.5],                     // pickleball court
+    [7,24],[46,19],[20,24]                                    // office wing / gym link
   ];
   const gc=document.createElement('canvas');gc.width=gc.height=64;
   const gq=gc.getContext('2d'),rg=gq.createRadialGradient(32,32,1,32,32,32);
@@ -3566,7 +3568,7 @@ function drawScoreboard(){
 }
 /* ===== 🏀 BASKETBALL COURT sa gilid (kanan ng HQ) ===== */
 function buildBasketball3d(){
-  const cx=30,cz=8,L=12,W=7;
+  const cx=26,cz=22,L=12,W=7;
   g.court={cx,cz,L,W};
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(L,W),m3('#3f6f9c',{roughness:.9}));
   floor.rotation.x=-Math.PI/2;floor.position.set(cx,-.685,cz);floor.receiveShadow=true;g.level.add(floor);
@@ -3643,9 +3645,9 @@ function buildCourtBots3d(){
     p.scale.setScalar(.9);p.position.set(x,-.7,z);g.level.add(p);
     g.courtBots.push({grp:p,legs,arms,role,ph,hx:x,hz:z});
   };
-  make('#e8622c',30,8,'handler',0);
-  make('#4b8dff',34,7.6,'shooter',2.1);
-  make('#2bb3a6',26,8.4,'defender',4.2);
+  make('#e8622c',26,22,'handler',0);
+  make('#4b8dff',30,21.6,'shooter',2.1);
+  make('#2bb3a6',22,22.4,'defender',4.2);
 }
 /* ===== ☕ COFFEE CART sa tabi ng court + bots na bumibili ===== */
 function buildCoffeeCart3d(){
@@ -3759,41 +3761,9 @@ function buildPlayground3d(){
 }
 function buildCity3d(){
   cityMovers3d=[];g.trees=[];
-  const roadMat=m3('#4a4f5a');
-  const mkRoad=(w,d,x,z)=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);r.rotation.x=-Math.PI/2;r.position.set(x,-.69,z);r.receiveShadow=true;g.level.add(r)};  mkRoad(180,4.4,18,36);
-  // 🚫 Kalsadang katabi ng office (x=-6.8) tinanggal — luwang na ang office wing
-  for(let x=-70;x<=105;x+=3.2){
-    const d=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.24),m3('#e8e8e8'));
-    d.rotation.x=-Math.PI/2;d.position.set(x,-.68,36);g.level.add(d);
-  }
-  // (walang patayong kalsada sa tabi ng office)
-  // trees around the plot
-  [[-3.4,1.5],[-3.4,6],[-3.4,10.5],[-3.4,15],[4,-1.4],[10,-1.4],[16,-1.4],
-   [24,1.5],[24,10.5],[23.8,16],[24,17],[2,16.2],[7.5,16.2],[13,16.2],[24.5,24],[-12,-9],[24,-9],[-12,26]]
-    .forEach((p,i)=>tree3d(p[0],p[1],1+((i*37)%10)/14));
-  // neighboring city blocks
-  // neighboring city blocks (malayo sa campus para hindi humaharang sa view)
-  // city blocks sa PALAYO — lahat nasa radius 77+ mula sa office (max zoom = 70)
-  // para HINDI KAILANMAN makakapasok sa pagitan ng camera at ng campus!
-  cityBlock3d(-60,10,9,9,10,'#8a95a8');
-  cityBlock3d(-60,35,8,8,12,'#a89a8a');
-  cityBlock3d(-55,-15,10,9,9,'#7a8aa0');
-  cityBlock3d(95,10,10,9,12,'#9aa8b8');
-  cityBlock3d(95,32,9,9,10,'#8a95a8');
-  cityBlock3d(90,-12,10,9,14,'#a89a8a');
-  cityBlock3d(5,-65,12,9,9,'#9aa8b8');
-  cityBlock3d(28,-65,10,9,12,'#7a8aa0');
-  cityBlock3d(-10,90,12,9,10,'#8a95a8');
-  cityBlock3d(28,90,9,9,13,'#a89a8a');
-  // streetlights — nasa sidewalk, HINDI sa ibabaw ng kalsada
-  lamp3d(-2.2,32.4);lamp3d(11,39.6);lamp3d(26,32.4);lamp3d(44,39.6);
-  buildFarm3d();
-  buildParking3d();
-  // moving cars
-  car3d(-8,34.6,false,'#c94f4f',70);
-  car3d(6,37.2,false,'#4f8ac9',70);
-  car3d(24,34.6,false,'#e8c04a',70);
-  // tinanggal ang dalawang vertical cars — wala na ang x=-6.8 side road
+  // (walang kalsada — puro campus view gaya ng reference)
+  // (walang kalsada, puno, o gusaling kalapit — malinis at nakahilera ang campus)
+  // (walang kalsada — puro campus view gaya ng reference)
 }
 function frame3D(){
   if(!threeReady)return;
@@ -4444,7 +4414,7 @@ function frame3D(){
     cam3d.target.x=Math.max(-12,Math.min(62,cam3d.target.x+dx*sp));
     cam3d.target.z=Math.max(-12,Math.min(72,cam3d.target.z+dz*sp));
     cam3d.theta=Math.atan2(dx,dz);
-    cam3d.phi=.5; cam3d.r=16; cam3d.lastUser=Date.now();
+    cam3d.phi=.45; cam3d.r=28; cam3d.lastUser=Date.now();
   }
   if(!playerMode){
     // 1st floor lang: walang jump/float
@@ -4947,27 +4917,27 @@ $('hireRun').onclick=async()=>{
 };
 /* ✨? JUMP TO LOCATION: isang pindot, diretso sa lugar! */
 const JUMP_VIEWS={
-  hq:{t:[20,1.2,14],phi:.6,theta:.5,r:44},
+  hq:{t:[22,1.2,12],phi:.6,theta:.5,r:44},
   ceo:{t:[3.3,1.2,10.85],phi:.55,theta:.3,r:12},
   work:{t:[10.6,1.2,10.85],phi:.55,theta:.3,r:13},
   conf:{t:[18.3,1.2,10.85],phi:.55,theta:.3,r:12},
   fun:{t:[3.95,1.2,3.35],phi:.55,theta:.3,r:12},
   pantry:{t:[10.5,1.2,3.35],phi:.55,theta:.3,r:11},
   bay:{t:[17.55,1.2,3.35],phi:.55,theta:.3,r:12},
-  sleep:{t:[28,1.5,27],phi:.55,theta:.3,r:14},
+  sleep:{t:[28,1.5,13],phi:.55,theta:.3,r:14},
   mall:{t:[23.8,5,-5],phi:.5,theta:.3,r:14},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
   pool:{t:[18.7,5.5,-5],phi:.55,theta:2.6,r:16},
-  lab:{t:[40,1.5,27],phi:.55,theta:.3,r:14},
+  lab:{t:[40,1.5,13],phi:.55,theta:.3,r:14},
   resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
-  court:{t:[30,1.5,8],phi:.55,theta:.3,r:16},
+  court:{t:[26,1.5,22],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
   gym:{t:[54,1.5,26],phi:.55,theta:.3,r:18},
   cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
   wfun:{t:[40.8,1.5,20],phi:.55,theta:.3,r:14}
 };
-function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
+function jumpTo(key){const v=JUMP_VIEWS[key];if(!v||!cam3d)return;if(playerMode&&player){player.x=v.t[0];player.z=v.t[2];player.group.position.x=player.x;player.group.position.z=player.z;player.theta=0;if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.42;cam3d.r=28;cam3d.lastUser=Date.now();}}else{cam3d.target.set(v.t[0],v.t[1],v.t[2]);cam3d.phi=v.phi;cam3d.theta=v.theta;cam3d.r=v.r;}cam3d.lastUser=Date.now();toast('✨ Pumunta sa '+key.toUpperCase()+'! (WASD para gumalaw)')}
 function bindJump(id,key){const b=$(id);if(b)b.onclick=e=>{e.stopPropagation();jumpTo(key)};}
 /* 3x3 HANAY NG MGA OFFICE */
 bindJump('jCeo','ceo');bindJump('jWork','work');bindJump('jConf','conf');
@@ -5056,7 +5026,7 @@ function spawnPlayer(){
   const sh=new THREE.Mesh(new THREE.CircleGeometry(.42,20),new THREE.MeshBasicMaterial({color:'#1a2230',transparent:true,opacity:.28,depthWrite:false}));sh.rotation.x=-Math.PI/2;g.level.add(sh);
   player={group:grp,shadow:sh,x:grp.position.x,z:grp.position.z,y:0,theta:0,vy:0,onGround:true,head:head,crown:crown,crownBits:crownBits};
   try{applyOutfit()}catch(e){}
-  if(cam3d){cam3d.target.set(15,.7,16);cam3d.theta=0;cam3d.phi=.5;cam3d.r=15;cam3d.lastUser=Date.now();}
+  if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.45;cam3d.r=28;}
   toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!');
 }
 function despawnPlayer(){
@@ -6518,7 +6488,7 @@ function createUiHideBtn(){
   const bar=document.getElementById('officeTools');if(!bar)return;
   const b=document.createElement('button');b.id='uiHideBtn';b.title='Itago / ipakita ang floating panels (shortcut: H)';
   b.onclick=()=>toggleUiHide();bar.appendChild(b);
-  try{if(localStorage.getItem('uiHidden')==='1')document.body.classList.add('ui-hidden');}catch(e){}
+  try{const v=localStorage.getItem('uiHidden');if(v==='0')document.body.classList.remove('ui-hidden');else{document.body.classList.add('ui-hidden');if(v===null)localStorage.setItem('uiHidden','1');}}catch(e){}
   updateUiHideBtn();
 }
 function toggleUiHide(force){
@@ -6531,6 +6501,7 @@ function toggleUiHide(force){
   }
   document.body.classList.toggle('ui-hidden',on);
   try{localStorage.setItem('uiHidden',on?'1':'0');}catch(e){}
+  try{window.dispatchEvent(new Event('resize'));}catch(e){}
   updateUiHideBtn();
 }
 function updateUiHideBtn(){const b=document.getElementById('uiHideBtn');if(b)b.textContent=document.body.classList.contains('ui-hidden')?'👁 Show UI':'👁 Hide UI';}
