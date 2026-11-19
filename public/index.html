@@ -2004,6 +2004,78 @@ function phone3d(x,z){
   box3(.34,.06,.26,'#3a4256',x,.05,z);
   const h=box3(.36,.07,.09,'#222b3d',x,.11,z);h.rotation.y=.15;
 }
+function buildCyborgOffice3d(){
+  const glassMat2=new THREE.MeshStandardMaterial({color:'#a8d8ff',transparent:true,opacity:.3,roughness:.08,metalness:.4,side:THREE.DoubleSide,depthWrite:false});
+  const glass=(w,h,d,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glassMat2);m.position.set(x,y,z);m.castShadow=true;g.level.add(m);return m;};
+  // floor slab
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(46.6,.8,34.6),m3('#1a2230'));slab.position.set(23,-.4,17);slab.receiveShadow=true;g.level.add(slab);
+  // exterior glass walls — entrance gap front center
+  glass(46,3.4,.12,23,1.7,0);
+  glass(.12,3.4,34,0,1.7,17);
+  glass(.12,3.4,34,46,1.7,17);
+  glass(14,3.4,.12,7,1.7,34);
+  glass(22,3.4,.12,35,1.7,34);
+  // zone floor planes + labels
+  const zones=[
+    {n:'SERVER ROOM (Data Center)',x:0,z:0,w:13,d:11,c:'#1f3a5f'},
+    {n:'AI COMMAND CENTER (24/7 Ops)',x:13,z:0,w:19,d:11,c:'#1f2a4f'},
+    {n:'AI RESEARCH & DEVELOPMENT LAB',x:32,z:0,w:14,d:11,c:'#2a1f4f'},
+    {n:'ROBOTICS LAB',x:0,z:11,w:13,d:11,c:'#3a2a1f'},
+    {n:'AI WORKSTATION AREA',x:13,z:11,w:19,d:11,c:'#1f3a2a'},
+    {n:'MEETING ROOMS',x:32,z:11,w:8,d:11,c:'#2a3a4f'},
+    {n:'INNOVATION LAB (Prototyping)',x:40,z:11,w:6,d:11,c:'#3a1f2a'},
+    {n:'EXECUTIVE OFFICE (CEO)',x:0,z:22,w:8,d:12,c:'#3a2a4f'},
+    {n:'EXECUTIVE LOUNGE (VIP)',x:8,z:22,w:6,d:12,c:'#2f2a1f'},
+    {n:'MAIN LOBBY (Welcome Area)',x:14,z:22,w:10,d:12,c:'#1f2a3f'},
+    {n:'CAFETERIA (Dining Area)',x:24,z:22,w:8,d:12,c:'#3f2a1f'},
+    {n:'WELLNESS CENTER (Gym/Health)',x:32,z:22,w:8,d:12,c:'#1f3a3a'},
+    {n:'RESTROOMS',x:40,z:22,w:6,d:12,c:'#2a2a2a'}
+  ];
+  zones.forEach(z=>{
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(z.w-.2,z.d-.2),m3(z.c));
+    f.rotation.x=-Math.PI/2;f.position.set(z.x+z.w/2,.02,z.z+z.d/2);f.receiveShadow=true;g.level.add(f);
+    mkLabel(z.n,z.x+z.w/2,z.z+z.d/2,3.6,'#8fd0e8');
+  });
+  // SERVER ROOM — racks
+  for(let i=0;i<6;i++)box3(.9,2.2,.8,'#2b3346',2+i*2,1.1,3);
+  for(let i=0;i<6;i++)box3(.9,2.2,.8,'#2b3346',2+i*2,1.1,8);
+  // AI COMMAND CENTER — big desk + screens
+  box3(8,.8,2,'#3a4256',22.5,.4,5);
+  for(let i=0;i<4;i++)box3(1.6,1.6,.1,'#66d9ff',18.5+i*2.6,1.6,2.5,true);
+  // AI RESEARCH & DEV LAB — tables
+  box3(4,.8,1.5,'#4a4f6a',36,.4,4);box3(4,.8,1.5,'#4a4f6a',36,.4,8);
+  // ROBOTICS LAB — robot arms
+  for(let i=0;i<3;i++){cyl3(.3,2,'#c9a227',3+i*4,1,15);box3(.6,1,.6,'#e8eef8',3+i*4,2,15);}
+  // AI WORKSTATION AREA — desk grid with monitors
+  for(let r=0;r<3;r++)for(let c=0;c<5;c++){box3(1.2,.75,.7,'#c9a26a',16+c*3.2,.38,14+r*3.3);box3(.6,.5,.06,'#222b3d',16+c*3.2,1.02,13.8+r*3.3);}
+  // MEETING ROOMS — conference tables
+  box3(3,.75,1.6,'#93744c',34.5,.38,14);box3(3,.75,1.6,'#93744c',34.5,.38,18);
+  // INNOVATION LAB — workbench
+  box3(3,.8,1.5,'#6a4a2a',43,.4,16);
+  // EXECUTIVE OFFICE — big desk
+  box3(2.4,.8,1.2,'#5b3a22',4,.4,28);
+  // EXECUTIVE LOUNGE — sofas
+  box3(2.4,.5,.9,'#6a4a7a',11,.3,26);box3(2.4,.5,.9,'#6a4a7a',11,.3,30);
+  // MAIN LOBBY — reception desk
+  box3(4,.8,1.4,'#3a4256',19,.4,29);
+  // CAFETERIA — tables
+  for(let i=0;i<4;i++)cyl3(.6,.75,'#8a6238',26+i*1.8,.38,28);
+  // WELLNESS CENTER — treadmills
+  for(let i=0;i<3;i++)box3(.8,.4,1.6,'#2b3346',34+i*2,.2,28);
+  // RESTROOMS — stalls
+  for(let i=0;i<4;i++)box3(.9,1.6,.12,'#4a4f5a',41+i*1.3,.8,30);
+  // PARKING LOT
+  const park=new THREE.Mesh(new THREE.PlaneGeometry(46,8),m3('#2a2f36'));park.rotation.x=-Math.PI/2;park.position.set(23,-.69,38);park.receiveShadow=true;g.level.add(park);
+  for(let i=0;i<12;i++)box3(.15,.02,3,'#f2f6ff',3+i*3.8,-.66,38,true);
+  const carCols=['#c94f4f','#4f8ac9','#e8c04a','#5ac98f','#c98ac9','#8a95a8'];
+  for(let i=0;i<6;i++){const c=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(1.8,.5,.9),m3(carCols[i]));b.position.y=.32;c.add(b);const cab=new THREE.Mesh(new THREE.BoxGeometry(.9,.4,.8),m3('#2b3346'));cab.position.set(-.1,.72,0);c.add(cab);c.position.set(4+i*7.5,-.68,38);g.level.add(c);}
+  // FOUNTAIN in front of lobby
+  cyl3(1.6,.5,'#8a94a8',19,.25,36);
+  const water=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,.1,20),new THREE.MeshStandardMaterial({color:'#2bb3d6',transparent:true,opacity:.85,roughness:.2}));water.position.set(19,.55,36);g.level.add(water);
+  cyl3(.3,1.2,'#c9a227',19,1.1,36,true);
+  // ENTRANCE CANOPY
+  box3(10,.2,2,'#1a2230',19,3.6,34);
+}
 function buildRoom3d(id){
   if(!threeReady)return;
   if(level3d){scene3d.remove(level3d);level3d.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
@@ -2022,7 +2094,7 @@ function buildRoom3d(id){
   scene3d.fog=new THREE.Fog('#0e1726',80,220);
   const W=44,H=14;
   // 🏞️ minimal ground only — court lang ang natira
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),m3('#2f333a'));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),m3('#000000'));
   ground.rotation.x=-Math.PI/2;ground.position.set(22,-.7,8);ground.receiveShadow=true;level3d.add(ground);
   if(false){
   // ===== IISANG PALAPAG: maayos na hanay ng opisina, may harang bawat isa =====
@@ -2303,8 +2375,7 @@ function buildRoom3d(id){
   // buildScenery3d(); // tinanggal — walang mountains/river/waterfall
   // buildExtraScenery3d(); // tinanggal — walang rainbow/balloon/fountain
   // buildAnimals3d(); // tinanggal — walang animals sa campus
-  // buildBasketball3d(); // tinanggal — malinis, walang structures (uusin natin)
-  // buildCourtBots3d(); // tinanggal
+  // (court builders inilipat sa labas ng if(false) — tingnan sa dulo ng buildRoom3d)
   // buildCoffeeCart3d(); // tinanggal — puro office campus layout
   // buildPlayground3d(); // tinanggal — puro office campus layout
   // buildSports3d(); // tinanggal — walang tennis/soccer/event, office lang
@@ -2345,6 +2416,7 @@ function buildRoom3d(id){
   if(g.pet){g.pet.group.position.x=g.pet.group.position.x*SX+shiftX;g.pet.group.position.z=g.pet.group.position.z*SZ+shiftZ;if(g.pet.tx!==undefined)g.pet.tx=g.pet.tx*SX+shiftX;if(g.pet.tz!==undefined)g.pet.tz=g.pet.tz*SZ+shiftZ;}
   (g.courtBots||[]).forEach(b=>{b.grp.position.x=b.grp.position.x*SX+shiftX;b.grp.position.z=b.grp.position.z*SZ+shiftZ;if(b.hx!==undefined)b.hx=b.hx*SX+shiftX;if(b.hz!==undefined)b.hz=b.hz*SZ+shiftZ;});
   }
+  buildCyborgOffice3d();
   // orbit camera
   cam3d={target:new THREE.Vector3(10,1.2,11),theta:.55,phi:.58,r:62,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
@@ -3552,7 +3624,7 @@ function drawScoreboard(){
 }
 /* ===== 🏀 BASKETBALL COURT sa gilid (kanan ng HQ) ===== */
 function buildBasketball3d(){
-  const cx=48,cz=-14,L=12,W=7;
+  const cx=28,cz=10,L=12,W=7;
   g.court={cx,cz,L,W};
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(L,W),m3('#3f6f9c',{roughness:.9}));
   floor.rotation.x=-Math.PI/2;floor.position.set(cx,-.685,cz);floor.receiveShadow=true;g.level.add(floor);
@@ -3629,9 +3701,9 @@ function buildCourtBots3d(){
     p.scale.setScalar(.9);p.position.set(x,-.7,z);g.level.add(p);
     g.courtBots.push({grp:p,legs,arms,role,ph,hx:x,hz:z});
   };
-  make('#e8622c',48,-14,'handler',0);
-  make('#4b8dff',52,-14.4,'shooter',2.1);
-  make('#2bb3a6',44,-13.6,'defender',4.2);
+  make('#e8622c',28,10,'handler',0);
+  make('#4b8dff',32,9.6,'shooter',2.1);
+  make('#2bb3a6',24,10.4,'defender',4.2);
 }
 /* ===== ☕ COFFEE CART sa tabi ng court + bots na bumibili ===== */
 function buildCoffeeCart3d(){
@@ -4900,7 +4972,7 @@ const JUMP_VIEWS={
   pool:{t:[16,5.5,-8.8],phi:.55,theta:2.6,r:16},
   lab:{t:[40,1.5,13],phi:.55,theta:.3,r:14},
   resort:{t:[16,5.2,-8.8],phi:.62,theta:2.4,r:20},
-  court:{t:[48,1.5,-14],phi:.55,theta:.3,r:16},
+  court:{t:[28,1.5,10],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
   gym:{t:[8,1.5,26],phi:.55,theta:.3,r:18},
   cafeteria:{t:[33.4,1.5,20],phi:.55,theta:.3,r:14},
