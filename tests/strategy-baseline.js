@@ -38,14 +38,19 @@ const protectedHashes = {
   // Ollama fix (2026-11-20): local providers send reasoning_effort=none (so
   // reasoning models stop returning empty `content`), keep_alive=30m (no 30s
   // reloads), a 5-minute request timeout, and a reasoning-text fallback.
-  'server.js': '0e95e81fd5671d24078b58314ec4630fe7cf1f41194564bb0a5ac33ab1f51a4d',
+  // 2026-11-20: office bots chat through the user's Groq key (callGroq),
+  // model qwen/qwen3.8-27b (clean Taglish, no reasoning leak), case-insensitive speaker ids.
+  'server.js': 'fb95aaf36e4109031416e562f27ee15ba08d4312c0a20c3e11f71f0759d9c8c2',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
   // renderer (no MSAA / 1x DPR / no shadows) so weak GPUs do not stall.
   // Cache-bust bump v8 -> v9 so returning browsers cannot reuse the old
   // phaseB.js that contained the self-triggering MutationObserver freeze.
-  'public/index.html': '4065618f0bab6150075b3fe4b8abeca4f62189132b1347ab18cd0fc4a2e257aa',
+  // 2026-11-20: realistic office-v9 scene + 2-min bot chatter + cache-bust v2.
+  'public/index.html': '3221b9be01feae7a00d94999335b0621257c896820e528b2a48a42c13f3a2008',
+  // 2026-11-20: new realistic single-floor office with 6 small happy bots.
+  'public/office-v9.js': '38a66d122c4f1908eb8d93b1c7873d1b0f7d5e4b4169249422835a11f69246ec',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

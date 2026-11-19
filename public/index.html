@@ -2451,9 +2451,11 @@ function buildRoom3d(id){
   if(g.pet){g.pet.group.position.x=g.pet.group.position.x*SX+shiftX;g.pet.group.position.z=g.pet.group.position.z*SZ+shiftZ;if(g.pet.tx!==undefined)g.pet.tx=g.pet.tx*SX+shiftX;if(g.pet.tz!==undefined)g.pet.tz=g.pet.tz*SZ+shiftZ;}
   (g.courtBots||[]).forEach(b=>{b.grp.position.x=b.grp.position.x*SX+shiftX;b.grp.position.z=b.grp.position.z*SZ+shiftZ;if(b.hx!==undefined)b.hx=b.hx*SX+shiftX;if(b.hz!==undefined)b.hz=b.hz*SZ+shiftZ;});
   }
-  buildCyborgOffice3d();
-  // orbit camera
-  cam3d={target:new THREE.Vector3(22,1.2,6),theta:.55,phi:.68,r:92,lastUser:0};
+  /* Office v9: bright realistic single-floor office with small happy bots.
+     Falls back to the old zone map if the new module did not load. */
+  if(typeof buildRealOffice3d!=='function'||!buildRealOffice3d())buildCyborgOffice3d();
+  // orbit camera — framed for the realistic office (was far top-down r=92)
+  cam3d={target:new THREE.Vector3(23,1,16),theta:.52,phi:.42,r:58,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
@@ -4653,7 +4655,8 @@ tick();setInterval(tick,30000);
 refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!'),4000)});
 setInterval(refresh,6000);
 setInterval(async()=>{if(!autoOn||!S||S.stopped||S.running)return;const t=S.tasks.filter(a=>a.status==='queued');if(t.length)await api('/api/tasks/run',{method:'POST',body:'{}'});await refresh()},5000);
-setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;const r=await api('/api/conversation',{method:'POST',body:'{}'});if(r.ok)await refresh()},600000);
+/* Bots chat every 2 minutes (Groq). Was 10 minutes — felt dead on open. */
+setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;const r=await api('/api/conversation',{method:'POST',body:'{}'});if(r.ok)await refresh()},120000);
 </script>
 
 <!-- CEO Chat -->
@@ -7059,5 +7062,5 @@ async function openCeoWish(){
   window.openMeeting=openMeeting;
 })();
 </script>
-<script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script></body>
+<script src="/office-v9.js?v=2"></script><script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script></body>
 </html>

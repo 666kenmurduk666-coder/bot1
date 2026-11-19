@@ -72,7 +72,7 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Dating custom build (neon): git history `7f3193e`
 - Lokal safety backup ng official v8: `C:\Users\PC\AppData\Local\Temp\opencode\phaseD-backup\`
 - **Timestamped data backups:** `C:\Users\PC\Desktop\bot1-backups\<yyyy-MM-dd-HHmm>\` (state.json, settings.json, .env, fb-config.txt, shopee-config.txt, audit.jsonl)
-- Restore scripts sa `bot1\`: `restore-after-deploy.js` (auto restore ng mall/commercials/FB/Shopee/Vyce key, idempotent) — samahan ito ng DEPLOY-NOTES.md na ito
+- Restore scripts sa `bot1\`: `restore-after-deploy.js` (auto restore ng mall/commercials/FB/Shopee/**Vyce + Groq** keys, idempotent, hinahayaan ang ibang keys) — samahan ito ng DEPLOY-NOTES.md na ito
 
 ## 📝 Notas sa token
 
@@ -120,4 +120,75 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   Script: `keepalive-ping.ps1`, log: `logs/keepalive.log`.
   Test run: `LastTaskResult=0`, `OK 200`.
 - Kapag bumalik sa labas ng 06:00-24:00 PHT: normal lang ang ~50s cold start.
+
+## 2026-11-20 - Realistic office + Groq bot conversations (office-v9)
+
+### Bakit pangit / hindi mukhang opisina ang dating 3D (NAYOS NA)
+- **Root cause:** sa `buildRoom3d()` ng `public/index.html`, ang buong detalyadong
+  office build ay nasa loob ng `if(false){ ... }` — **naka-disable**. Ang
+  lumalabas lang ay ang abstract `buildCyborgOffice3d()` (zone floor planes +
+  labels), kaya parang kulay-kulay na mapa, hindi opisina.
+- **Fix (hindi binubura ang protected v8 runtime):** bagong module
+  `public/office-v9.js` ang nag-build ng buong scene. Tinawag ito sa
+  `buildRoom3d()` bago ang lumang fallback:
+  `if(typeof buildRealOffice3d!=='function'||!buildRealOffice3d())buildCyborgOffice3d();`
+  Kung hindi mag-load ang module, babalik sa dating zone map (walang break).
+
+### Bagong disenyo
+- Maliwanag na **single-floor real office**: 46.6 x 34.6 na sahig, white walls,
+  window strips sa perimeter, glass partitions, ceiling lights, at mga karpet
+  bawat zone.
+- **Zones:** open workstations (2 hanay x 5 desk + monitor + upuan), meeting room
+  (mesa + 6 na upuan + whiteboard), CEO office (desk + bookshelf + plant),
+  reception/lobby (counter + sofa + signage), pantry (counter + coffee machine +
+  stools), at server nook.
+- **6 na maliliit at masasayang bots** (`cos`, `seo`, `product`, `joker`, `mgr`,
+  `writer`): scaled `0.66`, may ngiti, eye sparkle, blush, bowtie, emoji bubble,
+  name tag, at umaalog na kamay + bao ng katawan.
+- **Magaan sa GPU:** ~400 meshes lang, walang shadow map, 30 FPS cap, at hintay
+  kapag `document.hidden`. `scene3d.background = #e9eef5`, camera
+  `r=58, phi=.42, target(23,1,16)`.
+- Speech bubbles: lumalabas sa tabi ng bot gamit ang projection sa `camera3d`;
+  umiikot ang 4 na linya ng usapan bawat ~3.8s habang sariwa ang conversation
+  (<3 min).
+- **Cache-bust:** `/office-v9.js?v=2` — bump ang `?v=` kapag may bagong change
+  sa module para ma-bypass ang browser cache.
+
+### Groq ang nagpapausap sa mga bot
+- Key: `gsk_p...ErUV` (masked), naka-save sa `C:\Users\PC\Desktop\bot1\.env`
+  bilang `GROQ_API_KEY`, modelo **`GROQ_MODEL=qwen/qwen3.8-27b`**.
+  Pinagmulan: `C:\Users\PC\Documents\BotFactory-Data\.config.json` (`groq` field).
+- `server.js`: bagong `callGroq()` (gamit ang `keys.groq` sa settings, hindi
+  nakadepende sa napiling provider para sa ibang AI work). Ang
+  `generateConversation()` ay **Groq-first**, tapos `callAI()` fallback, tapos
+  template fallback.
+- **Bakit qwen at hindi gpt-oss:** ang `openai/gpt-oss-20b` ay nag-leak ng
+  reasoning/prompt text sa sagot, at `reasoning_effort:'none'` ay 400. Ang
+  `qwen/qwen3.8-27b` ay malinis, natural Taglish, at case-insensitive ang
+  speaker parse (`Cos:` at `cos:` parehong gumagana).
+- Auto-chat: **2 minuto** (dating 10 minuto) + agarang conversation 4s pagbukas
+  ng app. Kailangang naka-unlock ang CEO (`cyborg`) dahil ang `/api/conversation`
+  ay protected; `api()` at office-v9 ay nagpapadala ng `pass` sa body.
+- **Restore runbook update:** `restore-after-deploy.js` ngayon ay kumukuha muna
+  ng umiiral na keys sa `/api/private` bago mag-post sa `/api/settings`
+  (ang `/api/settings` ay **pinapalitan** ang buong `keys` object — kaya kung
+  hindi muna hihilahin, mabubura ang Vyce). Isinasama nito ang **Vyce + Groq**
+  sa iisang post, `failover:['groq','vyce']`. Pattern ng key: `gsk_`.
+
+### Verification na ginawa
+- Lokal (`http://localhost:8790`): `readyState=complete`, `bots=6`,
+  `meshes=400`, background `e9eef5`, **walang console errors**.
+- Groq endpoint (POST `/api/conversation` + `pass:cyborg`): 200, natural Taglish
+  hal. `cos: Kuya, why is our engagement flat?` / `seo: Because I'm too busy
+  writing captions that don't mention discounts.`
+- Tick diagnostic (`window.__officeV9.tick()` — para sa embedded browser na
+  hindi nagfi-fire ng `requestAnimationFrame`): nagbago ang `rotation.y`
+  (0 -> 3.40) at `position.y` (0 -> 0.02), at lumabas ang bubble ni Seo.
+- `node tests/strategy-baseline.js` + lahat ng tests sa `tests/`: PASS.
+  Na-update ang protected hashes para sa `server.js`, `public/index.html`, at
+  bagong entry na `public/office-v9.js`.
+- **Tandaan:** ang embedded browser ng OpenCode ay hindi nagfi-fire ng
+  `requestAnimationFrame` kahit `document.hidden=false` (test probe = 0 frames).
+  Hindi ito app bug — normal na browser ay umaandar; kaya gamitin ang
+  `window.__officeV9.tick()` diagnostic kapag sinusuri dito.
 

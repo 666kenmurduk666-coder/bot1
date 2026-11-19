@@ -61,7 +61,7 @@ function settings() {
   }
   const defaults = {
     openrouter: 'openai/gpt-4o-mini', coarena: 'gemini-3-8-flash',
-    groq: 'openai/gpt-oss-20b', openai: 'gpt-4o-mini'
+    groq: 'qwen/qwen3.8-27b', openai: 'gpt-4o-mini'
   };
   return {
     apiKey,
@@ -511,7 +511,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const MODEL_DEFAULTS = {
   openrouter: 'openai/gpt-4o-mini', coarena: 'gemini-3-8-flash',
-  groq: 'openai/gpt-oss-20b', openai: 'gpt-4o-mini', vyce: ''
+  groq: 'qwen/qwen3.8-27b', openai: 'gpt-4o-mini', vyce: ''
 };
 function providerCfg(name, s) {
   if (name === s.provider) return { provider: name, apiKey: s.apiKey, model: s.model, baseUrl: s.baseUrl };
@@ -625,6 +625,15 @@ async function callAI(system, user, maxTokens) {
     }
   }
   throw lastErr || new Error('No provider available');
+}
+
+/* Office bots talk through the user's own Groq key, independent of whichever
+   provider is selected for ordinary CEO/agent work. Falls back to callAI(). */
+async function callGroq(system, user, maxTokens) {
+  const s = settings();
+  const cfg = providerCfg('groq', s);
+  if (!cfg.apiKey) throw new Error('No Groq key');
+  return (await callProvider(cfg, system, user, maxTokens)).text;
 }
 
 const PROMPTS = {
@@ -764,16 +773,22 @@ async function generateConversation(ids) {
     '\nWrite 4 short lines of casual watercooler talk. Format: "id: line".';
   let lines;
   try {
-    lines = (await callAI(sys, user, 500)).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
+    // Prefer Groq for the office watercooler when the user's key is present.
+    lines = (await callGroq(sys, user, 500)).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
   } catch (e) {
-    lines = [chosen[0] + ': Coffee first, work later.', chosen[1] + ': Boss is watching. Back to work!'];
+    try {
+      lines = (await callAI(sys, user, 500)).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
+    } catch (e2) {
+      lines = [chosen[0] + ': Coffee first, work later.', chosen[1] + ': Boss is watching. Back to work!'];
+    }
   }
   const conv = {
     id: 'c' + Date.now(), t: Date.now(),
     lines: lines.map(l => {
       const i = l.indexOf(':');
-      const id = (i > 0 ? l.slice(0, i) : chosen[0]).trim();
-      return { id: chosen.includes(id) ? id : chosen[0], text: (i > 0 ? l.slice(i + 1) : l).trim() };
+      const raw = (i > 0 ? l.slice(0, i) : chosen[0]).trim().replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '');
+      const id = chosen.find(c => c.toLowerCase() === raw.toLowerCase()) || chosen[0];
+      return { id: id, text: (i > 0 ? l.slice(i + 1) : l).trim() };
     })
   };
   state.conversations.unshift(conv);
