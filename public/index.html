@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>🤖 Cyborg Cheebee Office — AI Agents HQ</title>
 <style>
 :root{--nav:#0b1020;--nav2:#12172a;--nav3:#1a2340;--line:#39466d;--bg:#090b18;--panel:#12172a;--node:#1a2340;--tx:#f4f5ff;--mut:#aab3d0;--acc:#77eaff;--gold:#a78bfa;--ok:#75f0c0;--bad:#ff8fa8}
@@ -65,8 +65,16 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .agent-card .top{display:flex;gap:9px;align-items:center}
 .agent-card b{font-size:13px}
 #oc{width:100%;max-width:900px;display:block;image-rendering:auto;border-radius:11px;box-shadow:0 0 30px #1b3a7a55}
-#oc3d{width:100%;height:520px;position:relative;border-radius:11px;overflow:hidden;background:#121a30;box-shadow:0 0 30px #1b3a7a55}
-#oc3d canvas{display:block}
+#oc3d{width:100%;height:clamp(520px,72vh,900px);min-height:460px;position:relative;border-radius:14px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#243b68,#090f20 78%);box-shadow:0 0 34px #1b3a7a66;border:1px solid #35527e;isolation:isolate}
+#oc3d canvas{display:block;width:100%;height:100%;touch-action:none}
+#officeCamTools{position:absolute;z-index:10001;top:10px;right:10px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:min(560px,75%);padding:6px;background:rgba(7,13,29,.82);border:1px solid #45689b;border-radius:12px;backdrop-filter:blur(8px);box-shadow:0 4px 18px #0008}
+#officeCamTools button{min-width:34px;padding:6px 9px;font-size:12px;background:linear-gradient(135deg,#1a3154,#14213a);border-color:#45689b;color:#e8f3ff}
+#officeCamTools button:hover{background:linear-gradient(135deg,#315b8b,#233c62);border-color:#8bdcff}
+#officeMiniMap{position:absolute;z-index:10000;right:10px;bottom:10px;width:min(230px,34vw);height:auto;aspect-ratio:23/16;border:1px solid #5a82b8;border-radius:10px;background:rgba(7,13,29,.9);box-shadow:0 4px 18px #0009;display:none;cursor:crosshair;touch-action:manipulation}
+#officeMiniMap.visible{display:block}
+#officeCamHint{position:absolute;z-index:9999;left:10px;top:10px;padding:5px 8px;border-radius:8px;background:rgba(7,13,29,.72);border:1px solid #35527e;color:#b9d7ff;font-size:10px;pointer-events:none}
+@media(max-width:700px){#oc3d{height:70vh;min-height:440px;border-radius:9px}#officeCamTools{top:6px;right:6px;max-width:92%;gap:3px;padding:4px}#officeCamTools button{padding:5px 7px;font-size:11px}#officeMiniMap{width: min(190px,45vw);right:6px;bottom:6px}}
+
 .bub3d{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#182032;font-size:16px;line-height:1.35;padding:9px 13px;border-radius:13px;border:2px solid #182032;max-width:280px;white-space:normal;text-align:center;box-shadow:4px 4px 0 rgba(24,32,50,.2);pointer-events:none;z-index:4}
 .bub3d b{display:block;font-size:12px;color:#5a6474;margin-bottom:3px}
 .bub3d:after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-6px;border:6px solid transparent;border-top-color:#182032}
@@ -83,6 +91,9 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #ceoModeBtn,#playBtn{display:none!important}
 /* 👁 Hide UI — itinatago ang floating panels para walang humaharang sa view */
 body.ui-hidden #oc3d #jumpPanel,
+body.ui-hidden #officeCamTools,
+body.ui-hidden #officeMiniMap,
+body.ui-hidden #officeCamHint,
 body.ui-hidden #oc3d #mmoChat,
 body.ui-hidden #gameHud,
 body.ui-hidden #bzPanel,
@@ -207,6 +218,17 @@ dialog::backdrop{background:#000a}
       </div>
     <div id="oc3d" style="display:none;position:relative">
       <button id="playBtn" title="Roblox-style controls: WASD = lakad, Space = jump, E = harvest" style="display:block;position:absolute;left:10px;bottom:10px;z-index:9999;background:linear-gradient(135deg,#e8622c,#f0723c);color:#fff;border:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px #0008;opacity:.95">🎮 Maglaro (Roblox Mode)</button>
+      <div id="officeCamTools" aria-label="Office camera controls">
+        <button id="camZoomOut" title="Zoom out" aria-label="Zoom out">－</button>
+        <button id="camZoomIn" title="Zoom in" aria-label="Zoom in">＋</button>
+        <button id="camFit" title="Show the whole campus" aria-label="Fit entire campus">⛶ Fit campus</button>
+        <button id="camReset" title="Reset camera" aria-label="Reset camera">↺ Reset</button>
+        <button id="camSave" title="Save camera position" aria-label="Save camera position">☆ Save view</button>
+        <button id="camLoad" title="Restore saved camera position" aria-label="Load saved camera position">★ Load</button>
+        <button id="camMiniToggle" title="Show or hide the campus minimap" aria-label="Toggle minimap">▦ Map</button>
+      </div>
+      <div id="officeCamHint">Drag: rotate · Right-drag: pan · Wheel: zoom · Click a bot: follow</div>
+      <canvas id="officeMiniMap" width="460" height="320" aria-label="Clickable office campus minimap" title="Click a point to move the camera"></canvas>
       <div id="jumpPanel" style="display:none;position:absolute;right:8px;bottom:8px;z-index:9999;background:rgba(10,18,40,.82);padding:4px;border-radius:7px;border:1px solid rgba(47,95,168,.7);pointer-events:auto;box-shadow:none">
         <button id="jumpToggle" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#c9a227;background:#16213c;border:1px solid #2f5fa8;border-radius:6px">📍 Zones</button>
         <button id="liveZoneBtn" title="1 click = LIVE CAM ON + FB Live Studio" style="font-size:10px;padding:2px 5px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#b03a3a,#e8622c);border:1px solid #ff8f5a;border-radius:6px;margin-left:3px">🎬 LIVE</button>
@@ -518,7 +540,7 @@ dialog::backdrop{background:#000a}
   <div class="bar"><button class="run" id="saveProfile">Save</button><button onclick="this.closest('dialog').close()">Close</button></div></dialog>
 <div class="toast" id="toast" style="display:none"></div>
 
-<script src="/three.min.js"></script>
+<script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1108,7 +1130,7 @@ function officeLoop(){
     const host=$('oc3d'),oc=$('oc');
     if(host)host.style.display=use3d?'block':'none';
     if(oc)oc.style.display=use3d?'none':'block';
-    if(use3d){frame3D();const info=$('officeInfo');if(info)info.textContent='3D 🖱️ drag = ikot · 🖱️ scroll = zoom · 👆 pindutin ang bot = sunod!'}
+    if(use3d){frame3D();const info=$('officeInfo');if(info)info.textContent='3D · Drag: rotate · Right-drag: pan · Wheel / ＋－: zoom · Fit campus: buong HQ · Click bot: follow'}
     else if(selRoom==='hq')drawBuilding();
     else drawOffice();
   }catch(err){
@@ -2420,7 +2442,7 @@ function buildRoom3d(id){
   }
   buildCyborgOffice3d();
   // orbit camera
-  cam3d={target:new THREE.Vector3(10,1.2,11),theta:.55,phi:.58,r:62,lastUser:0};
+  cam3d={target:new THREE.Vector3(22,1.2,6),theta:.55,phi:.68,r:92,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
@@ -2571,7 +2593,7 @@ function buildRoom3d(id){
       cam3d.theta-=(e.clientX-lx)*.006;cam3d.phi=Math.min(1.35,Math.max(.18,cam3d.phi+(e.clientY-ly)*.005));
       lx=e.clientX;ly=e.clientY;cam3d.lastUser=Date.now();
     });
-    dom.addEventListener('wheel',e=>{if(!cam3d)return;const dy=e.deltaY*(e.deltaMode===1?16:1);const step=dy>0?1.5:1/1.5;cam3d.r=Math.min(70,Math.max(2.5,cam3d.r*step));cam3d.lastUser=Date.now();e.preventDefault()},{passive:false});
+    dom.addEventListener('wheel',e=>{if(!cam3d)return;const dy=e.deltaY*(e.deltaMode===1?16:1);const step=dy>0?1.5:1/1.5;cam3d.r=Math.min(150,Math.max(2.5,cam3d.r*step));cam3d.lastUser=Date.now();e.preventDefault()},{passive:false});
     dom.addEventListener('touchstart',e=>{touchD={x:e.touches[0].clientX,y:e.touches[0].clientY};
       if(e.touches.length===2&&cam3d)pinch0={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),r:cam3d.r};
       if(cam3d)cam3d.lastUser=Date.now()},{passive:true});
@@ -2579,7 +2601,7 @@ function buildRoom3d(id){
       if(!cam3d)return;
       if(e.touches.length>=2&&pinch0){ // pinch zoom sa cellphone!
         const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-        if(d>10)cam3d.r=Math.min(70,Math.max(2.5,pinch0.r*pinch0.d/d));
+        if(d>10)cam3d.r=Math.min(150,Math.max(2.5,pinch0.r*pinch0.d/d));
         cam3d.lastUser=Date.now();return;
       }
       if(!touchD)return;
@@ -2700,6 +2722,64 @@ function buildRoom3d(id){
   });
 }
 let cam3d=null,orbitBound=false,cityMovers3d=[],escArr=[],esc2Steps=[],liftCage=null,followBot=null,xrayOn=false,xrayAuto=false;
+// CEO camera tools: broad zoom range, saved view, and clickable campus minimap.
+const OFFICE_MAP_ZONES=[
+  {name:'Command Center',x:-3.2,z:10.2,emoji:'👑'},
+  {name:'Operations Hub',x:6.6,z:10.2,emoji:'💻'},
+  {name:'Meeting Room',x:17,z:10.2,emoji:'🤝'},
+  {name:'Creative Studio',x:-2.4,z:1.2,emoji:'🎨'},
+  {name:'Pantry & Lounge',x:6.5,z:1.2,emoji:'☕'},
+  {name:'Brain Lab',x:16,z:1.2,emoji:'🧠'},
+  {name:'Sleep Quarters',x:36,z:13,emoji:'😴'},
+  {name:'Dev Studio',x:41.4,z:6,emoji:'💻'},
+  {name:'Content Studio',x:48.8,z:6,emoji:'🎬'},
+  {name:'Cafe Deck',x:16.3,z:-8.8,emoji:'☕'},
+  {name:'Gym',x:8,z:26,emoji:'💪'},
+  {name:'Pickleball Court',x:48,z:-14,emoji:'🏓'}
+];
+const OFFICE_MAP_BOUNDS={minX:-10,maxX:56,minZ:-20,maxZ:32};
+function setOfficeCamera(p){
+  if(!cam3d||!p)return false;
+  cam3d.target.set(Number(p.x)||0,Number.isFinite(Number(p.y))?Number(p.y):1.2,Number(p.z)||0);
+  cam3d.theta=Number.isFinite(Number(p.theta))?Number(p.theta):.55;
+  cam3d.phi=Math.max(.16,Math.min(1.42,Number(p.phi)||.68));
+  cam3d.r=Math.max(2.5,Math.min(150,Number(p.r)||88));cam3d.lastUser=Date.now();
+  return true;
+}
+function officeCameraZoom(factor){if(!cam3d)return;cam3d.r=Math.max(2.5,Math.min(150,cam3d.r*factor));cam3d.lastUser=Date.now();}
+function fitOfficeCampus(){setOfficeCamera({x:22,y:1.2,z:6,theta:.55,phi:.68,r:92});}
+function resetOfficeCamera(){setOfficeCamera({x:10,y:1.2,z:11,theta:.55,phi:.58,r:62});}
+function saveOfficeCamera(){
+  if(!cam3d)return;
+  try{localStorage.setItem('ccOfficeCameraV1',JSON.stringify({x:cam3d.target.x,y:cam3d.target.y,z:cam3d.target.z,theta:cam3d.theta,phi:cam3d.phi,r:cam3d.r}));toast('📷 Na-save ang camera position.');}
+  catch(e){toast('Hindi ma-save ang camera position sa browser.');}
+}
+function loadOfficeCamera(){
+  try{const p=JSON.parse(localStorage.getItem('ccOfficeCameraV1')||'null');if(!p||!setOfficeCamera(p)){toast('Wala pang saved camera view.');return;}toast('📷 Restored ang saved camera view.');}
+  catch(e){toast('Hindi mabasa ang saved camera view.');}
+}
+function drawOfficeMiniMap(){
+  const cv=$('officeMiniMap');if(!cv||!cv.classList.contains('visible'))return;
+  const c=cv.getContext('2d');if(!c)return;const w=cv.width,h=cv.height,pad=26,b=OFFICE_MAP_BOUNDS;
+  const px=x=>pad+(x-b.minX)/(b.maxX-b.minX)*(w-pad*2),py=z=>pad+(z-b.minZ)/(b.maxZ-b.minZ)*(h-pad*2);
+  c.clearRect(0,0,w,h);c.fillStyle='rgba(7,13,29,.96)';c.fillRect(0,0,w,h);
+  c.strokeStyle='rgba(120,170,230,.22)';c.lineWidth=1;
+  for(let i=0;i<=8;i++){const xx=pad+i*(w-pad*2)/8,yy=pad+i*(h-pad*2)/8;c.beginPath();c.moveTo(xx,pad);c.lineTo(xx,h-pad);c.stroke();c.beginPath();c.moveTo(pad,yy);c.lineTo(w-pad,yy);c.stroke();}
+  c.strokeStyle='#75caff';c.lineWidth=3;c.strokeRect(px(-5),py(-16),px(51)-px(-5),py(28)-py(-16));
+  OFFICE_MAP_ZONES.forEach(z=>{c.beginPath();c.fillStyle='#8cecff';c.arc(px(z.x),py(z.z),7,0,Math.PI*2);c.fill();c.fillStyle='#f5f8ff';c.font='15px sans-serif';c.textAlign='center';c.fillText(z.emoji,px(z.x),py(z.z)-12);});
+  if(cam3d){c.strokeStyle='#ffd34d';c.lineWidth=3;c.beginPath();c.arc(px(cam3d.target.x),py(cam3d.target.z),12,0,Math.PI*2);c.stroke();}
+  c.fillStyle='#c9dfff';c.font='bold 15px sans-serif';c.textAlign='left';c.fillText('CYBORG HQ MAP',pad,19);
+}
+function bindOfficeCameraTools(){
+  const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.bound){el.addEventListener('click',fn);el.dataset.bound='1';}};
+  bind('camZoomIn',()=>officeCameraZoom(1/1.22));bind('camZoomOut',()=>officeCameraZoom(1.22));
+  bind('camFit',()=>{fitOfficeCampus();toast('🏢 Buong campus ang view.');});bind('camReset',()=>{resetOfficeCamera();toast('Camera reset.');});
+  bind('camSave',saveOfficeCamera);bind('camLoad',loadOfficeCamera);
+  bind('camMiniToggle',()=>{const m=$('officeMiniMap');if(!m)return;m.classList.toggle('visible');drawOfficeMiniMap();});
+  const map=$('officeMiniMap');if(map&&!map.dataset.bound){map.addEventListener('click',e=>{const r=map.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height,b=OFFICE_MAP_BOUNDS;const wx=b.minX+u*(b.maxX-b.minX),wz=b.minZ+v*(b.maxZ-b.minZ);setOfficeCamera({x:wx,y:1.2,z:wz,theta:.55,phi:.68,r:Math.min(cam3d?cam3d.r:62,48)});});map.dataset.bound='1';}
+}
+bindOfficeCameraTools();
+
 let guardBlinkUntil=0; // pulang ilaw ng booth ni BANTAY kapag may security event
 let partyUntil=0,confetti=[]; // ✨ party mode + confetti particles
 let moveKeys={w:false,a:false,s:false,d:false,space:false,e:false};
@@ -3826,8 +3906,15 @@ function buildCity3d(){
   // maliliit na dashes (madilim, hindi puting guhit)
   for(let x=-9;x<22;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#555b63'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
 }
+function syncOfficeRendererSize(){
+  const host=$('oc3d');if(!host||!renderer3d||!camera3d)return;
+  const w=Math.max(1,host.clientWidth||900),h=Math.max(1,host.clientHeight||520);
+  if(renderer3d._officeW!==w||renderer3d._officeH!==h){renderer3d.setSize(w,h,false);camera3d.aspect=w/h;camera3d.updateProjectionMatrix();renderer3d._officeW=w;renderer3d._officeH=h;}
+}
 function frame3D(){
   if(!threeReady)return;
+  syncOfficeRendererSize();
+  if(!frame3D._mapAt||Date.now()-frame3D._mapAt>250){frame3D._mapAt=Date.now();drawOfficeMiniMap();}
   if(room3dId!==selRoom||!level3d)buildRoom3d(selRoom);
   const t=Date.now();
   const dt=Math.min(3,Math.max(.25,(t-(frame3D._last||t))/16.667));frame3D._last=t;
@@ -4501,14 +4588,14 @@ function frame3D(){
       else if(ch&&typeof ch.x==='number')v.set(ch.x,0,(typeof ch.z==='number')?ch.z:0);
     }catch(err){}
     v.y+=2.5;v.project(camera3d);
-    const host=$('oc3d'),w=host.clientWidth||900;
+    const host=$('oc3d'),w=host.clientWidth||900,h=host.clientHeight||520;
     if(bub3d.dataset.who!==speaker||bub3d.dataset.line!==line){
       bub3d.dataset.who=speaker;bub3d.dataset.line=line;bub3d.dataset.t0=t;
       bub3d.innerHTML='<b>'+esc(whoLabel||(meta(speaker).i||'✨')+' '+meta(speaker).n)+'</b>'+esc(line);
       if(!isChat){const m=meta(speaker);mmoLog((m.i||'✨')+' '+m.n,line,m.c||'#7fc7ff');}
     }
     bub3d.style.display=(t-Number(bub3d.dataset.t0||0)<3400)?'block':'none';
-    bub3d.style.left=((v.x*.5+.5)*w)+'px';bub3d.style.top=((-v.y*.5+.5)*520)+'px';
+    bub3d.style.left=((v.x*.5+.5)*w)+'px';bub3d.style.top=((-v.y*.5+.5)*h)+'px';
   } else bub3d.style.display='none';
   renderer3d.render(scene3d,camera3d);
 }
@@ -4830,17 +4917,18 @@ $('partyBtn').onclick=()=>{
 };
 $('mallCheckout').onclick=async()=>{
   if(!cart.length){toast('🛒 Wala pang laman ang cart!');return;}
-  const items=cart.map(i=>({name:i.name,price:i.price,qty:1}));
+  const items=cart.map(i=>({id:i.id,name:i.name,price:i.price,qty:1}));
+  const requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('order-'+Date.now()+'-'+Math.random().toString(36).slice(2));
   let bzref='';try{const c=(document.cookie||'').split(';').map(s=>s.trim()).find(s=>s.indexOf('bzref=')===0);bzref=c?c.split('=')[1]:''}catch(e){}
-  const r=await api('/api/orders',{method:'POST',body:JSON.stringify({items,ref:bzref})});
+  const r=await api('/api/orders',{method:'POST',body:JSON.stringify({items,ref:bzref,requestId})});
   if(!r.ok||!r.order){toast('❌ Hindi maka-generate ng resibo');return;}
   const o=r.order,dt=new Date(o.at||Date.now());
   let txt='  C Y B O R G   M A L L\n  Cyborg Cheebee Office\n'+'='.repeat(32)+'\n';
   o.items.forEach(it=>{txt+=' '+it.name+'\n   '+peso(it.price)+' x '+(it.qty||1)+'\n'});
-  txt+='='.repeat(32)+'\n TOTAL: '+peso(o.total)+'\n'+'-'.repeat(32)+'\n STATUS : BAYAD NA ✅\n RESIBO#: '+o.code+'\n ARAW   : '+dt.toLocaleString('en-PH')+'\n'+'-'.repeat(32)+'\n Ipakita ang resibo na ito sa\n CASHIER BOT sa Cyborg Mall.\n Delivery: sa loob ng ilang araw ✨\n Thank you sa pag-shop! ✨?';
+  txt+='='.repeat(32)+'\n TOTAL: '+peso(o.total)+'\n'+'-'.repeat(32)+'\n STATUS : PENDING / HINDI PA VERIFIED\n RESIBO#: '+o.code+'\n ARAW   : '+dt.toLocaleString('en-PH')+'\n'+'-'.repeat(32)+'\n Ipakita ang resibo sa CEO/Cashier Bot.\n Hindi pa kumpirmado ang bayad o delivery. ✨\n Thank you sa pag-shop! ✨?';
   $('rcpBody').textContent=txt;
   $('receipt').showModal();
-  if(typeof bazaarTask==='function')bazaarTask('order','mall');
+  // Order-task reward is granted only after the CEO verifies actual payment.
   cart=[];updateCart();
 };
 $('mallAdd').onclick=async()=>{
@@ -5663,10 +5751,10 @@ async function bzOneClickTask(type){
         if(r&&r.visitor)bzVisitor=r.visitor;
       }
     } else if(type==='order'){
-      const it=(typeof mallItems==='function'?mallItems():[])[0]||{name:'Cyborg Office Find',price:69,url:officeUrl};
+      const it=(typeof mallItems==='function'?mallItems():[])[0]||{id:'gr1',name:'Bigas 5kg',price:299,url:officeUrl};
       const sh=await pubApi('/api/bazaar/share',{method:'POST',body:JSON.stringify({kind:'product',key:'1click-order',title:String(it.name||'Cyborg Office Find').slice(0,80),price:Number(it.price)||0,desc:String(it.caption||'De-kalidad na produkto mula sa affiliate shop natin.').slice(0,140),url:String(it.url||officeUrl)})});
       if(sh&&sh.share){
-        await pubApi('/api/orders',{method:'POST',body:JSON.stringify({items:[{name:String(it.name||'Cyborg Office Find'),price:Number(it.price)||0,qty:1}],ref:sh.share.id})});
+        await pubApi('/api/orders',{method:'POST',body:JSON.stringify({items:[{id:String(it.id||''),name:String(it.name||'Cyborg Office Find'),price:Number(it.price)||0,qty:1}],ref:sh.share.id})});
       } else toast('⚠ '+(sh&&sh.error||'Hindi ma-order'));
     } else if(type==='share'||type==='content'){
       const prod=(typeof mallItems==='function'?mallItems():[])[0]||{name:'Cyborg Office',price:0,url:officeUrl};
@@ -6558,12 +6646,13 @@ async function openCeoAds(){
   const d=bzMakeDialog('bzCeoAdsDlg','📢 AD PROJECTS & GOODS','min(560px,92vw)'),body=document.getElementById('bzCeoAdsDlgBody');
   body.innerHTML='<div style="color:#9fb2d0;font-size:11px">Naglo-load…</div>';
   if(!d.open)d.showModal();
-  const [cr,gr,sr]=await Promise.all([
+  const [cr,gr,sr,or]=await Promise.all([
     api('/api/ceo/campaigns',{method:'POST',body:'{}'}),
     api('/api/ceo/redemptions',{method:'POST',body:'{}'}),
-    api('/api/ceo/bazaar/stats',{method:'POST',body:'{}'})
+    api('/api/ceo/bazaar/stats',{method:'POST',body:'{}'}),
+    api('/api/ceo/orders',{method:'POST',body:'{}'})
   ]);
-  const campaigns=(cr&&cr.campaigns)||[],redemptions=(gr&&gr.redemptions)||[],stats=(sr&&sr.stats)||{};
+  const campaigns=(cr&&cr.campaigns)||[],redemptions=(gr&&gr.redemptions)||[],stats=(sr&&sr.stats)||{},orders=(or&&or.orders)||[];
   const goodsPending=redemptions.filter(x=>x.status==='pending').length;
   body.innerHTML='<div style="display:flex;gap:6px;margin-bottom:8px">'+
       '<div style="flex:1;background:rgba(18,32,64,.8);border:1px solid #2f5fa8;border-radius:8px;padding:6px;text-align:center"><div style="color:#8494b4;font-size:9px">ACTIVE PROJECTS</div><b style="color:#ffd34d;font-size:14px">'+campaigns.filter(c=>c.status==='active').length+'</b></div>'+
@@ -6605,6 +6694,49 @@ async function openCeoAds(){
         '<button data-ship="'+bzEsc(x.id)+'" style="background:#4f8ac9;color:#fff;border:0;border-radius:6px;padding:4px 7px;font-size:9.5px;cursor:pointer">🚚 Update shipping</button></div>'):'')+
       '</div>'}).join(''):'<div style="color:#8494b4;font-size:10px">Wala pang goods redemption.</div>')+
     '<div style="color:#8494b4;font-size:9px;margin-top:8px;line-height:1.5">🛡️ Fulfilled goods lang ang lumalabas sa public Legit Proof. Kailangan ang Shopee order reference bago ma-fulfill; makikita rin ang parcel sa 3D delivery dock.</div>';
+  const pendingOrders=orders.filter(o=>o.status==='pending'&&o.paymentStatus!=='verified');
+  const orderReview='<div style="border:1px solid #d97736;border-radius:9px;padding:8px;margin-bottom:10px;background:rgba(11,23,48,.78)">'+
+    '<div style="color:#ffd34d;font-size:11px;font-weight:700;margin-bottom:5px">🧾 MALL ORDERS — PAYMENT REVIEW ('+pendingOrders.length+' pending)</div>'+
+    (orders.length?orders.slice(0,25).map(o=>'<div style="border-top:1px solid #29405f;padding:7px 0">'+
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#fff;font-size:10px">'+bzEsc(o.code)+'</b><b style="color:'+(o.paymentStatus==='verified'?'#7ee2a8':o.status==='cancelled'?'#ff8fa8':'#ffd34d')+';font-size:9px">'+bzEsc(o.paymentStatus||o.status)+'</b><span style="flex:1"></span><b style="color:#fff;font-size:10px">₱'+Number(o.total||0).toFixed(2)+'</b></div>'+
+      '<div style="color:#9fb2d0;font-size:9px;margin:3px 0">'+(o.items||[]).map(i=>bzEsc(i.name)+' ×'+(i.qty||1)).join(' · ')+' · '+ts(o.at)+'</div>'+
+      (o.status==='pending'?'<div style="display:flex;gap:5px;flex-wrap:wrap"><input data-order-ref="'+bzEsc(o.code)+'" placeholder="Payment / receipt reference (checked by CEO)" style="flex:1;min-width:180px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px"><button data-order-verify="'+bzEsc(o.code)+'" style="background:#2bb37a;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">✅ Verify payment</button><button data-order-cancel="'+bzEsc(o.code)+'" style="background:#8f3f57;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">Cancel</button></div>':(o.paymentRef?'<div style="color:#7ee2a8;font-size:9px">Verified ref: '+bzEsc(o.paymentRef)+'</div>':''))+
+      '</div>').join(''):'<div style="color:#8494b4;font-size:10px">Wala pang mall orders.</div>')+
+    '<div style="color:#8494b4;font-size:9px;margin-top:5px">⚠️ Manual confirmation ito. I-verify lang matapos mong makita ang totoong payment receipt; walang payment gateway na konektado.</div></div>';
+  body.innerHTML=orderReview+body.innerHTML;
+  body.insertAdjacentHTML('beforeend','<div style="border:1px solid #2f5fa8;border-radius:9px;padding:8px;margin-top:10px;background:rgba(11,23,48,.78)"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#8fd0e8;font-size:11px">🛡️ OFFICE OPERATIONS</b><span style="flex:1"></span><button id="opsRefresh" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">↻ Status</button><button id="opsBackup" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">📦 Create backup</button></div><div id="opsStatus" style="color:#9fb2d0;font-size:9.5px;margin-top:7px">Operational health, data backup, and CEO audit trail.</div><div id="opsAudit" style="color:#8494b4;font-size:9px;line-height:1.5;margin-top:5px"></div></div>');
+  const opsStatus=$('opsStatus'),opsAudit=$('opsAudit');
+  const loadOps=async()=>{
+    if(opsStatus)opsStatus.textContent='⏳ Loading operations status…';
+    const r=await api('/api/ceo/ops',{method:'POST',body:JSON.stringify({action:'status'})});
+    if(!r||!r.ok){if(opsStatus)opsStatus.textContent='⚠ '+((r&&r.error)||'Hindi makuha ang operations status');return;}
+    const c=r.counts||{};
+    if(opsStatus)opsStatus.textContent='Version: '+(r.version||'—')+' · Uptime: '+Math.floor((r.uptimeSeconds||0)/60)+' min · Agents: '+(c.agents||0)+' · Tasks: '+(c.tasks||0)+' · Orders: '+(c.orders||0)+' · Visitors: '+(c.visitors||0)+' · Backups: '+((r.backups||[]).length);
+    if(opsAudit)opsAudit.innerHTML=(r.lastAudit||[]).slice(0,5).map(x=>'<div>• '+bzEsc(new Date(x.at||0).toLocaleString())+' · <b>'+bzEsc(x.actor||'system')+'</b> · '+bzEsc(x.action||'')+'</div>').join('')||'No audit events yet.';
+  };
+  const opsRefresh=$('opsRefresh');if(opsRefresh)opsRefresh.onclick=loadOps;
+  const opsBackup=$('opsBackup');if(opsBackup)opsBackup.onclick=async()=>{
+    if(!confirm('Gumawa ng secure backup ng settings, credentials, at office data? Panatilihing pribado ang backup.'))return;
+    opsBackup.disabled=true;opsBackup.textContent='⏳ Backing up…';
+    const r=await api('/api/ceo/ops',{method:'POST',body:JSON.stringify({action:'backup'})});
+    opsBackup.disabled=false;opsBackup.textContent='📦 Create backup';
+    toast(r&&r.ok?'✅ Backup created: '+r.backup.name:'⚠ '+((r&&r.error)||'Backup failed'));
+    loadOps();
+  };
+  loadOps();
+  body.querySelectorAll('[data-order-verify]').forEach(b=>b.onclick=async()=>{
+    const code=b.dataset.orderVerify,inp=body.querySelector('[data-order-ref="'+code+'"]');
+    const paymentRef=inp?inp.value.trim():'';
+    if(!paymentRef){toast('Ilagay ang payment/receipt reference na na-check mo muna.');return;}
+    const r=await api('/api/ceo/orders',{method:'POST',body:JSON.stringify({action:'verify-payment',code,paymentRef})});
+    toast(r&&r.ok?'✅ Payment manually verified; order reward/commission processed.':'⚠ '+((r&&r.error)||'Hindi ma-verify'));
+    openCeoAds();
+  });
+  body.querySelectorAll('[data-order-cancel]').forEach(b=>b.onclick=async()=>{
+    const r=await api('/api/ceo/orders',{method:'POST',body:JSON.stringify({action:'cancel',code:b.dataset.orderCancel})});
+    toast(r&&r.ok?'Order cancelled.':'⚠ '+((r&&r.error)||'Hindi ma-cancel'));
+    openCeoAds();
+  });
   document.getElementById('adCreate').onclick=async()=>{
     const r=await api('/api/ceo/campaigns',{method:'POST',body:JSON.stringify({
       action:'create',name:document.getElementById('adName').value,
@@ -6916,5 +7048,5 @@ async function openCeoWish(){
   window.openMeeting=openMeeting;
 })();
 </script>
-</body>
+<script src="/phaseB.js?v=8"></script><script src="/phaseC.js?v=8"></script><script src="/phaseD.js?v=8"></script></body>
 </html>

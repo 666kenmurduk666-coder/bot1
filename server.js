@@ -19,6 +19,10 @@ const CONFIG_FILE = path.join(DATA, 'config.json');
 const ROUTINES_FILE = path.join(DATA, 'routines.json');
 const LAYOUT_FILE = path.join(DATA, 'layout.json');
 const STATE_FILE = path.join(DATA, 'state.json');
+const BACKUP_DIR = path.join(DATA, 'backups');
+const AUDIT_FILE = path.join(DATA, 'audit.jsonl');
+const APP_VERSION = 'Phase D v8 — Layout Upgrade & Operations Foundation';
+const STARTED_AT = Date.now();
 const PORT = Number(process.env.PORT || 8787);
 
 if (!fs.existsSync(DATA)) fs.mkdirSync(DATA, { recursive: true });
@@ -29,7 +33,17 @@ function readJSON(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return fallback; }
 }
 function writeJSON(file, obj) {
-  fs.writeFileSync(file, JSON.stringify(obj, null, 2));
+  // Atomic replace: a crash during serialization/write must not truncate the last good file.
+  const dir = path.dirname(file);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const tmp = file + '.tmp-' + process.pid + '-' + crypto.randomBytes(4).toString('hex');
+  const fd = fs.openSync(tmp, 'wx', 0o600);
+  try {
+    fs.writeFileSync(fd, JSON.stringify(obj, null, 2));
+    fs.fsyncSync(fd);
+  } finally { fs.closeSync(fd); }
+  try { fs.renameSync(tmp, file); }
+  catch (e) { try { fs.unlinkSync(tmp); } catch (_) {} throw e; }
 }
 function settings() {
   const disk = readJSON(SETTINGS_FILE, {});
@@ -221,7 +235,16 @@ state.hires = Array.isArray(savedState.hires) ? savedState.hires : [];
 state.visitors = (savedState.visitors && typeof savedState.visitors === 'object' && !Array.isArray(savedState.visitors)) ? savedState.visitors : {};
 // Stable cookie signing key: must survive Render restarts / redeploys,
 // otherwise every visitor login cookie becomes invalid on restart.
-state.bazaarSecret = 'cyborg-bz-stable-v1';
+// Cookie-signing key: never hard-code a forgeable value in source control.
+// Keep the generated key in state.json so visitor sessions survive normal restarts.
+const LEGACY_BAZAAR_SECRET = 'cyborg-bz-stable-v1';
+state.bazaarSecret = String(process.env.BAZAAR_COOKIE_SECRET || savedState.bazaarSecret || '');
+if (!state.bazaarSecret || state.bazaarSecret === LEGACY_BAZAAR_SECRET || state.bazaarSecret.length < 32) {
+  state.bazaarSecret = crypto.randomBytes(32).toString('hex');
+  console.warn('SECURITY: generated a new Bazaar cookie signing key; existing visitor cookies must log in again.');
+  // saveStateNow is declared below; persist after its declaration during startup.
+  state._needsBazaarSecretSave = true;
+}
 // 📣 Share attribution + office earnings mula sa trabaho ng mga bisita
 state.bazaarShares = Array.isArray(savedState.bazaarShares) ? savedState.bazaarShares.slice(-300) : [];
 // 💰 5% assumed affiliate commission; progressibong hatian sa visitor ayon sa level
@@ -416,11 +439,69 @@ function scheduleSave() {
 }
 process.on('SIGINT', () => { saveStateNow(); process.exit(0); });
 process.on('SIGTERM', () => { saveStateNow(); process.exit(0); });
+function auditEvent(action, actor) {
+  try {
+    if (!fs.existsSync(DATA)) fs.mkdirSync(DATA, { recursive: true });
+    const row = JSON.stringify({ at: Date.now(), actor: String(actor || 'system').slice(0, 32), action: String(action || '').slice(0, 240) });
+    fs.appendFileSync(AUDIT_FILE, row + '\n', { mode: 0o600 });
+    // Keep the append-only audit log bounded on disk; rotate to a dated archive.
+    try {
+      const st = fs.statSync(AUDIT_FILE);
+      if (st.size > 2 * 1024 * 1024) {
+        const rotated = AUDIT_FILE + '.' + new Date().toISOString().replace(/[:.]/g, '-') + '.bak';
+        fs.renameSync(AUDIT_FILE, rotated);
+      }
+    } catch (_) {}
+  } catch (e) { console.warn('Audit log write failed:', e.message); }
+}
 function log(text, who) {
-  state.activity.unshift({ t: Date.now(), who: who || 'system', text: String(text) });
+  const actor = who || 'system';
+  const message = String(text);
+  state.activity.unshift({ t: Date.now(), who: actor, text: message });
   if (state.activity.length > 200) state.activity.length = 200;
+  if (/^(CEO|security|mall|bazaar)$/i.test(actor)) auditEvent(message, actor);
   scheduleSave();
 }
+function createDataBackup() {
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true, mode: 0o700 });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const name = 'backup-' + stamp;
+  const dir = path.join(BACKUP_DIR, name);
+  fs.mkdirSync(dir, { mode: 0o700 });
+  const files = [SETTINGS_FILE, CONFIG_FILE, ROUTINES_FILE, LAYOUT_FILE, STATE_FILE];
+  const included = [];
+  for (const file of files) {
+    if (!fs.existsSync(file)) continue;
+    const base = path.basename(file);
+    fs.copyFileSync(file, path.join(dir, base), fs.constants.COPYFILE_EXCL);
+    try { fs.chmodSync(path.join(dir, base), 0o600); } catch (_) {}
+    included.push(base);
+  }
+  const manifest = { version: APP_VERSION, createdAt: Date.now(), files: included,
+    note: 'Contains private settings and credentials. Store securely; never publish this backup.' };
+  writeJSON(path.join(dir, 'manifest.json'), manifest);
+  const backups = fs.readdirSync(BACKUP_DIR).filter(x => /^backup-/.test(x)).sort().reverse();
+  backups.slice(20).forEach(old => { try { fs.rmSync(path.join(BACKUP_DIR, old), { recursive: true, force: true }); } catch (_) {} });
+  return { name, createdAt: manifest.createdAt, files: included };
+}
+function listDataBackups() {
+  try { return fs.readdirSync(BACKUP_DIR).filter(x => /^backup-/.test(x)).sort().reverse().slice(0, 20).map(name => {
+    const m = readJSON(path.join(BACKUP_DIR, name, 'manifest.json'), {});
+    return { name, createdAt: Number(m.createdAt) || 0, files: Array.isArray(m.files) ? m.files : [] };
+  }); } catch (_) { return []; }
+}
+function recentAudit(limit) {
+  try {
+    const lines = fs.readFileSync(AUDIT_FILE, 'utf8').trim().split(/\r?\n/).filter(Boolean);
+    return lines.slice(-Math.max(1, Math.min(200, Number(limit) || 50))).reverse().map(line => { try { return JSON.parse(line); } catch (_) { return null; } }).filter(Boolean);
+  } catch (_) { return []; }
+}
+if (state._needsBazaarSecretSave) {
+  delete state._needsBazaarSecretSave;
+  saveStateNow();
+}
+if (!ceoPassword()) console.warn('SECURITY WARNING: Set CEO_PASSWORD or data/settings.json password before using CEO/admin features.');
+if (ceoPassword() === 'cyborg') console.warn('SECURITY WARNING: The legacy CEO password is active. Change it before exposing this server to the internet.');
 log('Office online. Add your OpenRouter key in Setup, then give the CEO an order.', 'system');
 
 /* ---------- AI ---------- */
@@ -1102,15 +1183,17 @@ function markVisitorTask(v, type, key) {
 }
 function signBazaarToken(obj) {
   const p = Buffer.from(JSON.stringify(obj)).toString('base64url');
-  const s = crypto.createHmac('sha256', String(state.bazaarSecret || 'cyborg')).update(p).digest('base64url');
+  const s = crypto.createHmac('sha256', String(state.bazaarSecret)).update(p).digest('base64url');
   return p + '.' + s;
 }
 function readBazaarToken(tok) {
   try {
     const parts = String(tok || '').split('.');
     if (parts.length !== 2) return null;
-    const want = crypto.createHmac('sha256', String(state.bazaarSecret || 'cyborg')).update(parts[0]).digest('base64url');
-    if (want !== parts[1]) return null;
+    const want = crypto.createHmac('sha256', String(state.bazaarSecret)).update(parts[0]).digest('base64url');
+    const gotBuf = Buffer.from(parts[1]);
+    const wantBuf = Buffer.from(want);
+    if (gotBuf.length !== wantBuf.length || !crypto.timingSafeEqual(gotBuf, wantBuf)) return null;
     const o = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
     if (!o.id || (o.exp && o.exp < Date.now())) return null;
     return o;
@@ -1128,10 +1211,16 @@ function visitorIdFrom(req, fallback) {
   }
   return fallback ? String(fallback).slice(0, 80) : null;
 }
-function setBazaarCookie(res, id, name, picture) {
+function setBazaarCookie(res, id, name, picture, req) {
   const max = 30 * 86400;
   const v = state.visitors[id] || {};
-  res.setHeader('Set-Cookie', 'bz=' + encodeURIComponent(signBazaarToken({ id: id, name: String(name || v.name || '').slice(0, 60), picture: String(picture || v.picture || '').slice(0, 500), exp: Date.now() + max * 1000 })) + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + max);
+  const secure = String((req && req.headers && req.headers['x-forwarded-proto']) || '').split(',')[0].trim() === 'https';
+  res.setHeader('Set-Cookie', 'bz=' + encodeURIComponent(signBazaarToken({ id: id, name: String(name || v.name || '').slice(0, 60), picture: String(picture || v.picture || '').slice(0, 500), exp: Date.now() + max * 1000 })) + '; Path=/; HttpOnly; SameSite=Lax' + (secure ? '; Secure' : '') + '; Max-Age=' + max);
+}
+
+function ceoPassword() {
+  const cfg = readJSON(SETTINGS_FILE, {});
+  return String(process.env.CEO_PASSWORD || cfg.password || '');
 }
 
 /* ---------- HTTP helpers ---------- */
@@ -1143,8 +1232,10 @@ const MIME = {
 function send(res, code, body, type) {
   res.writeHead(code, {
     'Content-Type': type || 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'SAMEORIGIN'
   });
   res.end(body);
 }
@@ -1166,7 +1257,7 @@ function publicState() {
     replyIds: state.replyIds, replyProviders: state.replyProviders,
     agents: AGENT_META.concat(state.hires), routines: state.routines, layout: state.layout,
     sources: state.sources, memory: state.memory, chat: state.chat, products: state.products,
-    mall: state.mall, orders: state.orders.slice(-50),
+    mall: state.mall,
     conversations: state.conversations,
     activity: state.activity, stopped: state.stopped, running: state.running,
     // ⚠️ PUBLIC: hinding-hindi isasama ang aktwal na API keys — CEO lang kumukuha via /api/private
@@ -1179,6 +1270,7 @@ let limitsCache = { at: 0, data: null };
 
 // ===== 🛡️ ANTI-HACKER SHIELD: rate limiting + brute-force lockout (per IP) =====
 const guard = new Map(); // ip -> {n, t0, bad, lastBad}
+const orderRate = new Map(); // ip -> {windowStart, count}
 const oauthStates = new Map(); // FB OAuth state -> issued at (short-lived)
 const fbCodeCache = new Map(); // FB auth code -> {id,name,picture,at} (idempotent callback: browser/Render may hit callback twice)
 const cleanTxt = s => String(s || '').replace(/[<>&"'`]/g, '').trim().slice(0, 80);
@@ -1205,7 +1297,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
         if (p === '/api/unlock') {
           const b = await body(req);
-          if (String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg')) {
+          if (ceoPassword() && String(b.pass || '') === ceoPassword()) {
             log('CEO passed the lockout gate — totoo ang password!', 'security');
           } else return sendJSON(res, 429, { ok: false, error: '🚨 BANTAY: Blocked! Maraming maling tangka. Subukan ulit mamaya.' });
         } else return sendJSON(res, 429, { ok: false, error: '🚨 BANTAY: Blocked! Maraming maling tangka. Subukan ulit mamaya.' });
@@ -1216,12 +1308,18 @@ const server = http.createServer(async (req, res) => {
     gh.n++;
     if (gh.n > 150) { log('🚨 Flood blocked (' + ip + ') — hawak ni BANTAY', 'security'); return sendJSON(res, 429, { ok: false, error: 'Too many requests' }); }
     guard.set(ip, gh);
+    if (guard.size > 5000) {
+      for (const [key, value] of guard) {
+        if (nowMs - (value.lastBad || value.t0 || 0) > 10 * 60 * 1000) guard.delete(key);
+        if (guard.size <= 4000) break;
+      }
+    }
     // ===== SECURITY: password lock sa lahat ng CEO actions (bisita: tingin lang) =====
     if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders'
         && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
       const b = await body(req);
-      const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
-      if (String(b.pass || '') !== real) {
+      const real = ceoPassword();
+      if (!real || String(b.pass || '') !== real) {
         guardBumpBad(ip);
         log('Blocked ' + p + ' — wrong or missing CEO password', 'security');
         return sendJSON(res, 403, { ok: false, error: 'Locked! CEO password required.' });
@@ -1230,7 +1328,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/unlock' && req.method === 'POST') {
       const b = await body(req);
-      const ok = String(b.pass || '') === String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
+      const real = ceoPassword();
+      const ok = !!real && String(b.pass || '') === real;
       if (ok) {
         const g = guard.get(ip); if (g) { g.bad = 0; g.n = 0; guard.set(ip, g); }
         log('CEO logged in — office unlocked', 'security');
@@ -1238,6 +1337,30 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, ok ? 200 : 403, { ok });
     }
 
+    if (p === '/api/health' && req.method === 'GET') {
+      return sendJSON(res, 200, { ok: true, version: APP_VERSION, uptimeSeconds: Math.floor((Date.now() - STARTED_AT) / 1000),
+        startedAt: STARTED_AT, stopped: !!state.stopped, running: !!state.running, agents: AGENT_META.length + state.hires.length,
+        openTasks: state.tasks.filter(t => t.status !== 'done' && t.status !== 'rejected').length,
+        memoryStorage: 'json-files', backupCount: listDataBackups().length });
+    }
+    if (p === '/api/ceo/ops' && req.method === 'POST') {
+      const b = await body(req);
+      const action = String(b.action || 'status');
+      if (action === 'status') {
+        return sendJSON(res, 200, { ok: true, version: APP_VERSION, uptimeSeconds: Math.floor((Date.now() - STARTED_AT) / 1000),
+          startedAt: STARTED_AT, stopped: !!state.stopped, running: !!state.running,
+          counts: { agents: AGENT_META.length + state.hires.length, tasks: state.tasks.length, products: state.products.length,
+            orders: state.orders.length, visitors: Object.keys(state.visitors).length, redemptions: state.redemptions.length,
+            payouts: state.payouts.length }, backups: listDataBackups(), lastAudit: recentAudit(8) });
+      }
+      if (action === 'backup') {
+        const backup = createDataBackup();
+        log('🛡️ CEO created data backup ' + backup.name, 'CEO');
+        return sendJSON(res, 201, { ok: true, backup, backups: listDataBackups(), warning: 'Backup includes private settings and API credentials. Keep it private.' });
+      }
+      if (action === 'audit') return sendJSON(res, 200, { ok: true, events: recentAudit(b.limit || 100) });
+      return sendJSON(res, 400, { ok: false, error: 'Unknown operations action.' });
+    }
     if (p === '/api/state' && req.method === 'GET') return sendJSON(res, 200, publicState());
     // 🔐 CEO-only private data (keys + vault links) — dumaan sa password gate sa taas
     if (p === '/api/private' && req.method === 'POST') {
@@ -1271,11 +1394,8 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { ok: true, mall: state.mall });
     }
     // ===== 🏦 KEEPER BOT: vault ng account links (LINKS LANG — walang password, para safe!) =====
-    if (p === '/api/accounts' && req.method === 'GET') {
-      if (String(u.searchParams.get('pass') || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
-        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
-      return sendJSON(res, 200, { accounts: state.accounts });
-    }
+    if (p === '/api/accounts' && req.method === 'GET')
+      return sendJSON(res, 405, { ok: false, error: 'Use the authenticated CEO panel.' });
     if (p === '/api/accounts' && req.method === 'POST') {
       const b = await body(req);
       const acct = {
@@ -1295,55 +1415,146 @@ const server = http.createServer(async (req, res) => {
       if (i >= 0) { const gone = state.accounts.splice(i, 1)[0]; saveStateNow(); log('🏦 KEEPER: tinanggal ang account link — ' + gone.label, 'CEO'); }
       return sendJSON(res, 200, { ok: true, accounts: state.accounts });
     }
-    if (p === '/api/orders' && req.method === 'GET') return sendJSON(res, 200, { orders: state.orders.slice(-50) });
+    if (p === '/api/orders' && req.method === 'GET') return sendJSON(res, 405, { ok: false, error: 'Use the CEO orders panel.' });
     if (p === '/api/orders' && req.method === 'POST') {
-      const b = await body(req);
-      const items = Array.isArray(b.items) ? b.items.filter(x => x && x.name).slice(0, 30)
-        .map(x => ({ name: cleanTxt(x.name), price: Math.max(0, Math.min(1e7, Number(x.price) || 0)), qty: Math.max(1, Math.min(10, Number(x.qty) || 1)) })) : [];
-      if (!items.length) return sendJSON(res, 400, { ok: false, error: 'Walang laman ang cart!' });
-      const total = items.reduce((s, x) => s + (Number(x.price) || 0) * (Number(x.qty) || 1), 0);
-      const code = 'CB-' + Math.floor(100000 + Math.random() * 900000);
-      const ref = String(b.ref || '').slice(0, 50);
-      const sr = ref ? state.bazaarShares.find(s => s.id === ref) : null;
-      const order = { code, items, total, status: 'bayad-na', at: Date.now(), ref: sr ? ref : '' };
-      state.orders.push(order); state.orders = state.orders.slice(-200);
-      if (sr) {
-        const buyer = sr.vid && state.visitors[sr.vid];
-        const cut = buyer ? LEVEL_CUT[levelFor(buyer.xp).index] : LEVEL_CUT[0];
-        const gross = Math.round(total * BAZAAR_COMMISSION_RATE * 100) / 100;
-        const paid = Math.max(5, Math.round(gross * cut));
-        sr.clicks = (sr.clicks || 0) + 1;
-        sr.orders = (sr.orders || 0) + 1;
-        sr.paid = (sr.paid || 0) + paid;
-        state.bazaarStats.orders++;
-        state.bazaarStats.gross = Math.round((state.bazaarStats.gross + gross) * 100) / 100;
-        state.bazaarStats.visitorPaid += paid;
-        state.bazaarStats.officeNet = Math.round((state.bazaarStats.officeNet + Math.max(0, gross - paid)) * 100) / 100;
-        state.bazaarStats.earned = state.bazaarStats.officeNet;
-        if (buyer) {
-          buyer.earned = (buyer.earned || 0) + paid;
-          buyer.paidOrders = (buyer.paidOrders || 0) + 1;
-          grantVisitor(buyer, paid, 5);
-          markVisitorTask(buyer, 'order', sr.id);
-          log('💰 ' + cleanTxt(buyer.name) + ' earned ' + paid + ' tokens (' + Math.round(cut * 100) + '% cut) from order ' + code, 'bazaar');
+      const bucket = orderRate.get(ip) || { windowStart: Date.now(), count: 0 };
+      if (Date.now() - bucket.windowStart >= 60000) { bucket.windowStart = Date.now(); bucket.count = 0; }
+      bucket.count++;
+      orderRate.set(ip, bucket);
+      if (bucket.count > 10) return sendJSON(res, 429, { ok: false, error: 'Order limit reached. Try again in a minute.' });
+      if (orderRate.size > 5000) {
+        for (const [key, value] of orderRate) {
+          if (Date.now() - value.windowStart > 10 * 60000) orderRate.delete(key);
+          if (orderRate.size <= 4000) break;
         }
       }
+      const b = await body(req);
+      // The browser may request an order, but it cannot declare its own prices or paid status.
+      const fallbackCatalog = {
+        gr1: { id: 'gr1', name: 'Bigas 5kg', price: 299, emoji: '🍚', url: 'https://shopee.ph/search?keyword=bigas%205kg' },
+        gr2: { id: 'gr2', name: 'Mantika 1L', price: 189, emoji: '🫙', url: 'https://shopee.ph/search?keyword=mantika%201l' },
+        gr3: { id: 'gr3', name: 'Asukal 1kg', price: 79, emoji: '🍬', url: 'https://shopee.ph/search?keyword=asukal%201kg' },
+        gr4: { id: 'gr4', name: 'Itlog 1 dozen', price: 140, emoji: '🥚', url: 'https://shopee.ph/search?keyword=itlog%20dozen' },
+        gr5: { id: 'gr5', name: 'De-lata assortment', price: 250, emoji: '🥫', url: 'https://shopee.ph/search?keyword=delata%20assortment' },
+        gr6: { id: 'gr6', name: 'Biskwit / Snacks', price: 120, emoji: '🍪', url: 'https://shopee.ph/search?keyword=biscuits%20snacks' },
+        gr7: { id: 'gr7', name: 'Kape 3-in-1', price: 199, emoji: '☕', url: 'https://shopee.ph/search?keyword=kape%203in1' },
+        gr8: { id: 'gr8', name: 'Detergent', price: 149, emoji: '🧴', url: 'https://shopee.ph/search?keyword=detergent%20laba' }
+      };
+      const findCatalogItem = id => {
+        const manual = state.mall.find(x => String(x.id) === id);
+        if (manual) return manual;
+        if (fallbackCatalog[id]) return fallbackCatalog[id];
+        const product = state.products.find(x => ('pr' + String(x.id)) === id);
+        if (product) return { id, name: String(product.title || product.description || 'Office product').slice(0, 80), price: Number(product.price) || 0, emoji: '🛍️', url: product.url || '' };
+        return null;
+      };
+      if (!Array.isArray(b.items) || !b.items.length || b.items.length > 30)
+        return sendJSON(res, 400, { ok: false, error: 'Invalid cart.' });
+      const items = [];
+      for (const raw of b.items) {
+        const id = String(raw && raw.id || '').slice(0, 100);
+        const product = id && findCatalogItem(id);
+        const qty = Number(raw && raw.qty);
+        if (!product || !Number.isInteger(qty) || qty < 1 || qty > 10)
+          return sendJSON(res, 400, { ok: false, error: 'May invalid o unavailable na item sa cart. I-refresh ang mall.' });
+        const price = Number(product.price);
+        if (!Number.isFinite(price) || price <= 0 || price > 1e7)
+          return sendJSON(res, 400, { ok: false, error: 'Hindi puwedeng i-checkout ang item na walang valid server price.' });
+        items.push({ id, name: cleanTxt(product.name), price: Math.round(price * 100) / 100, qty, emoji: cleanTxt(product.emoji || '🛒').slice(0, 4) });
+      }
+      const total = Math.round(items.reduce((sum, item) => sum + item.price * item.qty, 0) * 100) / 100;
+      if (!Number.isFinite(total) || total <= 0) return sendJSON(res, 400, { ok: false, error: 'Invalid order total.' });
+      const ref = String(b.ref || '').slice(0, 50);
+      const sr = ref ? state.bazaarShares.find(share => share.id === ref && share.kind === 'product') : null;
+      const buyerVid = visitorIdFrom(req);
+      const requestId = String(b.requestId || '').trim().slice(0, 80);
+      if (requestId) {
+        const prior = state.orders.find(x => x.requestId === requestId && String(x.buyerVid || '') === String(buyerVid || ''));
+        if (prior) return sendJSON(res, 200, { ok: true, duplicate: true, order: prior, message: 'Na-save na ang request na ito.' });
+      }
+      const code = 'CB-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+      const order = {
+        code, requestId, items, total, status: 'pending', paymentStatus: 'unverified',
+        at: Date.now(), ref: sr ? ref : '', buyerVid: buyerVid || '',
+        paymentRef: '', verifiedAt: 0, verifiedBy: ''
+      };
+      state.orders.push(order);
+      state.orders = state.orders.slice(-200);
       saveStateNow();
-      log('🧾 Mall order ' + code + ' — ₱' + total + ' (' + items.length + ' item/s) BAYAD NA ✓' + (sr ? ' 👑 ref=' + sr.id : ''), 'mall');
-      return sendJSON(res, 200, { ok: true, order });
+      log('🧾 Mall order ' + code + ' — ₱' + total + ' (' + items.length + ' item/s) PENDING PAYMENT/CEO REVIEW', 'mall');
+      return sendJSON(res, 201, { ok: true, order, message: 'Order request saved. Hindi pa ito marked as paid.' });
+    }
+
+    // CEO manually confirms payment only after checking the real receipt/payment evidence.
+    // No payment gateway is connected in this project, so this endpoint never claims automatic verification.
+    if (p === '/api/ceo/orders' && req.method === 'POST') {
+      const b = await body(req);
+      const action = String(b.action || 'list');
+      if (action === 'list') {
+        return sendJSON(res, 200, { ok: true, orders: state.orders.slice(-100).reverse() });
+      }
+      const order = state.orders.find(x => x.code === String(b.code || ''));
+      if (!order) return sendJSON(res, 404, { ok: false, error: 'Order not found.' });
+      if (action === 'cancel') {
+        if (order.paymentStatus === 'verified') return sendJSON(res, 409, { ok: false, error: 'Verified orders need a separate refund process.' });
+        order.status = 'cancelled';
+        order.cancelledAt = Date.now();
+        saveStateNow();
+        log('🧾 CEO cancelled mall order ' + order.code, 'CEO');
+        return sendJSON(res, 200, { ok: true, order });
+      }
+      if (action !== 'verify-payment') return sendJSON(res, 400, { ok: false, error: 'Unknown order action.' });
+      if (order.paymentStatus === 'verified') return sendJSON(res, 200, { ok: true, alreadyVerified: true, order });
+      if (order.status !== 'pending') return sendJSON(res, 409, { ok: false, error: 'Only pending orders can be verified.' });
+      const paymentRef = cleanTxt(b.paymentRef || '').slice(0, 100);
+      if (!paymentRef) return sendJSON(res, 400, { ok: false, error: 'Kailangan ang payment/receipt reference na personal mong na-check.' });
+      order.status = 'bayad-na';
+      order.paymentStatus = 'verified';
+      order.paymentRef = paymentRef;
+      order.verifiedAt = Date.now();
+      order.verifiedBy = 'CEO';
+      // Count verified orders once. Referral commission is recorded only when attribution exists.
+      state.bazaarStats.orders++;
+      const sr = order.ref ? state.bazaarShares.find(share => share.id === order.ref && share.kind === 'product') : null;
+      if (sr && !(Array.isArray(sr.orderCodes) && sr.orderCodes.includes(order.code))) {
+        const referrer = sr.vid && state.visitors[sr.vid];
+        const cut = referrer ? LEVEL_CUT[levelFor(referrer.xp).index] : LEVEL_CUT[0];
+        const gross = Math.round(order.total * BAZAAR_COMMISSION_RATE * 100) / 100;
+        const paid = Math.max(0, Math.round(gross * cut * 100) / 100);
+        sr.orders = (sr.orders || 0) + 1;
+        sr.paid = Math.round(((sr.paid || 0) + paid) * 100) / 100;
+        sr.orderCodes = (Array.isArray(sr.orderCodes) ? sr.orderCodes : []).concat(order.code).slice(-100);
+        state.bazaarStats.gross = Math.round((state.bazaarStats.gross + gross) * 100) / 100;
+        state.bazaarStats.visitorPaid = Math.round((state.bazaarStats.visitorPaid + paid) * 100) / 100;
+        state.bazaarStats.officeNet = Math.round((state.bazaarStats.officeNet + Math.max(0, gross - paid)) * 100) / 100;
+        state.bazaarStats.earned = state.bazaarStats.officeNet;
+        if (referrer && paid > 0) {
+          referrer.earned = (referrer.earned || 0) + paid;
+          referrer.paidOrders = (referrer.paidOrders || 0) + 1;
+          grantVisitor(referrer, paid, 5);
+          log('💰 ' + cleanTxt(referrer.name) + ' earned ₱' + paid + ' estimated referral commission from verified order ' + order.code, 'bazaar');
+        }
+      }
+      const buyer = order.buyerVid && state.visitors[order.buyerVid];
+      if (buyer) markVisitorTask(buyer, 'order', order.code);
+      saveStateNow();
+      log('🧾 CEO verified payment for order ' + order.code + ' using reference ' + paymentRef, 'CEO');
+      return sendJSON(res, 200, { ok: true, order, note: 'Manual CEO verification only; no payment processor is connected.' });
     }
 
     if (p === '/api/settings' && req.method === 'POST') {
       const b = await body(req);
       const cur = readJSON(SETTINGS_FILE, {});
-      const next = {
+      // Preserve CEO password, OAuth credentials, affiliate IDs and any future settings.
+      // The old replacement object silently erased these when saving AI provider settings.
+      const next = Object.assign({}, cur, {
         apiKey: typeof b.apiKey === 'string' ? b.apiKey : cur.apiKey || '',
         provider: typeof b.provider === 'string' ? b.provider : cur.provider || 'auto',
         model: typeof b.model === 'string' && b.model.trim() ? b.model.trim() : cur.model || '',
         baseUrl: typeof b.baseUrl === 'string' ? b.baseUrl.trim() : cur.baseUrl || '',
         keys: b.keys && typeof b.keys === 'object' ? b.keys : cur.keys || {},
         failover: Array.isArray(b.failover) ? b.failover : cur.failover || []
-      };
+      });
       writeJSON(SETTINGS_FILE, next);
       const eff = settings();
       log('Settings updated (' + eff.provider + ' / ' + eff.model + ')', 'system');
@@ -1353,10 +1564,7 @@ const server = http.createServer(async (req, res) => {
 
     // Failover provider keys (Groq, Vyce, OpenAI, OpenRouter, Coarena)
     if (p === '/api/providers' && req.method === 'GET') {
-      if (String(u.searchParams.get('pass') || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
-        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
-      const s = settings();
-      return sendJSON(res, 200, { keys: s.keys, failover: s.failover, primary: s.provider });
+      return sendJSON(res, 405, { ok: false, error: 'Use the authenticated CEO panel.' });
     }
     if (p === '/api/providers' && req.method === 'POST') {
       const b = await body(req);
@@ -1749,7 +1957,7 @@ const server = http.createServer(async (req, res) => {
       const cached = fbCodeCache.get(code);
       if (cached && Date.now() - cached.at < 15 * 60 * 1000) {
         const cv = getOrCreateVisitor(cached.id, cached.name, cached.picture);
-        setBazaarCookie(res, cv.id, cv.name, cv.picture);
+        setBazaarCookie(res, cv.id, cv.name, cv.picture, req);
         res.writeHead(302, { Location: '/?bazaar=1' });
         return res.end();
       }
@@ -1769,7 +1977,7 @@ const server = http.createServer(async (req, res) => {
           if (String(fe.message || '').indexOf('used') >= 0) {
             const again = fbCodeCache.get(code);
             const cv = again ? getOrCreateVisitor(again.id, again.name, again.picture) : null;
-            if (cv) setBazaarCookie(res, cv.id, cv.name, cv.picture);
+            if (cv) setBazaarCookie(res, cv.id, cv.name, cv.picture, req);
             if (cv || visitorIdFrom(req)) {
               res.writeHead(302, { Location: '/?bazaar=1' });
               return res.end();
@@ -1784,7 +1992,7 @@ const server = http.createServer(async (req, res) => {
         const v = getOrCreateVisitor('fb_' + mj.id, mj.name, pic);
         fbCodeCache.set(code, { id: v.id, name: v.name, picture: v.picture, at: Date.now() });
         if (fbCodeCache.size > 200) fbCodeCache.delete(fbCodeCache.keys().next().value);
-        setBazaarCookie(res, v.id, v.name, v.picture);
+        setBazaarCookie(res, v.id, v.name, v.picture, req);
         log('🛒 FB visitor logged in: ' + cleanTxt(v.name), 'bazaar');
         res.writeHead(302, { Location: '/?bazaar=1' });
         return res.end();
@@ -1945,9 +2153,9 @@ const server = http.createServer(async (req, res) => {
       if (c.id && c.secret && c.redirect) return sendJSON(res, 200, { ok: false, error: 'Demo is off — use Facebook login.' });
       const b = await body(req);
       const name = cleanTxt(b.name || 'Guest') || 'Guest';
-      const id = 'demo_' + crypto.createHash('sha1').update('bazaar:' + name.toLowerCase()).digest('hex').slice(0, 12);
+      const id = 'demo_' + crypto.randomBytes(12).toString('hex');
       const v = getOrCreateVisitor(id, name, '');
-      setBazaarCookie(res, v.id, v.name, v.picture);
+      setBazaarCookie(res, v.id, v.name, v.picture, req);
       return sendJSON(res, 200, { ok: true, visitor: visitorView(v) });
     }
     if (p === '/api/bazaar/checkin' && req.method === 'POST') {
@@ -1968,7 +2176,8 @@ const server = http.createServer(async (req, res) => {
       const id = visitorIdFrom(req), v = id && state.visitors[id];
       if (!v) return sendJSON(res, 200, { ok: false, error: 'Facebook login muna.' });
       const type = String(b.type || '');
-      if (!BAZAAR_TASKS.some(t => t.id === type)) return sendJSON(res, 200, { ok: false, error: 'Unknown task' });
+      if (!['stalls', 'posts', 'bots'].includes(type))
+        return sendJSON(res, 400, { ok: false, error: 'Task na ito ay server-verified sa sariling endpoint.' });
       const r = markVisitorTask(v, type, b.key);
       const awarded = awardBadge(v, 'vip');
       return sendJSON(res, 200, { ok: true, result: r, awarded, visitor: visitorView(v) });
@@ -2032,7 +2241,7 @@ const server = http.createServer(async (req, res) => {
       const taskType = kind === 'content' ? 'content' : 'share';
       const result = markVisitorTask(v, taskType, String(b.key || sid));
       scheduleSave();
-      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax; Max-Age=' + (30 * 86400));
+      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax' + (String((req.headers || {})['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? '; Secure' : '') + '; Max-Age=' + (30 * 86400));
       log('📣 ' + cleanTxt(v.name) + ' shared ' + kind + ': ' + title, 'bazaar');
       return sendJSON(res, 200, { ok: true, share: rec, caption: caption, result: result, visitor: visitorView(v) });
     }
@@ -2052,7 +2261,7 @@ const server = http.createServer(async (req, res) => {
       sr.clicks = (sr.clicks || 0) + 1;
       state.bazaarStats.clicks++;
       scheduleSave();
-      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax; Max-Age=' + (30 * 86400));
+      res.setHeader('Set-Cookie', 'bzref=' + sid + '; Path=/; SameSite=Lax' + (String((req.headers || {})['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' ? '; Secure' : '') + '; Max-Age=' + (30 * 86400));
       const loc = /^https?:\/\//i.test(sr.url) ? sr.url : (String(sr.url || '/').startsWith('/') ? sr.url : '/');
       res.writeHead(302, { Location: loc });
       return res.end();
@@ -2220,7 +2429,7 @@ const server = http.createServer(async (req, res) => {
     // 🔑 CEO FACEBOOK SETUP — server-side lang sinusulat; hindi ibinabalik ang secret sa browser
     if (p === '/api/ceo/setup-fb' && req.method === 'POST') {
       const b = await body(req);
-      const real = String(readJSON(SETTINGS_FILE, {}).password || 'cyborg');
+      const real = ceoPassword();
       if (String(b.pass || '') !== real) return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
       const cur = readJSON(SETTINGS_FILE, {});
       const id = String(b.fbAppId || '').trim();
@@ -2240,7 +2449,7 @@ const server = http.createServer(async (req, res) => {
     // 🛍️ SHOPEE AFFILIATE — Affiliate ID / token, server-side lang; hindi binabalik sa browser
     if (p === '/api/ceo/setup-shopee' && req.method === 'POST') {
       const b = await body(req);
-      if (String(b.pass || '') !== String(readJSON(SETTINGS_FILE, {}).password || 'cyborg'))
+      if (!ceoPassword() || String(b.pass || '') !== ceoPassword())
         return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
       const cur = readJSON(SETTINGS_FILE, {});
       const id = String(b.shopeeAffId || '').trim().slice(0, 64);

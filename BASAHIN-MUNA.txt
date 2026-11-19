@@ -1,0 +1,81 @@
+CYBORG CHEEBEE OFFICE — PHASE D v8
+SERVER SECURITY + ORDER FIXES
+
+BASAHIN MUNA BAGO MAG-APPLY
+
+ANO ANG NASA ZIP
+- server.js — patched Node backend
+- public/index.html — updated office UI + honest pending-payment receipt
+- public/phaseB.js, phaseC.js, phaseD.js — browser add-ons
+- public/sw.js — cache version cheebee-v8
+- tests/ — layout, fixes, smoke, at bagong server security integration test
+
+INSTALL (SAFE NA PARAAN)
+1. I-STOP muna ang Node server.
+2. BACKUP ang buong project folder mo. Lalo na ang server.js, public/index.html, at data/.
+3. I-extract ang ZIP sa project root (kung nasaan ang server.js). Pumayag sa overwrite ng server.js at public/index.html.
+4. PANATILIHIN ang dati mong data/ folder. HUWAG burahin o palitan ang data/state.json at data/settings.json.
+5. Siguraduhing may CEO password sa data/settings.json (field na password) o environment variable na CEO_PASSWORD. Wala nang built-in default na "cyborg". Kapag walang naka-configure na password, naka-lock ang CEO/admin API.
+6. I-double-click ang APPLY-PHASE-D.bat.
+7. Simulan ulit: node server.js. I-refresh ang browser.
+
+PAALALA SA BAZAAR LOGIN
+Sa unang start, papalitan ng random secret ang lumang hard-coded cookie key. Kailangan mag-Facebook login ulit ang Bazaar visitors nang isang beses. Ise-save ang bagong secret sa data/state.json para manatiling valid ang cookie sa normal na restart. HUWAG burahin ang data/state.json.
+
+MGA INAYOS SA SERVER
+- Hindi na awtomatikong BAYAD NA ang order sa pag-click ng checkout. Pending muna ito.
+- Server ang nagva-validate ng item ID at presyo; hindi pinagkakatiwalaan ang presyo mula sa browser.
+- May idempotency key ang checkout para hindi madoble ang order sa network retry.
+- Hindi na public ang order history.
+- May Mall Orders — Payment Review sa CEO > AD PROJECTS & GOODS. I-verify lang kapag nakita at nasuri mo ang totoong payment receipt/reference.
+- Walang payment gateway na konektado. Manual CEO verification lang ito, hindi automatic bank/GCash/Shopee verification.
+- Referral commission at order quest reward ay pagkatapos lang ng manual payment verification; hindi nadodoble kapag inulit ang verify.
+- Hindi na puwedeng gamitin ang generic task endpoint para i-claim ang check-in/order/share/content reward.
+- Random na ang demo visitor ID; hindi na puwedeng manghula ng account gamit lang ang display name.
+- Random at persisted na ang Bazaar cookie-signing secret; constant-time ang signature comparison.
+- Hindi na nawawala ang CEO password/Facebook/Shopee credentials kapag nagse-save ng AI provider settings.
+- Disabled ang account/provider GET endpoints na dating nangangailangan ng password sa URL.
+- May baseline security headers at order rate limit.
+
+TEST RESULTS SA BUILD ENVIRONMENT
+- node --check server.js: PASSED
+- tests/layout.js: 20/20 PASSED
+- tests/fixes.js: 63/63 PASSED
+- tests/smoke.js: PASSED
+- tests/server-security.js: PASSED
+- Inline JavaScript syntax ng index.html: PASSED
+
+HINDI PA NAPATUNAYAN
+- Hindi pa nasusubukan sa totoong Windows PC o pisikal na cellphone.
+- Walang tunay na payment gateway.
+- Wala pang 2FA. Password gate lang ito, hindi two-factor authentication.
+- Ang campaign/social share reward ay nangangailangan pa ng trusted social-network callback o manual approval para maging fraud-resistant.
+- JSON file storage pa rin ang database; hindi pa ito transactional multi-user database.
+
+ROLLBACK
+- Ibalik ang backup na server.js at public/index.html kung kailangang i-undo ang server patch.
+- REMOVE-PHASE-D.bat ay nag-aalis lang ng Phase D browser add-on. HINDI nito ibinabalik ang server.js.
+
+
+PHASE D v7 — OPERATIONS FOUNDATION
+- May atomic file saving, health endpoint, CEO Operations panel, manual timestamped backup, at audit trail.
+- Tingnan ang MASTER-UPGRADE-ROADMAP.md para sa 100 upgrades. Hindi pa lahat implemented; DONE lang ang marked as DONE.
+- Ang backup ay may private settings/API credentials. Huwag i-upload sa public GitHub o i-share publicly.
+- Panatilihin ang buong data folder. Gumawa muna ng hiwalay na backup bago mag-update.
+
+
+PHASE D v8 — VIRTUAL OFFICE LAYOUT
+- Mas responsive ang 3D campus viewport (desktop at mobile).
+- May camera buttons: Zoom In/Out, Fit Campus, Reset, Save View, Load View, at Map.
+- Pinalawak ang maximum zoom-out para makita ang mas malaking campus; gumagana rin sa mouse wheel at two-finger pinch.
+- May clickable minimap para tumalon ang camera sa napiling bahagi ng campus.
+- May renderer resize synchronization para hindi lumiit o ma-stretch ang 3D canvas pagkatapos itong ipakita.
+- Pindutin ang H para ipakita/itago ang UI. Kapag nakatago ang UI, nakatago rin ang camera controls at minimap para malinis ang full-screen view.
+- Ang bagong layout controls ay hindi pa nangangahulugang kumpleto na ang lahat ng 100 visual upgrades. Tingnan ang LAYOUT-UPGRADE-ROADMAP.md.
+
+BAGONG TEST
+- node tests/office-layout.js — camera controls, responsive viewport, minimap, saved view, at zoom bounds.
+
+THREE.JS DEPENDENCY
+- Unang susubukan ng page ang local public/three.min.js. Kapag wala ito, gagamit ng pinned Three.js r159 mula sa jsDelivr (kailangan ng internet). Kapag pareho itong unavailable, 2D fallback ang gagamitin.
+- r159 ang naka-pin dahil inalis ng Three.js ang classic build/three.min.js simula r160. Basahin ang THREE-LICENSE.txt.
