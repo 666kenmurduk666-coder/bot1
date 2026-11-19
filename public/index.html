@@ -1747,18 +1747,19 @@ function init3D(){
   scene3d.fog=new THREE.Fog('#c9d6ea',40,200);
   camera3d=new THREE.PerspectiveCamera(45,(host.clientWidth||900)/(host.clientHeight||520),.1,500);
   camera3d.position.set(9,11,16);camera3d.lookAt(6,0,6);
-  const amb=new THREE.AmbientLight(0xfff4e0,1.25);scene3d.add(amb);g.amb=amb;
-  const dl=new THREE.DirectionalLight(0xfff8e8,1.45);dl.position.set(12,18,8);dl.castShadow=true;
+  const amb=new THREE.AmbientLight(0xfff4e0,1.1);scene3d.add(amb);g.amb=amb;
+  const dl=new THREE.DirectionalLight(0xfff8e8,1.6);dl.position.set(12,18,8);dl.castShadow=true;
   dl.shadow.mapSize.width=1024;dl.shadow.mapSize.height=1024;
   dl.shadow.camera.left=-15;dl.shadow.camera.right=15;dl.shadow.camera.top=15;dl.shadow.camera.bottom=-15;
   scene3d.add(dl);g.sun=dl;
-  const pl=new THREE.PointLight(0x4b8dff,1.15,26);pl.position.set(6,6,6);scene3d.add(pl);g.blueLamp=pl;
-  const rim=new THREE.DirectionalLight(0xffe8c8,.5);rim.position.set(-10,8,-12);scene3d.add(rim);g.rim=rim;
+  const pl=new THREE.PointLight(0x4b8dff,1.2,28);pl.position.set(6,6,6);scene3d.add(pl);g.blueLamp=pl;
+  const warm=new THREE.PointLight(0xffd9a0,1.1,32);warm.position.set(6,7,6);scene3d.add(warm);g.warmLamp=warm;
+  const rim=new THREE.DirectionalLight(0xffe8c8,.6);rim.position.set(-10,8,-12);scene3d.add(rim);g.rim=rim;
   bub3d=document.createElement('div');bub3d.className='bub3d';bub3d.style.display='none';host.appendChild(bub3d);
   window.addEventListener('resize',()=>{const w=host.clientWidth||900,h=host.clientHeight||520;renderer3d.setSize(w,h);camera3d.aspect=w/h;camera3d.updateProjectionMatrix()});
   threeReady=true;return true;
 }
-function m3(color,opts){return new THREE.MeshStandardMaterial(Object.assign({color:color,roughness:.75,metalness:.06},opts||{}))}
+function m3(color,opts){return new THREE.MeshStandardMaterial(Object.assign({color:color,roughness:.6,metalness:.18},opts||{}))}
 function box3(w,h,d,color,x,y,z,glow){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m3(color,glow?{emissive:color,emissiveIntensity:.6}:{}));
   m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;(structureGroup||g.level).add(m);return m;
@@ -2033,7 +2034,7 @@ function buildRoom3d(id){
   const dust=new THREE.Points(dustGeo,dustMat);g.level.add(dust);g.dust=dust;room3dId=id;escArr=[];
   scene3d.background=new THREE.Color('#0e1726');
   scene3d.fog=new THREE.Fog('#0e1726',80,220);
-  const W=22,H=14;
+  const W=44,H=14;
   // ===== IISANG PALAPAG: maayos na hanay ng opisina, may harang bawat isa =====
   const ROOMS=[
     {id:'ceo',  name:'COMMAND CENTER 👑',  x1:.4,x2:6.2, z1:8.1,z2:13.6, f1:'#b7945c',f2:'#c2a06b',wall:'#d8b46a'},
@@ -2048,7 +2049,7 @@ function buildRoom3d(id){
     if(z>=CORR.z1&&z<=CORR.z2)return null;
     return ROOMS.find(r=>x>=r.x1&&x<=r.x2&&z>=r.z1&&z<=r.z2);
   };
-  const glassMat=new THREE.MeshStandardMaterial({color:'#a8d8ff',transparent:true,opacity:.26,roughness:.15,metalness:.1});
+  const glassMat=new THREE.MeshStandardMaterial({color:'#a8d8ff',transparent:true,opacity:.32,roughness:.08,metalness:.45});
   const glass=(w,h,d,x,y,z)=>{
     const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glassMat);m.position.set(x,y,z);g.level.add(m);
     const bar=new THREE.Mesh(new THREE.BoxGeometry(w+.06,.06,d+.06),m3('#e8eef8'));bar.position.set(x,y+h/2,z);g.level.add(bar);return m;
@@ -2086,24 +2087,19 @@ function buildRoom3d(id){
   // building slab + ground
   const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#aeb6c4'));
   slab.position.set(W/2,-.36,H/2);slab.receiveShadow=true;structureGroup.add(slab);
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#3a3128'));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#22262c'));
   ground.rotation.x=-Math.PI/2;ground.position.set(17,-.72,13);ground.receiveShadow=true;structureGroup.add(ground);
-  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#4a4238'));
+  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#1e2228'));
   walk.rotation.x=-Math.PI/2;walk.position.set(W/2,-.7,H/2);walk.receiveShadow=true;structureGroup.add(walk);
   // sahig: ibang kulay bawat opisina + gitnang corridor
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     const r=roomAt(a+.5,b+.5),k=(a+b)%2;
-    const col='#b8a07a';
+    const col='#1e2228';
     const t=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(col));
     t.rotation.x=-Math.PI/2;t.position.set(a+.5,.01,b+.5);t.receiveShadow=true;level3d.add(t);
   }
   // MGA HARANG: corridor sa gitna, pintuan papunta sa bawat kwarto
-  wallZ(CORR.z1,.4,21.6,'#9aa7bb',[[3.8,0],[10.8,0],[18,0]]);
-  wallZ(CORR.z2,.4,21.6,'#9aa7bb',[[3.6,0],[10.6,0],[18,0]]);
-  wallX(6.2,8.1,13.6,'#d8b46a');
-  wallX(15,8.1,13.6,'#5d7fb5');
-  wallX(7.5,.4,6.3,'#b36f9c');
-  wallX(13.5,.4,6.3,'#7c8ba3');
+  // (tinanggal ang mga partition walls — open plan, walang bakod)
   // pangalan ng bawat opisina — NAKADIKIT SA PADER (hindi nakalutang)
   ROOMS.forEach(r=>{
     const top=(r.z1+r.z2)/2>7.2;
@@ -2167,16 +2163,14 @@ function buildRoom3d(id){
   const tileRow=(y,palL,palR,split,dep)=>{
     for(let a=0;a<W;a++)for(let b=0;b<dep;b++){
       if(holeAt(a,b))continue;
-      const k=(a+b)%2,f2='#b8a07a';
+      const k=(a+b)%2,f2='#1e2228';
       const t2=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(f2));
       t2.rotation.x=-Math.PI/2;t2.position.set(a+.5,y,b+.5);t2.receiveShadow=true;g.level.add(t2);
     }
   };
   tileRow(3.62,['#8fa8cf','#9ab3d8'],['#d9b28c','#e2bfa0'],8,8);
   tileRow(7.22,['#6a7486','#727c8e'],['#d9b28c','#e2bfa0'],10,8);
-  // glass railing sa gilid ng mga slab, may butas para sa escalator (floor 2 lang)
-  for(let a=0;a<W;a+=.95){const x=a+.45;if(x>7.5&&x<11.2)continue;glass(.9,.95,.06,x,4.1,8.25)}
-  for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,7.7,8.25)}
+  // (tinanggal ang mga glass railing sa gilid ng slabs — walang bakod)
   // ☕ KAFE LOUNGE (floor 2, may escalator) — puro kape at sofa
   box3(4.2,1,.9,'#6b4423',14,4.1,1.4);box3(3.9,.13,.8,'#d8c6a8',14,4.66,1.4); // coffee counter
   box3(.8,1.4,.6,'#3a4256',16.8,4.5,1.4);box3(.5,.55,.05,'#8fe3ff',16.8,4.8,1.73,true); // coffee machine
@@ -2216,7 +2210,7 @@ function buildRoom3d(id){
   box3(1.2,.4,9.9,'#e2e6ec',11.5,10.6,9.05);
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     if(holeAt(a,b))continue;
-    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#b8a07a'));
+    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#1e2228'));
     t3.rotation.x=-Math.PI/2;t3.position.set(a+.5,10.82,b+.5);t3.receiveShadow=true;g.level.add(t3);
   }
   for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,3.5,.25)}
@@ -2325,7 +2319,7 @@ function buildRoom3d(id){
   // 🏢 OFFICE WING — i-align sa HQ (itaas na hanay ng grid)
   const _oldLevel=g.level, _wingGrp=new THREE.Group();
   g.level=_wingGrp; buildOfficeWing3d();
-  g.level=_oldLevel; _wingGrp.position.set(8,0,-14); g.level.add(_wingGrp);
+  g.level=_oldLevel; _wingGrp.position.set(1,0,-15); g.level.add(_wingGrp);
   if(typeof buildZonePartitions3d==='function')buildZonePartitions3d();
   // buildSportsBots3d(); // tinanggal — walang sports bots, office lang
   // buildPoleLights3d(); // tinanggal — walang pole sa loob ng structures
@@ -2548,17 +2542,18 @@ function buildRoom3d(id){
     const wp=new THREE.Vector3();o.updateWorldMatrix(true,false);o.getWorldPosition(wp);
     if((o.isSprite?wp.y>3.6:wp.y>3.15)||o.material===glassMat) o.visible=false;
   });
-  // Ground-floor shell: may butas sa ENTRANCE/EXIT, open top para makita ang loob
+  // Ground-floor shell: GLASS na pader, may butas sa ENTRANCE/EXIT, open top para makita ang loob
+  const shellGlass=(w,h,d,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glassMat);m.position.set(x,y,z);m.castShadow=true;g.level.add(m);};
   for(let a=0;a<W;a+=2){
     const c=a+1;
-    if(Math.abs(c-10.7)>1.1){box3(1.8,1.3,.08,'#bcd6ef',c,1.1,0);box3(1.8,1.3,.08,'#bcd6ef',c,1.1,H);}
+    if(Math.abs(c-10.7)>1.1){shellGlass(1.8,1.3,.08,c,1.1,0);shellGlass(1.8,1.3,.08,c,1.1,H);}
   }
   for(let b=0;b<H;b+=2){
-    box3(.08,1.3,1.8,'#bcd6ef',0,1.1,b+1);
-    box3(.08,1.3,1.8,'#bcd6ef',W,1.1,b+1); // buong pader, walang butas papuntang mall
+    shellGlass(.08,1.3,1.8,0,1.1,b+1);
+    shellGlass(.08,1.3,1.8,W,1.1,b+1); // buong pader, walang butas papuntang mall
   }
-  box3(W+.4,.3,.16,'#cfd6e0',W/2,.15,0);box3(W+.4,.3,.16,'#cfd6e0',W/2,.15,H);
-  box3(.16,.3,H+.4,'#cfd6e0',0,.15,H/2);box3(.16,.3,H+.4,'#cfd6e0',W,.15,H/2);
+  box3(W+.4,.3,.16,'#2a2f36',W/2,.15,0);box3(W+.4,.3,.16,'#2a2f36',W/2,.15,H);
+  box3(.16,.3,H+.4,'#2a2f36',0,.15,H/2);box3(.16,.3,H+.4,'#2a2f36',W,.15,H/2);
   // Ground-floor mall connector TINANGGAL — mall nasa 2F resort na lang
   // ===== ENTRANCE / EXIT (may pintuan, hindi tumatagos sa pader) =====
   doorAt(10.6,H,false);mkWallSign('ENTRANCE 🚪',10.6,1.95,14.06,'#2bb37a',0,2.3,.52);
@@ -2569,14 +2564,10 @@ function buildRoom3d(id){
   // ===== 2F RESORT DECK: BAR + POOL + CYBORG MALL (iisang sahig, walang pintuan) =====
   const DX1=9.5,DX2=26,DZ1=-8,DZ2=-2;
   box3(DX2-DX1,.35,DZ2-DZ1,'#e2e6ec',(DX1+DX2)/2,DY-.18,(DZ1+DZ2)/2);
-  const deckFloor=new THREE.Mesh(new THREE.PlaneGeometry(DX2-DX1,DZ2-DZ1),m3('#3a3128'));
+  const deckFloor=new THREE.Mesh(new THREE.PlaneGeometry(DX2-DX1,DZ2-DZ1),m3('#22262c'));
   deckFloor.rotation.x=-Math.PI/2;deckFloor.position.set((DX1+DX2)/2,DY+.01,(DZ1+DZ2)/2);deckFloor.receiveShadow=true;g.level.add(deckFloor);
-  [[DX1+.4,DZ1+.4],[DX2-.4,DZ1+.4],[DX1+.4,DZ2-.4],[DX2-.4,DZ2-.4]].forEach(p=>cyl3(.18,DY,'#7c8ba3',p[0],DY/2,p[1]));
-  for(let x=DX1;x<DX2;x+=1){if(x<11.2)continue;box3(.9,.75,.07,'#cfe0f2',x+.45,DY+.42,DZ2-.05)}
-  for(let z=DZ1;z<DZ2;z+=1){
-    box3(.07,.75,.9,'#cfe0f2',DX1+.05,DY+.42,z+.45);
-    box3(.07,.75,.9,'#cfe0f2',DX2-.05,DY+.42,z+.45); // tuloy-tuloy na fence (wala na ang butas)
-  }
+  // (tinanggal ang deck support poles)
+  // (tinanggal ang Kafe Deck railings — walang bakod)
   // 🧱 Ayos na fence — tuloy-tuloy na top rail sa buong deck
   box3(DX2-DX1+.2,.07,.1,'#e8eef8',(DX1+DX2)/2,DY+.84,DZ2-.02,true); // front top rail
   box3(.1,.07,DZ2-DZ1+.2,'#e8eef8',DX1+.02,DY+.84,(DZ1+DZ2)/2,true); // left
@@ -2792,7 +2783,7 @@ function buildFarm3d(){
 // ===== ✨ PARKING LOT: slots + cars + ticket booth + barrier =====
 function buildParking3d(){
   const z=42.5;
-  box3(36,.04,6,'#5a5044',15,-.62,z); // aspalto
+  box3(36,.04,6,'#555b63',15,-.62,z); // aspalto
   mkLabel('PARKING 🎫',15,z-3.4,1.2);
   for(let s2=0;s2<10;s2++){
     const px=0.5+s2*3.4;
@@ -3091,22 +3082,18 @@ function buildGym3d(){
 }
 /* ===== 🏢 OFFICE WING — malawak na dagdag na opisina, maayos na zones (Pixel-style) ===== */
 function buildOfficeWing3d(){
-  // malaking sahig ng bagong wing — nagsisimula sa z=14.2 (HINDI nakapatong sa HQ!)
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(22.2,.1,15.8),m3('#cfd4da'));
-  deck.position.set(32.4,-.05,22.1);deck.receiveShadow=true;g.level.add(deck);
+  const wingGlassMat=new THREE.MeshStandardMaterial({color:'#a8d8ff',transparent:true,opacity:.28,roughness:.15,metalness:.1,side:THREE.DoubleSide,depthWrite:false});
+  const wingGlass=(w,h,d,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wingGlassMat);m.position.set(x,y,z);m.castShadow=true;g.level.add(m);};
+  // (tinanggal ang malaking empty wing deck platform)
   // (tinanggal ang white bridge/walkway sa pagitan ng HQ at wing)
   // (inalis ang gymLink — gym na naka-grid sa ibaba, hindi sa kanan)
   // low glass railings — may butas sa office link at gym link
-  box3(22.2,.5,.09,'#a8d8ff',32.4,.25,30);                   // likod
-  box3(22.2,.5,.09,'#a8d8ff',32.4,.25,14.2);                 // harap (tuloy-tuloy na, walang butas)
-  box3(.09,.5,9.4,'#a8d8ff',21.6,.25,25.3);                   // kaliwa
-  box3(.09,.5,9.8,'#a8d8ff',43.5,.25,19.1);                   // kanan, gilid ng deck
-  box3(.09,.5,2,'#a8d8ff',43.5,.25,29);                       // kanan, gilid ng deck
+  // (tinanggal ang wing railings — walang bakod, open plan)
   const zone=(x,z,w,d,col,label)=>{
-    const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3('#2a2f36'));
     f.rotation.x=-Math.PI/2;f.position.set(x,.02,z);f.receiveShadow=true;g.level.add(f);
-    [[x,z-d/2],[x,z+d/2]].forEach(p=>box3(w,.03,.08,'#eef3fb',p[0],.04,p[1],true));
-    [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#eef3fb',x+dx,.04,z,true));
+    [[x,z-d/2],[x,z+d/2]].forEach(p=>box3(w,.03,.08,'#3a3f47',p[0],.04,p[1],true));
+    [-w/2,w/2].forEach(dx=>box3(.08,.03,d,'#3a3f47',x+dx,.04,z,true));
     mkLabel(label,x,z-d/2-1.1,1.8,'#c9a227');
   };
   // 😴 SLEEP QUARTERS — likod-kaliwa ng wing (dating Conference), malayo sa pantry
@@ -3776,11 +3763,11 @@ function buildPlayground3d(){
 function buildCity3d(){
   cityMovers3d=[];g.trees=[];
   // 🛣️ MALIIT NA KALSADA — nag-uugnay sa lahat ng structures
-  const roadMat=m3('#2f2a24');
+  const roadMat=m3('#1e2228');
   const mkRoad=(w,d,x,z)=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);r.rotation.x=-Math.PI/2;r.position.set(x,-.685,z);r.receiveShadow=true;g.level.add(r)};
   mkRoad(31,3,6.5,19);  // horizontal road sa pagitan ng rows (pinaikli bago ang court)
   // maliliit na dashes (madilim, hindi puting guhit)
-  for(let x=-9;x<22;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#5a5044'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
+  for(let x=-9;x<22;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#555b63'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
 }
 function frame3D(){
   if(!threeReady)return;
@@ -5871,9 +5858,7 @@ function buildBazaar3d(){
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(X2-X1,Z2-Z1),m3('#5f4a33'));
   floor.rotation.x=-Math.PI/2;floor.position.set((X1+X2)/2,Y+.01,(Z1+Z2)/2);floor.receiveShadow=true;g.level.add(floor);
   // rehas (may butas sa kanan papuntang mall)
-  box3(10,.8,.08,'#cfe0f2',31,Y+.42,-8.04);box3(10,.8,.08,'#cfe0f2',31,Y+.42,-1.96);
-  box3(.08,.8,6,'#cfe0f2',36.04,Y+.42,-5);
-  box3(.08,.8,2,'#cfe0f2',25.96,Y+.42,-6.5);box3(.08,.8,2,'#cfe0f2',25.96,Y+.42,-3.5);
+  // (tinanggal ang bazaar fences)
   // 🎪 welcome arch + string lights
   box3(.12,2.5,.12,'#ffd34d',26.1,Y+1.25,-2.1,true);box3(.12,2.5,.12,'#ffd34d',35.9,Y+1.25,-2.1,true);
   box3(9.9,.12,.12,'#ffd34d',31,Y+2.5,-2.1,true);
