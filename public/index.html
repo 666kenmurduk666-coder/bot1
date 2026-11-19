@@ -2083,16 +2083,16 @@ function buildRoom3d(id){
   const wallX=(x,z1,z2,col,gaps)=>{let cur=z1;(gaps||[]).forEach(g=>{solidX(x,cur,g[0]-.72,col);cur=g[0]+.72;});solidX(x,cur,z2,col);(gaps||[]).forEach(g=>doorAt(x,g[0],true))};
   const wallZ=(z,x1,x2,col,gaps)=>{let cur=x1;(gaps||[]).forEach(g=>{solidZ(z,cur,g[0]-.72,col);cur=g[0]+.72;});solidZ(z,cur,x2,col);(gaps||[]).forEach(g=>doorAt(g[0],z,false))};
   // building slab + ground
-  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#8a94a8'));
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#aeb6c4'));
   slab.position.set(W/2,-.36,H/2);slab.receiveShadow=true;structureGroup.add(slab);
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#1c2433'));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#4a5260'));
   ground.rotation.x=-Math.PI/2;ground.position.set(17,-.72,13);ground.receiveShadow=true;structureGroup.add(ground);
-  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#2c3444'));
+  const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#5a6370'));
   walk.rotation.x=-Math.PI/2;walk.position.set(W/2,-.7,H/2);walk.receiveShadow=true;structureGroup.add(walk);
   // sahig: ibang kulay bawat opisina + gitnang corridor
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     const r=roomAt(a+.5,b+.5),k=(a+b)%2;
-    const col='#d8d2c4';
+    const col='#9aa3ad';
     const t=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(col));
     t.rotation.x=-Math.PI/2;t.position.set(a+.5,.01,b+.5);t.receiveShadow=true;level3d.add(t);
   }
@@ -2166,7 +2166,7 @@ function buildRoom3d(id){
   const tileRow=(y,palL,palR,split,dep)=>{
     for(let a=0;a<W;a++)for(let b=0;b<dep;b++){
       if(holeAt(a,b))continue;
-      const k=(a+b)%2,f2='#d8d2c4';
+      const k=(a+b)%2,f2='#9aa3ad';
       const t2=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(f2));
       t2.rotation.x=-Math.PI/2;t2.position.set(a+.5,y,b+.5);t2.receiveShadow=true;g.level.add(t2);
     }
@@ -2215,7 +2215,7 @@ function buildRoom3d(id){
   box3(1.2,.4,9.9,'#c2c9d6',11.5,10.6,9.05);
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     if(holeAt(a,b))continue;
-    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#d8d2c4'));
+    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#9aa3ad'));
     t3.rotation.x=-Math.PI/2;t3.position.set(a+.5,10.82,b+.5);t3.receiveShadow=true;g.level.add(t3);
   }
   for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,3.5,.25)}
@@ -2642,7 +2642,7 @@ let farmPlots=[]; // ✨ GROW A GARDEN: mga pananim sa farm!
 let lastInteract=0;
 let liveOn=false,liveShot=0,liveNext=0; // ✨ LIVE CAM: auto-cycling camera para sa Streamlabs
 // 🎬 Lahat ng view — office bots muna, sunod ang court/gym/mall/farm/park/pool/lab
-const LIVE_SHOTS=[[11,1.5,7,.4,.5,24],[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[12,1.5,17.5,.45,.9,10],[30,1.5,8,.5,.3,16],[54,1.5,26,.55,.3,18],[23.8,5.4,-5,.45,.5,13],[17,5.4,-5,.45,2.4,14],[18.7,5.5,-5,.55,2.6,16],[40,1.5,27,.55,.3,14],[22,1,56,.55,.2,28],[15,1,42,.6,.3,24]];
+const LIVE_SHOTS=[[11,1.5,7,.4,.5,24],[5,12.2,10,.5,1.2,14],[17.5,12,10.5,.45,2,12],[12,1.5,17.5,.45,.9,10],[30,1.5,26,.5,.3,16],[8,1.5,26,.55,.3,18],[16,5.4,-8.8,.45,.5,13],[16,5.4,-8.8,.45,2.4,14],[16,5.5,-8.8,.55,2.6,16],[40,1.5,13,.55,.3,14],[22,1,56,.55,.2,28],[15,1,42,.6,.3,24]];
 let nightManual=null; // ✨ night mode: null=auto (18:00-6:00 PH), true/false=manual
 let rainOn=false,rainDrops=[],rainNoise=null; // ☔ ulan
 function spawnRainDrops(){
@@ -4343,22 +4343,23 @@ function frame3D(){
   if(player && g.level && player.group.parent !== g.level){ g.level.add(player.group); if(player.shadow) g.level.add(player.shadow); }
   const moving = moveKeys.w||moveKeys.a||moveKeys.s||moveKeys.d;
   if(playerMode && player){
-    // ESCALATOR SA LABAS: 1F opisina -> 2F resort (bar + pool + mall)
+    // ESCALATOR SA LABAS: 1F opisina -> 2F KAFE DECK (nakapag-transform ang HQ)
+    const ESC_X0=-3.65, ESC_X1=5.8, ESC_Z=-5.44;
     if(!escRide && Date.now()>(escCooldown||0)){
-      if(player.y<.6 && player.z>-3.3 && player.z<-1.1 && player.x>2.1 && player.x<4.2){escRide={u:0,dir:1};toast('⬆️ Aakyat sa 2F RESORT — Bar · Pool · Mall!');}
-      else if(player.y>3.4 && player.z>-3.2 && player.z<-1.3 && player.x>9.2 && player.x<11.2){escRide={u:1,dir:-1};toast('⬇️ Bababa sa 1F Opisina!');}
+      if(player.y<.6 && player.z>ESC_Z-1.1 && player.z<ESC_Z+1.1 && player.x>ESC_X0-1.9 && player.x<ESC_X0+0.3){escRide={u:0,dir:1};toast('⬆️ Aakyat sa 2F KAFE DECK!');}
+      else if(player.y>3.4 && player.z>ESC_Z-1.1 && player.z<ESC_Z+1.1 && player.x>ESC_X1-1.9 && player.x<ESC_X1+0.3){escRide={u:1,dir:-1};toast('⬇️ Bababa sa 1F Opisina!');}
     }
     let riding=false;
     if(escRide){
       riding=true;escRide.u+=.008*escRide.dir;
       if(escRide.u>=1){
-        escRide=null;escCooldown=Date.now()+2200;player.x=10.4;player.z=-2.6;player.y=4;
-        player.group.position.set(player.x,player.y,player.z);toast('🎉 2F Resort — Bar · Pool · Mall! Welcome!');
+        escRide=null;escCooldown=Date.now()+2200;player.x=ESC_X1+0.6;player.z=ESC_Z-0.5;player.y=4;
+        player.group.position.set(player.x,player.y,player.z);toast('☕ 2F Kafe Deck! Welcome!');
       } else if(escRide.u<=0){
-        escRide=null;escCooldown=Date.now()+2200;player.x=2.8;player.z=-2.2;player.y=0;
+        escRide=null;escCooldown=Date.now()+2200;player.x=ESC_X0-0.9;player.z=ESC_Z;player.y=0;
         player.group.position.set(player.x,player.y,player.z);toast('🏢 Balik sa 1F Opisina!');
       } else {
-        const u=escRide.u;player.x=3+u*7;player.z=-2.2;player.y=u*4;
+        const u=escRide.u;player.x=ESC_X0+u*(ESC_X1-ESC_X0);player.z=ESC_Z;player.y=u*4;
         player.group.position.set(player.x,player.y,player.z);
       }
     }
@@ -4924,12 +4925,12 @@ const JUMP_VIEWS={
   pantry:{t:[10.5,1.2,3.35],phi:.55,theta:.3,r:11},
   bay:{t:[17.55,1.2,3.35],phi:.55,theta:.3,r:12},
   sleep:{t:[28,1.5,13],phi:.55,theta:.3,r:14},
-  mall:{t:[17,5.2,-5],phi:.62,theta:2.4,r:18},
+  mall:{t:[16,5.2,-8.8],phi:.62,theta:2.4,r:18},
   farm:{t:[22,1,56],phi:.55,theta:.2,r:28},
   park:{t:[15,1,42],phi:.6,theta:.3,r:24},
-  pool:{t:[18.7,5.5,-5],phi:.55,theta:2.6,r:16},
+  pool:{t:[16,5.5,-8.8],phi:.55,theta:2.6,r:16},
   lab:{t:[40,1.5,13],phi:.55,theta:.3,r:14},
-  resort:{t:[17,5.2,-5],phi:.62,theta:2.4,r:20},
+  resort:{t:[16,5.2,-8.8],phi:.62,theta:2.4,r:20},
   court:{t:[30,1.5,26],phi:.55,theta:.3,r:16},
   event:{t:[46,1.5,-22],phi:.55,theta:.3,r:20},
   gym:{t:[8,1.5,26],phi:.55,theta:.3,r:18},
@@ -4998,7 +4999,7 @@ function interactFarm(){
   else toast('🌿 '+st.crop+': busog pa · growth '+st.growth+'%. Balik mamaya!');
 }
 function groundYAt(x,z,y){
-  if(x>=9.5&&x<=36&&z>=-8&&z<=-2&&y>3.2)return 4; // 2F resort deck: bar + pool + mall + bazaar
+  if(x>=5&&x<=28&&z>=-12.5&&z<=-5&&y>3.2)return 4; // 2F KAFE DECK
   return 0;
 }
 function spawnPlayer(){
