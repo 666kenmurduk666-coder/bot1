@@ -2564,7 +2564,7 @@ function buildRoom3d(id){
   box3(4.6,1,.9,'#6b4423',13,DY+.53,-7.2);box3(4.2,.13,.8,'#d8c6a8',13,DY+1.1,-7.2); // coffee counter
   box3(.9,1.5,.7,'#3a4256',16.2,DY+.8,-7.2);box3(.6,.8,.05,'#8fe3ff',16.2,DY+.95,-6.83,true); // coffee machine
   const kafeSofa=(x,z,col)=>{box3(2,.42,.9,col,x,DY+.35,z);box3(2,.4,.2,col,x,DY+.75,z-.35);box3(.25,.5,.9,col,x-.9,DY+.6,z);box3(.25,.5,.9,col,x+.9,DY+.6,z)};
-  kafeSofa(12,-4.6,'#8a4a7a');kafeSofa(16,-4.6,'#6a8a9a');kafeSofa(12,-2.6,'#6a8a9a');kafeSofa(21,-4.6,'#c9a227');
+  kafeSofa(12.5,-4.6,'#8a4a7a');kafeSofa(16.5,-4.6,'#6a8a9a');kafeSofa(20.5,-4.6,'#c9a227');kafeSofa(14,-2.6,'#6a8a9a');kafeSofa(19,-2.6,'#8a4a7a');
   const kafeRug=new THREE.Mesh(new THREE.PlaneGeometry(10,4),m3('#2b7d78'));kafeRug.rotation.x=-Math.PI/2;kafeRug.position.set(16.5,DY+.02,-4.4);kafeRug.receiveShadow=true;g.level.add(kafeRug);
   box3(1.6,.08,.9,'#7a5a34',14,DY+.35,-4.2);box3(1.6,.08,.9,'#7a5a34',18.5,DY+.35,-4.2); // coffee tables
   cyl3(.05,.4,'#5a4028',13.3,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',14.7,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',17.8,DY+.22,-4.6);cyl3(.05,.4,'#5a4028',19.2,DY+.22,-4.6);
@@ -5867,12 +5867,10 @@ function buildBazaar3d(){
   if(!threeReady||!g.level||g.bzLevel===g.level)return;
   g.bzLevel=g.level;g.bazaarStalls=[];
   const Y=4,X1=26,X2=36,Z1=-8,Z2=-2;
-  // 🌲 BAGUIO NIGHT MARKET — kahoy na sahig, mainit na ilaw, tarpaulin
-  box3(X2-X1,.35,Z2-Z1,'#7a5a3c',(X1+X2)/2,Y-.18,(Z1+Z2)/2);
-  for(let x=X1;x<X2;x++)for(let z=Z1;z<Z2;z++){
-    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3((x+z)%2?'#8a6a48':'#6f5238',{roughness:1}));
-    t.rotation.x=-Math.PI/2;t.position.set(x+.5,Y+.01,z+.5);t.receiveShadow=true;g.level.add(t);
-  }
+  // uniform floor — walang checkerboard, mas malinis tingnan
+  box3(X2-X1,.35,Z2-Z1,'#6f5238',(X1+X2)/2,Y-.18,(Z1+Z2)/2);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(X2-X1,Z2-Z1),m3('#5f4a33'));
+  floor.rotation.x=-Math.PI/2;floor.position.set((X1+X2)/2,Y+.01,(Z1+Z2)/2);floor.receiveShadow=true;g.level.add(floor);
   // rehas (may butas sa kanan papuntang mall)
   box3(10,.8,.08,'#cfe0f2',31,Y+.42,-8.04);box3(10,.8,.08,'#cfe0f2',31,Y+.42,-1.96);
   box3(.08,.8,6,'#cfe0f2',36.04,Y+.42,-5);
@@ -5896,8 +5894,10 @@ function buildBazaar3d(){
   if(typeof buildChristmas3d==='function')buildChristmas3d();
   const items=(typeof mallItems==='function'?mallItems():((typeof S!=='undefined'&&S&&S.mall)||[])).filter(x=>(x.cat||'shopee')==='grocery').slice(0,10);
   const pal=['#e8622c','#2bb3a6','#c9a227','#8f6fd8','#4f8ac9','#ff8fa8','#7cf7ff','#c98ac9','#f0b429','#5ac98f'];
-  items.forEach((it,i)=>{
-    const front=i>=5,sx=27.2+(i%5)*1.95,sz=front?-3.1:-6.4,col=pal[i%pal.length];
+  // 🧹 MAAYOS NA 2×5 GRID — pare-parehong espasyo, nakahanay ang bawat stall
+  for(let i=0;i<10;i++){
+    const it=items[i]||null, front=i>=5, col=pal[i%pal.length];
+    const sx=27.0+(i%5)*2.05, sz=front?-3.0:-6.3;
     box3(1.65,.85,.6,'#6b4423',sx,Y+.43,sz);                        // kahoy na counter
     box3(1.8,.08,.72,'#a97c52',sx,Y+.9,sz);
     box3(.85,.55,.55,'#5c432e',sx-.38,Y+.28,sz+(front?-.25:.25)); // crate
@@ -5905,11 +5905,13 @@ function buildBazaar3d(){
     [-.78,.78].forEach(o=>cyl3(.04,1.15,'#d9c9a8',sx+o,Y+1.48,sz));
     box3(1.9,.07,.95,col,sx,Y+2.02,sz,true);                        // tarpaulin
     box3(.95,.07,.95,i%2?'#fff4d6':'#ff8fa8',sx-.47,Y+2.05,sz,true);
-    box3(.42,.42,.42,col,sx,Y+1.2,sz,true);                         // product box
-    const label=String(it.name||'Paninda').slice(0,14)+(it.price>0?('\n₱'+it.price):'');
-    mkWallSign(label,sx,Y+1.58,sz+(front?-.38:.38),col,front?Math.PI:0,1.72,.46);
-    g.bazaarStalls.push({x:sx,y:Y,z:sz,item:it,i:i});
-  });
+    if(it){
+      box3(.42,.42,.42,col,sx,Y+1.2,sz,true);                         // product box
+      const label=String(it.name||'Paninda').slice(0,14)+(it.price>0?('\n₱'+it.price):'');
+      mkWallSign(label,sx,Y+1.58,sz+(front?-.38:.38),col,front?Math.PI:0,1.72,.46);
+      g.bazaarStalls.push({x:sx,y:Y,z:sz,item:it,i:i});
+    }
+  }
   const L=new THREE.PointLight('#ffd34d',1.25,13);L.position.set(31,Y+2.6,-5);g.level.add(L);
   const L2=new THREE.PointLight('#ffb86b',1,12);L2.position.set(34,Y+2.4,-5);g.level.add(L2);
 }
