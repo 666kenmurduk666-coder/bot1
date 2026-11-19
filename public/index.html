@@ -2091,7 +2091,7 @@ function buildRoom3d(id){
   // sahig: ibang kulay bawat opisina + gitnang corridor
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     const r=roomAt(a+.5,b+.5),k=(a+b)%2;
-    const col=r?(k?r.f2:r.f1):(k?'#dde1e7':'#d5d9e0');
+    const col='#d8d2c4';
     const t=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3(col));
     t.rotation.x=-Math.PI/2;t.position.set(a+.5,.01,b+.5);t.receiveShadow=true;level3d.add(t);
   }
@@ -2165,7 +2165,7 @@ function buildRoom3d(id){
   const tileRow=(y,palL,palR,split,dep)=>{
     for(let a=0;a<W;a++)for(let b=0;b<dep;b++){
       if(holeAt(a,b))continue;
-      const k=(a+b)%2,f2=(a<split?palL:palR)[k];
+      const k=(a+b)%2,f2='#d8d2c4';
       const t2=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3(f2));
       t2.rotation.x=-Math.PI/2;t2.position.set(a+.5,y,b+.5);t2.receiveShadow=true;g.level.add(t2);
     }
@@ -2214,7 +2214,7 @@ function buildRoom3d(id){
   box3(1.2,.4,9.9,'#c2c9d6',11.5,10.6,9.05);
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     if(holeAt(a,b))continue;
-    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3(((a+b)%2)?'#93a0b4':'#9ba8bc'));
+    const t3=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3('#d8d2c4'));
     t3.rotation.x=-Math.PI/2;t3.position.set(a+.5,10.82,b+.5);t3.receiveShadow=true;g.level.add(t3);
   }
   for(let a=0;a<W;a+=.95){glass(.9,.95,.06,a+.45,3.5,.25)}
@@ -2527,7 +2527,7 @@ function buildRoom3d(id){
   const DX1=9.5,DX2=26,DZ1=-8,DZ2=-2;
   box3(DX2-DX1,.35,DZ2-DZ1,'#b8c0cc',(DX1+DX2)/2,DY-.18,(DZ1+DZ2)/2);
   for(let x=DX1;x<DX2;x++)for(let z=DZ1;z<DZ2;z++){
-    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3((x+z)%2?'#2b3a5c':'#22304d',{emissive:(x+z)%2?'#13284a':'#0f2038',emissiveIntensity:.6}));
+    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3('#26304a'));
     t.rotation.x=-Math.PI/2;t.position.set(x+.5,DY+.01,z+.5);t.receiveShadow=true;g.level.add(t);
   }
   [[DX1+.4,DZ1+.4],[DX2-.4,DZ1+.4],[DX1+.4,DZ2-.4],[DX2-.4,DZ2-.4]].forEach(p=>cyl3(.18,DY,'#7c8ba3',p[0],DY/2,p[1]));
