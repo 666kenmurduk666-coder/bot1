@@ -2092,7 +2092,7 @@ function buildRoom3d(id){
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     const r=roomAt(a+.5,b+.5),k=(a+b)%2;
     const col='#d8d2c4';
-    const t=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3(col));
+    const t=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(col));
     t.rotation.x=-Math.PI/2;t.position.set(a+.5,.01,b+.5);t.receiveShadow=true;level3d.add(t);
   }
   // MGA HARANG: corridor sa gitna, pintuan papunta sa bawat kwarto
@@ -2166,7 +2166,7 @@ function buildRoom3d(id){
     for(let a=0;a<W;a++)for(let b=0;b<dep;b++){
       if(holeAt(a,b))continue;
       const k=(a+b)%2,f2='#d8d2c4';
-      const t2=new THREE.Mesh(new THREE.PlaneGeometry(.98,.98),m3(f2));
+      const t2=new THREE.Mesh(new THREE.PlaneGeometry(1.02,1.02),m3(f2));
       t2.rotation.x=-Math.PI/2;t2.position.set(a+.5,y,b+.5);t2.receiveShadow=true;g.level.add(t2);
     }
   };
@@ -2526,10 +2526,8 @@ function buildRoom3d(id){
   // ===== 2F RESORT DECK: BAR + POOL + CYBORG MALL (iisang sahig, walang pintuan) =====
   const DX1=9.5,DX2=26,DZ1=-8,DZ2=-2;
   box3(DX2-DX1,.35,DZ2-DZ1,'#b8c0cc',(DX1+DX2)/2,DY-.18,(DZ1+DZ2)/2);
-  for(let x=DX1;x<DX2;x++)for(let z=DZ1;z<DZ2;z++){
-    const t=new THREE.Mesh(new THREE.PlaneGeometry(.96,.96),m3('#26304a'));
-    t.rotation.x=-Math.PI/2;t.position.set(x+.5,DY+.01,z+.5);t.receiveShadow=true;g.level.add(t);
-  }
+  const deckFloor=new THREE.Mesh(new THREE.PlaneGeometry(DX2-DX1,DZ2-DZ1),m3('#26304a'));
+  deckFloor.rotation.x=-Math.PI/2;deckFloor.position.set((DX1+DX2)/2,DY+.01,(DZ1+DZ2)/2);deckFloor.receiveShadow=true;g.level.add(deckFloor);
   [[DX1+.4,DZ1+.4],[DX2-.4,DZ1+.4],[DX1+.4,DZ2-.4],[DX2-.4,DZ2-.4]].forEach(p=>cyl3(.18,DY,'#7c8ba3',p[0],DY/2,p[1]));
   for(let x=DX1;x<DX2;x+=1){if(x<11.2)continue;box3(.9,.75,.07,'#cfe0f2',x+.45,DY+.42,DZ2-.05)}
   for(let z=DZ1;z<DZ2;z+=1){
