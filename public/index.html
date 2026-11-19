@@ -3075,18 +3075,16 @@ function buildGym3d(){
 /* ===== 🏢 OFFICE WING — malawak na dagdag na opisina, maayos na zones (Pixel-style) ===== */
 function buildOfficeWing3d(){
   // malaking sahig ng bagong wing — nagsisimula sa z=14.2 (HINDI nakapatong sa HQ!)
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(23.2,.1,15.8),m3('#cfd4da'));
-  deck.position.set(32.9,-.05,22.1);deck.receiveShadow=true;g.level.add(deck);
-  // connecting walkway mula sa lumang opisina papunta sa wing
-  const link=new THREE.Mesh(new THREE.PlaneGeometry(4.5,6.4),m3('#dfe4ec'));
-  link.rotation.x=-Math.PI/2;link.position.set(21.8,.02,17.4);link.receiveShadow=true;g.level.add(link);
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(22.2,.1,15.8),m3('#cfd4da'));
+  deck.position.set(32.4,-.05,22.1);deck.receiveShadow=true;g.level.add(deck);
+  // (tinanggal ang white bridge/walkway sa pagitan ng HQ at wing)
   // (inalis ang gymLink — gym na naka-grid sa ibaba, hindi sa kanan)
   // low glass railings — may butas sa office link at gym link
-  box3(23.2,.5,.09,'#a8d8ff',32.9,.25,30);                   // likod
-  box3(20.3,.5,.09,'#a8d8ff',34.25,.25,14.2);                 // harap (butas sa link)
-  box3(.09,.5,9.4,'#a8d8ff',21.6,.25,25.3);                   // kaliwa, pagkatapos ng link gap
-  box3(.09,.5,9.8,'#a8d8ff',44.4,.25,19.1);                   // kanan, bago ang gym link
-  box3(.09,.5,2,'#a8d8ff',44.4,.25,29);                       // kanan, pagkatapos ng gym link
+  box3(22.2,.5,.09,'#a8d8ff',32.4,.25,30);                   // likod
+  box3(22.2,.5,.09,'#a8d8ff',32.4,.25,14.2);                 // harap (tuloy-tuloy na, walang butas)
+  box3(.09,.5,9.4,'#a8d8ff',21.6,.25,25.3);                   // kaliwa
+  box3(.09,.5,9.8,'#a8d8ff',43.5,.25,19.1);                   // kanan, gilid ng deck
+  box3(.09,.5,2,'#a8d8ff',43.5,.25,29);                       // kanan, gilid ng deck
   const zone=(x,z,w,d,col,label)=>{
     const f=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m3(col));
     f.rotation.x=-Math.PI/2;f.position.set(x,.02,z);f.receiveShadow=true;g.level.add(f);
