@@ -1,6 +1,6 @@
 /* Network-first (3s timeout), cache kapag offline. Allowlist lang: static files ng add-on. Hindi kasama ang mga pahina/API. */
 var C = 'cheebee-v8';
-var OK = ['/phaseB.js', '/phaseC.js', '/phaseD.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/manifest.webmanifest'];
+var OK = ['/phaseB.js', '/phaseC.js', '/phaseD.js', '/three.min.js', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/manifest.webmanifest'];
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== C; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); })); });
 self.addEventListener('fetch', function (e) {

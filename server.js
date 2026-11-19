@@ -10,6 +10,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
@@ -1227,17 +1228,37 @@ function ceoPassword() {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png',
-  '.svg': 'image/svg+xml', '.ico': 'image/x-icon'
+  '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+  '.webp': 'image/webp', '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.mp4': 'video/mp4', '.txt': 'text/plain; charset=utf-8',
+  '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2', '.pdf': 'application/pdf'
 };
-function send(res, code, body, type) {
-  res.writeHead(code, {
-    'Content-Type': type || 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
+/* Compressible text types. Small responses are skipped (CPU > gain). */
+function compressible(type) {
+  return /^(text\/|application\/(json|javascript|xml|manifest\+json)|image\/svg)/.test(String(type || ''));
+}
+/* gzip for clients that accept it + smart Cache-Control:
+   - static assets: cached 1 day (they only change between deploys)
+   - html: no-cache (always revalidate, stay official)
+   - everything else (API): no-store (never cached) */
+function send(res, code, body, type, cache) {
+  const t = type || 'application/json; charset=utf-8';
+  let out = body, enc = null;
+  const cc = (res.req && res.req.headers && res.req.headers['accept-encoding']) || '';
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body == null ? '' : body));
+  if (buf.length > 1024 && compressible(t) && /\bgzip\b/i.test(cc) && code !== 204) {
+    try { out = zlib.gzipSync(buf, { level: 6 }); enc = 'gzip'; } catch (e) { out = buf; }
+  }
+  const headers = {
+    'Content-Type': t,
+    'Cache-Control': cache === 'static' ? 'public, max-age=86400' : cache === 'html' ? 'no-cache' : 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Frame-Options': 'SAMEORIGIN'
-  });
-  res.end(body);
+  };
+  if (enc) { headers['Content-Encoding'] = enc; headers['Vary'] = 'Accept-Encoding'; headers['Content-Length'] = String(out.length); }
+  res.writeHead(code, headers);
+  res.end(out);
 }
 function sendJSON(res, code, obj) { send(res, code, JSON.stringify(obj)); }
 function body(req) {
@@ -1286,6 +1307,7 @@ function guardBumpBad(ip) {
 }
 
 const server = http.createServer(async (req, res) => {
+  res.req = req;
   const u = new URL(req.url, 'http://localhost:' + PORT);
   const p = u.pathname;
   try {
@@ -2701,7 +2723,8 @@ const server = http.createServer(async (req, res) => {
     if (!full.startsWith(PUBLIC)) return sendJSON(res, 403, { error: 'Forbidden' });
     fs.readFile(full, (err, data) => {
       if (err) return send(res, 404, 'Not found', 'text/plain');
-      send(res, 200, data, MIME[path.extname(full)] || 'application/octet-stream');
+      const ext = path.extname(full).toLowerCase();
+      send(res, 200, data, MIME[ext] || 'application/octet-stream', ext === '.html' ? 'html' : 'static');
     });
   } catch (e) {
     console.error(e);
