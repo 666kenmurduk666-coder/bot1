@@ -4384,7 +4384,7 @@ function frame3D(){
       player.lastMoveDir={x:dx,z:dz};
     }
     if(moveKeys.space)moveKeys.space=false;
-    if(!riding){player.y=groundYAt(player.x,player.z,player.y);player.vy=0;player.onGround=true;player.group.position.y=player.y+(moving?Math.abs(Math.sin(Date.now()/150))*.07:0);}
+    if(true){player.y=groundYAt(player.x,player.z,player.y);player.vy=0;player.onGround=true;player.group.position.y=player.y+(moving?Math.abs(Math.sin(Date.now()/150))*.07:0);}
     if(player.shadow) player.shadow.position.set(player.x,.03,player.z);
     // CEO GREETING: bots na malapit = magbabati! (wag snob!)
     if(playerMode && player && Date.now()-lastGreet>4000){
