@@ -83,7 +83,7 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 ## Known behavior
 
 - Ang app ay nagse-serve ng service worker (`sw.js`) na nag-cache ng Phase B/C/D add-on files at `/three.min.js`. Kapag may bagong deploy, mag-refresh muna (o i-clear ang site data) para makita ang bagong version.
-- `/phaseD.js` at friends ay `?v=8` — bump ang `?v=` kapag may bagong release mula sa developer.
+- `/phaseD.js` at friends ay `?v=9` (binump mula `?v=8` noong 2026-11-20 para ma-bypass ang 1-day browser/SW cache ng lumang `phaseB.js`). Bump ang `?v=` kapag may bagong release mula sa developer.
 - Ang bazaar ay nagpapakita lang ng **12 pinakabagong commercials** (sliding window, app design); nakatago ang lahat sa CEO list (hanggang 60 sa state).
 - Ang Render free instance ay tumutulog pag ~15 min walang tap; gumigising kapag nasa keep-alive window (06:00-24:00 PHT).
 

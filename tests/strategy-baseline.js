@@ -43,7 +43,9 @@ const protectedHashes = {
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
   // renderer (no MSAA / 1x DPR / no shadows) so weak GPUs do not stall.
-  'public/index.html': '04e7defbd958d9de68254f645871647c135b68fd03af228d11ad8872e9eaeadd',
+  // Cache-bust bump v8 -> v9 so returning browsers cannot reuse the old
+  // phaseB.js that contained the self-triggering MutationObserver freeze.
+  'public/index.html': '4065618f0bab6150075b3fe4b8abeca4f62189132b1347ab18cd0fc4a2e257aa',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
