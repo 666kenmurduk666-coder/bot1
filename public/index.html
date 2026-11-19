@@ -1732,7 +1732,7 @@ lay.addEventListener('contextmenu',e=>{
 });
 
 /* ---------- 3D office (Three.js) ---------- */
-let renderer3d=null,scene3d=null,camera3d=null,level3d=null,chars3d=[],bub3d=null,threeReady=false,room3dId=null;
+let renderer3d=null,scene3d=null,camera3d=null,level3d=null,chars3d=[],bub3d=null,threeReady=false,room3dId=null,structureGroup=null;
 function init3D(){
   if(typeof THREE==='undefined'||renderer3d)return !!renderer3d;
   const host=$('oc3d');if(!host)return false;
@@ -1760,11 +1760,11 @@ function init3D(){
 function m3(color,opts){return new THREE.MeshStandardMaterial(Object.assign({color:color,roughness:.75,metalness:.06},opts||{}))}
 function box3(w,h,d,color,x,y,z,glow){
   const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m3(color,glow?{emissive:color,emissiveIntensity:.6}:{}));
-  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.level.add(m);return m;
+  m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;(structureGroup||g.level).add(m);return m;
 }
 function cyl3(r,h,color,x,y,z,glow){
   const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,14),m3(color,glow?{emissive:color,emissiveIntensity:.7}:{}));
-  m.position.set(x,y,z);m.castShadow=true;g.level.add(m);return m;
+  m.position.set(x,y,z);m.castShadow=true;(structureGroup||g.level).add(m);return m;
 }
 let g={level:null};
 function signTexture(txt,col){
@@ -1789,7 +1789,7 @@ function mkLabel(txt,a,b,y,col){
   const fm=new THREE.MeshBasicMaterial({map:tex,transparent:true});
   const front=new THREE.Mesh(new THREE.PlaneGeometry(w-.08,.64),fm);front.position.set(0,h,.056);grp.add(front);
   const back=new THREE.Mesh(new THREE.PlaneGeometry(w-.08,.64),fm);back.position.set(0,h,-.056);back.rotation.y=Math.PI;grp.add(back);
-  grp.position.set(a,0,b);g.level.add(grp);
+  grp.position.set(a,0,b);(structureGroup||g.level).add(grp);
 }
 /* 🪧 Wall sign — nakadikit sa pader, parang nakasulat sa dingding */
 function mkWallSign(txt,x,y,z,col,rotY,w,h){
@@ -1802,7 +1802,7 @@ function mkWallSign(txt,x,y,z,col,rotY,w,h){
   const tex=signTexture(txt,col);
   const face=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,transparent:true}));
   face.position.z=.042;grp.add(face);
-  grp.position.set(x,y,z);grp.rotation.y=rotY||0;g.level.add(grp);
+  grp.position.set(x,y,z);grp.rotation.y=rotY||0;(structureGroup||g.level).add(grp);
   return grp;
 }
 function makeItem3d(it){
@@ -1837,7 +1837,7 @@ function setEmo(sp,em){
   g2.clearRect(0,0,64,64);g2.font='44px serif';g2.textAlign='center';g2.textBaseline='middle';g2.fillText(em,32,34);
   sp.material.map.needsUpdate=true;
 }
-function makeChar3d(a,x,z){  const grp=new THREE.Group();
+function makeChar3d(a,x,z){  const grp=new THREE.Group();grp.userData.isBot=true;
   const bodyMat=m3(a.c);
   const head=new THREE.Mesh(new THREE.SphereGeometry(.42,20,16),bodyMat);head.position.set(0,.5,0);head.castShadow=true;grp.add(head);
   const eyeW=m3('#ffffff'),eyeB=m3('#10151f'),blush=m3('#ff8fa8');
@@ -1875,7 +1875,7 @@ function makeChar3d(a,x,z){  const grp=new THREE.Group();
   grp.position.set(x,0,z);g.level.add(grp);
   // contact shadow: maitim na bilog sa ilalim ng bot — para laging grounded, hindi lumulutang!
   const sh=new THREE.Mesh(new THREE.CircleGeometry(.42,20),new THREE.MeshBasicMaterial({color:'#1a2230',transparent:true,opacity:.28,depthWrite:false}));
-  sh.rotation.x=-Math.PI/2;sh.renderOrder=2;g.level.add(sh);
+  sh.rotation.x=-Math.PI/2;sh.renderOrder=2;sh.userData.isBot=true;g.level.add(sh);
   return {group:grp,agent:a,shadow:sh,emo:emo,cup:cupG};
 }
 // ===== PADER AT PINTUAN: ginagamit ng layout AT ng paggalaw =====
@@ -2020,6 +2020,7 @@ function buildRoom3d(id){
   if(!threeReady)return;
   if(level3d){scene3d.remove(level3d);level3d.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
   level3d=new THREE.Group();g.level=level3d;scene3d.add(level3d);chars3d=[];
+  structureGroup=new THREE.Group();g.level.add(structureGroup);
   SALA_SPOTS.forEach(s=>{s.taken=false;s.t=0});BAND_SPOTS.forEach(s=>{s.taken=false;s.t=0});
   g.windMats=[];g.delivery3d=null;g.deliveryParcels=[];
   rainDrops=[];if(rainOn)spawnRainDrops();
@@ -2083,11 +2084,11 @@ function buildRoom3d(id){
   const wallZ=(z,x1,x2,col,gaps)=>{let cur=x1;(gaps||[]).forEach(g=>{solidZ(z,cur,g[0]-.72,col);cur=g[0]+.72;});solidZ(z,cur,x2,col);(gaps||[]).forEach(g=>doorAt(g[0],z,false))};
   // building slab + ground
   const slab=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.7,H+.6),m3('#8a94a8'));
-  slab.position.set(W/2,-.36,H/2);slab.receiveShadow=true;level3d.add(slab);
+  slab.position.set(W/2,-.36,H/2);slab.receiveShadow=true;structureGroup.add(slab);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(230,230),m3('#1c2433'));
-  ground.rotation.x=-Math.PI/2;ground.position.set(17,-.72,13);ground.receiveShadow=true;level3d.add(ground);
+  ground.rotation.x=-Math.PI/2;ground.position.set(17,-.72,13);ground.receiveShadow=true;structureGroup.add(ground);
   const walk=new THREE.Mesh(new THREE.PlaneGeometry(W+7,H+7),m3('#2c3444'));
-  walk.rotation.x=-Math.PI/2;walk.position.set(W/2,-.7,H/2);walk.receiveShadow=true;level3d.add(walk);
+  walk.rotation.x=-Math.PI/2;walk.position.set(W/2,-.7,H/2);walk.receiveShadow=true;structureGroup.add(walk);
   // sahig: ibang kulay bawat opisina + gitnang corridor
   for(let a=0;a<W;a++)for(let b=0;b<H;b++){
     const r=roomAt(a+.5,b+.5),k=(a+b)%2;
@@ -2330,8 +2331,33 @@ function buildRoom3d(id){
   buildSunRays3d();
   buildAttendance3d();
   buildLivingWorld3d();
+  // 🏗️ WIDEN HQ — iusog ang lahat ng istruktura papunta sa upper-left (palayo, pakaliwa)
+  const SX=1.35, SZ=1.2, W0=22, H0=14;
+  const shiftX=W0-SX*W0, shiftZ=H0-SZ*H0; // panatilihin ang harapan/tuwi, palawakin palayo
+  const botGroups=new Set();
+  chars3d.forEach(c=>botGroups.add(c.group));
+  if(g.bantay&&g.bantay.group)botGroups.add(g.bantay.group);
+  if(g.keeper&&g.keeper.group)botGroups.add(g.keeper.group);
+  (g.promoters||[]).forEach(p=>botGroups.add(p.g));
+  if(g.pet&&g.pet.group)botGroups.add(g.pet.group);
+  (g.courtBots||[]).forEach(b=>botGroups.add(b.grp));
+  (g.vill||[]).forEach(v=>botGroups.add(v.o.group));
+  for(const child of [...g.level.children]){
+    if(child===structureGroup)continue;
+    if(botGroups.has(child))continue;
+    structureGroup.add(child);
+  }
+  structureGroup.scale.set(SX,1,SZ);
+  structureGroup.position.set(shiftX,0,shiftZ);
+  // iusog din ang mga bot at kanilang mga destinasyon para hindi makipot
+  chars3d.forEach(c=>{c.group.position.x=c.group.position.x*SX+shiftX;c.group.position.z=c.group.position.z*SZ+shiftZ;c.home.x=c.home.x*SX+shiftX;c.home.z=c.home.z*SZ+shiftZ;c.target.x=c.target.x*SX+shiftX;c.target.z=c.target.z*SZ+shiftZ;});
+  if(g.bantay){g.bantay.group.position.x=g.bantay.group.position.x*SX+shiftX;g.bantay.group.position.z=g.bantay.group.position.z*SZ+shiftZ;if(g.bantay.patrol)g.bantay.patrol.forEach(p=>{p[0]=p[0]*SX+shiftX;p[1]=p[1]*SZ+shiftZ;});}
+  if(g.keeper){g.keeper.group.position.x=g.keeper.group.position.x*SX+shiftX;g.keeper.group.position.z=g.keeper.group.position.z*SZ+shiftZ;}
+  (g.promoters||[]).forEach(p=>{p.g.position.x=p.g.position.x*SX+shiftX;p.g.position.z=p.g.position.z*SZ+shiftZ;});
+  if(g.pet){g.pet.group.position.x=g.pet.group.position.x*SX+shiftX;g.pet.group.position.z=g.pet.group.position.z*SZ+shiftZ;if(g.pet.tx!==undefined)g.pet.tx=g.pet.tx*SX+shiftX;if(g.pet.tz!==undefined)g.pet.tz=g.pet.tz*SZ+shiftZ;}
+  (g.courtBots||[]).forEach(b=>{b.grp.position.x=b.grp.position.x*SX+shiftX;b.grp.position.z=b.grp.position.z*SZ+shiftZ;if(b.hx!==undefined)b.hx=b.hx*SX+shiftX;if(b.hz!==undefined)b.hz=b.hz*SZ+shiftZ;});
   // orbit camera
-  cam3d={target:new THREE.Vector3(24,1.2,15),theta:.55,phi:.58,r:48,lastUser:0};
+  cam3d={target:new THREE.Vector3(8,1.2,6),theta:.55,phi:.58,r:56,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
