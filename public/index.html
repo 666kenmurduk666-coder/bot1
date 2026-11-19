@@ -2527,7 +2527,7 @@ function buildRoom3d(id){
   box3(2.6,.12,1.2,'#cfd6e0',10.6,.06,H+.7);
   box3(2.6,.12,1.2,'#cfd6e0',10.8,.06,-.7);
   // ===== LABAS: 1F POOL + 2F BAR/TAMBAYAN (maayos, hindi makalat) =====
-  const EX0=3,EX1=10,EZ=-2.2,DY=4;
+  const EX0=2.74,EX1=9.4,EZ=-5.17,DY=4;
   esc2Steps=[];
   // talukbon (covered) connector mula EXIT papuntang escalator — parang loob lang ng building
   box3(8.2,.12,1.5,'#cfd6e0',7.1,.02,-.9);
@@ -2558,8 +2558,13 @@ function buildRoom3d(id){
   for(let x=DX1;x<DX2;x+=1){if(x<11.2)continue;box3(.9,.75,.07,'#cfe0f2',x+.45,DY+.42,DZ2-.05)}
   for(let z=DZ1;z<DZ2;z+=1){
     box3(.07,.75,.9,'#cfe0f2',DX1+.05,DY+.42,z+.45);
-    if(z!==-5&&z!==-4)box3(.07,.75,.9,'#cfe0f2',DX2-.05,DY+.42,z+.45); // 🛒 butas papuntang bazaar
+    box3(.07,.75,.9,'#cfe0f2',DX2-.05,DY+.42,z+.45); // tuloy-tuloy na fence (wala na ang butas)
   }
+  // 🧱 Ayos na fence — tuloy-tuloy na top rail sa buong deck
+  box3(DX2-DX1+.2,.07,.1,'#e8eef8',(DX1+DX2)/2,DY+.84,DZ2-.02,true); // front top rail
+  box3(.1,.07,DZ2-DZ1+.2,'#e8eef8',DX1+.02,DY+.84,(DZ1+DZ2)/2,true); // left
+  box3(.1,.07,DZ2-DZ1+.2,'#e8eef8',DX2-.02,DY+.84,(DZ1+DZ2)/2,true); // right
+  box3(DX2-DX1+.2,.07,.1,'#e8eef8',(DX1+DX2)/2,DY+.84,DZ1+.02,true); // back
   // ☕ KAFE DECK (2F) — escalator arrival, puro kape at sofa (wala nang bar/pool/mall)
   box3(4.6,1,.9,'#6b4423',13,DY+.53,-7.2);box3(4.2,.13,.8,'#d8c6a8',13,DY+1.1,-7.2); // coffee counter
   box3(.9,1.5,.7,'#3a4256',16.2,DY+.8,-7.2);box3(.6,.8,.05,'#8fe3ff',16.2,DY+.95,-6.83,true); // coffee machine
@@ -3758,11 +3763,9 @@ function buildCity3d(){
   // 🛣️ MALIIT NA KALSADA — nag-uugnay sa lahat ng structures
   const roadMat=m3('#3a3f4a');
   const mkRoad=(w,d,x,z)=>{const r=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);r.rotation.x=-Math.PI/2;r.position.set(x,-.685,z);r.receiveShadow=true;g.level.add(r)};
-  mkRoad(3,22,26,1);   // vertical road sa pagitan ng HQ at Wing
-  mkRoad(46,3,13,19);  // horizontal road sa pagitan ng rows
+  mkRoad(31,3,6.5,19);  // horizontal road sa pagitan ng rows (pinaikli bago ang court)
   // maliliit na dashes (madilim, hindi puting guhit)
-  for(let z=-9;z<12;z+=2.4){const d=new THREE.Mesh(new THREE.PlaneGeometry(.18,1.1),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(26,-.68,z);g.level.add(d);}
-  for(let x=-9;x<36;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
+  for(let x=-9;x<22;x+=2.6){const d=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.18),m3('#6b7280'));d.rotation.x=-Math.PI/2;d.position.set(x,-.68,19);g.level.add(d);}
 }
 function frame3D(){
   if(!threeReady)return;
@@ -4344,7 +4347,7 @@ function frame3D(){
   const moving = moveKeys.w||moveKeys.a||moveKeys.s||moveKeys.d;
   if(playerMode && player){
     // ESCALATOR SA LABAS: 1F opisina -> 2F KAFE DECK (nakapag-transform ang HQ)
-    const ESC_X0=-3.65, ESC_X1=5.8, ESC_Z=-5.44;
+    const ESC_X0=-4.0, ESC_X1=5.0, ESC_Z=-9.0;
     if(!escRide && Date.now()>(escCooldown||0)){
       if(player.y<.6 && player.z>ESC_Z-1.1 && player.z<ESC_Z+1.1 && player.x>ESC_X0-1.9 && player.x<ESC_X0+0.3){escRide={u:0,dir:1};toast('⬆️ Aakyat sa 2F KAFE DECK!');}
       else if(player.y>3.4 && player.z>ESC_Z-1.1 && player.z<ESC_Z+1.1 && player.x>ESC_X1-1.9 && player.x<ESC_X1+0.3){escRide={u:1,dir:-1};toast('⬇️ Bababa sa 1F Opisina!');}
@@ -6655,7 +6658,7 @@ async function openCeoWish(){
   try{BAZAAR_INFO=await pubApi('/api/bazaar/info')||{};}catch(e){}
   try{const j=await pubApi('/api/bazaar/profile');if(j&&j.visitor)bzVisitor=j.visitor;}catch(e){}
   createBzPanel();renderBzPanel();try{renderBzBadges()}catch(e){}createCeoWishBtn();createCeoAdsBtn();createCeoMonitorBtn();createCeoStudioBtn();createXmasBtn();createCeoConnectionsBtn();createUiHideBtn();
-  try{if(g.level){buildBazaar3d();buildPod3d();}}catch(e){}
+  try{if(g.level){/* buildBazaar3d removed — Kafe Deck lang */;buildPod3d();}}catch(e){}
   const cbtn=document.getElementById('careBtn');if(cbtn)cbtn.onclick=()=>openCareDialog();
   await loadCare(true);syncQuestPanel();
   bzPingControls(true);
