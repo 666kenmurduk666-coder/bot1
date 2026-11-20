@@ -621,6 +621,7 @@ function mmoAnchorObj(){
 function mmoSay(who,label,text,actor){
   mmoSpeech={who:who,label:label,line:text,t0:Date.now(),actor:actor||mmoAnchorObj()};
   mmoLog(label,text);
+  try{snd('blip',who)}catch(e){}
 }
 function mmoPickReply(txt){
   const s=String(txt).toLowerCase();let pool=CHAT_REPLIES.default;
@@ -1140,7 +1141,7 @@ function startBotAct(c){
 /* ---------- sound effects (Web Audio synth — walang files!) ---------- */
 let AC=null,soundOn=true,bandLoop=null;
 function ensureAC(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
-function snd(kind){
+function snd(kind,seed){
   if(!soundOn)return;ensureAC();if(!AC)return;
   const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
   o.connect(g);g.connect(AC.destination);
@@ -1151,6 +1152,16 @@ function snd(kind){
   else if(kind==='bell'){o.type='sine';o.frequency.setValueAtTime(1200,t);o.frequency.setValueAtTime(1600,t+.15);g.gain.setValueAtTime(.14,t);g.gain.exponentialRampToValueAtTime(.001,t+.6);o.start(t);o.stop(t+.6)}
   else if(kind==='bark'){o.type='square';o.frequency.setValueAtTime(380,t);o.frequency.setValueAtTime(240,t+.08);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.14);o.start(t);o.stop(t+.14);
     const o2=AC.createOscillator(),g2=AC.createGain();o2.type='square';o2.connect(g2);g2.connect(AC.destination);o2.frequency.setValueAtTime(420,t+.18);o2.frequency.setValueAtTime(260,t+.26);g2.gain.setValueAtTime(.08,t+.18);g2.gain.exponentialRampToValueAtTime(.001,t+.34);o2.start(t+.18);o2.stop(t+.34)}
+  else if(kind==='blip'){
+    // Each bot gets its own little voice; soft and short so chatter stays comfy.
+    let h=0;for(const ch of String(seed||'bot'))h=(h*31+ch.charCodeAt(0))>>>0;
+    const base=430+(h%9)*38;
+    o.type='sine';o.frequency.setValueAtTime(base,t);o.frequency.exponentialRampToValueAtTime(base*1.35,t+.09);
+    g.gain.setValueAtTime(.055,t);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.start(t);o.stop(t+.16);
+  }
+  else if(kind==='pop'){o.type='triangle';o.frequency.setValueAtTime(620,t);o.frequency.exponentialRampToValueAtTime(880,t+.03);g.gain.setValueAtTime(.045,t);g.gain.exponentialRampToValueAtTime(.001,t+.08);o.start(t);o.stop(t+.08)}
+  else if(kind==='success'){o.type='sine';o.frequency.setValueAtTime(660,t);o.frequency.setValueAtTime(990,t+.1);o.frequency.setValueAtTime(1320,t+.2);g.gain.setValueAtTime(.10,t);g.gain.exponentialRampToValueAtTime(.001,t+.42);o.start(t);o.stop(t+.42)}
+  else if(kind==='error'){o.type='sawtooth';o.frequency.setValueAtTime(220,t);o.frequency.exponentialRampToValueAtTime(110,t+.22);g.gain.setValueAtTime(.07,t);g.gain.exponentialRampToValueAtTime(.001,t+.24);o.start(t);o.stop(t+.24)}
 }
 function bandBeat(){
   if(!soundOn||!AC)return;const t=AC.currentTime;
@@ -1164,6 +1175,21 @@ function bandBeat(){
   g2.gain.setValueAtTime(.13,t);g2.gain.exponentialRampToValueAtTime(.001,t+.15);o2.start(t);o2.stop(t+.15);
 }
 document.addEventListener('mousedown',ensureAC);document.addEventListener('touchstart',ensureAC);
+/* 🔊 Bot voices + light UI clicks (all synthesized, no audio files) */
+let lastBubbleSfx={k:'',t:0};
+function bubbleSfx(k,id){
+  const n=Date.now();
+  if(k===lastBubbleSfx.k||n-lastBubbleSfx.t<2500)return;
+  lastBubbleSfx={k:k,t:n};
+  try{snd('blip',id)}catch(e){}
+}
+let lastUiClick=0;
+document.addEventListener('click',e=>{
+  const b=e.target&&e.target.closest&&e.target.closest('button,.ob-main,[role="button"]');
+  if(!b||b.id==='sfx'||b.dataset.noSfx!==undefined)return;
+  const n=Date.now();if(n-lastUiClick<70)return;lastUiClick=n;
+  try{snd('pop')}catch(err){}
+},true);
 function ambientLine(a,i){
   const arr=AMBIENT[a.id]||['Working…'];
   return arr[(Math.floor(Date.now()/4200)+i)%arr.length];
@@ -1220,6 +1246,7 @@ function drawOffice(){
     speaker=present[turn].id;line=ambientLine(present[turn],turn);
   }
   if(speaker&&!present.some(a=>a.id===speaker)&&present.length){speaker=present[0].id;line=ambientLine(present[0],0)}
+  if(speaker&&line)bubbleSfx(speaker+'|'+line,speaker);
   present.forEach((a,i)=>{
     const working=S.tasks.some(t=>t.bot===a.id&&t.status==='running');
     const aa=working?Math.min(room.w-1,2+(i%5)*2.2):Math.min(room.w-1,1.6+(i%5)*2.2);
@@ -1446,6 +1473,7 @@ function drawBuilding(){
   let speaker=null,line=null;
   if(useConv&&conv.lines.length){const k=Math.floor(now/3800)%conv.lines.length;speaker=conv.lines[k].id;line=conv.lines[k].text}
   else if(present.length){const k=Math.floor(now/4200)%present.length;speaker=present[k].id;line=ambientLine(present[k],k)}
+  if(speaker&&line)bubbleSfx(speaker+'|'+line,speaker);
   present.forEach((a,i)=>{
     const spot=SPOTS[i%SPOTS.length];
     const aa=spot[0],ab=spot[1];
@@ -1637,6 +1665,7 @@ function drawLounge(){
   let speaker=null,line=null;
   if(useConv&&conv.lines.length){const k=Math.floor(now/3800)%conv.lines.length;speaker=conv.lines[k].id;line=conv.lines[k].text}
   else if(present.length){const k=Math.floor(now/4200)%present.length;speaker=present[k].id;line=ambientLine(present[k],k)}
+  if(speaker&&line)bubbleSfx(speaker+'|'+line,speaker);
   present.forEach((a,i)=>{
     const spot=SPOTS[i%SPOTS.length];
     const aa=spot[0],bb=spot[1];
@@ -1706,6 +1735,7 @@ function drawTycoon(){
   let speaker=null,line=null;
   if(useConv&&conv.lines.length){const k=Math.floor(now/3800)%conv.lines.length;speaker=conv.lines[k].id;line=conv.lines[k].text}
   else if(present.length){const k=Math.floor(now/4200)%present.length;speaker=present[k].id;line=ambientLine(present[k],k)}
+  if(speaker&&line)bubbleSfx(speaker+'|'+line,speaker);
   const bub=[];
   const items=[];
   present.forEach((a,i)=>{const sp=SPOTS[i%SPOTS.length];items.push([sp[0]+sp[1],sp,a,i])});
@@ -4715,7 +4745,7 @@ function frame3D(){
   // (handled by E key ? interactFarm, which checks player position when playerMode)
   if(mmoSpeech&&t-mmoSpeech.t0>3400)mmoSpeech=null;
   const conv=(S.conversations||[])[0];
-  const useConv=conv&&t-conv.t<180000;
+  const useConv=conv&&t-conv.t<600000;
   let speaker=null,line=null,actorRef=null,whoLabel=null,isChat=false;
   if(mmoSpeech){isChat=true;speaker=mmoSpeech.who;line=mmoSpeech.line;actorRef=mmoSpeech.actor;whoLabel=mmoSpeech.label;}
   else {
@@ -4724,6 +4754,7 @@ function frame3D(){
     else if(useConv&&conv.lines.length){const k=Math.floor(t/3800)%conv.lines.length;speaker=conv.lines[k].id;line=conv.lines[k].text}
     else if(chars3d.length){const k=Math.floor(t/4200)%chars3d.length;speaker=chars3d[k].agent.id;line=ambientLine(chars3d[k].agent,k)}
   }
+  if(speaker&&line)bubbleSfx(speaker+'|'+line,speaker);
   const ch=actorRef||chars3d.find(c=>c.agent.id===speaker);
   if(ch&&line){
     if(line.length>64)line=line.slice(0,64).replace(/\s+\S*$/,'')+'…';
@@ -4785,6 +4816,22 @@ $('mmoChatHead').onclick=mmoToggle;
   };
 })();
 mmoLog('🌐 SYSTEM','Maligayang pagdating! Enter = mag-type, sumasagot ang bots.','#e8b04a');
+/* 💬 Ipakita rin ang server-generated watercooler talk sa visible world chat. */
+let shownConvId=null;
+setInterval(()=>{
+  try{
+    const c=S&&S.conversations&&S.conversations[0];
+    if(!c||!c.lines||c.id===shownConvId)return;
+    shownConvId=c.id;
+    c.lines.forEach((l,i)=>setTimeout(()=>{
+      try{
+        const m=meta(l.id)||{};
+        mmoLog((m.i||'🤖')+' '+(m.n||l.id),l.text,m.c||'#7fc7ff');
+        snd('blip',l.id);
+      }catch(e){}
+    },i*850));
+  }catch(e){}
+},4000);
 /* ---------- boot ---------- */
 const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'})};
 tick();setInterval(tick,30000);
