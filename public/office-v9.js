@@ -80,7 +80,10 @@
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
     blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
-    scenery: [], crops: [] };
+    scenery: [], crops: [],
+    // Batch 1 world layer (all optional, none touch the white-out guards).
+    night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
+    seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null };
   // v30 job cues: the antenna tip reads like a tiny status lamp.
   var JOB_HINTS = {
     greet: ['#7cf7ff', .85], wave: ['#7cf7ff', 1.1], type: ['#8fd0ff', 1.4],
@@ -2445,7 +2448,9 @@
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
       blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
-      scenery: [], crops: [] };
+      scenery: [], crops: [],
+      night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
+      seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -2636,6 +2641,7 @@
     buildingEnhancements();
     aryaskyArtZone();
     greenSurrounds();
+    buildBatch1World();
 
     // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;
@@ -2756,6 +2762,9 @@
     } catch (e) {}
     applyCeilingView();
     applyDetailLevel();
+    // Batch 1 world layer — smooth night, weather, seasons and ambient life.
+    // It never writes bg/fog/ambient/exposure/isNight (the guards above own them).
+    updateBatch1World(now, botDt);
     // Photo mode: keep camera/render alive but hold every bot and effect still.
     if (typeof window !== 'undefined' && window.__officeFreeze === true) return;
     cuteBots.forEach(function (b, i) {
@@ -3049,6 +3058,422 @@
     if (cuteBots.length || healTries >= 40) clearInterval(healTimer);
   }, 700);
 
+  /* ================= BATCH 1 — living world layer =================
+     Ten optional visual upgrades. Every object here is flagged v9, uses cheap
+     basic/standard materials, and stays completely independent of the
+     white-out guards (bg/fog #93a1b3, ambient .58, exposure .85, isNight 0,
+     tameOfficeLights). Nothing in this block writes those guarded values. */
+  var _v9dir = null;
+  function faceCamera(m, dist) {
+    if (!camera3d || !m) return;
+    try {
+      camera3d.updateMatrixWorld(true);
+      if (!_v9dir) _v9dir = new THREE.Vector3();
+      _v9dir.set(0, 0, -1).applyQuaternion(camera3d.quaternion);
+      m.position.copy(camera3d.position).addScaledVector(_v9dir, dist);
+      m.quaternion.copy(camera3d.quaternion);
+      var h = 2 * dist * Math.tan((camera3d.fov || 52) * Math.PI / 360) * 1.06;
+      m.scale.set(h * (camera3d.aspect || 1.7), h, 1);
+    } catch (e) {}
+  }
+  function v9Group(x, y, z) {
+    var g2 = new THREE.Group(); g2.position.set(x || 0, y || 0, z || 0);
+    g2.userData.v9 = true; addO(g2); return g2;
+  }
+  function neonSign(text, color, x, y, z, ry, w, h) {
+    var key = 'neon-' + text + '-' + color;
+    var tex = makeTex(key, function (q, S) {
+      q.clearRect(0, 0, S, S);
+      q.font = 'bold 60px Arial, sans-serif';
+      q.textAlign = 'center'; q.textBaseline = 'middle';
+      q.shadowColor = color; q.shadowBlur = 26;
+      q.fillStyle = color; q.fillText(text, S / 2, S / 2, S * .92);
+      q.shadowBlur = 0;
+    }, 1, 1);
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .82,
+        depthWrite: false, toneMapped: false, side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending, fog: false }));
+    m.position.set(x, y, z); m.rotation.y = ry || 0; m.userData.v9 = true;
+    addO(m); fx.neon.push({ m: m, base: .82 }); return m;
+  }
+  function buildBatch1World() {
+    if (!fx || fx.rooftop) return;
+    var i, j, p, m, mat, grp, child;
+
+    // ---- 1. smooth day <-> night veil (never touches guarded values) ----
+    var veil = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ color: '#0a1633', transparent: true, opacity: 0,
+        depthTest: false, depthWrite: false, toneMapped: false, fog: false }));
+    veil.renderOrder = 9998; veil.frustumCulled = false; addO(veil);
+    fx.night = { veil: veil, amount: 0, target: 0 };
+
+    // ---- 2. weather: rain, lightning flash, puddles, rainbow ----
+    var rainPts = [], rainBase = [], rndW = rnd(907);
+    for (i = 0; i < 420; i++) {
+      var rx = 23 + (rndW() - .5) * 62, ry = rndW() * 15, rz = 17 + (rndW() - .5) * 52;
+      rainPts.push(rx, ry, rz); rainBase.push(rx, ry, rz);
+    }
+    var rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.Float32BufferAttribute(rainPts, 3));
+    var rainMesh = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: '#c4dcff',
+      size: .07, transparent: true, opacity: .55, depthWrite: false, fog: false }));
+    rainMesh.visible = false; addO(rainMesh);
+    fx.weather.rain = { pts: rainMesh, base: rainBase, n: rainPts.length / 3 };
+
+    var flash = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ color: '#dceaff', transparent: true, opacity: 0,
+        depthTest: false, depthWrite: false, toneMapped: false, fog: false }));
+    flash.renderOrder = 9999; flash.frustumCulled = false; flash.visible = false; addO(flash);
+    fx.weather.flash = { m: flash, power: 0, next: 0 };
+
+    var pudPos = [[14, 30], [30, 30], [23, 23.2], [10, 23.2], [36, 23.2], [5, 28], [40, 28]];
+    pudPos.forEach(function (pp, pi) {
+      var base = new THREE.Mesh(new THREE.CircleGeometry(1.15, 18),
+        solid('#4b5d72', { metalness: .65, roughness: .2, transparent: true, opacity: .5 }));
+      base.rotation.x = -Math.PI / 2; base.position.set(pp[0], .018 + pi * .0004, pp[1]);
+      base.userData.v9 = true; addO(base);
+      var shine = new THREE.Mesh(new THREE.CircleGeometry(1.1, 18),
+        new THREE.MeshBasicMaterial({ map: windowReflectionTex(), transparent: true,
+          opacity: .34, depthWrite: false, fog: false }));
+      shine.rotation.x = -Math.PI / 2; shine.position.set(pp[0], .022 + pi * .0004, pp[1]);
+      shine.userData.v9 = true; addO(shine);
+      fx.weather.puddles.push(base, shine);
+    });
+    var rainbow = new THREE.Group();
+    var rbColors = ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa', '#e599f7'];
+    rbColors.forEach(function (c, ri) {
+      var arc = new THREE.Mesh(new THREE.TorusGeometry(9 + ri * .28, .16, 5, 44, Math.PI),
+        new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: .3,
+          depthWrite: false, toneMapped: false, fog: false }));
+      arc.userData.v9 = true; rainbow.add(arc);
+    });
+    rainbow.position.set(23, 5.2, -26); rainbow.visible = false;
+    addO(rainbow); fx.weather.rainbow = rainbow;
+
+    // ---- 3. seasonal props (four prebuilt, cheap groups) ----
+    var seasons = { default: v9Group(0, 0, 0), pasko: v9Group(0, 0, 0),
+      fiesta: v9Group(0, 0, 0), rainy: v9Group(0, 0, 0) };
+    [[6, 31.5], [40, 31.5]].forEach(function (pp) {
+      var t = new THREE.Mesh(new THREE.ConeGeometry(.85, 2.2, 8), solid('#2f9d6a'));
+      t.position.set(pp[0], 1.25, pp[1]); t.userData.v9 = true; seasons.pasko.add(t);
+      var tr = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, .4, 6), solid('#7a5230'));
+      tr.position.set(pp[0], .2, pp[1]); tr.userData.v9 = true; seasons.pasko.add(tr);
+      for (j = 0; j < 7; j++) {
+        var light = new THREE.Mesh(new THREE.SphereGeometry(.075, 6, 5),
+          new THREE.MeshBasicMaterial({ color: j % 2 ? '#ffd34d' : '#ff6b6b', toneMapped: false, fog: false }));
+        light.position.set(pp[0] + Math.cos(j * 1.8) * .6, .7 + j * .22, pp[1] + Math.sin(j * 1.8) * .6);
+        light.userData.v9 = true; seasons.pasko.add(light);
+      }
+    });
+    var flagCols = ['#ff6b6b', '#ffd34d', '#4dabf7', '#69db7c', '#e599f7'];
+    for (i = 0; i < 10; i++) {
+      var fl = new THREE.Mesh(new THREE.PlaneGeometry(.4, .46),
+        new THREE.MeshBasicMaterial({ color: flagCols[i % flagCols.length], side: THREE.DoubleSide,
+          transparent: true, opacity: .92, fog: false }));
+      fl.position.set(4 + i * 4.2, 2.72 - Math.sin(i / 9 * Math.PI) * .34, 23.2);
+      fl.userData.v9 = true; seasons.fiesta.add(fl);
+    }
+    [19, 23, 27].forEach(function (ux) {
+      var um = new THREE.Mesh(new THREE.ConeGeometry(.85, .42, 10, 1, true),
+        new THREE.MeshBasicMaterial({ color: ux === 23 ? '#e8622c' : '#4a7fb0', side: THREE.DoubleSide,
+          transparent: true, opacity: .9, fog: false }));
+      um.position.set(ux, 2.15, 32.4); um.userData.v9 = true; seasons.rainy.add(um);
+      var pole = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, 1.9, 5), solid('#c9d2de'));
+      pole.position.set(ux, 1.1, 32.4); pole.userData.v9 = true; seasons.rainy.add(pole);
+    });
+    Object.keys(seasons).forEach(function (k) { seasons[k].visible = (k === 'default'); });
+    fx.seasons = seasons;
+
+    // ---- 4. rooftop garden + helipad on an east annex ----
+    var roof = v9Group(70, 0, 12);
+    var tower = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 10), solid('#94a2b2'));
+    tower.position.y = 2; tower.userData.v9 = true; roof.add(tower);
+    var deck = new THREE.Mesh(new THREE.BoxGeometry(12.4, .18, 10.4), solid('#5f6f80'));
+    deck.position.y = 4.08; deck.userData.v9 = true; roof.add(deck);
+    var pad = new THREE.Mesh(new THREE.CircleGeometry(2.15, 24), solid('#263443'));
+    pad.rotation.x = -Math.PI / 2; pad.position.set(2.6, 4.19, 0); pad.userData.v9 = true; roof.add(pad);
+    [[0, .55], [0, -.55], [0, 0]].forEach(function (hp) {
+      var hb = new THREE.Mesh(new THREE.BoxGeometry(hp[1] ? .16 : .16, .03, hp[1] ? 2.3 : .16),
+        new THREE.MeshBasicMaterial({ color: '#f2f7ff', fog: false }));
+      hb.position.set(2.6 + hp[0] + (hp[1] ? -.42 : .42), 4.21, hp[1] || 0);
+      hb.rotation.y = hp[1] ? Math.PI / 2 : 0; hb.userData.v9 = true; roof.add(hb);
+    });
+    [-4.4, -2.2].forEach(function (px, pi2) {
+      var pl = new THREE.Mesh(new THREE.BoxGeometry(1.6, .35, 7.6), solid(pi2 ? '#7a5230' : '#8b5e34'));
+      pl.position.set(px, 4.35, 0); pl.userData.v9 = true; roof.add(pl);
+      for (j = 0; j < 4; j++) {
+        var bush = new THREE.Mesh(new THREE.SphereGeometry(.42, 7, 5), solid('#4f9a4c'));
+        bush.position.set(px, 4.7, -2.8 + j * 1.85); bush.userData.v9 = true; roof.add(bush);
+      }
+    });
+    fx.rooftop = roof;
+
+    // ---- 5. basement Server Vault + elevator access ----
+    var vault = v9Group(5, 0, 25.4);
+    var vdoor = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, .18), solid('#2d3b4c', { metalness: .6, roughness: .35 }));
+    vdoor.position.set(0, 1.25, -.55); vdoor.userData.v9 = true; vault.add(vdoor);
+    var vglow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .12),
+      new THREE.MeshBasicMaterial({ color: '#7cf7ff', toneMapped: false, fog: false }));
+    vglow.position.set(0, 1.75, -.45); vglow.userData.v9 = true; vault.add(vglow);
+    for (i = 0; i < 4; i++) {
+      var rack = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.9, .6), solid('#3a4256'));
+      rack.position.set(-4.5 + i * 1.6, .95, -.6); rack.userData.v9 = true; vault.add(rack);
+      for (j = 0; j < 5; j++) {
+        var led = new THREE.Mesh(new THREE.BoxGeometry(.9, .045, .03),
+          new THREE.MeshBasicMaterial({ color: j % 2 ? '#7cf7ff' : '#ffd34d', toneMapped: false, fog: false }));
+        led.position.set(-4.5 + i * 1.6, .3 + j * .32, -.28); led.userData.v9 = true; vault.add(led);
+      }
+    }
+    fx.basement = vault;
+    var elev = v9Group(44, 0, 6);
+    [[-1.1, -1.1], [1.1, -1.1], [-1.1, 1.1], [1.1, 1.1]].forEach(function (ep) {
+      var frame = new THREE.Mesh(new THREE.BoxGeometry(.1, 3.3, .1), solid('#9aa8b8'));
+      frame.position.set(ep[0], 1.65, ep[1]); frame.userData.v9 = true; elev.add(frame);
+    });
+    var cabin = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.1, 1.9),
+      new THREE.MeshBasicMaterial({ color: '#7cf7ff', transparent: true, opacity: .18,
+        depthWrite: false, fog: false }));
+    cabin.position.y = 1.15; cabin.userData.v9 = true; elev.add(cabin);
+    var cabFloor = new THREE.Mesh(new THREE.BoxGeometry(1.9, .1, 1.9), solid('#b9c8d8'));
+    cabFloor.position.y = .12; cabFloor.userData.v9 = true; elev.add(cabFloor);
+    var arrow = new THREE.Mesh(new THREE.PlaneGeometry(.55, .55),
+      new THREE.MeshBasicMaterial({ color: '#ffd34d', toneMapped: false, fog: false }));
+    arrow.position.set(0, 2.85, -1.16); arrow.userData.v9 = true; elev.add(arrow);
+    fx.elevator = { g: elev, cabin: cabin, floor: cabFloor };
+
+    // ---- 6. moving walkway along MAIN STREET ----
+    var beltTex = makeTex('walkway-belt', function (q, S) {
+      q.fillStyle = '#3b4657'; q.fillRect(0, 0, S, S);
+      q.fillStyle = '#5b6c80'; for (var yy = 0; yy < S; yy += 32) q.fillRect(0, yy, S, 9);
+      q.strokeStyle = '#c9a86a'; q.lineWidth = 4; q.strokeRect(2, 2, S - 4, S - 4);
+    }, 6, 2);
+    [8, 23, 38].forEach(function (wx) {
+      var belt = new THREE.Mesh(new THREE.PlaneGeometry(13.5, 2.5),
+        solid('#ffffff', { map: beltTex, roughness: .7, metalness: .15 }));
+      belt.rotation.x = -Math.PI / 2; belt.position.set(wx, .03, 23.2);
+      belt.userData.v9 = true; addO(belt);
+    });
+    fx.walkways.push({ map: beltTex });
+
+    // ---- 7. holographic receptionist ----
+    var holo = v9Group(25.6, 0, 29.4);
+    var hb = new THREE.Mesh(new THREE.CircleGeometry(.7, 20),
+      new THREE.MeshBasicMaterial({ color: '#7cf7ff', transparent: true, opacity: .3,
+        depthWrite: false, fog: false }));
+    hb.rotation.x = -Math.PI / 2; hb.position.y = .04; hb.userData.v9 = true; holo.add(hb);
+    var hbody = new THREE.Mesh(new THREE.CylinderGeometry(.26, .4, 1.0, 9),
+      new THREE.MeshBasicMaterial({ color: '#7cf7ff', transparent: true, opacity: .24,
+        depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    hbody.position.y = .78; hbody.userData.v9 = true; holo.add(hbody);
+    var hhead = new THREE.Mesh(new THREE.SphereGeometry(.24, 9, 7),
+      new THREE.MeshBasicMaterial({ color: '#bff4ff', transparent: true, opacity: .32,
+        depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    hhead.position.y = 1.5; hhead.userData.v9 = true; holo.add(hhead);
+    var rings = [];
+    for (i = 0; i < 3; i++) {
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(.42, .018, 4, 18),
+        new THREE.MeshBasicMaterial({ color: '#7cf7ff', transparent: true, opacity: .4,
+          depthWrite: false, fog: false }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = .3 + i * .5;
+      ring.userData.v9 = true; holo.add(ring); rings.push(ring);
+    }
+    fx.holo.push({ g: holo, body: hbody, head: hhead, rings: rings });
+
+    // ---- 8. reflective wet floor (subtle permanent lobby sheen) ----
+    [[23, 30.4, 6, 4], [23, 23.2, 26, 2.3], [10, 11, 12, 8]].forEach(function (wp2, wi) {
+      var wm = new THREE.Mesh(new THREE.PlaneGeometry(wp2[2], wp2[3]),
+        new THREE.MeshBasicMaterial({ map: windowReflectionTex(), transparent: true,
+          opacity: .1 + wi * .025, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      wm.rotation.x = -Math.PI / 2; wm.position.set(wp2[0], .016 + wi * .001, wp2[1]);
+      wm.userData.v9 = true; addO(wm); fx.wet.push({ m: wm, map: wm.material.map, base: wm.material.opacity });
+    });
+
+    // ---- 9. neon zone signs ----
+    neonSign('RECEPTION', '#7cf7ff', 23, 2.62, 33.66, 0, 4.6, 1.0);
+    neonSign('WORK HUB', '#ffd34d', 41.8, 2.5, 23.2, -Math.PI / 2, 3.6, .85);
+    neonSign('FOCUS', '#8fd0ff', 14, 2.78, .34, 0, 3.2, .8);
+    neonSign('MEET', '#ff9fc0', 33, 2.78, .34, 0, 2.8, .8);
+    neonSign('PANTRY', '#69db7c', 37.8, 2.6, 28.8, -Math.PI / 2, 3.0, .8);
+    neonSign('FARM', '#c9a6ff', 46, 2.4, 52, Math.PI / 2, 2.8, .8);
+
+    // ---- 10. drone package delivery ----
+    [0, 1].forEach(function (di) {
+      var drone = v9Group(0, 0, 0), rotors = [];
+      var body = new THREE.Mesh(new THREE.BoxGeometry(.55, .16, .5), solid('#3a4256', { metalness: .5 }));
+      body.userData.v9 = true; drone.add(body);
+      [[-.42, -.42], [.42, -.42], [-.42, .42], [.42, .42]].forEach(function (ap) {
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(.5, .04, .06), solid('#8b97a8'));
+        arm.position.set(ap[0] * .5, 0, ap[1] * .5); arm.rotation.y = Math.atan2(ap[1], ap[0]);
+        arm.userData.v9 = true; drone.add(arm);
+        var rotor = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .012, 10),
+          new THREE.MeshBasicMaterial({ color: '#9fb2d0', transparent: true, opacity: .45, fog: false }));
+        rotor.position.set(ap[0], .06, ap[1]); rotor.userData.v9 = true; drone.add(rotor); rotors.push(rotor);
+      });
+      var parcel = new THREE.Mesh(new THREE.BoxGeometry(.26, .26, .26), solid('#c98f4a'));
+      parcel.position.y = -.42; parcel.userData.v9 = true; drone.add(parcel);
+      var cord = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .3, 4), solid('#d8dee6'));
+      cord.position.y = -.22; cord.userData.v9 = true; drone.add(cord);
+      drone.visible = true; fx.drones.push({ g: drone, rotors: rotors,
+        rx: 16 + di * 6, rz: 11 + di * 4, y: 6.2 + di * 1.3, phase: di * 2.3 });
+    });
+
+    // Restore any persisted Studio choices after a rebuild.
+    setWeather(window.__officeWeather || 'clear');
+    setSeason(window.__officeSeason || 'default');
+    if (fx.night) fx.night.amount = (window.__officeNight === true) ? 1 : (nightValue() ? 1 : 0);
+  }
+
+  function nightValue() {
+    if (typeof window !== 'undefined' && typeof window.__officeNight === 'boolean') return window.__officeNight;
+    try {
+      if (typeof nightManual !== 'undefined' && nightManual !== null) return !!nightManual;
+      var hr = 14;
+      try { hr = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getHours(); } catch (e) {}
+      return hr >= 18 || hr < 6;
+    } catch (e) { return false; }
+  }
+  function setWeather(mode) {
+    var m = (mode === 'rain' || mode === 'storm') ? mode : 'clear';
+    window.__officeWeather = m;
+    if (!fx || !fx.weather) return m;
+    if (fx.weather.rain) fx.weather.rain.pts.visible = m !== 'clear';
+    fx.weather.puddles.forEach(function (o) { o.visible = m !== 'clear'; });
+    if (fx.weather.rainbow) fx.weather.rainbow.visible = m !== 'clear';
+    if (fx.weather.flash) fx.weather.flash.m.visible = m === 'storm';
+    return m;
+  }
+  function setSeason(name) {
+    var n = (fx && fx.seasons && fx.seasons[name]) ? name : 'default';
+    window.__officeSeason = n;
+    if (fx && fx.seasons) Object.keys(fx.seasons).forEach(function (k) {
+      if (fx.seasons[k]) fx.seasons[k].visible = (k === n);
+    });
+    return n;
+  }
+  function setNight(mode) {
+    if (mode === 'auto' || mode === null || mode === undefined) {
+      window.__officeNight = null;
+      try { nightManual = null; } catch (e) {}
+      try { var nb0 = document.getElementById('nightBtn'); if (nb0) nb0.textContent = '🌙 Gabi'; } catch (e) {}
+    } else {
+      var b = !!mode;
+      window.__officeNight = b;
+      // Keep the app's own isNight state in sync (v9 still re-asserts the
+      // bg/fog/ambient/exposure guards afterwards, so no white-out).
+      try { nightManual = b; } catch (e) {}
+      try {
+        var nb = document.getElementById('nightBtn');
+        if (nb) nb.textContent = b ? '🌙 Araw' : '🌙 Gabi';
+      } catch (e) {}
+    }
+    return window.__officeNight;
+  }
+  function setWorldFeature(key, on) {
+    var v = !!on;
+    if (!fx) return false;
+    if (key === 'rooftop' && fx.rooftop) fx.rooftop.visible = v;
+    else if (key === 'basement' && fx.basement) fx.basement.visible = v;
+    else if (key === 'elevator' && fx.elevator) fx.elevator.g.visible = v;
+    else if (key === 'walkway') fx.walkways.forEach(function (w) { w.on = v; });
+    else if (key === 'holo') fx.holo.forEach(function (h) { h.g.visible = v; });
+    else if (key === 'wet') fx.wet.forEach(function (w) { w.m.visible = v; });
+    else if (key === 'neon') fx.neon.forEach(function (n) { n.on = v; n.m.visible = v; });
+    else if (key === 'drones') fx.drones.forEach(function (d) { d.g.visible = v; });
+    else return false;
+    return v;
+  }
+  function updateBatch1World(now, dt) {
+    if (!fx || !fx.night) return;
+    dt = Math.max(0, Math.min(.12, dt || 0));
+    var low = window.__officeDetail === 'low';
+
+    // 1 — smooth night: only the veil opacity moves, guards stay untouched.
+    var nt = nightValue() ? 1 : 0;
+    fx.night.target = nt;
+    fx.night.amount += (nt - fx.night.amount) * Math.min(1, dt * 1.8 + .012);
+    if (Math.abs(nt - fx.night.amount) < .002) fx.night.amount = nt;
+    var veil = fx.night.veil;
+    if (veil) { faceCamera(veil, 1.4); veil.material.opacity = fx.night.amount * .62; }
+
+    // 2 — rain + lightning + puddles shimmer + rainbow.
+    var w = fx.weather || {}, storm = window.__officeWeather === 'storm';
+    if (w.rain && w.rain.pts.visible && !low) {
+      var arr = w.rain.pts.geometry.attributes.position.array;
+      var sp = storm ? 11 : 7.5;
+      for (var ri = 0; ri < w.rain.n; ri++) {
+        var yi = ri * 3 + 1;
+        arr[yi] -= sp * dt;
+        if (arr[yi] < 0) { arr[yi] = 14 + (ri % 7) * .2; arr[ri * 3] = w.rain.base[ri * 3]; arr[ri * 3 + 2] = w.rain.base[ri * 3 + 2]; }
+      }
+      w.rain.pts.geometry.attributes.position.needsUpdate = true;
+    }
+    if (w.flash && w.flash.m.visible) {
+      var fl = w.flash;
+      if (!fl.next) fl.next = now + 2600 + Math.random() * 4200;
+      if (now >= fl.next) { fl.power = 1; fl.next = now + 3800 + Math.random() * 6000; }
+      fl.power = Math.max(0, fl.power - dt * 2.6);
+      faceCamera(fl.m, 1.35);
+      fl.m.material.opacity = fl.power * (.28 + .3 * (fl.power > .82 ? 1 : .5));
+    }
+    if (w.rainbow && w.rainbow.visible) {
+      var rb = .22 + .1 * (.5 + .5 * Math.sin(now / 2600));
+      w.rainbow.children.forEach(function (a, ai) { if (a.material) a.material.opacity = rb * (1 - ai * .035); });
+    }
+
+    // 6 — moving walkway texture scroll.
+    fx.walkways.forEach(function (ww) {
+      if (ww.on === false || low) return;
+      if (ww.map) ww.map.offset.x -= dt * .24;
+    });
+
+    // 7 — holographic receptionist bob + scan rings + flicker.
+    fx.holo.forEach(function (h, hi) {
+      if (!h.g.visible) return;
+      h.g.position.y = .05 + Math.sin(now / 900 + hi) * .06;
+      var flick = .2 + .06 * Math.sin(now / 170 + hi * 3) + (Math.random() < .012 ? -.1 : 0);
+      if (h.body.material) h.body.material.opacity = Math.max(.08, flick);
+      if (h.head.material) h.head.material.opacity = Math.max(.1, flick + .1);
+      h.rings.forEach(function (r, ri) {
+        r.position.y = .25 + ((now / 2100 + ri / 3 + hi * .2) % 1) * 1.45;
+        r.material.opacity = .28 + .18 * (.5 + .5 * Math.sin(now / 500 + ri));
+      });
+    });
+
+    // 8 — wet floor sheen drift.
+    fx.wet.forEach(function (ww, wi) {
+      if (!ww.m.visible || low) return;
+      if (ww.map) ww.map.offset.y = .02 * Math.sin(now / 3400 + wi);
+      ww.m.material.opacity = ww.base * (.85 + .3 * (.5 + .5 * Math.sin(now / 1900 + wi)));
+    });
+
+    // 9 — neon signs: brighter at night, gentle flicker, dimmed in low detail.
+    var boost = 1 + fx.night.amount * .7;
+    fx.neon.forEach(function (n, ni) {
+      if (n.on === false || !n.m.visible) return;
+      var flick = .93 + .07 * Math.sin(now / 430 + ni * 2.7);
+      if (Math.random() < .006) flick *= .55;
+      n.m.material.opacity = Math.min(1, n.base * boost * flick * (low ? .7 : 1));
+    });
+
+    // 10 — drones patrol and spin their rotors.
+    fx.drones.forEach(function (d, di) {
+      if (!d.g.visible) return;
+      var a = now / 1000 * .34 + d.phase;
+      d.g.position.set(23 + Math.cos(a) * d.rx, d.y + Math.sin(now / 1200 + d.phase) * .28,
+        17 + Math.sin(a) * d.rz);
+      d.g.rotation.y = -a + Math.PI / 2;
+      d.rotors.forEach(function (r) { r.rotation.y += dt * 26; });
+    });
+
+    // 5 — elevator cabin cycles slowly between floors.
+    if (fx.elevator && fx.elevator.g.visible) {
+      var ep = (Math.sin(now / 4200) + 1) / 2;
+      fx.elevator.cabin.position.y = .2 + ep * 1.55;
+      fx.elevator.floor.position.y = fx.elevator.cabin.position.y - 1.03;
+    }
+  }
+
   window.buildRealOffice3d = buildRealOffice3d;
   window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
     get fx() { return fx; },
@@ -3057,6 +3482,23 @@
     setTheme: function (v) {
       window.__officeTheme = v || 'default';
       applyThemeVisuals(window.__officeTheme);
+    },
+    // Batch 1 world controls (Studio-safe; never writes guarded values).
+    setNight: setNight,
+    setWeather: setWeather,
+    setSeason: setSeason,
+    setWorldFeature: setWorldFeature,
+    get world() {
+      return { weather: window.__officeWeather || 'clear', season: window.__officeSeason || 'default',
+        night: nightValue(), nightAmount: fx && fx.night ? fx.night.amount : 0,
+        features: { rooftop: !!(fx && fx.rooftop && fx.rooftop.visible),
+          basement: !!(fx && fx.basement && fx.basement.visible),
+          elevator: !!(fx && fx.elevator && fx.elevator.g.visible),
+          walkway: !!(fx && fx.walkways.length && fx.walkways[0].on !== false),
+          holo: !!(fx && fx.holo.length && fx.holo[0].g.visible),
+          wet: !!(fx && fx.wet.length && fx.wet[0].m.visible),
+          neon: !!(fx && fx.neon.length && fx.neon[0].m.visible),
+          drones: !!(fx && fx.drones.length && fx.drones[0].g.visible) } };
     }
   };
 })();

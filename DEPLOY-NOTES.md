@@ -1036,3 +1036,40 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Hero-pixel render: `meanLum=96.2`, `dark=19.3%`, `green=22.2%`, `bg=3.7%`
   — no white-out; farm/greens clearly visible.
 
+## Batch 1 (items 1–10) — living world layer (v31 / v32 / v34)
+
+### What was added (v9/Studio modules only; protected v8 runtime untouched)
+1. Smooth day↔night: camera-facing dark veil fades in/out; Studio Time control
+   also syncs the app's `nightManual` so `scene3d.isNight` stays correct.
+2. Weather: rain particles, lightning flash (storm), puddles and a rainbow arc.
+3. Seasonal props: four prebuilt groups (default / Pasko / Fiesta / Rainy).
+4. Rooftop garden + helipad on an east annex (x≈70, z≈12), clear of hero view.
+5. Basement Server Vault (glowing racks/door) + animated elevator at x≈44, z≈6.
+6. Moving walkway: three scrolling belt strips along MAIN STREET.
+7. Holographic receptionist: additive body/head with rising scan rings.
+8. Reflective wet floor: subtle animated sheen planes in lobby/street/focus.
+9. Neon zone signs: six additive text signs that brighten at night.
+10. Delivery drones: two patrolling quads with spinning rotors and parcels.
+
+### Guards and stability
+- No guarded value is written by the new layer: bg/fog `#93a1b3`, ambient `.58`,
+  exposure `.85`, `isNight` owned by the app, `tameOfficeLights()` unchanged.
+- Cull line in `index.html` and `t.userData = t.userData || {}` in `makeTex()`
+  are untouched. `.v9bub` exemption under `body.ui-hidden` remains.
+- Cache keys: `/office-v9.js?v=32`, `/office-studio.js?v=34`.
+- Studio World bar (Time / Weather / Season + 8 toggles) persists choices in
+  localStorage and re-applies them after a v9 rebuild.
+
+### Verification (local headless)
+- `node --check` on both modules: PASS. `node tests/strategy-baseline.js`: PASS.
+- No console errors on load or after exercising every World control.
+- Forced ticks (`tick.last=Date.now()-100`): day mode `bg=fog=93a1b3, amb=.58,
+  expo=.85, isNight=0` (after `frame3D()` so the app resolves night state);
+  storm mode raised the veil to `.62`, rain/flash/puddles/rainbow all visible,
+  guards unchanged.
+- 60 forced ticks: geometries `2799→2799`, textures `131→131`, render calls
+  `2879→2879` (flat — no transient-object leak).
+- Toggles on/off, season switching (`fiesta` visible, others hidden), and the
+  `H`/`.v9bub` CSS exemption were verified.
+- Render sample (day): `meanLum=91.6`, `dark=33%`, `green=9.5%` — no white-out.
+

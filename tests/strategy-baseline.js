@@ -59,8 +59,10 @@ const protectedHashes = {
   // world chat opens as a small 200x100 window, – collapses it to a 24px bar.
   // v30: loads office-v9.js?v=30 and the new office-studio.js module after
   // the main app. Cache key bumped to v32 after the editor-shell mount and
-  // click-guard fixes. The protected H hide-ui shortcut is left untouched.
-  'public/index.html': 'fde0cf01aabff2cc13d6973ccf431c1cab78830d4dd674243992b2a6f8bf3052',
+  // click-guard fixes. v31/v32/v34 (Batch 1): cache keys bumped again for the
+  // living-world layer and night-state sync. The protected H hide-ui shortcut
+  // is left untouched.
+  'public/index.html': '230d792636a3c0a669d44288dda2cc9c97cfc9cb2f227e3556bbda94ac3efba7',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -98,13 +100,19 @@ const protectedHashes = {
   // High v9 objects are flagged so the simple-mode cull keeps them visible.
   // v30: job-status antenna lamps, freeze/detail/theme hooks, interactable crops
   // and green-only seasonal material swaps. Protected v8 runtime unchanged.
-  'public/office-v9.js': '230fbae98bfbefabf84d24dbe983467e6e263979649441e397bfbad8c59b1961',
+  // v31 Batch 1: smooth night veil, rain/lightning/puddles/rainbow, seasonal
+  // props, rooftop garden + helipad, basement vault + elevator, moving walkway,
+  // holographic receptionist, wet-floor sheen, neon signs and delivery drones.
+  // All guarded values (bg/fog/ambient/exposure/isNight) remain untouched.
+  'public/office-v9.js': '409c952a5a7f644c84043f01bc45a648b47342392875920fe2716d07cfaa0588',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
   // v31: boot guard uses querySelector so the new editor shell actually mounts.
   // v32: bot-card click guard tolerates synthetic events whose target is Window.
-  'public/office-studio.js': 'efe7e021a13fdb68bfbb99fa597707b8b6b52ce8712dee2b83a5e9b9e74e882e',
+  // v33/v34 Batch 1: World bar (time/weather/season + 8 feature toggles) wired
+  // to __officeV9 world controls, persisted in localStorage.
+  'public/office-studio.js': 'ab23338cbbc04d4a1cade88da9b09639e6c1addc3ffc9b12f32a495116b2f655',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

@@ -631,9 +631,93 @@
     }, true);
   }
 
+  // ---------- Batch 1 world controls ----------
+  var WORLD_FEATURES = [
+    ['rooftop', '🏙 Rooftop'], ['basement', '🔒 Vault'], ['elevator', '🛗 Elevator'],
+    ['walkway', '🚶 Walkway'], ['holo', '👾 Holo AI'], ['wet', '💧 Wet floor'],
+    ['neon', '💡 Neon'], ['drones', '🚁 Drones']
+  ];
+  function addWorldBar() {
+    var card = document.querySelector('#v-layout .card');
+    if (!card || $('edWorldBar')) return;
+    var v9 = window.__officeV9;
+    var saved = store.get('ccStudioWorld', {});
+    var features = {};
+    WORLD_FEATURES.forEach(function (f) {
+      features[f[0]] = saved.features ? (saved.features[f[0]] !== false) : (saved[f[0]] !== false);
+    });
+    var bar = document.createElement('div');
+    bar.className = 'ed-toolbar'; bar.id = 'edWorldBar';
+    bar.innerHTML =
+      '<span class="ed-group" style="margin:0">🌍 WORLD</span>' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;margin:0;font-size:10px">Time ' +
+        '<select id="wNight"><option value="auto">Auto</option><option value="day">☀️ Araw</option><option value="night">🌙 Gabi</option></select></label>' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;margin:0;font-size:10px">Weather ' +
+        '<select id="wWeather"><option value="clear">☀️ Clear</option><option value="rain">🌧️ Ulan</option><option value="storm">⛈️ Bagyo + kidlat</option></select></label>' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;margin:0;font-size:10px">Season ' +
+        '<select id="wSeason"><option value="default">Default</option><option value="pasko">🎄 Pasko</option>' +
+        '<option value="fiesta">🎉 Fiesta</option><option value="rainy">🌧️ Rainy</option></select></label>' +
+      '<span class="sep"></span>' +
+      WORLD_FEATURES.map(function (f) {
+        return '<button data-wf="' + f[0] + '" title="Toggle ' + f[1] + '">' + f[1] + '</button>';
+      }).join('');
+    var first = card.querySelector('.ed-toolbar');
+    if (first && first.nextSibling) card.insertBefore(bar, first.nextSibling);
+    else card.appendChild(bar);
+
+    $('wNight').value = saved.nightMode || 'auto';
+    $('wWeather').value = saved.weather || 'clear';
+    $('wSeason').value = saved.season || 'default';
+    function persist() {
+      saved.nightMode = $('wNight').value; saved.weather = $('wWeather').value;
+      saved.season = $('wSeason').value; saved.features = features;
+      store.set('ccStudioWorld', saved);
+    }
+    $('wNight').onchange = function () {
+      if (v9 && typeof v9.setNight === 'function') v9.setNight(this.value === 'auto' ? 'auto' : this.value === 'night');
+      persist(); toast('🌗 Oras: ' + this.options[this.selectedIndex].text + ' (guard values unchanged)');
+    };
+    $('wWeather').onchange = function () {
+      if (v9 && typeof v9.setWeather === 'function') v9.setWeather(this.value);
+      persist(); toast('🌦️ Weather: ' + this.options[this.selectedIndex].text);
+    };
+    $('wSeason').onchange = function () {
+      if (v9 && typeof v9.setSeason === 'function') v9.setSeason(this.value);
+      persist(); toast('🎊 Season: ' + this.options[this.selectedIndex].text);
+    };
+    qsa('[data-wf]', bar).forEach(function (b) {
+      var k = b.dataset.wf;
+      b.classList.toggle('on', features[k] !== false);
+      b.onclick = function () {
+        features[k] = !features[k];
+        b.classList.toggle('on', features[k]);
+        if (v9 && typeof v9.setWorldFeature === 'function') v9.setWorldFeature(k, features[k]);
+        persist(); toast((features[k] ? '✅ ' : '🚫 ') + b.textContent.trim() + (features[k] ? ' ON' : ' OFF'));
+      };
+    });
+    // Apply the persisted state once the 3D module is ready.
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      var api9 = window.__officeV9;
+      if (api9 && typeof api9.setWorldFeature === 'function') {
+        WORLD_FEATURES.forEach(function (f) { api9.setWorldFeature(f[0], features[f[0]] !== false); });
+        if (typeof api9.setWeather === 'function') api9.setWeather(saved.weather || 'clear');
+        if (typeof api9.setSeason === 'function') api9.setSeason(saved.season || 'default');
+        if (typeof api9.setNight === 'function') {
+          var nm = saved.nightMode || 'auto';
+          api9.setNight(nm === 'auto' ? 'auto' : nm === 'night');
+        }
+        clearInterval(iv);
+      }
+      if (tries > 60) clearInterval(iv);
+    }, 250);
+  }
+
   // ---------- boot ----------
   function boot() {
     if (document.querySelector('#v-layout .card')) buildShell();
+    addWorldBar();
     addPhotoTools();
     addChatQuick();
     addBotCard();
@@ -642,6 +726,7 @@
     var retry = 0;
     var iv = setInterval(function () {
       retry++;
+      addWorldBar();
       if (renderer3d && window.__officeV9) { hookBotPicking(); clearInterval(iv); }
       if (retry > 80) clearInterval(iv);
     }, 250);
