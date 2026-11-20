@@ -1232,3 +1232,16 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Narrow panels (<800px) show 2 lines; wider views show 3. Both verified at
   r=20, r=36 and r=90: 0 overlaps, all inside view, font unchanged by zoom.
 - Cache keys: /office-v9.js?v=37, /office-studio.js?v=39.
+
+## 2026-11-20 - Final live verification (v37/v39, commit 7a53477)
+- Live scripts: /office-v9.js?v=37, /office-studio.js?v=39.
+- Ollama UI present (Setup option + olu/olm fields); world chat display=flex.
+- Detailed bubble rects at r=20 / r=36 / r=90 on a 671x516 panel: 2 bubbles,
+  font 16px (clamp min), 0 overlaps, all fully inside the host with 8px gap.
+  The earlier overlaps=1/inView=false was a load/settling artifact, not a bug.
+- Night veil visible=false; guards bg=fog=93a1b3, ambient .58, exposure .85.
+- No console errors. 60 forced ticks stay flat (no geometry/texture leak).
+- Real Ollama end-to-end: qwen2.5:3b running locally, /api/chat with provider=ollama
+  returned a natural Taglish reply.
+- Restore after deploy: MALL ok=23, COMMERCIALS ok=19, FACEBOOK 200, SHOPEE 200,
+  AI KEYS coarena, groq, vyce, ollama failover=groq, vyce 200 OK.
