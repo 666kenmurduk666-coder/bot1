@@ -225,3 +225,60 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Cache-bust: `?v=4`. Kapag binago ulit ang module, bump ang `?v=` sa **dalawang**
   lugar: ang bagong early `<script>` tag (malapit sa `three.min.js`).
 
+## 2026-11-20 — "Puro puti" white-out + Google-style office layout (v7)
+
+### Sintomas at root cause
+- Report ng user: **"grabe walang makita puro puti"** at humiling ng layout na
+  "kinuha sa Google / gayahin". Live canvas diagnostics: 4 sa 5 sampled pixels
+  ay eksaktong background `227,231,238`, at `body.ui-hidden` ang default.
+- Hindi lang framing. Apat na magkakahiwalay na dahilan ang nag-stacked:
+  1. **Camera:** ang auto Roblox `spawnPlayer()` ay nag-o-override sa office
+     camera papuntang `r=28, target(15,16)` — close-up sa labas ng layout.
+  2. **Pale background:** ang day/night reset ng main app ay nagtatakda ulit ng
+     `#e3e7ee` pagkatapos ng office build.
+  3. **Walked-out lights:** ang lumang dark scene ay nag-iwan ng
+     `HemisphereLight 1.6` at `PointLight 26 (purple)` na nakadikit sa `scene3d`
+     (hindi sa `level3d`), kaya hindi natatanggal ng `level3d.clear()`.
+     Lahat ng desk at sahig ay nag-white-out kahit exposure 0.92 na.
+  4. **Service worker:** nag-cache ng `/office-v9.js?v=6` (transferSize=0),
+     kaya hindi lumalabas ang mga bagong edit sa embedded browser.
+  - `body.ui-hidden .bub3d{display:none}` din ang nagtatago sa talk bubbles.
+
+### Google-reference layout (bagong `public/office-v9.js`)
+- Base sa published planning guides (Aaditya interior design guide + Northvale
+  Studio "The Loft" plan): **public → semi-private → private/service zoning**,
+  isang **Main Street** circulation spine, at reception malapit sa entrance.
+- Zones: **WELCOME** (reception counter, logo wall, lounge, plants),
+  **MAIN STREET** (2.6m sentral na daan + wayfinding sign),
+  **FOCUS** (apat na six-seat bench clusters + monitor/upuan + quiet booths),
+  **MEET** (glass boardroom + huddle room + whiteboard),
+  **GATHER** (pantry/cafe island, stools, fridge, coffee machine),
+  at **SUPPORT** (executive cabin + server/IT racks).
+- 6 na maliliit, masasayang bots (scaled `0.66`) na nakalagay sa kani-kanilang
+  zone; lahat **visible sa default view**; umiikot ang Groq lines sa `.v9bub`
+  speech bubbles.
+
+### Mga fix
+- `spawnPlayer()` nagsimula na sa gitna `(23,17)` at wide camera
+  `r=45, phi=.52, theta=.42` — buong 46x34 office ang makikita.
+- Muted palette sa buong pipeline: background/fog `#93a1b3`, dark surround
+  ground plane `#4a5668`, wood/teal/navy floor zones, exposure `0.85`,
+  ambient `0.58`. `scene3d.isNight=0` + tick re-assert para hindi bumalik sa
+  `#e3e7ee`.
+- `tameOfficeLights()`: pinapatay ang lumang purple/blue point lights at
+  binabaan ang hemisphere/directional sa office-safe levels; tinatawag sa build
+  at sa tick.
+- CSS: `body.ui-hidden .bub3d:not(.v9bub){display:none}` — lumang bubble lang
+  ang nakatago; makikita ang Groq bubbles.
+- **Cache-bust bump `?v=7`** — kailangan ito dahil nag-cache ang SW ng lumang
+  URL. Bumump agad ng `?v=` sa early `<script>` tag sa bawat office-v9 edit.
+
+### Verification (lokal)
+- `bots=6`, `meshes=606`, lahat ng 6 bots nasa loob ng frame.
+- Pixel grid: **walang puting background** — dark slate (60–115) sa labas,
+  wood/teal/navy (130–196) sa loob ng opisina; bg `#93a1b3`, amb `0.58`,
+  exposure `0.85`, lights naka-tame.
+- `POST /api/conversation` (`pass:cyborg`) → Groq Taglish lines; `.v9bub`
+  lumabas (`display:block`, naka-position sa tabi ni Cos). Walang console errors.
+- `node tests/strategy-baseline.js` at smoke/office-layout/server-security: PASS.
+

@@ -48,12 +48,18 @@ const protectedHashes = {
   // Cache-bust bump v8 -> v9 so returning browsers cannot reuse the old
   // phaseB.js that contained the self-triggering MutationObserver freeze.
   // 2026-11-20: office-v9 loaded BEFORE the main app script (kills the init3D
-  // race), 2-min chatter, cache-bust v4, dangling references fixed, old 2F
-  // layout skipped when v9 is active.
-  'public/index.html': '2227686e0d99c0478a219b7385c3c66cfaa1d80338936839eaabfe794fc41bed',
-  // 2026-11-20: realistic single-floor office, 6 happy bots, standalone-safe
-  // rebuild, repeating self-heal, no doomed 403 conversation fetch.
-  'public/office-v9.js': '5feeb50ed958bc149389951a6d7102cb43d0425cc49c999482316294ad32f245',
+  // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
+  // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
+  // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
+  // Cache-bust bumped v4 -> v7 (the service worker caches by URL, so every
+  // office-v9.js edit needs a fresh query string).
+  'public/index.html': 'd4fac05b63333ebfe7ac98aca354ab9263f98e5f65d0a1d2bb7354aa4b842c4d',
+  // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
+  // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
+  // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
+  // Dark surround plane + muted palette (exposure .85, ambient .58) and a
+  // palette re-assert in tick defeat the day/night reset that caused white-out.
+  'public/office-v9.js': '447226a6ebb1fd3f704b9c055cdac49c2bc00bf86c730ff4e6a52ac759fc21b1',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
