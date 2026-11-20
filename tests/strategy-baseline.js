@@ -51,11 +51,11 @@ const protectedHashes = {
   // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
   // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
   // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
-  // Cache-bust bumped v4 -> v14b (the service worker caches by URL, so every
+  // Cache-bust bumped v4 -> v15 (the service worker caches by URL, so every
   // office-v9.js edit needs a fresh query string). v9 look: lower hero camera
   // (phi .40 / theta .34 / r38 / fov52), brighter .v9bub styling, glass south
   // facade, exterior approach and legible signs. White-out guards unchanged.
-  'public/index.html': '0aacd2729952796b55bbf38c937d093e26b494d7c8de47b84e7bec3c60597c06',
+  'public/index.html': 'e93b23f1d3c8221087da9d19bff81e644d091385ef7af613472ea63f5b3ee946',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
@@ -66,9 +66,11 @@ const protectedHashes = {
   // plaza + skyline, and correctly oriented wall signage. No new runtime feature.
   // v14 effects: animated monitor dashboards, light shafts + drifting dust,
   // water-cooler bubbles, coffee steam, bot sparkles, swaying plants, server
-  // scan bars, flickering skyline windows, birds and a floor sheen. Still the
-  // same protected v8 runtime; only visual polish inside office-v9.js.
-  'public/office-v9.js': '2070993883f008952ba4491e2c9719c307590e8da682fd1418833c13eba8dfc7',
+  // scan bars, flickering skyline windows, birds and a floor sheen.
+  // v15 beauty pass: bot feet/hands/antennae/talking auras, glass glints,
+  // window-light bands, framed art, bookshelves, desk plants, a sun glow and
+  // moving cars. Still the same protected v8 runtime; visual polish only.
+  'public/office-v9.js': 'dcf2824ba2d8275f96d5a9ef2f5769f841b8ca30952519af41a022ab62532d44',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

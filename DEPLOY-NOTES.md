@@ -386,3 +386,33 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - **Cache-bust:** `/office-v9.js?v=14b` (fresh URL para hindi maulit ang v13/v14
   service-worker cache).
 
+## 2026-11-20 — "Sobrang ganda" polish (v15 cache-bust)
+
+### Mga idinagdag
+- **Cuter bots:** paa, kamay, antenna na may glowing tip, at colored floor aura.
+  Kapag may Groq line ang isang bot, lumalakas ang aura niya (`talking` state) —
+  kita agad kung sino ang nagsasalita.
+- **Real glass feel:** diagonal glints sa south facade at meeting-room glass, plus
+  warm window-light bands sa sahig mula sa north glazing.
+- **More lived-in office:** framed abstract art, bookshelves, tiny desk plants,
+  reception LED strips, at mini planters sa ilang desks.
+- **Exterior life:** sun glow sa likod ng skyline at 2 kotse na gumagalaw sa kalsada.
+- **Motion:** antenna, glints, light bands, sun, at cars ay may banayad na animation;
+  nanatiling mababa ang overhead (walang bagong shadow map / MSAA / DPR change).
+- Protected Phase D v8 runtime ay hindi pa rin binabago; lahat nasa
+  `public/office-v9.js` lang.
+
+### Verification (v15, lokal)
+- `bots=6`, walang build error, walang console errors.
+- Effects arrays: `auras=6`, `antennae=6`, `glints=4`, `bands=5`, `cars=2`,
+  `sun=1`, plus buong v14 set (`screens=24`, `shafts=11`, `dust=1`, `bubbles=7`,
+  `steam=6`, `sparkles=12`, `plants=85`, `birds=3`, `scan=3`, `windows=27`, `sheen=1`).
+- Talking probe: may Groq bubble si Product, `talkers=['product']`, aura opacity
+  `0.316` vs `~0.08–0.14` sa iba.
+- Animation probe: carX, glint, band, sun scale, at antenna intensity lahat nagbago.
+- Pixel stats: `bgPct=0`, `edgePct=3.7`, `meanLum=112.6`, `hidden=0`,
+  `meshes=1745`, `textured=236` — walang white-out. `bgHex=93a1b3`, `amb=0.58`,
+  `exposure=0.85` — pareho pa rin.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=15`.
+
