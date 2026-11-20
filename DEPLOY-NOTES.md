@@ -1091,3 +1091,38 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Live hero pixels: `meanLum=108.9`, `dark=19.5%`, `green=10.5%`,
   `bg=0.1%` — no white-out; greens clearly visible.
 
+
+## 2026-11-20 - Batch 2 local verification (items 11-20, not yet deployed)
+
+### Implemented
+11. Barista bot behind the pantry counter with chef hat, apron and cup pour.
+12. Three indoor plants that cycle through visible growth stages.
+13. Lounge fish tank with five swimmers, glass, water and tank frame.
+14. Skyline window lights whose opacity follows the smooth night amount.
+15. Ceiling projection (clouds by day, stars by night) as one additive plane.
+16. Floating role/name plate above each of the seven bots.
+17. Status text sprite that follows the bot's live job/walk state.
+18. Idle beats: stretch, yawn and coffee sip with restored arm/head/cup state.
+19. Job outfits: chef hat on barista, hard hat on Product, beret on ARYASKY.
+20. Pet cat and dog that trail two bots with tail wag and bobbing.
+
+### Guards and stability
+- Batch 2 writes no bg/fog/ambient/exposure/isNight value. Day guards verified:
+  bg=fog `93a1b3`, ambient `.58`, exposure `.85`, `isNight=0`, veil `0`.
+- Protected lines intact: cull fix in `index.html`, `makeTex()` userData guard,
+  and `.v9bub` exemption under `body.ui-hidden`.
+- Cache keys bumped: `/office-v9.js?v=33`, `/office-studio.js?v=35`.
+- Studio BOT bar: 10 toggles persisted in `localStorage.ccStudioBots`; `H`
+  remains reserved for Hide UI.
+
+### Verification (local headless)
+- `node --check` on both modules: PASS. `node tests/strategy-baseline.js`: PASS.
+- No console errors (only the benign `navigator.vibrate` user-gesture notice).
+- Bars mounted: World 8 buttons, BOT 10 buttons.
+- Feature counts: barista yes, plants 3, fish 5, skyline panes 72, ceiling yes,
+  outfits 3, pets 2, nameplates 7, status sprites 7.
+- Toggle round-trip PASS: fish `[true,false,true]`, nameplates `[true,false,true]`.
+- 60 forced ticks flat: geometries `2923 -> 2923`, textures `146 -> 146`,
+  render calls `3015 -> 3015`.
+- Day hero pixels after 120 settling ticks: `meanLum=95.7`, `dark=21.2%`,
+  `green=21.1%`, `bg=0.2%` - no white-out.

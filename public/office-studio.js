@@ -714,10 +714,61 @@
     }, 250);
   }
 
+  var BOT_FEATURES = [
+    ['barista', '☕ Barista'], ['plants', '🌱 Plants'], ['fish', '🐠 Fish'],
+    ['skyline', '🌃 Skyline'], ['ceiling', '☁️ Ceiling'], ['nameplates', '🏷 Names'],
+    ['status', '💬 Status'], ['idle', '😴 Idle'], ['outfits', '🎩 Outfits'],
+    ['pets', '🐾 Pets']
+  ];
+  function addBotBar() {
+    var card = document.querySelector('#v-layout .card');
+    if (!card || $('edBotBar')) return;
+    var v9 = window.__officeV9;
+    var saved = store.get('ccStudioBots', {});
+    var features = {};
+    BOT_FEATURES.forEach(function (f) { features[f[0]] = saved.features ? (saved.features[f[0]] !== false) : (saved[f[0]] !== false); });
+    var bar = document.createElement('div');
+    bar.className = 'ed-toolbar'; bar.id = 'edBotBar';
+    bar.innerHTML = '<span class="ed-group" style="margin:0">🤖 BOT</span>' +
+      BOT_FEATURES.map(function (f) {
+        return '<button data-bf="' + f[0] + '" title="Toggle ' + f[1] + '">' + f[1] + '</button>';
+      }).join('');
+    var world = $('edWorldBar');
+    if (world && world.nextSibling) card.insertBefore(bar, world.nextSibling);
+    else if (world) card.appendChild(bar);
+    else {
+      var first = card.querySelector('.ed-toolbar');
+      if (first && first.nextSibling) card.insertBefore(bar, first.nextSibling);
+      else card.appendChild(bar);
+    }
+    qsa('[data-bf]', bar).forEach(function (b) {
+      var k = b.dataset.bf;
+      b.classList.toggle('on', features[k] !== false);
+      b.onclick = function () {
+        features[k] = !features[k];
+        b.classList.toggle('on', features[k]);
+        if (v9 && typeof v9.setBotFeature === 'function') v9.setBotFeature(k, features[k]);
+        store.set('ccStudioBots', { features: features });
+        toast((features[k] ? '✅ ' : '🚫 ') + b.textContent.trim() + (features[k] ? ' ON' : ' OFF'));
+      };
+    });
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      var api9 = window.__officeV9;
+      if (api9 && typeof api9.setBotFeature === 'function') {
+        BOT_FEATURES.forEach(function (f) { api9.setBotFeature(f[0], features[f[0]] !== false); });
+        clearInterval(iv);
+      }
+      if (tries > 60) clearInterval(iv);
+    }, 250);
+  }
+
   // ---------- boot ----------
   function boot() {
     if (document.querySelector('#v-layout .card')) buildShell();
     addWorldBar();
+    addBotBar();
     addPhotoTools();
     addChatQuick();
     addBotCard();
@@ -727,6 +778,7 @@
     var iv = setInterval(function () {
       retry++;
       addWorldBar();
+      addBotBar();
       if (renderer3d && window.__officeV9) { hookBotPicking(); clearInterval(iv); }
       if (retry > 80) clearInterval(iv);
     }, 250);

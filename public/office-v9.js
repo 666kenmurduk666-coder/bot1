@@ -83,7 +83,12 @@
     scenery: [], crops: [],
     // Batch 1 world layer (all optional, none touch the white-out guards).
     night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
-    seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null };
+    seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null,
+    // Batch 2 character layer (items 11-20).
+    barista: null, growthPlants: [], fish: null, skylineLights: [], ceilingProj: null,
+    pets: [], outfits: [],
+    botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: true,
+      nameplates: true, status: true, idle: true, outfits: true, pets: true } };
   // v30 job cues: the antenna tip reads like a tiny status lamp.
   var JOB_HINTS = {
     greet: ['#7cf7ff', .85], wave: ['#7cf7ff', 1.1], type: ['#8fd0ff', 1.4],
@@ -2450,7 +2455,11 @@
       blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
       scenery: [], crops: [],
       night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
-      seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null };
+      seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null,
+      barista: null, growthPlants: [], fish: null, skylineLights: [], ceilingProj: null,
+      pets: [], outfits: [],
+      botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: true,
+        nameplates: true, status: true, idle: true, outfits: true, pets: true } };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -2642,6 +2651,7 @@
     aryaskyArtZone();
     greenSurrounds();
     buildBatch1World();
+    buildBatch2World();
 
     // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;
@@ -2688,7 +2698,7 @@
         id: b.id, n: b.n, group: c.group, shadow: c.shadow, emo: c.emo,
         arm: arm, armL: flair.armL, legs: rig.legs,
         aura: flair.aura, tip: flair.tip, refl: flair.refl,
-        talking: false, bubble: el,
+        talking: false, bubble: el, cup: c.cup, head: c.group.children[0],
         baseY: 0, baseScale: .74, phase: idx * 1.1, face: b.face,
         route: route, wp: 0, job: route[0].job, jobUntil: Date.now() + (route[0].dur || 3500),
         walking: false, nextWp: 0, walkFrom: null, walkTo: null, walkStart: 0, walkDur: 1000,
@@ -2699,6 +2709,7 @@
       setBotMood(bot, bot.job, Date.now(), false);
       botSparkles(c.group, idx);
     });
+    attachBatch2Bots();
 
     // The main app's simple-mode cull hides any unflagged object above y=3.15.
     // Everything now in level3d belongs to this v9 office, so flag it all —
@@ -2765,6 +2776,8 @@
     // Batch 1 world layer — smooth night, weather, seasons and ambient life.
     // It never writes bg/fog/ambient/exposure/isNight (the guards above own them).
     updateBatch1World(now, botDt);
+    // Batch 2 character layer — barista, plants, fish, skyline lights, ceiling.
+    updateBatch2World(now, botDt);
     // Photo mode: keep camera/render alive but hold every bot and effect still.
     if (typeof window !== 'undefined' && window.__officeFreeze === true) return;
     cuteBots.forEach(function (b, i) {
@@ -2826,6 +2839,7 @@
         b.tip.material.emissiveIntensity = hint[1] * (.78 + .28 * Math.sin(now / 230 + i));
       }
       b.tx = b.group.position.x; b.tz = b.group.position.z;
+      updateBotBatch2(b, now, i);
     });
     updateBotParticles(now);
     if (now - (tick.glow || 0) > 140) {
@@ -3474,6 +3488,364 @@
     }
   }
 
+  /* ================= BATCH 2 — character life layer =================
+     Items 11-20, all optional and Studio-toggleable. No guarded value is
+     written here; the white-out guards above keep full ownership of
+     bg/fog/ambient/exposure/isNight. */
+  var BATCH2_ROLE = {
+    cos: 'HOST · COS', seo: 'ANALYST · SEO', product: 'OPS · PRODUCT',
+    joker: 'CULTURE · JOKER', mgr: 'MANAGER · MGR', writer: 'CONTENT · WRITER',
+    aryasky: 'ARTIST · ARYASKY'
+  };
+  var BATCH2_STATUS = {
+    greet: 'Greeting guests…', wave: 'Waving hi! 👋', type: 'Typing reports…',
+    pack: 'Packing orders…', joke: 'Cracking jokes…', plan: 'Planning tasks…',
+    write: 'Writing copy…', design: 'Designing art…', review: 'Reviewing SEO…',
+    showcase: 'Showcasing work…', walk: 'On the move…'
+  };
+  function paintBatch2Label(q, text, color, bg) {
+    q.clearRect(0, 0, 256, 64);
+    q.fillStyle = bg || 'rgba(11,20,38,.86)';
+    q.fillRect(2, 4, 252, 56);
+    q.strokeStyle = 'rgba(255,255,255,.22)'; q.lineWidth = 2;
+    q.strokeRect(2, 4, 252, 56);
+    q.font = 'bold 25px sans-serif'; q.textAlign = 'center'; q.textBaseline = 'middle';
+    q.lineWidth = 5; q.strokeStyle = 'rgba(4,8,18,.9)';
+    q.strokeText(text, 128, 33, 236);
+    q.fillStyle = color || '#ffffff'; q.fillText(text, 128, 33, 236);
+  }
+  function batch2LabelTexture(text, color, bg) {
+    var cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    var q = cv.getContext('2d'); paintBatch2Label(q, text, color, bg);
+    var t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+    t.userData = t.userData || {}; // same guard as makeTex()
+    t.userData.cv = cv; t.userData.q = q;
+    return t;
+  }
+  function batch2LabelSprite(text, color, bg, w, h, y) {
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: batch2LabelTexture(text, color, bg), transparent: true,
+      depthWrite: false, toneMapped: false, fog: false
+    }));
+    s.scale.set(w, h, 1); s.position.set(0, y, 0); s.userData.v9 = true;
+    return s;
+  }
+  function applyBatch2Visibility() {
+    var f = fx && fx.botFeatures; if (!f) return;
+    if (fx.barista && fx.barista.c) fx.barista.c.group.visible = f.barista !== false;
+    fx.growthPlants.forEach(function (p) { if (p.g) p.g.visible = f.plants !== false; });
+    if (fx.fish && fx.fish.g) fx.fish.g.visible = f.fish !== false;
+    fx.skylineLights.forEach(function (a) { if (a.m) a.m.visible = f.skyline !== false; });
+    if (fx.ceilingProj) fx.ceilingProj.visible = f.ceiling !== false;
+    fx.outfits.forEach(function (o) { if (o) o.visible = f.outfits !== false; });
+    fx.pets.forEach(function (p) { if (p.g) p.g.visible = f.pets !== false; });
+    cuteBots.forEach(function (b) {
+      if (b.roleTag) b.roleTag.visible = f.nameplates !== false;
+      if (b.statusSprite) b.statusSprite.visible = f.status !== false;
+    });
+  }
+  function buildBatch2World() {
+    if (!fx || fx.barista) return;
+    var i, j;
+
+    // 11 — barista bot behind the pantry/cafe counter.
+    if (typeof makeChar3d === 'function') {
+      try {
+        var bc = makeChar3d({ id: 'barista', n: 'Barista ☕', c: '#b07b3d' }, 10.4, 4.2);
+        bc.group.scale.setScalar(.62);
+        bc.group.userData.v9 = true;
+        bc.group.traverse(function (o) { o.userData.v9 = true; });
+        if (bc.emo) bc.emo.visible = false;
+        var hat = new THREE.Group();
+        var band = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .14, 10), solid('#f5f0e6'));
+        band.userData.v9 = true; hat.add(band);
+        var puff = new THREE.Mesh(new THREE.SphereGeometry(.28, 9, 7), solid('#ffffff'));
+        puff.scale.set(1, .72, 1); puff.position.y = .15; puff.userData.v9 = true; hat.add(puff);
+        hat.position.set(0, 1.08, 0); hat.userData.v9 = true; bc.group.add(hat);
+        var apron = new THREE.Mesh(new THREE.BoxGeometry(.46, .4, .05), solid('#7d4a2f'));
+        apron.position.set(0, .34, .3); apron.userData.v9 = true; bc.group.add(apron);
+        if (bc.cup) { bc.cup.visible = true; bc.cup.position.set(.36, .48, .2); }
+        fx.barista = { c: bc, hat: hat };
+        fx.outfits.push(hat);
+      } catch (e) { fx.barista = null; }
+    }
+    // Counter + espresso machine stay put; they make the barista read as cafe staff.
+    box(2.8, .12, .72, solid('#a9793f'), 10.4, .96, 5.05);
+    box(.8, .52, .5, solid('#3a4256'), 10.4, 1.28, 5.05);
+    box(.5, .05, .04, '#7cf7ff', 10.4, 1.42, 4.79);
+    [9.85, 10.95].forEach(function (cx) {
+      var cup = new THREE.Mesh(new THREE.CylinderGeometry(.09, .075, .14, 10), solid('#f5f0e6'));
+      cup.position.set(cx, 1.09, 5.05); cup.userData.v9 = true; addO(cup);
+    });
+
+    // 12 — indoor plants with visible growth stages.
+    [[8, 30], [15.5, 30.8], [35, 30.6]].forEach(function (pp, pi) {
+      var gp = new THREE.Group(); gp.position.set(pp[0], 0, pp[1]); gp.userData.v9 = true; addO(gp);
+      var pot = new THREE.Mesh(new THREE.CylinderGeometry(.22, .18, .34, 9), solid('#b07b52'));
+      pot.position.y = .17; pot.userData.v9 = true; gp.add(pot);
+      var leaves = [];
+      for (i = 0; i < 4; i++) {
+        var a = i * 1.57;
+        var leaf = new THREE.Mesh(new THREE.ConeGeometry(.17, .62, 6),
+          solid(i % 2 ? '#3f9d6a' : '#57ad78', { roughness: .9 }));
+        leaf.position.set(Math.cos(a) * .12, .58 + (i % 2) * .1, Math.sin(a) * .12);
+        leaf.rotation.z = Math.cos(a) * .28; leaf.userData.v9 = true;
+        gp.add(leaf); leaves.push(leaf);
+      }
+      fx.growthPlants.push({ g: gp, leaves: leaves, p: pi * 1.9 });
+    });
+
+    // 13 — lounge fish tank with five gentle swimmers.
+    var tank = new THREE.Group(); tank.position.set(7.2, 0, 28.2);
+    tank.userData.v9 = true; addO(tank);
+    box(2.6, .75, .8, solid('#6e7c8f'), 7.2, .38, 28.2);
+    var glass = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1, .7),
+      new THREE.MeshBasicMaterial({ color: '#a8dcff', transparent: true, opacity: .18,
+        depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    glass.position.y = 1.12; glass.userData.v9 = true; tank.add(glass);
+    var water = new THREE.Mesh(new THREE.PlaneGeometry(2.34, .64),
+      new THREE.MeshBasicMaterial({ color: '#4fa8d8', transparent: true, opacity: .3,
+        depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    water.rotation.x = -Math.PI / 2; water.position.y = 1.58; water.userData.v9 = true; tank.add(water);
+    [[-1.22, 1.12], [1.22, 1.12]].forEach(function (fr) {
+      var edge = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.04, .74), solid('#9fb2d0'));
+      edge.position.set(fr[0], fr[1], 0); edge.userData.v9 = true; tank.add(edge);
+    });
+    var fishCols = ['#ffd34d', '#ff8fa8', '#7cf7ff', '#b9f07a', '#c9a6ff'];
+    var fish = [];
+    for (i = 0; i < 5; i++) {
+      var fg = new THREE.Group(); fg.userData.v9 = true;
+      var body = new THREE.Mesh(new THREE.SphereGeometry(.09, 8, 6),
+        new THREE.MeshBasicMaterial({ color: fishCols[i], fog: false }));
+      body.scale.set(1.5, .75, .6); body.userData.v9 = true; fg.add(body);
+      var tail = new THREE.Mesh(new THREE.ConeGeometry(.06, .13, 5),
+        new THREE.MeshBasicMaterial({ color: fishCols[i], fog: false }));
+      tail.rotation.z = Math.PI / 2; tail.position.x = -.17; tail.userData.v9 = true; fg.add(tail);
+      fg.position.set(-.9 + i * .45, 1.12 + (i % 2) * .22, (i % 2) ? .13 : -.13);
+      tank.add(fg); fish.push({ m: fg, x: fg.position.x, y: fg.position.y, p: i * 1.3 });
+    }
+    fx.fish = { g: tank, fish: fish };
+
+    // 14 — skyline window lights that brighten with the night amount.
+    var sky = new THREE.Group(); sky.userData.v9 = true; addO(sky);
+    var lightCols = ['#ffd89a', '#bfe4ff', '#ffc1d8'];
+    for (i = 0; i < 12; i++) {
+      var bx0 = -22 + i * 7.4;
+      for (j = 2; j < 15; j += 2.2) {
+        var pane = new THREE.Mesh(new THREE.PlaneGeometry(.34, .24),
+          new THREE.MeshBasicMaterial({ color: lightCols[(i + Math.round(j)) % 3],
+            transparent: true, opacity: .1, depthWrite: false, fog: false, toneMapped: false }));
+        pane.position.set(bx0 + ((Math.round(j) % 3) - 1) * 1.4, j, -12.35);
+        pane.userData.v9 = true; sky.add(pane);
+        fx.skylineLights.push({ m: pane, p: i + j });
+      }
+    }
+
+    // 15 — subtle ceiling projection: clouds by day, stars by night.
+    var projTex = makeTex('batch2-ceiling-sky', function (q, S) {
+      var g2 = q.createLinearGradient(0, 0, 0, S);
+      g2.addColorStop(0, 'rgba(18,38,74,.9)'); g2.addColorStop(.55, 'rgba(86,140,198,.55)');
+      g2.addColorStop(1, 'rgba(238,226,204,.4)'); q.fillStyle = g2; q.fillRect(0, 0, S, S);
+      var r2 = rnd(451);
+      for (var c = 0; c < 12; c++) {
+        var cx = r2() * S, cy = r2() * S * .7, rw = 22 + r2() * 46, rh = 6 + r2() * 12;
+        var cg = q.createRadialGradient(cx, cy, 1, cx, cy, rw);
+        cg.addColorStop(0, 'rgba(255,255,255,.5)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
+        q.save(); q.translate(cx, cy); q.scale(1, rh / rw); q.translate(-cx, -cy);
+        q.fillStyle = cg; q.beginPath(); q.arc(cx, cy, rw, 0, 6.3); q.fill(); q.restore();
+      }
+      for (var s = 0; s < 42; s++) {
+        q.fillStyle = 'rgba(255,248,220,' + (.25 + r2() * .6).toFixed(2) + ')';
+        q.fillRect(r2() * S, r2() * S, 1.4, 1.4);
+      }
+    }, 1, 1);
+    var proj = new THREE.Mesh(new THREE.PlaneGeometry(46, 26),
+      new THREE.MeshBasicMaterial({ map: projTex, transparent: true, opacity: .08,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+        toneMapped: false, fog: false }));
+    proj.rotation.x = Math.PI / 2; proj.position.set(23, 3.22, 17);
+    proj.renderOrder = 1; proj.userData.v9 = true; addO(proj);
+    fx.ceilingProj = proj;
+  }
+  function makeBatch2Pet(kind, owner, color, idx) {
+    if (!owner || !owner.group) return;
+    var g = new THREE.Group(); g.userData.v9 = true;
+    var body = new THREE.Mesh(new THREE.SphereGeometry(.18, 8, 6), solid(color));
+    body.scale.set(1.3, .8, .9); body.position.y = .18; body.userData.v9 = true; g.add(body);
+    var head = new THREE.Mesh(new THREE.SphereGeometry(.13, 8, 6), solid(color));
+    head.position.set(.2, .27, 0); head.userData.v9 = true; g.add(head);
+    [-.07, .07].forEach(function (zz) {
+      if (kind === 'cat') {
+        var ear = new THREE.Mesh(new THREE.ConeGeometry(.055, .12, 5), solid(color));
+        ear.position.set(.21, .4, zz); ear.userData.v9 = true; g.add(ear);
+      } else {
+        var ear2 = new THREE.Mesh(new THREE.SphereGeometry(.055, 7, 5), solid(color));
+        ear2.scale.set(1.4, .7, 1); ear2.position.set(.2, .31, zz * 1.7);
+        ear2.userData.v9 = true; g.add(ear2);
+      }
+    });
+    var tail = new THREE.Mesh(new THREE.CylinderGeometry(.025, .035, .32, 6), solid(color));
+    tail.position.set(-.24, .3, 0); tail.rotation.z = -.7; tail.userData.v9 = true; g.add(tail);
+    g.position.set(owner.group.position.x + (idx ? .8 : -.8), 0, owner.group.position.z + .6);
+    addO(g);
+    fx.pets.push({ g: g, owner: owner, tail: tail, ox: idx ? .75 : -.75, oz: .65, p: idx * 2.1 });
+  }
+  function attachBatch2Bots() {
+    if (!cuteBots.length || (cuteBots[0] && cuteBots[0].roleTag)) return;
+    cuteBots.forEach(function (b, i) {
+      // 16 — floating nameplate + role.
+      var roleTag = batch2LabelSprite(BATCH2_ROLE[b.id] || 'TEAM', '#dff6ff',
+        'rgba(15,27,48,.84)', 2.05, .34, 2.28);
+      b.group.add(roleTag); b.roleTag = roleTag;
+      // 17 — status text bubble, repainted only when the job changes.
+      var st = batch2LabelTexture(BATCH2_STATUS[b.job] || 'Working…',
+        '#ffe6a8', 'rgba(12,20,38,.88)');
+      var status = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: st, transparent: true, depthWrite: false, toneMapped: false, fog: false
+      }));
+      status.scale.set(2.35, .4, 1); status.position.set(0, 1.86, 0);
+      status.userData.v9 = true; b.group.add(status);
+      b.statusSprite = status; b.statusT = st; b.statusQ = st.userData.q;
+      b.statusText = BATCH2_STATUS[b.job] || 'Working…';
+      b.idleNext = Date.now() + 4000 + i * 1700; b.idleUntil = 0; b.idleKind = '';
+      // 19 — job outfits (hard hat + artist beret; chef hat is on the barista).
+      if (b.id === 'product') {
+        var hard = new THREE.Group();
+        var dome = new THREE.Mesh(new THREE.SphereGeometry(.34, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2), solid('#ffd34d'));
+        dome.userData.v9 = true; hard.add(dome);
+        var brim = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, .035, 12), solid('#e0ad2e'));
+        brim.position.y = -.02; brim.userData.v9 = true; hard.add(brim);
+        hard.position.set(0, 1.0, 0); hard.userData.v9 = true; b.group.add(hard);
+        fx.outfits.push(hard);
+      }
+      if (b.id === 'aryasky') {
+        var beret = new THREE.Group();
+        var cap = new THREE.Mesh(new THREE.SphereGeometry(.34, 10, 7), solid('#6bb3a6'));
+        cap.scale.set(1, .38, 1); cap.userData.v9 = true; beret.add(cap);
+        var nub = new THREE.Mesh(new THREE.SphereGeometry(.055, 7, 5), solid('#3f7d78'));
+        nub.position.y = .14; nub.userData.v9 = true; beret.add(nub);
+        beret.position.set(.06, 1.03, 0); beret.rotation.z = -.18;
+        beret.userData.v9 = true; b.group.add(beret);
+        fx.outfits.push(beret);
+      }
+    });
+    // 20 — pet bots: a cat and a dog that follow two of the team.
+    makeBatch2Pet('cat', cuteBots[0], '#e8b98a', 0);
+    makeBatch2Pet('dog', cuteBots[3] || cuteBots[0], '#c98f4a', 1);
+    applyBatch2Visibility();
+  }
+  function setBotFeature(key, on) {
+    if (!fx || !fx.botFeatures || !(key in fx.botFeatures)) return false;
+    fx.botFeatures[key] = !!on;
+    applyBatch2Visibility();
+    return fx.botFeatures[key];
+  }
+  function updateBatch2World(now, dt) {
+    if (!fx) return;
+    var f = fx.botFeatures || {}, low = window.__officeDetail === 'low';
+    dt = Math.max(0, Math.min(.12, dt || 0));
+    // 11 — barista pours gently.
+    if (fx.barista && fx.barista.c && f.barista !== false && !low) {
+      if (fx.barista.c.cup) fx.barista.c.cup.rotation.z = Math.sin(now / 340) * .2;
+      if (fx.barista.c.group.children[0]) fx.barista.c.group.children[0].rotation.z = Math.sin(now / 720) * .035;
+    }
+    // 12 — plants cycle through growth stages.
+    if (f.plants !== false && !low) {
+      fx.growthPlants.forEach(function (p) {
+        var g = .72 + .42 * (.5 + .5 * Math.sin(now / 3600 + p.p));
+        p.leaves.forEach(function (l, li) {
+          l.scale.y = g * (1 + li * .04);
+          l.rotation.z += 0; // base tilt is kept; only height grows
+        });
+      });
+    }
+    // 13 — fish swim inside the tank.
+    if (fx.fish && f.fish !== false && !low) {
+      fx.fish.fish.forEach(function (fsh) {
+        fsh.m.position.x = fsh.x + Math.sin(now / 1700 + fsh.p) * .72;
+        fsh.m.position.y = fsh.y + Math.sin(now / 900 + fsh.p * 1.7) * .07;
+        fsh.m.rotation.y = Math.cos(now / 1700 + fsh.p) > 0 ? 0 : Math.PI;
+      });
+    }
+    // 14/15 — night-linked skyline and ceiling projection opacities.
+    var amt = fx.night ? fx.night.amount : 0;
+    if (f.skyline !== false) {
+      fx.skylineLights.forEach(function (a) {
+        if (a.m.material) a.m.material.opacity = (low ? .12 : .08) + amt * .4
+          + (low ? 0 : .05 * Math.sin(now / 800 + a.p));
+      });
+    }
+    if (fx.ceilingProj && f.ceiling !== false && fx.ceilingProj.material) {
+      fx.ceilingProj.material.opacity = .05 + amt * .13
+        + (low ? 0 : .02 * Math.sin(now / 2100));
+    }
+    // 20 — pets trail their owners.
+    if (f.pets !== false) {
+      fx.pets.forEach(function (p) {
+        if (!p.owner || !p.g) return;
+        var tx = p.owner.group.position.x + p.ox, tz = p.owner.group.position.z + p.oz;
+        var k = Math.min(1, dt * 3.4);
+        p.g.position.x += (tx - p.g.position.x) * k;
+        p.g.position.z += (tz - p.g.position.z) * k;
+        p.g.position.y = Math.abs(Math.sin(now / 260 + p.p)) * .035;
+        p.g.rotation.y = Math.atan2(p.owner.group.position.x - p.g.position.x,
+          p.owner.group.position.z - p.g.position.z);
+        if (p.tail) p.tail.rotation.z = -.6 + Math.sin(now / 180 + p.p) * .35;
+      });
+    }
+  }
+  function updateBotBatch2(b, now, i) {
+    if (!fx || !fx.botFeatures) return;
+    var f = fx.botFeatures;
+    // 17 — status text follows the real job/walk state.
+    if (b.statusSprite) {
+      var txt = BATCH2_STATUS[b.walking ? 'walk' : b.job] || 'Working…';
+      if (txt !== b.statusText) {
+        if (b.statusQ) paintBatch2Label(b.statusQ, txt, '#ffe6a8', 'rgba(12,20,38,.88)');
+        if (b.statusT) b.statusT.needsUpdate = true;
+        b.statusText = txt;
+      }
+      b.statusSprite.visible = f.status !== false;
+    }
+    if (b.roleTag) b.roleTag.visible = f.nameplates !== false;
+    // 18 — occasional stretch / yawn / coffee-sip idle beats.
+    function resetIdle() {
+      if (b.head) b.head.scale.y = 1;
+      if (b.cup) b.cup.visible = false;
+      b.idleUntil = 0; b.idleKind = '';
+    }
+    if (f.idle === false || b.walking || !b.head || !b.cup) {
+      if (b.idleUntil) { resetIdle(); b.idleNext = now + 6000; }
+      return;
+    }
+    if (b.idleUntil && now < b.idleUntil) {
+      var k = b.idleKind;
+      if (k === 'stretch') {
+        if (b.arm) b.arm.rotation.z = -2.8;
+        if (b.armL) b.armL.rotation.z = 2.8;
+        b.group.position.y = b.baseY + .07;
+        b.head.scale.y = 1.08;
+      } else if (k === 'yawn') {
+        b.head.scale.y = 1.2;
+        b.group.rotation.z = Math.sin(now / 120) * .06;
+      } else {
+        b.cup.visible = true;
+        if (b.arm) b.arm.rotation.z = -1.55 + Math.sin(now / 180) * .12;
+      }
+      return;
+    }
+    if (b.idleUntil && now >= b.idleUntil) {
+      resetIdle(); b.idleNext = now + 7000 + Math.random() * 9000;
+    }
+    var allowed = { plan: 1, review: 1, write: 1, design: 1, type: 1, greet: 1 };
+    if (!b.idleUntil && now > b.idleNext && allowed[b.job]) {
+      var kinds = ['stretch', 'yawn', 'sip'];
+      b.idleKind = kinds[Math.floor(now / 1000 + i) % 3];
+      b.idleUntil = now + (b.idleKind === 'sip' ? 1500 : 1100);
+    }
+  }
+
   window.buildRealOffice3d = buildRealOffice3d;
   window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
     get fx() { return fx; },
@@ -3488,6 +3860,7 @@
     setWeather: setWeather,
     setSeason: setSeason,
     setWorldFeature: setWorldFeature,
+    setBotFeature: setBotFeature,
     get world() {
       return { weather: window.__officeWeather || 'clear', season: window.__officeSeason || 'default',
         night: nightValue(), nightAmount: fx && fx.night ? fx.night.amount : 0,
@@ -3498,7 +3871,8 @@
           holo: !!(fx && fx.holo.length && fx.holo[0].g.visible),
           wet: !!(fx && fx.wet.length && fx.wet[0].m.visible),
           neon: !!(fx && fx.neon.length && fx.neon[0].m.visible),
-          drones: !!(fx && fx.drones.length && fx.drones[0].g.visible) } };
+          drones: !!(fx && fx.drones.length && fx.drones[0].g.visible) },
+        bots: Object.assign({}, fx && fx.botFeatures) };
     }
   };
 })();
