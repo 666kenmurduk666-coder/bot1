@@ -889,3 +889,25 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Pixel stats: `bgPct=0.2`, `edgePct=18.3`, `meanLum=98.9`,
   `highPct=0`, `nearWhitePct=0.1` — walang white-out.
 
+### Live verification (v28, production)
+- Deployed app commit `58fbea6` (mula `4dc5b73`). Render nagsilbi ng
+  `/office-v9.js?v=28` (body `149773` bytes, may `OPISINA ART ZONE`).
+- Pinatakbo ang `node restore-after-deploy.js` kaagad pagkatapos ng deploy:
+  `UNLOCK 200`, `MALL ok=23 fail=0`, `COMMERCIALS ok=19 fail=0 skip=0`,
+  `FACEBOOK 200`, `SHOPEE 200`, `AI KEYS 200`; final `mall=23`,
+  `commercials=12`.
+- Live URL `?v28live=1795153546828`: walang console errors; script
+  `/office-v9.js?v=28`; `bots=7`, `legs=[2,2,2,2,2,2,2]`,
+  `routes=[3,3,3,3,3,3,3]`; cull line na-confirm sa live HTML (`cull=true`).
+- Art zone live: `artZoneMeshes=198` sa bounding box (x≈28–37, z≈17–24).
+- ARYASKY 180 live ticks: `sawJobs={design:64, review:52, showcase:64}`,
+  `walkTicks=63`, emojis `🎨 🖌️ 💡 🔍 🖼️ 🙌 ✨ 😊`.
+- Projection check: lahat ng 7 bots ay **onscreen** sa hero camera.
+- FX: `screens=25`, `sparkles=35`, `ceilings=12` @ `opacity=0.04`,
+  `steps=9`, `moods=12`.
+- Guards `bg=fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
+- Live pixel stats: `bgPct=0.2`, `edgePct=16`, `meanLum=98.8`,
+  `highPct=0`, `nearWhitePct=0.1` — walang white-out.
+- Live data APIs: `/api/mall` → `mall` array `23` entries;
+  `/api/bazaar/commercials` → `commercials` array `12` entries.
+
