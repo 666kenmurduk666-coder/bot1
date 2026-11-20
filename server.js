@@ -1130,10 +1130,10 @@ function convoTooSimilar(lines, prev) {
 }
 
 async function generateConversation(ids) {
-  // Reuse the last conversation for 10 minutes. Multiple open tabs or a UI
-  // refresh must not each spend a separate AI call.
+  // Reuse the last conversation for 3 minutes — fresh enough to keep the 3D
+  // comic bubbles alive, while open tabs still share one AI call per window.
   const recent = state.conversations[0];
-  if (recent && Date.now() - (recent.t || 0) < 10 * 60 * 1000) return recent;
+  if (recent && Date.now() - (recent.t || 0) < 3 * 60 * 1000) return recent;
 
   // Rotate the speakers and the scene so each chat feels like a different moment.
   let chosen;
@@ -1619,20 +1619,20 @@ setInterval(async () => {
 
 /* 💬 Watercooler chatter now runs on the SERVER, so the bots keep talking even
    when no CEO tab is open / the CEO session expired. generateConversation()
-   reuses the last conversation for 10 minutes, so triggers from open tabs
-   never spend extra AI calls. */
+   reuses the last conversation for 3 minutes so the comic bubbles stay alive,
+   while open tabs still never spend extra AI calls. */
 async function conversationTick() {
   try {
     if (state.stopped || state.running || quotaLow()) return;
     const recent = state.conversations[0];
-    if (recent && Date.now() - (recent.t || 0) < 10 * 60 * 1000) return;
+    if (recent && Date.now() - (recent.t || 0) < 3 * 60 * 1000) return;
     await generateConversation();
   } catch (e) {
     log('Watercooler tick failed — ' + e.message, 'system');
   }
 }
 setTimeout(conversationTick, 30000);
-setInterval(conversationTick, 10 * 60 * 1000);
+setInterval(conversationTick, 3 * 60 * 1000);
 
 /* ================= 🛒 CYBORG BAZAAR (business-only MMORPG progression) ================= */
 const BAZAAR_LEVELS = [

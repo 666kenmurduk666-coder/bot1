@@ -3152,7 +3152,10 @@
   // even inside a narrow office panel.
   function updateBubbles(now) {
     var conv = currentConv(), lines = null, start = 0;
-    if (conv && now - conv.t < 180000 && conv.lines && conv.lines.length) {
+    // Keep comic bubbles on screen even if a scheduled AI refresh gets skipped
+    // (busy task / low quota). The server refreshes every 3 min now, so the
+    // newest conversation still swaps in as soon as it arrives.
+    if (conv && now - conv.t < 12 * 60 * 1000 && conv.lines && conv.lines.length) {
       lines = conv.lines;
       start = Math.floor(now / 3800) % lines.length;
     }
