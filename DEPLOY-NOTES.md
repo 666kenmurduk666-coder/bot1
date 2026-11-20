@@ -558,5 +558,56 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - High-object check: `high=388`, `highHidden=0`, `hidden=0` — walang naitago ang cull.
 - Pixel stats: `bgPct=0.2`, `edgePct=4.8`, `meanLum=99.8`, `meshes=3105`,
   `textured=288`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Deploy:** commit `87c81b7` pushed; Render detected `/office-v9.js?v=19`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live verification:** `bots=6`, Groq bubble visible (`Seo`), `talkers=['seo']`,
+  `convOk=true`, walang console errors. Effects: `cars=14`, `peds=11`, `signals=4`,
+  `plants=135`, `reflections=30`, `sky=1`, `windows=51`. Lahat ng entrance-road
+  projections ay onscreen; `high=388`, `highHidden=0`, `hidden=0`, `meshes=3124`,
+  `textured=296`. Animation probe: carX, pedX, signal at blind nagbago. Pixel stats:
+  `bgPct=0.2`, `edgePct=4.8`, `meanLum=99.8`; guards `bg=93a1b3`, `amb=0.58`,
+  `exposure=0.85`. Single clean live tab left, naka-set sa north-side entrance view.
 - **Cache-bust:** `/office-v9.js?v=19`.
+
+## 2026-11-20 — Side worlds + basketball bots + airplane (v20–v23 cache-bust)
+
+### Bakit ito
+- Follow-up sa request na `yung sa left and right side lagyan mo din ng kahit anong
+  idea mo` at `lagyan mo basket ball court tapos may bots don nag lalaro`,
+  tapos `lagyan mo din airplane`.
+- Ang tamang visible wedges ng current north-side camera ay: screen-left =
+  `x≈18..34, z≈35..45` at screen-right = `x≈-22..-2, z≈8..44`. Kaya ang
+  unang east-world coordinates (x≈50+) ay inilipat sa loob ng screen-left wedge.
+
+### Mga idinagdag
+- **East / screen-left café court:** stone plaza, service lane, green court,
+  fountain pond, 4 umbrellas, park benches, market stall, 2 vans, café sign,
+  bollards, 3 street lamps, trees at pedestrians — lahat nasa `x≈18..35, z≈34..45`.
+- **West / screen-right basketball block:** textured hardwood court with boundary,
+  center circle, key/three-point arcs, 2 glass backboards, orange rims and nets.
+- **4 mini ball bots:** red/blue jerseys, ellipse running routes, swinging
+  legs/arms, head bob at facing direction. Isang bot ang may hawak ng ball;
+  nagpapalit-palit ng handler, dumidribble, at pumuputok ng shot arc papunta sa
+  hoop. Ang ball ay may seams at umiikot habang gumagalaw.
+- **Airplane:** white/silver passenger jet na may wings, engines, cockpit,
+  blinking red beacon at 2 contrails. Tumatawid ito sa `x=4→42` sa `y≈11, z≈22`
+  (visible sa upper-right ng current view), may gentle bob/bank at wrap-around.
+- **Name-collision fix:** ang bagong park bench helper ay pinalitan ng
+  `parkBench()` para hindi ma-override ang orihinal na office `bench()`
+  (workstation/monitor builder); naibalik ang `screens=25`.
+- Protected Phase D v8 runtime at ang cull line sa `index.html` ay hindi binago.
+
+### Verification (v23, lokal — north-side entrance view)
+- `bots=6`, walang build error, walang console errors, script `/office-v9.js?v=23`.
+- Effects: `cars=14`, `peds=15`, `signals=4`, `plants=165`, `reflections=37`,
+  `sky=1`, `windows=58`, `screens=25`, `ballers=4`, `ball=1`, `planes=1`.
+- Animation probe: ball, lahat ng 4 ballers, airplane at beacon — **lahat nagbago**.
+- Projection check: basketball court, parehong hoop, west market/bench/van,
+  east café/pond/stall/van, airplane, entrance, crosswalk at billboard —
+  **lahat onscreen**.
+- High-object check: `high=449`, `highHidden=0`, `hidden=0`.
+  Pixel stats: `bgPct=0.2`, `edgePct=5.2`, `meanLum=99.5`, `meshes=3537`,
+  `textured=314`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- No duplicate function declarations remain.
 
