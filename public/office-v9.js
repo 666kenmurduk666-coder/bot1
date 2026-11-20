@@ -6,7 +6,9 @@
    zones. v26 view fix: ceiling tiles fade out in Silip/auto-xray so the bots
    stay easy to observe. v27 character life: walking routes, job-specific work
    animations, independent per-bot moods and extra cute shoes/hearts/sparkles.
-   North city street, x1000 entrance road and east/west side worlds remain.
+   v28: ARYASKY joins as the 7th bot/artist and builds the OPISINA ART ZONE —
+   blueprint desk, moodboards and zone maquettes as sample works. North city
+   street, x1000 entrance road and east/west side worlds remain.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -19,7 +21,8 @@
     { id: 'product', n: 'Product 📦', c: '#f0b429', x: 18, z: 10.5, face: 0 },
     { id: 'joker',   n: 'Joker 😄',   c: '#8f6fd8', x: 13, z: 23.2, face: Math.PI },
     { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 36, z: 11,   face: Math.PI / 2 },
-    { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 }
+    { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 },
+    { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   // Each bot gets its own route and work shift, so nobody just stands still.
@@ -53,12 +56,19 @@
       { x: 36, z: 28, job: 'write', dur: 5000, face: -Math.PI / 2 },
       { x: 40, z: 30, job: 'write', dur: 3400, face: 1.2 },
       { x: 33, z: 26, job: 'pack', dur: 3600, face: 2.4 }
+    ],
+    aryasky: [
+      { x: 30.1, z: 21.3, job: 'design', dur: 4600, face: Math.PI },
+      { x: 32.6, z: 21.8, job: 'review', dur: 3600, face: -0.5 },
+      { x: 35.0, z: 20.6, job: 'showcase', dur: 3800, face: -1.1 }
     ]
   };
   var MOODS = {
     greet: ['💬', '😊', '🙌'], wave: ['😄', '✨', '💚'], type: ['⌨️', '🤔', '💡'],
     pack: ['📦', '😄', '🙌'], joke: ['😄', '🤪', '✨'], plan: ['📋', '✅', '😌'],
-    write: ['✍️', '💡', '😊'], walk: ['😊', '✨', '🙂']
+    write: ['✍️', '💡', '😊'], design: ['🎨', '🖌️', '💡'],
+    review: ['📐', '🔍', '✨'], showcase: ['🖼️', '🙌', '😍'],
+    walk: ['😊', '✨', '🙂']
   };
   var cuteBots = [], animId = null, animParts = [];
   var TEX = {}, screenCounter = 0;
@@ -358,6 +368,24 @@
         q.beginPath(); q.moveTo(r() * S, r() * S); q.lineTo(r() * S, r() * S); q.stroke();
       }
       q.globalAlpha = 1;
+    }, 1, 1);
+  }
+  function blueprintTex() {
+    return makeTex('blueprint', function (q, S) {
+      q.fillStyle = '#173b46'; q.fillRect(0, 0, S, S);
+      q.strokeStyle = 'rgba(150,215,205,.22)'; q.lineWidth = 1;
+      for (var i = 0; i <= S; i += 16) {
+        q.beginPath(); q.moveTo(i, 0); q.lineTo(i, S); q.stroke();
+        q.beginPath(); q.moveTo(0, i); q.lineTo(S, i); q.stroke();
+      }
+      q.strokeStyle = '#e3b159'; q.lineWidth = 6; q.strokeRect(26, 26, S - 52, S - 52);
+      q.fillStyle = 'rgba(107,179,166,.85)';
+      q.fillRect(58, 62, 68, 62); q.fillRect(150, 62, 48, 62);
+      q.fillStyle = 'rgba(255,102,71,.8)'; q.fillRect(58, 150, 140, 40);
+      q.fillStyle = 'rgba(227,177,89,.9)'; q.fillRect(58, 206, 48, 28);
+      q.strokeStyle = '#eaf6ff'; q.lineWidth = 3;
+      q.beginPath(); q.moveTo(34, 130); q.lineTo(S - 34, 130); q.stroke();
+      q.beginPath(); q.moveTo(138, 40); q.lineTo(138, S - 40); q.stroke();
     }, 1, 1);
   }
   function wallTex() {
@@ -661,6 +689,22 @@
         if (b.arm) { b.arm.rotation.z = -.68 + Math.sin(t / 125) * .24; b.arm.rotation.x = .28 + Math.cos(t / 150) * .18; }
         if (b.armL) b.armL.rotation.z = .56 + Math.sin(t / 700) * .08;
         b.group.rotation.z = Math.sin(t / 760) * .03;
+        break;
+      case 'design':
+        if (b.arm) { b.arm.rotation.z = -.62 + Math.sin(t / 140) * .24; b.arm.rotation.x = .3 + Math.cos(t / 175) * .16; }
+        if (b.armL) { b.armL.rotation.z = .6 - Math.sin(t / 185) * .16; b.armL.rotation.x = .18; }
+        b.group.rotation.z = Math.sin(t / 880) * .035;
+        break;
+      case 'review':
+        if (b.arm) b.arm.rotation.z = -1.68 + Math.sin(t / 920) * .1;
+        if (b.armL) b.armL.rotation.z = .5 + Math.sin(t / 1080) * .1;
+        b.group.rotation.z = Math.sin(t / 1020) * .05;
+        break;
+      case 'showcase':
+        if (b.arm) b.arm.rotation.z = -2.0 + Math.sin(t / 260) * .42;
+        if (b.armL) b.armL.rotation.z = 2.0 - Math.sin(t / 260) * .42;
+        b.group.position.y = b.baseY + Math.abs(Math.sin(t / 350)) * .07;
+        b.group.rotation.z = Math.sin(t / 420) * .06;
         break;
       default:
         if (b.arm) b.arm.rotation.z = -.85 + Math.sin(t / 330) * .32;
@@ -1032,6 +1076,75 @@
     glassDoors(23, 34);
     entranceCanopy(23, 34);
     receptionDetails(); meetingDetails(); pantryDetails(); serverDetails(); wayfinding();
+  }
+  function aryaskyArtZone() {
+    // OPISINA ART ZONE — ARYASKY's sample works: moodboards, zone maquettes,
+    // a live drafting desk and the exact ARYASKY accent palette.
+    planeAt(9.2, 7.2, solid('#ffffff', { map: rugTex('#1f4f4a', '#e3b159', 2, 2), roughness: .95 }), 32.5, .012, 20.5);
+    bx(9.2, .02, .05, '#e3b159', 32.5, .024, 16.95, true);
+    bx(9.2, .02, .05, '#6bb3a6', 32.5, .024, 24.05, true);
+    bx(.05, .02, 7.2, '#ff6647', 28.0, .024, 20.5, true);
+    bx(.05, .02, 7.2, '#e3b159', 37.0, .024, 20.5, true);
+    wallSign('OPISINA ART ZONE', 'ARYASKY · LAYOUT SAMPLES', 32.5, 2.5, 16.62, 4.8, 1.0, 0, '#6bb3a6');
+    pendant(32.5, 20.5, '#6bb3a6');
+
+    // Drafting desk with a real blueprint surface and the 3 accent swatches.
+    [[29.0, 19.75], [29.0, 20.95], [31.2, 19.75], [31.2, 20.95]].forEach(function (p) {
+      box(.09, .72, .09, '#5a4632', p[0], .36, p[1]);
+    });
+    box(2.6, .12, 1.5, solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 2, 1) }), 30.1, .78, 20.35);
+    box(2.45, .03, 1.35, '#d9e4ef', 30.1, .86, 20.35);
+    var plan = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.2),
+      new THREE.MeshBasicMaterial({ map: blueprintTex(), side: THREE.DoubleSide, toneMapped: false }));
+    plan.rotation.x = -Math.PI / 2; plan.position.set(30.1, .885, 20.35); addO(plan);
+    ['#e3b159', '#6bb3a6', '#ff6647'].forEach(function (c, i) {
+      box(.34, .014, .18, c, 29.25 + i * .42, .9, 21.0);
+    });
+    box(.75, .05, .48, '#1b2537', 31.1, .91, 20.95);
+    bx(.65, .02, .38, '#6bb3a6', 31.1, .945, 20.95, true);
+    officeChair(30.1, 21.95, Math.PI, '#3f7d78');
+
+    // Three layout maquettes: Class Plaza, Combat Arena and Flight Zone.
+    [33.0, 35.0, 37.0].forEach(function (x, i) {
+      box(.9, .75, .9, '#2f3d52', x, .375, 19.2);
+      box(.96, .03, .96, '#d9e4ef', x, .77, 19.2);
+      bx(.7, .02, .05, ['#e3b159', '#6bb3a6', '#ff6647'][i], x, .795, 19.68, true);
+    });
+    for (var k = 0; k < 8; k++) {
+      var a = k / 8 * Math.PI * 2;
+      cyl(.045, .12, ['#e3b159', '#6bb3a6', '#ff6647', '#e8d6b8'][k % 4],
+        33 + Math.cos(a) * .28, .86, 19.2 + Math.sin(a) * .28);
+    }
+    var core = new THREE.Mesh(new THREE.SphereGeometry(.07, 8, 6),
+      solid('#e3b159', { emissive: '#e3b159', emissiveIntensity: .8 }));
+    core.position.set(33, .87, 19.2); addO(core);
+    [[-.3, -.3], [-.3, .3], [.3, -.3], [.3, .3]].forEach(function (p, j) {
+      box(.09, .22, .09, '#8b96a5', 35 + p[0], .89, 19.2 + p[1]);
+      var brazier = new THREE.Mesh(new THREE.SphereGeometry(.055, 8, 6),
+        solid(j % 2 ? '#e3b159' : '#ff6647', { emissive: '#ff6647', emissiveIntensity: .9 }));
+      brazier.position.set(35 + p[0], 1.03, 19.2 + p[1]); addO(brazier);
+    });
+    box(.5, .02, .5, '#6b7a8c', 35, .8, 19.2);
+    cyl(.06, .55, '#6bb3a6', 37, 1.05, 19.2);
+    var wingRing = new THREE.Mesh(new THREE.TorusGeometry(.26, .02, 8, 20),
+      solid('#e3b159', { emissive: '#e3b159', emissiveIntensity: .6 }));
+    wingRing.rotation.x = Math.PI / 2; wingRing.position.set(37, 1.28, 19.2); addO(wingRing);
+    box(.6, .02, .6, '#8b96a5', 37, .8, 19.2);
+
+    // Two angled sample-art boards so the work is readable from the hero camera.
+    function board(x, z, seed, col) {
+      box(1.7, .12, .9, '#0f1b2e', x, .55, z);
+      box(.12, .55, .12, '#5a4632', x, .28, z + .25);
+      box(.12, .55, .12, '#5a4632', x, .28, z - .25);
+      var back = new THREE.Mesh(new THREE.PlaneGeometry(1.54, 1.04), solid('#0f1b2e', { side: THREE.DoubleSide }));
+      back.rotation.x = -Math.PI / 2 - .55; back.position.set(x, 1.02, z); addO(back);
+      var face = new THREE.Mesh(new THREE.PlaneGeometry(1.44, .94),
+        new THREE.MeshBasicMaterial({ map: artTex(seed), side: THREE.DoubleSide, toneMapped: false }));
+      face.rotation.x = -Math.PI / 2 - .55; face.position.set(x, 1.035, z - .012); addO(face);
+      bx(1.4, .02, .05, col, x, .72, z + .35, true);
+    }
+    board(32.0, 21.9, 1, '#e3b159');
+    board(34.2, 21.9, 2, '#6bb3a6');
   }
   function presentationScreen(x, z, rot) {
     var g2 = new THREE.Group();
@@ -2399,8 +2512,9 @@
     sideWorlds();
     airplane();
     buildingEnhancements();
+    aryaskyArtZone();
 
-    // ---- 6 small, cute, happy bots ----
+    // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;
     BOTS.forEach(function (b, idx) {
       var c;

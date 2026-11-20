@@ -849,3 +849,43 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `/api/mall` at `/api/bazaar/commercials` return 200; data `mall=23`,
   `commercials=12`.
 
+## 2026-11-20 — ARYASKY artist + OPISINA ART ZONE (v28 cache-bust)
+
+### Bakit ito
+- User: `sige idag dag mo at gusto ko sample siya ng mga gawa niya dito
+  pagawain mo siya ng mga bagay na kelangan sa office natin` at
+  `or opisina zone`. Kaya si ARYASKY (handoff artist) ay idinagdag bilang
+  ikapitang bot, at may sariling sample-work area sa mismong opisina.
+
+### Changes
+- Bagong bot: `ARYASKY 🎨`, kulay `#6bb3a6`, may 3-stop route: `design` sa
+  drafting desk, `review` sa mga moodboard, at `showcase` sa mga maquette.
+ 独立 moods: `🎨 🖌️ 💡`, `📐 🔍 ✨`, `🖼️ 🙌 😍`. May sariling work animations
+  (pagguhit, pagrepaso kamay-sa-baba, at pagpapakita ng dalawang kamay).
+- **OPISINA ART ZONE** sa gitna ng opisina (x≈28–37, z≈17–24):
+  - blueprint drafting desk na may wood top, 4 na binti, tablet at 3 accent
+    swatches (`#e3b159`, `#6bb3a6`, `#ff6647` — eksaktong ARYASKY palette),
+  - 2 angled sample-art boards gamit ang `artTex()`,
+  - 3 zone maquettes: Class Plaza (8 pedestal), Combat Arena (4 pillar + 4
+    brazier), at Flight Zone (tower + wing ring),
+  - rug, accent border strips, wall sign `OPISINA ART ZONE / ARYASKY · LAYOUT
+    SAMPLES`, at pendant.
+- Lahat ng bagong objects ay dumaan sa `addO()` / final v9 traverse, kaya hindi
+  sila matatago ng simple-mode cull. Protected v8 runtime, cull line,
+  `makeTex()` guard at white-out guards ay hindi binago.
+
+### Verification (v28, lokal)
+- Walang console errors; script `/office-v9.js?v=28`; `bots=7`
+  (`cos, seo, product, joker, mgr, writer, aryasky`).
+- Rig: `legs=[2,2,2,2,2,2,2]`, `routes=[3,3,3,3,3,3,3]`.
+- Art zone: `artZoneMeshes=163` sa bounding box; `screens=25`,
+  `sparkles=35` (7 bots × 5), `ceilings=12` @ `opacity=0.04`.
+- 100 manual ticks: ARYASKY `sawJobs={design:55, review:45}`, `walkTicks=27`,
+  emojis `🎨 🖌️ 💡 ✨ 📐 🙂`. 180-tick follow-up: lahat ng 3 jobs lumabas
+  (`design:61`, `review:55`, `showcase:64`), `walkTicks=63`, emojis
+  `🎨 🖌️ 💡 🔍 🖼️ 🙌 ✨ 🙂`.
+- Projection check: lahat ng 7 bots ay **onscreen**, kasama si ARYASKY.
+- Guards `bg=fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
+- Pixel stats: `bgPct=0.2`, `edgePct=18.3`, `meanLum=98.9`,
+  `highPct=0`, `nearWhitePct=0.1` — walang white-out.
+
