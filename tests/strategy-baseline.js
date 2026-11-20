@@ -111,7 +111,9 @@ const protectedHashes = {
   // hidden-tab skip, throttled frame3D fx updates; cache-bust office-v9 v41/v42.
   // 2026-11-21: ARYASKY-style beautification pass - richer landscape, farm, entrance
   // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
-  'public/index.html': '2b513cbc8a525e331f508a972c0330c662add4f5cfa1c9dda492594b917ba4ac',
+  // 2026-11-21: character 4D time-life pass - breathing, attention drift, weight
+  // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
+  'public/index.html': '3a9697b549d4551a3c85bb539c435cb92f1a10a655463f37c1a8eec4b701e412',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -171,7 +173,9 @@ const protectedHashes = {
   // rooftop/basement by default in buildBatch1World to cut draw calls/CPU.
   // 2026-11-21: beautification pass - cohesive exterior/interior visual polish
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
-  'public/office-v9.js': '2ec56122729b3b90642f5e1d05cd8bb72aa235181c96ec0056653f69e8023d09',
+  // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
+  // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
+  'public/office-v9.js': 'a2c186aca4e04833f2fadfa1452e416090542eca6b35288f239161ea43102a19',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

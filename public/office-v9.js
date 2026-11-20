@@ -758,6 +758,14 @@
   }
   function animateBotWork(b, now, i) {
     var t = now + b.phase * 900;
+    var life = now / 1000 + b.phase;
+    // v56 character 4D time-life: breathing presence, attention drift, micro-lean.
+    if (b.head) {
+      b.head.rotation.y = Math.sin(life * 0.58) * 0.1 + Math.sin(life * 1.25) * 0.03;
+      b.head.rotation.x = Math.sin(life * 0.72 + 1.1) * 0.035 + Math.sin(life * 1.7) * 0.01;
+      b.head.rotation.z = Math.sin(life * 0.44 + 0.6) * 0.018;
+    }
+    b.group.rotation.x = Math.sin(life * 0.82) * 0.012;
     switch (b.job) {
       case 'wave':
       case 'greet':
@@ -812,10 +820,12 @@
       default:
         if (b.arm) b.arm.rotation.z = -.85 + Math.sin(t / 330) * .32;
         if (b.armL) b.armL.rotation.z = .85 - Math.sin(t / 330) * .32;
+        b.group.position.y = b.baseY + Math.sin(life * 1.15) * .018;
+        b.group.rotation.z = Math.sin(life * 0.52) * .03;
     }
     if (b.legs) {
-      b.legs[0].rotation.x = Math.sin(t / 700) * .08;
-      b.legs[1].rotation.x = -Math.sin(t / 700) * .08;
+      b.legs[0].rotation.x = Math.sin(t / 700) * .08 + Math.sin(life * 1.6) * .01;
+      b.legs[1].rotation.x = -Math.sin(t / 700) * .08 - Math.sin(life * 1.6) * .01;
     }
   }
   function updateBotParticles(now) {
@@ -3237,15 +3247,23 @@
         b.group.position.y = b.baseY + Math.abs(Math.sin(now / 150 + b.phase)) * .075;
         b.group.rotation.y = b.face;
         b.group.rotation.z = Math.sin(now / 300 + b.phase) * .05;
+        b.group.rotation.x = Math.sin(now / 450 + b.phase) * .018;
         var sw = Math.sin(now / 145 + b.phase) * .6;
         if (b.legs) { b.legs[0].rotation.x = sw; b.legs[1].rotation.x = -sw; }
         if (b.arm) { b.arm.rotation.z = -.85 - sw * .45; b.arm.rotation.x = 0; }
         if (b.armL) { b.armL.rotation.z = .85 - sw * .45; b.armL.rotation.x = 0; }
+        if (b.head) {
+          b.head.rotation.y = Math.sin(now / 1200 + b.phase) * 0.08;
+          b.head.rotation.x = Math.sin(now / 900 + b.phase) * 0.028;
+          b.head.rotation.z = Math.sin(now / 1500 + b.phase) * 0.012;
+        }
         if (now - b.stepAt > 260) { stepPuff(b, now); b.stepAt = now; }
         if (p >= 1) { b.wp = b.nextWp; startBotWork(b, now); }
       } else {
         var st = b.route[b.wp];
-        b.group.position.x = st.x; b.group.position.z = st.z;
+        var lifeW = now / 1000 + b.phase;
+        b.group.position.x = st.x + Math.sin(lifeW * 0.43) * 0.012;
+        b.group.position.z = st.z + Math.cos(lifeW * 0.37) * 0.012;
         b.group.position.y = b.baseY + Math.sin(now / 520 + b.phase) * .035;
         b.group.rotation.y = turnTo(b.group.rotation.y, b.face, botDt * 5);
         animateBotWork(b, now, i);
@@ -3254,8 +3272,16 @@
           setBotMood(b, b.job, now, true);
         }
       }
+      var life = now / 1000 + b.phase;
+      var breath = 1 + Math.sin(life * 1.15) * 0.012;
       var squash = 1 + Math.sin(now / 330 + b.phase) * (b.walking ? .035 : .018);
-      b.group.scale.set(b.baseScale, b.baseScale * squash, b.baseScale);
+      // v56 character 4D: subtle breathing, talking bounce/nod, antenna life.
+      if (b.talking) {
+        b.group.position.y += 0.018 + Math.sin(now / 220 + b.phase) * 0.012;
+        if (b.head) b.head.rotation.x += 0.03 + Math.sin(now / 190 + b.phase) * 0.015;
+      }
+      b.group.scale.set(b.baseScale * breath, b.baseScale * squash, b.baseScale / Math.sqrt(breath));
+      if (b.tip) b.tip.position.y = 1.15 + Math.sin(life * 2.1) * 0.012 + Math.sin(life * 3.4) * 0.005;
       var pulse = .5 + .5 * Math.sin(now / 600 + i);
       if (b.aura) {
         b.aura.position.set(b.group.position.x, .028, b.group.position.z);
@@ -4280,7 +4306,10 @@
     if (b.roleTag) b.roleTag.visible = f.nameplates !== false;
     // 18 — occasional stretch / yawn / coffee-sip idle beats.
     function resetIdle() {
-      if (b.head) b.head.scale.y = 1;
+      if (b.head) {
+        b.head.scale.y = 1;
+        b.head.rotation.x = 0; b.head.rotation.y = 0; b.head.rotation.z = 0;
+      }
       if (b.cup) b.cup.visible = false;
       b.idleUntil = 0; b.idleKind = '';
     }
@@ -4295,11 +4324,14 @@
         if (b.armL) b.armL.rotation.z = 2.8;
         b.group.position.y = b.baseY + .07;
         b.head.scale.y = 1.08;
+        b.head.rotation.x = -0.09; b.head.rotation.y = Math.sin(now / 420) * 0.03; b.head.rotation.z = 0;
       } else if (k === 'yawn') {
         b.head.scale.y = 1.2;
+        b.head.rotation.x = -0.11; b.head.rotation.y = Math.sin(now / 260) * 0.04; b.head.rotation.z = Math.sin(now / 180) * 0.03;
         b.group.rotation.z = Math.sin(now / 120) * .06;
       } else {
         b.cup.visible = true;
+        b.head.rotation.x = 0.085 + Math.sin(now / 220) * 0.02; b.head.rotation.y = 0.05; b.head.rotation.z = 0;
         if (b.arm) b.arm.rotation.z = -1.55 + Math.sin(now / 180) * .12;
       }
       return;
