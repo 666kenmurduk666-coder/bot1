@@ -195,17 +195,22 @@
     return t;
   }
   function carpetTex(base, line, rx, ry) {
-    return makeTex('carpet-' + base + '-' + line, function (q, S) {
+    return makeTex('carpet-' + base + '-' + line + '-v2', function (q, S) {
       q.fillStyle = base; q.fillRect(0, 0, S, S);
       var r = rnd(19);
-      for (var i = 0; i < 3200; i++) {
-        q.fillStyle = 'rgba(255,255,255,' + (.025 + r() * .07).toFixed(3) + ')';
-        q.fillRect(r() * S, r() * S, 1.6, 1.6);
+      for (var i = 0; i < 3400; i++) {
+        q.fillStyle = 'rgba(255,255,255,' + (.02 + r() * .08).toFixed(3) + ')';
+        q.fillRect(r() * S, r() * S, 1.5, 1.5);
       }
-      q.globalAlpha = .32; q.strokeStyle = line; q.lineWidth = 2;
+      q.globalAlpha = .3; q.strokeStyle = line; q.lineWidth = 2;
       for (var p = 0; p <= S; p += 32) {
         q.beginPath(); q.moveTo(p, 0); q.lineTo(p, S); q.stroke();
         q.beginPath(); q.moveTo(0, p); q.lineTo(S, p); q.stroke();
+      }
+      q.globalAlpha = .12; q.lineWidth = 1;
+      for (var p2 = 16; p2 <= S; p2 += 32) {
+        q.beginPath(); q.moveTo(p2, 0); q.lineTo(p2, S); q.stroke();
+        q.beginPath(); q.moveTo(0, p2); q.lineTo(S, p2); q.stroke();
       }
       q.globalAlpha = 1;
     }, rx, ry);
@@ -2277,6 +2282,11 @@
     box(w, h, d, solid(color, { roughness: .9 }), x, h / 2, z);
     box(w + .2, .16, d + .2, '#9aa6b8', x, h + .08, z);
     box(.12, h - .2, d + .04, '#4d5a71', x - w / 2 - .06, h / 2, z);
+    // roof AC unit and small door
+    box(.7, .35, .5, '#8b97a5', x + w * 0.18, h + .34, z - d * 0.1);
+    cyl(.12, .02, '#6e7c8f', x + w * 0.18, h + .53, z - d * 0.1);
+    box(.8, 1.35, .06, '#4b586b', x - w * 0.22, .68, z + d / 2 + .04);
+    box(.06, .02, .02, '#d8c39a', x - w * 0.12, .72, z + d / 2 + .08);
     for (var wy = 1.8; wy < h - 1; wy += 1.9) {
       for (var wx = -w / 2 + 1; wx <= w / 2 - 1; wx += 1.4) {
         var lit = (Math.round(wy * 10) + Math.round(wx * 10) + Math.round(x)) % 4 !== 0;
