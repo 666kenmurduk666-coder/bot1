@@ -4,8 +4,9 @@
    suspended ceiling tiles, HVAC vents, sprinklers, glass entry doors/canopy,
    wainscot, terrazzo, wayfinding and detailed reception/meeting/pantry/server
    zones. v26 view fix: ceiling tiles fade out in Silip/auto-xray so the bots
-   stay easy to observe. North city street, x1000 entrance road and east/west
-   side worlds remain.
+   stay easy to observe. v27 character life: walking routes, job-specific work
+   animations, independent per-bot moods and extra cute shoes/hearts/sparkles.
+   North city street, x1000 entrance road and east/west side worlds remain.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -21,11 +22,49 @@
     { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
-  var cuteBots = [], lastEmo = 0, animId = null, animParts = [];
+  // Each bot gets its own route and work shift, so nobody just stands still.
+  var BOT_ROUTES = {
+    cos: [
+      { x: 23, z: 27.5, job: 'greet', dur: 4200, face: Math.PI },
+      { x: 19.5, z: 30.2, job: 'wave', dur: 3200, face: -.6 },
+      { x: 26.5, z: 29.4, job: 'greet', dur: 3600, face: 2.4 }
+    ],
+    seo: [
+      { x: 10, z: 10.5, job: 'type', dur: 5000, face: 0 },
+      { x: 14, z: 10.5, job: 'plan', dur: 3400, face: -1.2 },
+      { x: 12, z: 14.2, job: 'type', dur: 3600, face: Math.PI }
+    ],
+    product: [
+      { x: 18, z: 10.5, job: 'pack', dur: 4600, face: 0 },
+      { x: 21, z: 8.2, job: 'plan', dur: 3200, face: 1.1 },
+      { x: 16, z: 14, job: 'pack', dur: 3800, face: Math.PI }
+    ],
+    joker: [
+      { x: 13, z: 23.2, job: 'joke', dur: 3800, face: Math.PI },
+      { x: 18, z: 22, job: 'wave', dur: 3000, face: -1.4 },
+      { x: 10, z: 27, job: 'joke', dur: 3600, face: .6 }
+    ],
+    mgr: [
+      { x: 36, z: 11, job: 'plan', dur: 4800, face: Math.PI / 2 },
+      { x: 40, z: 12.5, job: 'plan', dur: 3400, face: -1 },
+      { x: 33, z: 8, job: 'type', dur: 3600, face: 2.2 }
+    ],
+    writer: [
+      { x: 36, z: 28, job: 'write', dur: 5000, face: -Math.PI / 2 },
+      { x: 40, z: 30, job: 'write', dur: 3400, face: 1.2 },
+      { x: 33, z: 26, job: 'pack', dur: 3600, face: 2.4 }
+    ]
+  };
+  var MOODS = {
+    greet: ['💬', '😊', '🙌'], wave: ['😄', '✨', '💚'], type: ['⌨️', '🤔', '💡'],
+    pack: ['📦', '😄', '🙌'], joke: ['😄', '🤪', '✨'], plan: ['📋', '✅', '😌'],
+    write: ['✍️', '💡', '😊'], walk: ['😊', '✨', '🙂']
+  };
+  var cuteBots = [], animId = null, animParts = [];
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [] };
+    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [] };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -475,11 +514,12 @@
       var foot = new THREE.Mesh(new THREE.SphereGeometry(.1, 8, 6), solid(bot.c));
       foot.scale.set(1, .45, 1.35); foot.position.set(side * .17, .035, .12);
       foot.userData.v9 = true; group.add(foot);
-      var hand = new THREE.Mesh(new THREE.SphereGeometry(.075, 8, 6), solid('#f7f3ec'));
-      hand.position.set(side * .36, .72, .08); hand.userData.v9 = true; group.add(hand);
     });
     var armL = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .34, 8), solid(bot.c));
     armL.position.set(-.3, .72, .08); armL.rotation.z = .85; armL.userData.v9 = true; group.add(armL);
+    // Hand rides at the end of the left arm, so typing/waving reads clearly.
+    var handL = new THREE.Mesh(new THREE.SphereGeometry(.075, 8, 6), solid('#f7f3ec'));
+    handL.position.set(0, -.17, 0); handL.userData.v9 = true; armL.add(handL);
     var stalk = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .2, 6), solid('#4b5a70'));
     stalk.position.set(0, 1.02, 0); stalk.userData.v9 = true; group.add(stalk);
     var tip = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8),
@@ -491,8 +531,169 @@
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
     aura.rotation.x = -Math.PI / 2; aura.position.set(bot.x, .028, bot.z); aura.renderOrder = 3; addO(aura);
     fx.auras.push({ m: aura, p: idx * 1.9 });
-    reflection(bot.x, bot.z + .1, .75, .95, bot.c, 0, .075);
-    return { armL: armL, aura: aura, tip: tip };
+    var refl = reflection(bot.x, bot.z + .1, .75, .95, bot.c, 0, .075);
+    return { armL: armL, aura: aura, tip: tip, refl: refl };
+  }
+  function cuteRig(group, bot, idx) {
+    // Tiny legs with shiny shoes make the walk readable even from the hero camera.
+    var legs = [];
+    [-1, 1].forEach(function (side) {
+      var pivot = new THREE.Group();
+      pivot.position.set(side * .13, .22, .02); pivot.userData.v9 = true;
+      var leg = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .24, 8), solid(bot.c));
+      leg.position.y = -.12; leg.userData.v9 = true; pivot.add(leg);
+      var shoe = new THREE.Mesh(new THREE.SphereGeometry(.095, 8, 6), solid('#2b3a4f'));
+      shoe.scale.set(1, .5, 1.5); shoe.position.set(0, -.245, .055);
+      shoe.userData.v9 = true; pivot.add(shoe);
+      var shine = new THREE.Mesh(new THREE.SphereGeometry(.025, 6, 4), solid('#ffffff'));
+      shine.position.set(0, -.235, .13); shine.userData.v9 = true; pivot.add(shine);
+      group.add(pivot); legs.push(pivot);
+    });
+    // Heart cheeks + floating star confetti: small, cheap, very cute.
+    [-1, 1].forEach(function (side) {
+      var heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#ff9fc0',
+        transparent: true, opacity: .5, depthWrite: false, toneMapped: false }));
+      heart.position.set(side * .245, .4, .36); heart.scale.set(.12, .12, 1);
+      heart.userData.v9 = true; group.add(heart);
+    });
+    for (var i = 0; i < 3; i++) {
+      var a = idx * 1.7 + i * 2.1;
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(),
+        color: i === 1 ? '#fff0a8' : '#ffffff', transparent: true, opacity: .45,
+        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      s.position.set(Math.cos(a) * .55, 1.12 + (i - 1) * .16, Math.sin(a) * .3);
+      s.scale.setScalar(.08 + i * .015); s.userData.v9 = true; group.add(s);
+      fx.sparkles.push({ m: s, base: s.position.x, p: a });
+    }
+    return { legs: legs };
+  }
+  function stepPuff(b, now) {
+    if (fx.steps.length > 40) return;
+    for (var i = 0; i < 2; i++) {
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(),
+        color: i ? '#d9f4ff' : '#ffffff', transparent: true, opacity: .5,
+        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      s.position.set(b.group.position.x + (i ? -.12 : .12), .06 + i * .03, b.group.position.z);
+      s.scale.setScalar(.12); s.renderOrder = 4; addO(s);
+      fx.steps.push({ m: s, t0: now, life: 520 + i * 120, base: s.position.y });
+    }
+  }
+  function moodPop(b, now) {
+    if (fx.moods.length > 36) return;
+    for (var i = 0; i < 3; i++) {
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(),
+        color: i === 1 ? '#ffe9a8' : b.tip ? b.tip.material.color.getHex() : '#ffffff',
+        transparent: true, opacity: .55, blending: THREE.AdditiveBlending,
+        depthWrite: false, toneMapped: false }));
+      s.position.set(b.group.position.x + (i - 1) * .13, 1.5 + i * .05, b.group.position.z);
+      s.scale.setScalar(.09); s.renderOrder = 4; addO(s);
+      fx.moods.push({ m: s, t0: now, life: 780, baseX: s.position.x, baseY: s.position.y, p: i });
+    }
+  }
+  function turnTo(cur, target, t) {
+    var d = ((target - cur + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    return cur + d * Math.max(0, Math.min(1, t));
+  }
+  function setBotMood(b, kind, now, pop) {
+    var list = MOODS[kind] || MOODS.walk;
+    var em = list[Math.floor(now / 1100 + b.phase * 3) % list.length];
+    b.mood = kind;
+    if (em === b.lastEmoji) return;
+    b.lastEmoji = em;
+    try { setEmo(b.emo, em); } catch (e) {}
+    if (pop) moodPop(b, now);
+  }
+  function startBotWork(b, now) {
+    var st = b.route[b.wp];
+    b.walking = false;
+    b.job = st.job;
+    b.face = st.face == null ? b.face : st.face;
+    b.jobUntil = now + (st.dur || 3500);
+    b.emoAt = now;
+    setBotMood(b, b.job, now, true);
+  }
+  function startBotWalk(b, now) {
+    var next = (b.wp + 1) % b.route.length;
+    var st = b.route[next];
+    var dx = st.x - b.group.position.x, dz = st.z - b.group.position.z;
+    b.walking = true;
+    b.nextWp = next;
+    b.walkFrom = { x: b.group.position.x, z: b.group.position.z };
+    b.walkTo = { x: st.x, z: st.z };
+    b.walkDur = Math.max(750, Math.min(2600, Math.sqrt(dx * dx + dz * dz) / (b.speed || 1.15) * 1000));
+    b.walkStart = now;
+    b.stepAt = 0;
+    setBotMood(b, 'walk', now, true);
+  }
+  function animateBotWork(b, now, i) {
+    var t = now + b.phase * 900;
+    switch (b.job) {
+      case 'wave':
+      case 'greet':
+        if (b.arm) b.arm.rotation.z = -2.25 + Math.sin(t / 190) * .34;
+        if (b.armL) b.armL.rotation.z = .8 + Math.sin(t / 620) * .12;
+        b.group.position.y = b.baseY + Math.abs(Math.sin(t / 310)) * .08;
+        b.group.rotation.z = Math.sin(t / 740) * .035;
+        break;
+      case 'type':
+        if (b.arm) { b.arm.rotation.z = -.58 + Math.sin(t / 135) * .2; b.arm.rotation.x = .22 + Math.cos(t / 170) * .12; }
+        if (b.armL) { b.armL.rotation.z = .58 - Math.sin(t / 155) * .18; b.armL.rotation.x = .18 + Math.sin(t / 190) * .12; }
+        b.group.rotation.z = Math.sin(t / 830) * .025;
+        break;
+      case 'pack':
+        if (b.arm) b.arm.rotation.z = -1.18 + Math.sin(t / 270) * .34;
+        if (b.armL) b.armL.rotation.z = 1.18 - Math.sin(t / 270) * .34;
+        b.group.position.y = b.baseY + Math.abs(Math.sin(t / 400)) * .045;
+        b.group.rotation.z = Math.sin(t / 390) * .06;
+        break;
+      case 'plan':
+        if (b.arm) b.arm.rotation.z = -1.72 + Math.sin(t / 880) * .1;
+        if (b.armL) b.armL.rotation.z = .46 + Math.sin(t / 1120) * .1;
+        b.group.rotation.z = Math.sin(t / 1030) * .055;
+        break;
+      case 'joke':
+        if (b.arm) b.arm.rotation.z = -1.9 + Math.sin(t / 230) * .5;
+        if (b.armL) b.armL.rotation.z = 1.9 - Math.sin(t / 230) * .5;
+        b.group.position.y = b.baseY + Math.abs(Math.sin(t / 220)) * .1;
+        b.group.rotation.z = Math.sin(t / 330) * .085;
+        break;
+      case 'write':
+        if (b.arm) { b.arm.rotation.z = -.68 + Math.sin(t / 125) * .24; b.arm.rotation.x = .28 + Math.cos(t / 150) * .18; }
+        if (b.armL) b.armL.rotation.z = .56 + Math.sin(t / 700) * .08;
+        b.group.rotation.z = Math.sin(t / 760) * .03;
+        break;
+      default:
+        if (b.arm) b.arm.rotation.z = -.85 + Math.sin(t / 330) * .32;
+        if (b.armL) b.armL.rotation.z = .85 - Math.sin(t / 330) * .32;
+    }
+    if (b.legs) {
+      b.legs[0].rotation.x = Math.sin(t / 700) * .08;
+      b.legs[1].rotation.x = -Math.sin(t / 700) * .08;
+    }
+  }
+  function updateBotParticles(now) {
+    var i;
+    for (i = fx.steps.length - 1; i >= 0; i--) {
+      var a = fx.steps[i], p = (now - a.t0) / a.life;
+      if (p >= 1) {
+        if (a.m.parentNode) a.m.parentNode.removeChild(a.m);
+        a.m.material.dispose(); fx.steps.splice(i, 1); continue;
+      }
+      a.m.position.y = a.base + p * .16;
+      a.m.material.opacity = .45 * (1 - p);
+      a.m.scale.setScalar(.1 + p * .2);
+    }
+    for (i = fx.moods.length - 1; i >= 0; i--) {
+      var q = fx.moods[i], r = (now - q.t0) / q.life;
+      if (r >= 1) {
+        if (q.m.parentNode) q.m.parentNode.removeChild(q.m);
+        q.m.material.dispose(); fx.moods.splice(i, 1); continue;
+      }
+      q.m.position.y = q.baseY + r * .48;
+      q.m.position.x = q.baseX + (q.p - 1) * r * .22;
+      q.m.material.opacity = .6 * (1 - r);
+      q.m.scale.setScalar(.08 + r * .1);
+    }
   }
   function miniDeskPlant(g2, x, z) {
     var pot = new THREE.Mesh(new THREE.CylinderGeometry(.055, .045, .09, 8), solid('#c07a52'));
@@ -2009,7 +2210,7 @@
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [] };
+    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [] };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -2209,7 +2410,9 @@
       var tag = c.group.children.filter(function (o) { return o.isSprite && o !== c.emo; })[0];
       if (tag) tag.position.set(0, 2.02, 0);
       var arm = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .34, 8), solid(b.c));
-      arm.position.set(.3, .72, .08); arm.rotation.z = -.85; c.group.add(arm);
+      arm.position.set(.3, .72, .08); arm.rotation.z = -.85; arm.userData.v9 = true; c.group.add(arm);
+      var handR = new THREE.Mesh(new THREE.SphereGeometry(.075, 8, 6), solid('#f7f3ec'));
+      handR.position.set(0, -.17, 0); handR.userData.v9 = true; arm.add(handR);
       if (b.id === 'cos') {
         var band = new THREE.Mesh(new THREE.TorusGeometry(.4, .03, 8, 16, Math.PI), solid('#2f3d52'));
         band.position.set(0, .58, 0); band.rotation.z = Math.PI; c.group.add(band);
@@ -2236,11 +2439,21 @@
       el.className = 'bub3d v9bub'; el.style.display = 'none';
       host.appendChild(el);
       var flair = botFlair(c.group, b, idx);
-      cuteBots.push({
-        id: b.id, n: b.n, group: c.group, emo: c.emo, arm: arm, armL: flair.armL,
-        aura: flair.aura, tip: flair.tip, talking: false, bubble: el,
-        baseY: 0, phase: idx * 1.1, face: b.face, tx: b.x, tz: b.z
-      });
+      var rig = cuteRig(c.group, b, idx);
+      var route = BOT_ROUTES[b.id] || [{ x: b.x, z: b.z, job: 'greet', dur: 4000, face: b.face }];
+      var bot = {
+        id: b.id, n: b.n, group: c.group, shadow: c.shadow, emo: c.emo,
+        arm: arm, armL: flair.armL, legs: rig.legs,
+        aura: flair.aura, tip: flair.tip, refl: flair.refl,
+        talking: false, bubble: el,
+        baseY: 0, baseScale: .74, phase: idx * 1.1, face: b.face,
+        route: route, wp: 0, job: route[0].job, jobUntil: Date.now() + (route[0].dur || 3500),
+        walking: false, nextWp: 0, walkFrom: null, walkTo: null, walkStart: 0, walkDur: 1000,
+        speed: 1.05 + idx * .07, emoAt: 0, stepAt: 0, lastEmoji: '', mood: '',
+        tx: b.x, tz: b.z
+      };
+      cuteBots.push(bot);
+      setBotMood(bot, bot.job, Date.now(), false);
       botSparkles(c.group, idx);
     });
 
@@ -2270,6 +2483,7 @@
     }
     var host = document.getElementById('oc3d');
     if (!host) return;
+    try { if (camera3d && camera3d.updateMatrixWorld) camera3d.updateMatrixWorld(true); } catch (e) {}
     var w = host.clientWidth || 900, h = host.clientHeight || 520;
     cuteBots.forEach(function (b) {
       var show = active && active.id === b.id && typeof camera3d !== 'undefined' && camera3d;
@@ -2291,7 +2505,9 @@
     if (document.hidden) return;
     var now = Date.now();
     if (now - (tick.last || 0) < 33) return;
+    var prevTick = tick.last || now;
     tick.last = now;
+    var botDt = Math.min(.12, Math.max(0, (now - prevTick) / 1000));
     try {
       if (scene3d) {
         if (scene3d.background && scene3d.background.getHexString() !== '93a1b3') scene3d.background.set('#93a1b3');
@@ -2303,20 +2519,55 @@
     } catch (e) {}
     applyCeilingView();
     cuteBots.forEach(function (b, i) {
-      b.group.position.y = b.baseY + Math.sin(now / 430 + b.phase) * .055;
-      b.group.rotation.y = b.face + Math.sin(now / 1700 + i) * .28;
-      if (b.arm) b.arm.rotation.z = -.85 + Math.sin(now / 330 + i) * .38;
-      if (b.armL) b.armL.rotation.z = .85 - Math.sin(now / 330 + i) * .38;
-      if (b.aura) {
-        var pulse = .5 + .5 * Math.sin(now / 600 + i);
-        b.aura.material.opacity = b.talking ? .22 + .16 * pulse : .08 + .06 * pulse;
-        b.aura.scale.setScalar(b.talking ? 1.08 + .08 * pulse : 1 + .03 * pulse);
+      if (!b.walking && now >= b.jobUntil) startBotWalk(b, now);
+      if (b.walking) {
+        var p = Math.min(1, (now - b.walkStart) / b.walkDur);
+        var ease = p * p * (3 - 2 * p);
+        b.group.position.x = b.walkFrom.x + (b.walkTo.x - b.walkFrom.x) * ease;
+        b.group.position.z = b.walkFrom.z + (b.walkTo.z - b.walkFrom.z) * ease;
+        var heading = Math.atan2(b.walkTo.x - b.walkFrom.x, b.walkTo.z - b.walkFrom.z);
+        b.face = turnTo(b.face, heading, botDt * 7);
+        b.group.position.y = b.baseY + Math.abs(Math.sin(now / 150 + b.phase)) * .075;
+        b.group.rotation.y = b.face;
+        b.group.rotation.z = Math.sin(now / 300 + b.phase) * .05;
+        var sw = Math.sin(now / 145 + b.phase) * .6;
+        if (b.legs) { b.legs[0].rotation.x = sw; b.legs[1].rotation.x = -sw; }
+        if (b.arm) { b.arm.rotation.z = -.85 - sw * .45; b.arm.rotation.x = 0; }
+        if (b.armL) { b.armL.rotation.z = .85 - sw * .45; b.armL.rotation.x = 0; }
+        if (now - b.stepAt > 260) { stepPuff(b, now); b.stepAt = now; }
+        if (p >= 1) { b.wp = b.nextWp; startBotWork(b, now); }
+      } else {
+        var st = b.route[b.wp];
+        b.group.position.x = st.x; b.group.position.z = st.z;
+        b.group.position.y = b.baseY + Math.sin(now / 520 + b.phase) * .035;
+        b.group.rotation.y = turnTo(b.group.rotation.y, b.face, botDt * 5);
+        animateBotWork(b, now, i);
+        if (now - b.emoAt > 1600 + (i % 3) * 320) {
+          b.emoAt = now;
+          setBotMood(b, b.job, now, true);
+        }
       }
+      var squash = 1 + Math.sin(now / 330 + b.phase) * (b.walking ? .035 : .018);
+      b.group.scale.set(b.baseScale, b.baseScale * squash, b.baseScale);
+      var pulse = .5 + .5 * Math.sin(now / 600 + i);
+      if (b.aura) {
+        b.aura.position.set(b.group.position.x, .028, b.group.position.z);
+        b.aura.material.opacity = b.talking ? .22 + .16 * pulse : .1 + .08 * pulse;
+        b.aura.scale.setScalar(b.talking ? 1.1 + .1 * pulse : 1 + .05 * pulse);
+      }
+      if (b.shadow) {
+        b.shadow.position.set(b.group.position.x, .012, b.group.position.z);
+        b.shadow.scale.setScalar(b.baseScale * (1 + Math.sin(now / 330 + b.phase) * .05));
+        b.shadow.material.opacity = b.walking ? .21 : .28;
+      }
+      if (b.refl) {
+        b.refl.position.x = b.group.position.x;
+        b.refl.position.z = b.group.position.z + .1;
+        b.refl.rotation.z = -b.group.rotation.y;
+      }
+      b.tx = b.group.position.x; b.tz = b.group.position.z;
     });
-    if (now - lastEmo > 2800) {
-      lastEmo = now;
-      cuteBots.forEach(function (b, i) { try { setEmo(b.emo, EMOS[(Math.floor(now / 2800) + i) % EMOS.length]); } catch (e) {} });
-    }
+    updateBotParticles(now);
     if (now - (tick.glow || 0) > 140) {
       tick.glow = now;
       animParts.forEach(function (a) {

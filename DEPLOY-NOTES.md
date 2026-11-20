@@ -788,3 +788,44 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `.v9bub` active bubble visible. Ceiling returns to opaque `1` when Silip is
   turned off; building detail is preserved without blocking character view.
 
+## 2026-11-20 — Character life + extra cuteness (v27 cache-bust)
+
+### Bakit ito
+- Reklamo ng user: `paayos ako ng buong character ang boring nila panoorin
+  walang emosyon at hindi nag lalakad or nag tratrabaho` at
+  `at gusto ko mas gawin mo pa silang super cute`.
+
+### Changes
+- May sariling 3-stop route ang bawat isa sa 6 bots: nagtatrabaho sa station,
+  naglalakad papunta sa susunod, tapos nagtratrabaho ulit. Smooth turning,
+  leg/arm counter-swing, footstep puffs at contact shadow/aura/reflection na
+  sumusunod sa posisyon.
+- Job-specific animations: `greet/wave` (waving), `type` (mabilisang keyboard),
+  `pack` (boboteng pagbubuhat), `plan` (kamay sa baba + tilt), `joke` (bounce at
+  dalawang kamay), `write` (scribble), `walk` (lakad + hop).
+- Independent moods: bawat bot may sariling `emoAt` at mood list
+  (`💬 😊 🙌`, `⌨️ 🤔 💡`, `📦 ✅ ✍️`, `😄 🤪 ✨`, atbp). Hindi na sabay-sabay ang
+  emoji; may mood burst particles sa bawat pagpalit.
+- Extra cuteness: 2 shiny shoes + 2 tiny legs bawat bot, pink heart cheeks (3D
+  sprites), 3 floating star sparkles, hand attachments sa dulo ngarms,
+  squash-and-stretch bob, at name tag/emoji na nananatiling nasa itaas.
+- Parts/particles ay lightweight: walang shadow map/MSAA, 1x pixel ratio, ~30 FPS
+  cap; `fx.steps`/`fx.moods` may cap at nililinis sa parent matapos mag-expire.
+
+### Verification (v27, lokal)
+- Walang console errors; script `/office-v9.js?v=27`; `bots=6`.
+- Rig check: `legs=[2,2,2,2,2,2]`, `shadow/refl=true` para sa lahat,
+  `routes=[3,3,3,3,3,3]`.
+- 70 manual ticks (fake clock, 100ms hanggang 7s): `sawWalk=156`,
+  lahat ng 6 na bot nagbago ng `x/z`, `wp`, `job` at emoji. Nakita ang
+  `greet`, `wave`, `type`, `pack`, `plan`, `joke`, `write` states at 14 na
+  magkakaibang emoji.
+- Animation deltas: hal. arm `-2.573 -> -2.569` (wave), leg `0.071 -> -0.037`
+  (work sway); may aktibong `steps=11`, `moods=12`, `sparkles=30`.
+- Projection check: lahat ng 6 na bot ay **onscreen** sa hero view kahit
+  nagbago ng posisyon. Ceiling view fixed pa rin: `opacity=0.04`,
+  `transparent=true`; guards `bg=fog=93a1b3`, `amb=0.58`, `exposure=0.85`,
+  `isNight=0`.
+- Pixel stats: `bgPct=0.3`, `edgePct=17.4`, `meanLum=101.3`,
+  `highPct=0`, `nearWhitePct=0.1` — walang white-out.
+
