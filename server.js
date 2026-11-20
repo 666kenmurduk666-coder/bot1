@@ -11,6 +11,10 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const os = require('os');
+const childProcess = require('child_process');
+const {promisify} = require('util');
+const execFileAsync = promisify(childProcess.execFile);
 // Optional Crawl4AI research service. Fails soft: the original regex scrapers
 // remain the fallback when this module/service is unavailable.
 const researchClient = require('./research-client');
@@ -19,15 +23,58 @@ const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
 const DATA = path.join(ROOT, 'data');
 const SETTINGS_FILE = path.join(DATA, 'settings.json');
+// P1: credentials live here (mode 0600), never in settings.json or browser state.
+const SECRETS_FILE = path.join(DATA, 'secrets.json');
 const CONFIG_FILE = path.join(DATA, 'config.json');
 const ROUTINES_FILE = path.join(DATA, 'routines.json');
 const LAYOUT_FILE = path.join(DATA, 'layout.json');
 const STATE_FILE = path.join(DATA, 'state.json');
 const BACKUP_DIR = path.join(DATA, 'backups');
 const AUDIT_FILE = path.join(DATA, 'audit.jsonl');
+// 🎬 Video Factory (Remotion) — renderer lives in its own folder so npm deps stay isolated.
+const VIDEO_DIR = path.join(PUBLIC, 'videos');
+const VIDEO_RENDERER = path.join(ROOT, 'video', 'render.js');
+const VIDEO_WORK = path.join(ROOT, 'video');
 const APP_VERSION = 'Phase D v8 — Layout Upgrade & Operations Foundation';
 const STARTED_AT = Date.now();
 const PORT = Number(process.env.PORT || 8787);
+
+// P1: CEO-gated research control accepts NO user path — only these fixed scripts.
+const RESEARCH_SCRIPTS = Object.freeze({
+  start: path.join(ROOT, 'START-RESEARCH.bat'),
+  stop: path.join(ROOT, 'STOP-RESEARCH.bat')
+});
+function controlResearch(action) {
+  const file = RESEARCH_SCRIPTS[action];
+  if (!file || !fs.existsSync(file)) return Promise.resolve({ ok: false, error: 'Fixed script missing: ' + action });
+  return new Promise(resolve => {
+    const cp = childProcess.spawn('cmd.exe', ['/d', '/c', 'start', '""', '/b', '"' + file + '"'],
+      { cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true });
+    cp.once('error', e => resolve({ ok: false, error: e.message }));
+    cp.once('spawn', () => resolve({ ok: true, action }));
+  });
+}
+
+/* ---------- P0: build identity + drift detection ---------- */
+const SERVER_FILE = path.join(ROOT, 'server.js');
+const QUOTA_FILE = path.join(DATA, 'quota-status.json');
+function fileSHA256(file) {
+  try { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'); }
+  catch (_) { return ''; }
+}
+function fileMtime(file) {
+  try { return fs.statSync(file).mtimeMs; } catch (_) { return 0; }
+}
+// Snapshot taken at load time: this is the code that is ACTUALLY running.
+const SERVER_SOURCE = (() => { try { return fs.readFileSync(SERVER_FILE, 'utf8'); } catch (_) { return ''; } })();
+const SERVER_HASH_AT_START = fileSHA256(SERVER_FILE);
+const SETTINGS_MTIME_AT_START = fileMtime(SETTINGS_FILE);
+const CRITICAL_ROUTES = ['/api/health', '/api/state', '/api/routines', '/api/tasks/run', '/api/ceo/research', '/api/unlock'];
+function routeSelfTest() {
+  const out = {};
+  for (const r of CRITICAL_ROUTES) out[r] = SERVER_SOURCE.indexOf("'" + r + "'") >= 0;
+  return out;
+}
 
 if (!fs.existsSync(DATA)) fs.mkdirSync(DATA, { recursive: true });
 if (!fs.existsSync(PUBLIC)) fs.mkdirSync(PUBLIC, { recursive: true });
@@ -35,6 +82,14 @@ if (!fs.existsSync(PUBLIC)) fs.mkdirSync(PUBLIC, { recursive: true });
 /* ---------- persistence ---------- */
 function readJSON(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return fallback; }
+}
+function secrets() {
+  const s = readJSON(SECRETS_FILE, {});
+  return s && typeof s === 'object' && !Array.isArray(s) ? s : {};
+}
+// Settings readable by the runtime = plain settings + separated secrets.
+function readSettingsMerged() {
+  return Object.assign({}, readJSON(SETTINGS_FILE, {}), secrets());
 }
 function writeJSON(file, obj) {
   // Atomic replace: a crash during serialization/write must not truncate the last good file.
@@ -50,7 +105,7 @@ function writeJSON(file, obj) {
   catch (e) { try { fs.unlinkSync(tmp); } catch (_) {} throw e; }
 }
 function settings() {
-  const disk = readJSON(SETTINGS_FILE, {});
+  const disk = readSettingsMerged();
   const keys = disk.keys || {};
   if (!keys.coarena && process.env.COARENA_API_KEY) keys.coarena = { apiKey: process.env.COARENA_API_KEY };
   if (!keys.groq && process.env.GROQ_API_KEY) keys.groq = { apiKey: process.env.GROQ_API_KEY };
@@ -89,7 +144,14 @@ const state = {
   tasks: [],
   activity: [],
   stopped: false,
-  running: false
+  running: false,
+  agentHealth: {},
+  // P2 governance: CEO approvals, manual publishes and separated finance records.
+  approvalLog: [], publishLedger: [],
+  // Office liveness: AI-proposed "shift" tasks wait here until the CEO approves them.
+  // Proposals never auto-enqueue and never post/send anything on their own.
+  shiftProposals: [],
+  ledger: { confirmed: [], pending: [], reversed: [] }
 };
 
 function defaultLayout() {
@@ -195,7 +257,8 @@ const DEFAULT_ROUTINES = [
   {id:'r-prod',agent:'product',name:'Product video batch',minutes:180,enabled:false,lastRun:0,runs:0},
   {id:'r-joke',agent:'joker',name:'Jester — daily jokes',minutes:360,enabled:false,lastRun:0,runs:0},
   {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:false,lastRun:0,runs:0},
-  {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:false,lastRun:0,runs:0}
+  {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:false,lastRun:0,runs:0},
+  {id:'r-recap-weekly',agent:'cos',name:'Weekly recap video (Mon 8AM)',minutes:10080,enabled:true,lastRun:0,runs:0,weekday:1,hour:8,tz:'Asia/Manila',fn:'weeklyRecap'}
 ];
 const savedRoutines = readJSON(ROUTINES_FILE, null);
 state.routines = Array.isArray(savedRoutines) ? savedRoutines.slice() : DEFAULT_ROUTINES.slice();
@@ -220,6 +283,17 @@ state.sources = Array.isArray(state.config.sources) ? state.config.sources : [];
 
 // Restore volatile-looking state from disk so restarts keep history.
 const savedState = readJSON(STATE_FILE, null) || {};
+if (savedState.agentHealth && typeof savedState.agentHealth === 'object') state.agentHealth = savedState.agentHealth;
+if (Array.isArray(savedState.approvalLog)) state.approvalLog = savedState.approvalLog.slice(-300);
+if (Array.isArray(savedState.publishLedger)) state.publishLedger = savedState.publishLedger.slice(-300);
+if (Array.isArray(savedState.shiftProposals)) state.shiftProposals = savedState.shiftProposals.slice(-60);
+if (savedState.ledger && typeof savedState.ledger === 'object') {
+  state.ledger = {
+    confirmed: Array.isArray(savedState.ledger.confirmed) ? savedState.ledger.confirmed.slice(-300) : [],
+    pending: Array.isArray(savedState.ledger.pending) ? savedState.ledger.pending.slice(-300) : [],
+    reversed: Array.isArray(savedState.ledger.reversed) ? savedState.ledger.reversed.slice(-300) : []
+  };
+}
 state.outputs = savedState.outputs || {};
 state.replyIds = savedState.replyIds || {};
 state.replyProviders = savedState.replyProviders || {};
@@ -435,7 +509,9 @@ function saveStateNow() {
     campaigns: state.campaigns, payouts: state.payouts.slice(-300),
     redemptions: state.redemptions.slice(-300), commercials: state.commercials.slice(-60),
     shopAnalytics: state.shopAnalytics.slice(-1200), eventShow: state.eventShow,
-    botCare: state.botCare
+    botCare: state.botCare, agentHealth: state.agentHealth,
+    approvalLog: state.approvalLog.slice(-300), publishLedger: state.publishLedger.slice(-300),
+    ledger: state.ledger
   });
 }
 function scheduleSave() {
@@ -448,7 +524,7 @@ function auditEvent(action, actor) {
   try {
     if (!fs.existsSync(DATA)) fs.mkdirSync(DATA, { recursive: true });
     const row = JSON.stringify({ at: Date.now(), actor: String(actor || 'system').slice(0, 32), action: String(action || '').slice(0, 240) });
-    fs.appendFileSync(AUDIT_FILE, row + '\n', { mode: 0o600 });
+    fs.appendFileSync(AUDIT_FILE, row + '\n', { encoding: 'utf8', mode: 0o600 });
     // Keep the append-only audit log bounded on disk; rotate to a dated archive.
     try {
       const st = fs.statSync(AUDIT_FILE);
@@ -470,30 +546,106 @@ function log(text, who) {
 function createDataBackup() {
   if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true, mode: 0o700 });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const name = 'backup-' + stamp;
+  const name = 'backup-' + stamp + '-' + crypto.randomBytes(3).toString('hex');
   const dir = path.join(BACKUP_DIR, name);
   fs.mkdirSync(dir, { mode: 0o700 });
-  const files = [SETTINGS_FILE, CONFIG_FILE, ROUTINES_FILE, LAYOUT_FILE, STATE_FILE];
-  const included = [];
+  // P2: secrets.json is now a separate file; include it so a backup is restorable.
+  const files = [SETTINGS_FILE, SECRETS_FILE, CONFIG_FILE, ROUTINES_FILE, LAYOUT_FILE, STATE_FILE];
+  const included = [], hashes = {};
   for (const file of files) {
     if (!fs.existsSync(file)) continue;
     const base = path.basename(file);
     fs.copyFileSync(file, path.join(dir, base), fs.constants.COPYFILE_EXCL);
     try { fs.chmodSync(path.join(dir, base), 0o600); } catch (_) {}
     included.push(base);
+    hashes[base] = fileSHA256(file);
   }
-  const manifest = { version: APP_VERSION, createdAt: Date.now(), files: included,
-    note: 'Contains private settings and credentials. Store securely; never publish this backup.' };
+  const manifest = { version: APP_VERSION, createdAt: Date.now(), files: included, hashes,
+    note: 'Contains private settings, credentials and office data. Store securely; never publish this backup.' };
   writeJSON(path.join(dir, 'manifest.json'), manifest);
   const backups = fs.readdirSync(BACKUP_DIR).filter(x => /^backup-/.test(x)).sort().reverse();
   backups.slice(20).forEach(old => { try { fs.rmSync(path.join(BACKUP_DIR, old), { recursive: true, force: true }); } catch (_) {} });
-  return { name, createdAt: manifest.createdAt, files: included };
+  return { name, createdAt: manifest.createdAt, files: included, hashes, verified: true };
 }
 function listDataBackups() {
   try { return fs.readdirSync(BACKUP_DIR).filter(x => /^backup-/.test(x)).sort().reverse().slice(0, 20).map(name => {
     const m = readJSON(path.join(BACKUP_DIR, name, 'manifest.json'), {});
-    return { name, createdAt: Number(m.createdAt) || 0, files: Array.isArray(m.files) ? m.files : [] };
+    return { name, createdAt: Number(m.createdAt) || 0, files: Array.isArray(m.files) ? m.files : [],
+      hasHashes: !!(m.hashes && typeof m.hashes === 'object') };
   }); } catch (_) { return []; }
+}
+
+/* ---------- P2: backup integrity + restore drill (never touches live data) ---------- */
+function verifyBackup(name) {
+  const safe = path.basename(String(name || ''));
+  if (!/^backup-/.test(safe) || safe.includes('..')) return { ok: false, error: 'Invalid backup name.' };
+  const dir = path.join(BACKUP_DIR, safe);
+  if (!fs.existsSync(dir)) return { ok: false, error: 'Backup not found.' };
+  const m = readJSON(path.join(dir, 'manifest.json'), null);
+  if (!m || !Array.isArray(m.files) || !m.files.length) return { ok: false, error: 'Invalid or missing manifest.' };
+  const files = [], hasHashes = !!(m.hashes && typeof m.hashes === 'object');
+  for (const base of m.files) {
+    const f = path.join(dir, path.basename(String(base)));
+    if (!fs.existsSync(f)) { files.push({ file: path.basename(String(base)), ok: false, error: 'missing' }); continue; }
+    const actual = fileSHA256(f), expected = hasHashes ? String(m.hashes[path.basename(String(base))] || '') : '';
+    files.push({ file: path.basename(String(base)), ok: !expected || actual === expected, expected, actual,
+      bytes: fs.statSync(f).size });
+  }
+  const ok = files.every(x => x.ok);
+  return { ok, name: safe, checkedAt: Date.now(), hasHashes, files,
+    note: hasHashes ? 'SHA-256 verified against manifest.' : 'Legacy backup without hashes; presence checked only.' };
+}
+function backupRestoreDrill(name) {
+  const target = String(name || (listDataBackups()[0] || {}).name || '');
+  const v = verifyBackup(target);
+  if (!v.ok) return Object.assign({ stage: 'hash-verification' }, v);
+  const dir = path.join(BACKUP_DIR, v.name);
+  const parsed = [];
+  for (const f of v.files) {
+    const file = path.join(dir, f.file);
+    try {
+      const txt = fs.readFileSync(file, 'utf8');
+      if (!txt.trim() || !'{['.includes(txt.trim()[0])) throw new Error('not JSON');
+      JSON.parse(txt);
+      parsed.push({ file: f.file, ok: true });
+    } catch (e) { parsed.push({ file: f.file, ok: false, error: e.message }); }
+  }
+  const parseOk = parsed.every(x => x.ok);
+  let copied = 0;
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cheebee-restore-drill-'));
+  try {
+    for (const f of v.files) { fs.copyFileSync(path.join(dir, f.file), path.join(tmp, f.file)); copied++; }
+  } catch (_) {} finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {} }
+  return { ok: parseOk && copied === v.files.length, stage: parseOk ? 'restore-dry-run' : 'json-parse',
+    name: v.name, files: v.files, verified: v, parsed, copied, checkedAt: Date.now(),
+    note: 'Dry run only: files were copied to a temporary folder and deleted. Live data was not changed.' };
+}
+
+/* ---------- P2: separated governance ledgers ---------- */
+function ledgerAdd(status, entry) {
+  const bucket = Object.prototype.hasOwnProperty.call(state.ledger, status) ? status : 'pending';
+  const row = Object.assign({
+    id: 'L' + Date.now().toString(36) + '-' + crypto.randomBytes(4).toString('hex'),
+    at: Date.now(), status: bucket, actor: 'system', currency: 'PHP'
+  }, entry || {});
+  state.ledger[bucket].unshift(row);
+  if (state.ledger[bucket].length > 300) state.ledger[bucket].length = 300;
+  auditEvent('Ledger ' + bucket + ': ' + String(row.note || row.ref || row.id).slice(0, 180), row.actor);
+  saveStateNow();
+  return row;
+}
+function ledgerFind(id) {
+  const key = String(id || '');
+  for (const bucket of ['confirmed', 'pending', 'reversed']) {
+    const i = state.ledger[bucket].findIndex(x => x.id === key);
+    if (i >= 0) return { bucket, i, row: state.ledger[bucket][i] };
+  }
+  return null;
+}
+function ledgerSummary() {
+  const sum = arr => Math.round(arr.reduce((a, x) => a + (Number(x.amount) || 0), 0) * 100) / 100;
+  return { confirmed: sum(state.ledger.confirmed), pending: sum(state.ledger.pending),
+    reversed: sum(state.ledger.reversed), currency: 'PHP' };
 }
 function recentAudit(limit) {
   try {
@@ -649,7 +801,11 @@ async function callProvider(cfg, system, user, maxTokens) {
       await sleep(wait);
       continue;
     }
-    if (!res.ok) throw new Error((j.error && j.error.message) || (cfg.provider + ' HTTP ' + res.status));
+    if (!res.ok) {
+      const err = new Error((j.error && j.error.message) || (cfg.provider + ' HTTP ' + res.status));
+      err.status = res.status;
+      throw err;
+    }
     const msg = (j.choices && j.choices[0] && j.choices[0].message) || {};
     let content = String(msg.content || '').trim();
     if (!content) {
@@ -658,7 +814,7 @@ async function callProvider(cfg, system, user, maxTokens) {
       const thought = String(msg.reasoning_content || msg.reasoning || '').trim();
       if (thought) content = thought.split(/\n+/).map(s => s.trim()).filter(Boolean).pop() || thought;
     }
-    if (!content) throw new Error('AI returned empty content');
+    if (!content) throw new Error(cfg.provider + ' / ' + cfg.model + ' returned empty content');
     const took = Date.now() - startedAt;
     if (took > 20000) log('AI ' + cfg.provider + ' / ' + cfg.model + ' replied in ' + Math.round(took / 1000) + 's', 'system');
     return {
@@ -670,10 +826,46 @@ async function callProvider(cfg, system, user, maxTokens) {
   throw new Error(cfg.provider + ' rate limited after retry');
 }
 
+/* ---------- P1: provider/model preflight + quota-aware routing ---------- */
+let preflightCache = { at: 0, value: null };
+let lastRouteAudit = 0;
+function preflight() {
+  if (preflightCache.value && Date.now() - preflightCache.at < 10 * 60 * 1000) return preflightCache.value;
+  const s = settings();
+  const health = readJSON(path.join(DATA, 'provider-health.json'), {});
+  const issues = [];
+  const cfg = providerCfg(s.provider, s);
+  if (quotaLow()) issues.push('Quota low — local/failover routing enabled.');
+  if (!cfg.apiKey && !isLocalAI(cfg)) issues.push('No API key for provider ' + s.provider + '.');
+  if (!cfg.model) issues.push('No model configured for ' + s.provider + '.');
+  const ph = health.providers && health.providers[s.provider];
+  if (ph && ph.ok === false) issues.push('Provider health check failed for ' + s.provider + '.');
+  const value = {
+    ok: issues.length === 0, provider: s.provider, model: cfg.model || s.model,
+    quotaLow: quotaLow(), issues, checkedAt: Date.now(), providerHealth: health.providers || {}
+  };
+  preflightCache = { at: Date.now(), value };
+  return value;
+}
+function routeCandidates(s) {
+  const list = [s.provider, ...(s.failover || [])].filter((v, i, a) => a.indexOf(v) === i);
+  if (quotaLow() && list.indexOf('ollama') !== -1) {
+    const local = providerCfg('ollama', s);
+    if (local && (local.apiKey || isLocalAI(local))) {
+      if (Date.now() - lastRouteAudit > 5 * 60 * 1000) {
+        lastRouteAudit = Date.now();
+        auditEvent('Quota low — routing to local Ollama first', 'system');
+      }
+      return ['ollama'].concat(list.filter(n => n !== 'ollama'));
+    }
+  }
+  return list;
+}
+
 async function callAI(system, user, maxTokens) {
   const s = settings();
   if (!/JSON/.test(system)) system += ' Always write in casual TAGLISH — natural Tagalog mixed with English, like Filipino office workers chatting. Use proper Tagalog spelling and grammar. Keep it natural, short, and friendly.';
-  const candidates = [s.provider, ...s.failover].filter((v, i, a) => a.indexOf(v) === i);
+  const candidates = routeCandidates(s);
   if (!s.apiKey && !candidates.some(n => {
     const c = providerCfg(n, s); return c.apiKey || isLocalAI(c);
   })) {
@@ -689,7 +881,7 @@ async function callAI(system, user, maxTokens) {
       return r.text;
     } catch (e) {
       lastErr = e;
-      log('Provider ' + name + ' failed, trying next: ' + e.message, 'system');
+      log('Provider ' + name + ' failed (' + (e.status ? 'HTTP ' + e.status + ' — ' : '') + e.message + '), trying next', 'system');
     }
   }
   throw lastErr || new Error('No provider available');
@@ -742,7 +934,7 @@ const PROMPTS = {
   cos: {
     sys: 'You are the Chief of Staff of a small AI agent company. You set priorities, delegate, and keep the CEO informed.',
     user: (c, o) => 'Mission: ' + (c.mission || '(none)') + '\nNiche: ' + c.niche +
-      '\nAgents available: Chief of Staff, Client Outreach, Community Scraper, Social Media Manager, Video Editor, SEO Caption Bot, Scheduler, Posting Bot, Bot Manager.' +
+      '\nAgents available: Chief of Staff, Client Outreach, Community Scraper, Social Media Manager, Video Editor, SEO Caption Bot, Scheduler, Posting Bot, Bot Manager, HF Script Planner, HF Storyboard Bot, HF Motion Editor, HF Caption & Overlay, HF Render QA.' +
       '\nOpen tasks: ' + state.tasks.filter(t => t.status !== 'done').length +
       '\nRoutines enabled: ' + state.routines.filter(r => r.enabled).map(r => r.name).join(', ') +
       '\nWrite today\'s plan: exactly 3 priorities. Format one line each: "priority — owner". No intro.',
@@ -811,6 +1003,38 @@ const PROMPTS = {
         'CAPTION: one line\nHASHTAGS: one line\nCTA: one line';
     },
     max: 1400
+  },
+
+  /* 🎬 HyperFrames video editor group — project-local skills live in .opencode/skills/. */
+  hflex: {
+    sys: 'You are the HyperFrames Script Planner in a Cyborg Cheebee video editing team. HyperFrames turns HTML/CSS plus seekable animation into deterministic MP4. Keep answers short and production-ready.',
+    user: c => 'Mission: ' + (c.mission || '(none)') + '\nNiche: ' + c.niche + '\nClips/products: ' + c.clips.join(', ') +
+      '\nWrite exactly 6 lines, one per scene: "scene N | duration | on-screen visual | on-screen text". No intro.',
+    max: 800
+  },
+  hfstory: {
+    sys: 'You are a HyperFrames storyboard artist. Turn a script into an editable shot list with timing and tracks. Be terse.',
+    user: (c, o) => 'Script plan:\n' + (o.hflex || '(none)') +
+      '\nConvert it to a shot list. Exactly one line per shot: "start-end | track | element | action". Use seconds. No intro.',
+    max: 800
+  },
+  hfmotion: {
+    sys: 'You are a HyperFrames motion editor. You plan seekable GSAP/CSS/WAAPI timelines that render frame-accurately. No wall-clock-only animation.',
+    user: (c, o) => 'Shot list:\n' + (o.hfstory || o.hflex || '(none)') +
+      '\nGive one motion note per shot: "shot | property | from -> to | start | duration | easing". No intro.',
+    max: 800
+  },
+  hfcaption: {
+    sys: 'You write captions, lower thirds and kinetic overlays for HyperFrames videos. Output only the text to place on screen.',
+    user: (c, o) => 'Niche: ' + c.niche + '\nStyle: ' + c.style + '\nPlan:\n' + (o.hflex || '(none)') +
+      '\nWrite: CAPTION line, then 3 short overlay lines, then a HASHTAGS line. One item per line. No intro.',
+    max: 600
+  },
+  hfrender: {
+    sys: 'You are the HyperFrames render QA bot. You give a short preflight and the exact local CLI commands. Never claim a render finished when you cannot run it.',
+    user: (c, o) => 'Outputs ready: ' + (Object.keys(o).join(', ') || 'none') +
+      '\nGive a 5-line checklist: composition validity, media paths, timeline seekability, audio levels, and the commands "npx hyperframes check", "npx hyperframes preview", "npx hyperframes render". Mention Node 22+ and FFmpeg. No intro.',
+    max: 600
   }
 };
 
@@ -939,6 +1163,56 @@ async function runProduct(p) {
   return p;
 }
 
+/* ---------- P0: per-agent error visibility, quota guard, system health ---------- */
+function markAgent(id, ok, err) {
+  const h = state.agentHealth[id] || (state.agentHealth[id] = {
+    lastRun: 0, lastError: '', failCount: 0, okCount: 0, status: 'idle'
+  });
+  h.lastRun = Date.now();
+  h.status = ok ? 'ok' : 'error';
+  if (ok) {
+    h.okCount = (h.okCount || 0) + 1;
+    h.lastError = '';
+  } else {
+    h.failCount = (h.failCount || 0) + 1;
+    h.lastError = String((err && err.message) || err || 'Unknown error').slice(0, 300);
+    auditEvent('Agent error [' + id + ']: ' + h.lastError, 'system');
+    log('⚠ ' + (BOT_NAMES[id] || id) + ' error: ' + h.lastError, id);
+  }
+}
+
+function quotaLow() {
+  try {
+    const q = readJSON(QUOTA_FILE, {});
+    if (q.low === true) return true;
+    const rr = Number(q.remainingRequests), lr = Number(q.limitRequests);
+    const rt = Number(q.remainingTokens), lt = Number(q.limitTokens);
+    if (Number.isFinite(rr) && Number.isFinite(lr) && lr > 0 && rr / lr < 0.12) return true;
+    if (Number.isFinite(rt) && Number.isFinite(lt) && lt > 0 && rt / lt < 0.12) return true;
+  } catch (_) {}
+  return false; // fail-open: a missing/stale quota file must never stop the office
+}
+
+function systemHealth() {
+  const hash = fileSHA256(SERVER_FILE);
+  const mtime = fileMtime(SETTINGS_FILE);
+  // Office liveness: show every agent as idle until it actually runs, so the
+  // pipeline never looks empty just because no error has happened yet.
+  const agentHealth = {};
+  for (const a of AGENT_META.concat(state.hires || [])) {
+    agentHealth[a.id] = { status: 'idle', okCount: 0, failCount: 0, lastError: '', lastRun: 0 };
+  }
+  Object.assign(agentHealth, state.agentHealth || {});
+  return {
+    codeHash: hash, loadedCodeHash: SERVER_HASH_AT_START,
+    settingsMtime: mtime, loadedAt: STARTED_AT,
+    drift: hash !== SERVER_HASH_AT_START,
+    settingsChanged: mtime !== SETTINGS_MTIME_AT_START,
+    quotaLow: quotaLow(), routes: routeSelfTest(),
+    agentHealth, version: APP_VERSION
+  };
+}
+
 async function runAgent(id, automatic) {
   const c = state.config;
   if (id === 'drop') return c.clips.length + ' clips ready:\n' + c.clips.join(', ');
@@ -954,9 +1228,16 @@ async function runAgent(id, automatic) {
   if (!p) return 'No output for this agent.';
   if (automatic) {
     const cached = agentCacheGet(id);
-    if (cached) return cached;
+    if (cached) { markAgent(id, true); return cached; }
   }
-  const text = await callAI(p.sys, p.user(c, state.outputs), p.max);
+  let text;
+  try {
+    text = await callAI(p.sys, p.user(c, state.outputs), p.max);
+    markAgent(id, true);
+  } catch (e) {
+    markAgent(id, false, e);
+    throw e;
+  }
   if (automatic) agentCacheSet(id, text);
   if (lastReply && lastReply.id) {
     state.replyIds[id] = lastReply.id;
@@ -972,7 +1253,9 @@ const BOT_NAMES = {
   sched: 'Scheduler Bot', post: 'Posting Bot', mgr: 'Bot Manager',
   cos: 'Chief of Staff', outreach: 'Client Outreach', scraper: 'Community Scraper',
   social: 'Social Media Manager', product: 'Product Video Bot', joker: 'Office Jester',
-  fixer: 'Office Fixer'
+  fixer: 'Office Fixer',
+  hflex: 'HF Script Planner', hfstory: 'HF Storyboard Bot', hfmotion: 'HF Motion Editor',
+  hfcaption: 'HF Caption & Overlay', hfrender: 'HF Render QA'
 };
 const AGENT_META = [
   {id:'drop',n:'Drop videos',i:'🎬',c:'#3f9d6a',group:'pipeline',room:'hq',desc:'Raw clips land here.'},
@@ -988,7 +1271,12 @@ const AGENT_META = [
   {id:'social',n:'Social Media Manager',i:'📱',c:'#d6607a',group:'staff',room:'hq',desc:'Drafts per-platform posts with times.'},
   {id:'product',n:'Product Video Bot',i:'🎬',c:'#4fd1c5',group:'staff',room:'hq',desc:'Turns product links into ready-to-shoot video packages.'},
   {id:'joker',n:'Office Jester',i:'🤡',c:'#f472b6',group:'staff',room:'fun',desc:'Keeps morale high with clean jokes and memes.'},
-  {id:'fixer',n:'Office Fixer',i:'🛠️',c:'#22c55e',group:'staff',room:'hq',desc:'Diagnoses why agents are not working and gives quick fixes.'}
+  {id:'fixer',n:'Office Fixer',i:'🛠️',c:'#22c55e',group:'staff',room:'hq',desc:'Diagnoses why agents are not working and gives quick fixes.'},
+  {id:'hflex',n:'HF Script Planner',i:'📝',c:'#77eaff',group:'video editor',room:'hq',desc:'Turns a brief into a 6-scene HyperFrames script plan.'},
+  {id:'hfstory',n:'HF Storyboard Bot',i:'🎞️',c:'#8b5cf6',group:'video editor',room:'hq',desc:'Converts the script into a timed shot list and tracks.'},
+  {id:'hfmotion',n:'HF Motion Editor',i:'✨',c:'#a78bfa',group:'video editor',room:'hq',desc:'Plans seekable GSAP/CSS timelines for every shot.'},
+  {id:'hfcaption',n:'HF Caption & Overlay',i:'💬',c:'#38bdf8',group:'video editor',room:'hq',desc:'Writes captions, lower thirds, overlays and hashtags.'},
+  {id:'hfrender',n:'HF Render QA',i:'🧪',c:'#75f0c0',group:'video editor',room:'hq',desc:'Preflight checklist and exact HyperFrames CLI render commands.'}
 ];
 
 /* 🐾 CARE & RETURN — Tamagotchi bot battery/mood + FarmVille-style visitor garden.
@@ -1058,7 +1346,9 @@ async function planOrder(order) {
       arr.push({ bot: 'post', title: 'Publish ' + clip, approval: true });
     });
   }
-  state.tasks = arr.slice(0, 12).map(t => ({
+  state.tasks = arr.slice(0, 12).map((t, i) => ({
+    id: 't' + Date.now().toString(36) + '-' + i + '-' + crypto.randomBytes(3).toString('hex'),
+    createdAt: Date.now(), attempts: 0, lastError: '', source: 'CEO order',
     bot: t.bot || 'mgr',
     title: t.title || 'Untitled task',
     approval: !!t.approval,
@@ -1089,11 +1379,15 @@ async function runTasks() {
       try {
         state.outputs[t.bot] = await runAgent(t.bot);
         t.status = 'done';
+        t.lastError = '';
         log('Done: ' + t.title, t.bot);
       } catch (e) {
-        t.status = 'failed';
-        t.note = e.message;
-        log('Failed: ' + t.title + ' - ' + e.message, t.bot);
+        t.attempts = (t.attempts || 0) + 1;
+        t.lastError = String(e.message || e).slice(0, 300);
+        t.note = t.lastError;
+        t.status = t.attempts >= 3 ? 'dead-letter' : 'failed';
+        if (t.status === 'dead-letter') auditEvent('Task dead-lettered after 3 attempts: ' + t.title, t.bot);
+        log('Failed: ' + t.title + ' - ' + t.lastError, t.bot);
       }
       if (settings().provider === 'coarena' && t.status !== 'approval') await sleep(800);
     }
@@ -1103,17 +1397,127 @@ async function runTasks() {
   return { ok: true, tasks: state.tasks };
 }
 
+/* ---------- P0: server-side task runner (runs even with the browser closed) ---------- */
+let lastQuotaHoldLog = 0;
+async function serverTaskRunner() {
+  if (state.stopped || state.running) return false;
+  if (!state.tasks.some(t => t.status === 'queued')) return false;
+  if (quotaLow()) {
+    if (Date.now() - lastQuotaHoldLog > 5 * 60 * 1000) {
+      lastQuotaHoldLog = Date.now();
+      log('⏸ Task runner HOLD — quota low, no AI calls made', 'system');
+      auditEvent('Task runner HOLD: quota low', 'system');
+    }
+    return false;
+  }
+  log('🤖 Server runner: processing queued tasks', 'system');
+  try { await runTasks(); return true; }
+  catch (e) { log('Task runner error: ' + e.message, 'system'); return false; }
+}
+setInterval(() => {
+  serverTaskRunner().catch(e => log('Task runner error: ' + e.message, 'system'));
+}, 5000);
+
+/* ---------- OFFICE LIVENESS: CEO-approved shift queue ---------- */
+/* AI only proposes internal work. Nothing is queued, posted or sent until the
+ * CEO explicitly approves, keeping the AI-recommend / CEO-approve rule intact. */
+const SHIFT_INTERVAL_MS = 45 * 60 * 1000;
+const SHIFT_TEMPLATES = [
+  { bot: 'cos', title: 'Office status brief', note: 'Internal status brief only; no external post.' },
+  { bot: 'mgr', title: 'Bot queue check', note: 'Review the task queue and report idle agents.' },
+  { bot: 'fixer', title: 'Office Fixer health check', note: 'Diagnose agent errors and suggest fixes; read-only.' },
+  { bot: 'joker', title: 'Watercooler joke draft', note: 'Clean joke for the office feed only.' },
+  { bot: 'outreach', title: 'Client outreach draft', note: 'Draft only; never sends messages.' },
+  { bot: 'social', title: 'Social post draft', note: 'Draft only; no posting without CEO approval.' },
+  { bot: 'product', title: 'Product clip idea', note: 'Internal idea only; no upload.' },
+  { bot: 'scraper', title: 'Resource scan digest', note: 'Configured public sources only; no login or private pages.' }
+];
+let shiftCursor = 0;
+let lastShiftPlanAt = 0;
+function generateShiftProposals(manual) {
+  const list = [];
+  for (let i = 0; i < 2; i++) {
+    const t = SHIFT_TEMPLATES[shiftCursor % SHIFT_TEMPLATES.length];
+    shiftCursor++;
+    list.push({
+      id: 'S' + Date.now().toString(36) + '-' + i + '-' + crypto.randomBytes(3).toString('hex'),
+      at: Date.now(), status: 'pending', source: 'shift-plan',
+      bot: t.bot, title: t.title, note: t.note,
+      reason: manual ? 'CEO requested' : 'scheduled shift'
+    });
+  }
+  state.shiftProposals = list.concat(state.shiftProposals).slice(0, 60);
+  lastShiftPlanAt = Date.now();
+  auditEvent('Office shift proposals generated (' + list.length + ')', manual ? 'CEO' : 'system');
+  saveStateNow();
+  return list;
+}
+function decideShiftProposal(id, approve) {
+  const proposal = state.shiftProposals.find(x => x.id === String(id || ''));
+  if (!proposal) return { ok: false, error: 'Proposal not found.' };
+  if (proposal.status !== 'pending') return { ok: false, error: 'Proposal is already ' + proposal.status + '.' };
+  proposal.status = approve ? 'approved' : 'rejected';
+  proposal.decidedAt = Date.now();
+  proposal.decidedBy = 'CEO';
+  let task = null;
+  if (approve) {
+    task = {
+      id: 't' + Date.now().toString(36) + '-shift-' + crypto.randomBytes(3).toString('hex'),
+      createdAt: Date.now(), attempts: 0, lastError: '', source: 'shift-queue',
+      bot: proposal.bot, title: proposal.title,
+      approval: true, approved: true, reviewedBy: 'CEO', reviewedAt: Date.now(),
+      status: 'queued', note: proposal.note || ''
+    };
+    state.tasks.push(task);
+    if (state.tasks.length > 60) state.tasks = state.tasks.slice(-60);
+  }
+  auditEvent('Shift proposal ' + (approve ? 'approved' : 'rejected') + ': ' + proposal.title, 'CEO');
+  log('🗓 Shift proposal ' + (approve ? 'approved' : 'rejected') + ': ' + proposal.title, 'CEO');
+  saveStateNow();
+  return { ok: true, proposal, task };
+}
+setInterval(() => {
+  if (state.stopped || state.running) return;
+  if (Date.now() - lastShiftPlanAt < SHIFT_INTERVAL_MS) return;
+  if (quotaLow()) return; // never spend quota while the office is holding
+  if (state.shiftProposals.some(x => x.status === 'pending')) return; // wait for CEO decision
+  try { generateShiftProposals(false); }
+  catch (e) { log('Shift planner error: ' + e.message, 'system'); }
+}, 60000);
+
 /* ---------- 24/7 routines ---------- */
 let lastRoutineAt = 0;
 async function runRoutine(id, manual) {
   const r = state.routines.find(x => x.id === id);
   if (!r) return { ok: false, error: 'No such routine' };
   if (!manual && (state.running || state.stopped)) return { ok: false, reason: 'busy or stopped' };
+  if (!manual && r.holdUntil && Date.now() < r.holdUntil) return { ok: false, reason: 'quota-hold' };
+  if (!manual && quotaLow()) {
+    r.holdUntil = Date.now() + 10 * 60 * 1000; // retry after 10 minutes, no AI call now
+    saveRoutines();
+    log('⏸ Routine HOLD (quota): ' + r.name, r.agent);
+    auditEvent('Routine HOLD (quota): ' + r.id, 'system');
+    return { ok: false, reason: 'quota-low' };
+  }
   state.running = true;
   try {
     log('Routine started: ' + r.name, r.agent);
-    state.outputs[r.agent] = await runAgent(r.agent, !manual);
+    if (r.fn === 'weeklyRecap') {
+      const stt = publicState();
+      const cfg = videoConfigFrom({
+        mode: 'recap', format: 'wide', title: 'Weekly Office Recap',
+        tagline: (stt.agents || []).length + ' AI employees - ' + (stt.tasks || []).length +
+          ' tasks - ' + (stt.products || []).length + ' products - ' + (stt.routines || []).length + ' routines',
+        cta: 'Dream Bigger. Let AI Work Harder!', watermark: false,
+      });
+      const out = await renderOfficeVideo(cfg, 'weekly-recap');
+      state.outputs[r.agent] = out.url;
+      log('🎬 Weekly recap video: ' + out.url, 'video');
+    } else {
+      state.outputs[r.agent] = await runAgent(r.agent, !manual);
+    }
     r.lastRun = Date.now();
+    r.holdUntil = 0;
     r.runs = (r.runs || 0) + 1;
     lastRoutineAt = Date.now();
     saveRoutines();
@@ -1126,11 +1530,29 @@ async function runRoutine(id, manual) {
     state.running = false;
   }
 }
+/* P0: deterministic per-routine jitter + minimum gap prevents a burst of AI calls. */
+const ROUTINE_MIN_GAP_MS = 12000;
+function routineJitterMs(r) {
+  const base = Math.max(1, Number(r.minutes) || 60) * 60000;
+  const byte = crypto.createHash('sha1').update(String(r.id)).digest()[0];
+  return Math.round(Math.min(base * 0.15, 5 * 60000) * (byte / 255));
+}
 setInterval(async () => {
   if (state.stopped || state.running) return;
-  if (Date.now() - lastRoutineAt < 7000) return;
-  const due = state.routines.find(r => r.enabled && r.minutes > 0 &&
-    Date.now() - (r.lastRun || 0) >= r.minutes * 60000);
+  if (Date.now() - lastRoutineAt < ROUTINE_MIN_GAP_MS) return;
+  const now = Date.now();
+  let recapWindow = false;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'Asia/Manila', weekday: 'short', hour: '2-digit', hour12: false}).formatToParts(new Date());
+    const wd = (parts.find(x => x.type === 'weekday') || {}).value;
+    const hh = Number((parts.find(x => x.type === 'hour') || {}).value || 0);
+    recapWindow = wd === 'Mon' && hh >= 8 && hh < 9;
+  } catch (_) {}
+  const due = state.routines
+    .filter(r => r.enabled && r.minutes > 0 && !(r.holdUntil && now < r.holdUntil))
+    .filter(r => now - (r.lastRun || 0) >= r.minutes * 60000 + routineJitterMs(r))
+    .filter(r => r.fn !== 'weeklyRecap' || recapWindow)
+    .sort((a, b) => (a.lastRun || 0) - (b.lastRun || 0))[0];
   if (due) await runRoutine(due.id, false);
 }, 10000);
 
@@ -1194,7 +1616,7 @@ function bazaarDay() {
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 function fbCfg() {
-  const d = readJSON(SETTINGS_FILE, {});
+  const d = readSettingsMerged();
   return {
     id: String(d.fbAppId || process.env.FB_APP_ID || ''),
     secret: String(d.fbAppSecret || process.env.FB_APP_SECRET || ''),
@@ -1398,7 +1820,7 @@ function setBazaarCookie(res, id, name, picture, req) {
 }
 
 function ceoPassword() {
-  const cfg = readJSON(SETTINGS_FILE, {});
+  const cfg = readSettingsMerged();
   return String(process.env.CEO_PASSWORD || cfg.password || '');
 }
 
@@ -1459,6 +1881,10 @@ function publicState() {
     mall: state.mall,
     conversations: state.conversations,
     activity: state.activity, stopped: state.stopped, running: state.running,
+    // P0/P2: drift/quota/agent errors + governance ledgers — no secrets included.
+    health: systemHealth(),
+    approvalLog: state.approvalLog, publishLedger: state.publishLedger, ledger: state.ledger,
+    shiftProposals: state.shiftProposals,
     // ⚠️ PUBLIC: hinding-hindi isasama ang aktwal na API keys — CEO lang kumukuha via /api/private
     setup: { hasKey: !!s.apiKey, model: s.model, provider: s.provider, baseUrl: s.baseUrl,
       keys: {}, failover: s.failover }
@@ -1469,6 +1895,25 @@ let limitsCache = { at: 0, data: null };
 
 // ===== 🛡️ ANTI-HACKER SHIELD: rate limiting + brute-force lockout (per IP) =====
 const guard = new Map(); // ip -> {n, t0, bad, lastBad}
+// P1: CEO session tokens — password is used once at unlock, not on every request.
+const sessions = new Map(); // token -> {ip, at, expires}
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+function newSession(ip) {
+  const token = crypto.randomBytes(24).toString('hex');
+  const now = Date.now();
+  sessions.set(token, { ip: String(ip || 'x'), at: now, expires: now + SESSION_TTL_MS });
+  if (sessions.size > 500) for (const [k, v] of sessions) if (v.expires < now) sessions.delete(k);
+  return token;
+}
+function tokenValid(req) {
+  const tok = String((req.headers && req.headers['x-ceo-token']) || '');
+  const s = tok ? sessions.get(tok) : null;
+  return !!(s && s.expires > Date.now());
+}
+// Legacy password fallback is kept during transition; the UI no longer stores it.
+function ceoAuthorized(req, b) {
+  return tokenValid(req) || (!!ceoPassword() && String((b && b.pass) || '') === ceoPassword());
+}
 const orderRate = new Map(); // ip -> {windowStart, count}
 const oauthStates = new Map(); // FB OAuth state -> issued at (short-lived)
 const fbCodeCache = new Map(); // FB auth code -> {id,name,picture,at} (idempotent callback: browser/Render may hit callback twice)
@@ -1482,6 +1927,47 @@ function guardBumpBad(ip) {
   const h = guard.get(ip) || { n: 0, t0: Date.now(), bad: 0 };
   h.bad++; h.lastBad = Date.now(); guard.set(ip, h);
   log('🚨 Wrong password attempt #' + h.bad + ' from ' + ip, 'security');
+}
+
+// ===== 🎬 VIDEO FACTORY HELPERS (Remotion) =====
+function safeVideoName(s) {
+  return String(s || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60) || 'video';
+}
+function videoConfigFrom(b) {
+  b = b || {};
+  const hex = (v, fallback) => /^#[0-9a-fA-F]{6}$/.test(v || '') ? v : fallback;
+  return {
+    title: String(b.title || 'Cyborg Cheebee').slice(0, 120),
+    tagline: String(b.tagline || 'Your AI Company. Your AI Team.').slice(0, 220),
+    cta: String(b.cta || 'Dream Bigger. Let AI Work Harder!').slice(0, 160),
+    brand: String(b.brand || 'CYBORG CHEEBEE OFFICE').slice(0, 120),
+    color1: hex(b.color1, '#77eaff'),
+    color2: hex(b.color2, '#8b5cf6'),
+    format: b.format === 'wide' ? 'wide' : 'vertical',
+    mode: ['product', 'recap', 'agent', 'campus'].indexOf(b.mode) >= 0 ? b.mode : 'product',
+    watermark: b.watermark !== false,
+    imageUrl: /^https?:\/\//i.test(String(b.imageUrl || '').trim()) ? String(b.imageUrl).trim().slice(0, 500) : '',
+    captions: Array.isArray(b.captions) ? b.captions.slice(0, 5).map(function (x) { return String(x).slice(0, 160); }) : [],
+    voiceoverUrl: /^https?:\/\//i.test(String(b.voiceoverUrl || '').trim()) ? String(b.voiceoverUrl).trim().slice(0, 500) : '',
+  };
+}
+async function renderOfficeVideo(cfg, baseName) {
+  if (!fs.existsSync(VIDEO_RENDERER)) throw new Error('Video renderer missing — run npm install inside video/.');
+  fs.mkdirSync(VIDEO_DIR, {recursive: true});
+  const name = safeVideoName(baseName) + '-' + Date.now();
+  const cfgFile = path.join(VIDEO_WORK, '.job-' + name + '.json');
+  const outFile = path.join(VIDEO_DIR, name + '.mp4');
+  fs.writeFileSync(cfgFile, JSON.stringify(cfg));
+  try {
+    const r = await execFileAsync(process.execPath, [VIDEO_RENDERER, cfgFile, outFile], {
+      cwd: VIDEO_WORK, timeout: 300000, maxBuffer: 8 * 1024 * 1024, windowsHide: true,
+    });
+    fs.writeFileSync(path.join(VIDEO_DIR, name + '.json'), JSON.stringify(cfg, null, 2));
+    log('🎬 Video rendered: ' + name + ' ' + String((r && r.stdout) || '').trim().slice(-100), 'video');
+    return {name, url: '/videos/' + name + '.mp4', config: cfg};
+  } finally {
+    try { fs.unlinkSync(cfgFile); } catch (_) {}
+  }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -1518,11 +2004,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders'
         && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
       const b = await body(req);
-      const real = ceoPassword();
-      if (!real || String(b.pass || '') !== real) {
+      if (!ceoAuthorized(req, b)) {
         guardBumpBad(ip);
-        log('Blocked ' + p + ' — wrong or missing CEO password', 'security');
-        return sendJSON(res, 403, { ok: false, error: 'Locked! CEO password required.' });
+        log('Blocked ' + p + ' — missing CEO session or password', 'security');
+        return sendJSON(res, 403, { ok: false, error: 'Locked! CEO login required.', sessionExpired: true });
       }
       req._body = b;
     }
@@ -1532,17 +2017,113 @@ const server = http.createServer(async (req, res) => {
       const ok = !!real && String(b.pass || '') === real;
       if (ok) {
         const g = guard.get(ip); if (g) { g.bad = 0; g.n = 0; guard.set(ip, g); }
+        const token = newSession(ip);
         log('CEO logged in — office unlocked', 'security');
-      } else guardBumpBad(ip);
-      return sendJSON(res, ok ? 200 : 403, { ok });
+        return sendJSON(res, 200, { ok: true, token, expiresAt: Date.now() + SESSION_TTL_MS });
+      }
+      guardBumpBad(ip);
+      return sendJSON(res, 403, { ok: false, error: 'Mali ang password.' });
+    }
+
+    // P1: session verify / logout / password change
+    if (p === '/api/session' && req.method === 'GET') {
+      const tok = String((req.headers && req.headers['x-ceo-token']) || '');
+      const s = sessions.get(tok);
+      const ok = !!(s && s.expires > Date.now());
+      return sendJSON(res, ok ? 200 : 401, { ok, expiresAt: ok ? s.expires : 0 });
+    }
+    if (p === '/api/logout' && req.method === 'POST') {
+      const tok = String((req.headers && req.headers['x-ceo-token']) || '');
+      if (tok) sessions.delete(tok);
+      log('CEO logged out', 'security');
+      return sendJSON(res, 200, { ok: true });
+    }
+    if (p === '/api/ceo/password' && req.method === 'POST') {
+      const b = await body(req);
+      const next = String(b.newPass || '');
+      if (next.length < 12) return sendJSON(res, 400, { ok: false, error: 'Password must be at least 12 characters.' });
+      const sec = secrets();
+      sec.password = next;
+      writeJSON(SECRETS_FILE, sec);
+      sessions.clear(); // force re-login everywhere with the new password
+      auditEvent('CEO password changed; all sessions revoked', 'security');
+      return sendJSON(res, 200, { ok: true, sessionsRevoked: true });
     }
 
     if (p === '/api/health' && req.method === 'GET') {
+      const h = systemHealth();
       return sendJSON(res, 200, { ok: true, version: APP_VERSION, uptimeSeconds: Math.floor((Date.now() - STARTED_AT) / 1000),
         startedAt: STARTED_AT, stopped: !!state.stopped, running: !!state.running, agents: AGENT_META.length + state.hires.length,
         openTasks: state.tasks.filter(t => t.status !== 'done' && t.status !== 'rejected').length,
-        memoryStorage: 'json-files', backupCount: listDataBackups().length });
+        memoryStorage: 'json-files', backupCount: listDataBackups().length,
+        codeHash: h.codeHash, loadedCodeHash: h.loadedCodeHash,
+        settingsMtime: h.settingsMtime, loadedAt: h.loadedAt,
+        drift: h.drift, settingsChanged: h.settingsChanged, quotaLow: h.quotaLow,
+        routes: h.routes, agentHealth: h.agentHealth });
     }
+    // P1: read-only provider/model preflight (no keys are returned).
+    if (p === '/api/preflight' && req.method === 'GET')
+      return sendJSON(res, 200, { ok: true, preflight: preflight() });
+    /* ---------- P2: governance ledger routes ---------- */
+    if (p === '/api/ceo/publish' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const action = String(b.action || 'list');
+      if (action === 'list')
+        return sendJSON(res, 200, { ok: true, entries: state.publishLedger.slice(0, 100) });
+      if (action !== 'add') return sendJSON(res, 400, { ok: false, error: 'Unknown publish action.' });
+      const platform = cleanTxt(b.platform || '').slice(0, 40);
+      const title = cleanTxt(b.title || '').slice(0, 120);
+      let url = String(b.url || '').trim().slice(0, 300);
+      const note = cleanTxt(b.note || '').slice(0, 240);
+      if (!platform || !title) return sendJSON(res, 400, { ok: false, error: 'Platform at title ang kailangan.' });
+      if (url && !/^https?:\/\//i.test(url)) return sendJSON(res, 400, { ok: false, error: 'URL must start with http:// or https://.' });
+      const row = { id: 'P' + Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex'),
+        at: Date.now(), platform, title, url, note, actor: 'CEO', mode: 'manual', approved: true };
+      state.publishLedger.unshift(row);
+      if (state.publishLedger.length > 300) state.publishLedger.length = 300;
+      auditEvent('Manual publish recorded: ' + platform + ' - ' + title, 'CEO');
+      saveStateNow();
+      return sendJSON(res, 201, { ok: true, entry: row, entries: state.publishLedger.slice(0, 100),
+        note: 'Record only. This endpoint does not post to any platform.' });
+    }
+
+    if (p === '/api/ceo/backup-drill' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const drill = backupRestoreDrill(b.name);
+      auditEvent('Backup restore drill ' + (drill.ok ? 'PASSED' : 'FAILED') + ': ' + (drill.name || 'none'), 'CEO');
+      log('🧪 Backup restore drill ' + (drill.ok ? 'PASSED' : 'FAILED') + (drill.name ? ': ' + drill.name : ''), 'CEO');
+      return sendJSON(res, drill.ok ? 200 : 400, Object.assign({ ok: drill.ok }, drill));
+    }
+
+    if (p === '/api/ceo/ledger' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const action = String(b.action || 'list');
+      if (action === 'list')
+        return sendJSON(res, 200, { ok: true, ledger: state.ledger, summary: ledgerSummary() });
+      const found = ledgerFind(b.id);
+      if (!found) return sendJSON(res, 404, { ok: false, error: 'Ledger entry not found.' });
+      if (action === 'reverse') {
+        const moved = state.ledger[found.bucket].splice(found.i, 1)[0];
+        moved.status = 'reversed'; moved.reversedAt = Date.now(); moved.reversedBy = 'CEO';
+        moved.reverseReason = cleanTxt(b.reason || '').slice(0, 200);
+        state.ledger.reversed.unshift(moved);
+        auditEvent('Ledger reversed: ' + moved.id + ' (' + moved.reverseReason + ')', 'CEO');
+        saveStateNow();
+        return sendJSON(res, 200, { ok: true, entry: moved, ledger: state.ledger, summary: ledgerSummary() });
+      }
+      if (action === 'approve-transfer') {
+        if (found.bucket !== 'pending') return sendJSON(res, 409, { ok: false, error: 'Only pending entries can be approved.' });
+        const moved = state.ledger[found.bucket].splice(found.i, 1)[0];
+        moved.status = 'confirmed'; moved.approvedAt = Date.now(); moved.approvedBy = 'CEO';
+        state.ledger.confirmed.unshift(moved);
+        auditEvent('Ledger approved by CEO (record only): ' + moved.id, 'CEO');
+        saveStateNow();
+        return sendJSON(res, 200, { ok: true, entry: moved, ledger: state.ledger, summary: ledgerSummary(),
+          note: 'Ledger status updated only. No external payment or transfer was executed.' });
+      }
+      return sendJSON(res, 400, { ok: false, error: 'Unknown ledger action.' });
+    }
+
     if (p === '/api/ceo/ops' && req.method === 'POST') {
       const b = await body(req);
       const action = String(b.action || 'status');
@@ -1567,6 +2148,14 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/ceo/research' && req.method === 'POST') {
       const b = req._body || await body(req);
       const action = String(b.action || 'list');
+      // P1: optional research service health + CEO-only fixed-path start/stop.
+      if (action === 'service-status')
+        return sendJSON(res, 200, { ok: true, service: await researchClient.getServiceHealth() });
+      if (action === 'service-start' || action === 'service-stop') {
+        const out = await controlResearch(action === 'service-start' ? 'start' : 'stop');
+        auditEvent('Research service ' + (action === 'service-start' ? 'START' : 'STOP') + ' requested by CEO', 'CEO');
+        return sendJSON(res, out.ok ? 200 : 500, { ok: !!out.ok, action, error: out.error || '' });
+      }
       if (action === 'list') {
         return sendJSON(res, 200, {
           ok: true,
@@ -1761,6 +2350,12 @@ const server = http.createServer(async (req, res) => {
       order.paymentRef = paymentRef;
       order.verifiedAt = Date.now();
       order.verifiedBy = 'CEO';
+      // P2: finance ledger is separate from game stats; no payment gateway is connected.
+      ledgerAdd('confirmed', {
+        type: 'order-payment', ref: order.code, paymentRef, amount: Number(order.total) || 0,
+        source: 'mall-order', actor: 'CEO',
+        note: 'CEO verified payment using receipt ref ' + paymentRef + '. Manual confirmation only.'
+      });
       // Count verified orders once. Referral commission is recorded only when attribution exists.
       state.bazaarStats.orders++;
       const sr = order.ref ? state.bazaarShares.find(share => share.id === order.ref && share.kind === 'product') : null;
@@ -1780,6 +2375,12 @@ const server = http.createServer(async (req, res) => {
           referrer.earned = (referrer.earned || 0) + paid;
           referrer.paidOrders = (referrer.paidOrders || 0) + 1;
           grantVisitor(referrer, paid, 5);
+          // P2: pending referral payout is a ledger record, not an executed transfer.
+          ledgerAdd('pending', {
+            type: 'referral-commission', ref: order.code, amount: paid,
+            payee: cleanTxt(referrer.name).slice(0, 60), source: 'bazaar-referral', actor: 'bazaar',
+            note: 'Estimated referral commission awaiting CEO approval. No transfer executed.'
+          });
           log('💰 ' + cleanTxt(referrer.name) + ' earned ₱' + paid + ' estimated referral commission from verified order ' + order.code, 'bazaar');
         }
       }
@@ -1793,17 +2394,18 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/settings' && req.method === 'POST') {
       const b = await body(req);
       const cur = readJSON(SETTINGS_FILE, {});
-      // Preserve CEO password, OAuth credentials, affiliate IDs and any future settings.
-      // The old replacement object silently erased these when saving AI provider settings.
+      const sec = secrets();
+      // P1: API keys go to secrets.json; settings.json keeps only non-secret config.
       const next = Object.assign({}, cur, {
-        apiKey: typeof b.apiKey === 'string' ? b.apiKey : cur.apiKey || '',
         provider: typeof b.provider === 'string' ? b.provider : cur.provider || 'auto',
         model: typeof b.model === 'string' && b.model.trim() ? b.model.trim() : cur.model || '',
         baseUrl: typeof b.baseUrl === 'string' ? b.baseUrl.trim() : cur.baseUrl || '',
-        keys: b.keys && typeof b.keys === 'object' ? b.keys : cur.keys || {},
         failover: Array.isArray(b.failover) ? b.failover : cur.failover || []
       });
+      if (typeof b.apiKey === 'string') sec.apiKey = b.apiKey;
+      if (b.keys && typeof b.keys === 'object') sec.keys = b.keys;
       writeJSON(SETTINGS_FILE, next);
+      writeJSON(SECRETS_FILE, sec);
       const eff = settings();
       log('Settings updated (' + eff.provider + ' / ' + eff.model + ')', 'system');
       return sendJSON(res, 200, { ok: true, hasKey: !!eff.apiKey, model: eff.model, provider: eff.provider,
@@ -1817,11 +2419,13 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/providers' && req.method === 'POST') {
       const b = await body(req);
       const cur = readJSON(SETTINGS_FILE, {});
-      cur.keys = b.keys && typeof b.keys === 'object' ? b.keys : cur.keys || {};
+      const sec = secrets();
+      if (b.keys && typeof b.keys === 'object') sec.keys = b.keys;
       cur.failover = Array.isArray(b.failover) ? b.failover.slice(0, 5) : cur.failover || [];
       writeJSON(SETTINGS_FILE, cur);
+      writeJSON(SECRETS_FILE, sec);
       log('Failover providers updated: ' + (cur.failover.join(', ') || 'none'), 'CEO');
-      return sendJSON(res, 200, { ok: true, keys: cur.keys, failover: cur.failover });
+      return sendJSON(res, 200, { ok: true, keys: sec.keys || {}, failover: cur.failover });
     }
 
     // Ollama local status + model auto-detect (no key required).
@@ -2055,6 +2659,34 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/api/routines' && req.method === 'GET') return sendJSON(res, 200, { routines: state.routines });
+    if (p === '/api/office/shift' && req.method === 'GET') return sendJSON(res, 200, {
+      ok: true, proposals: state.shiftProposals.slice(0, 30),
+      intervalMin: SHIFT_INTERVAL_MS / 60000, lastPlanAt: lastShiftPlanAt,
+      queued: state.tasks.filter(t => t.status === 'queued').length
+    });
+    if (p === '/api/office/shift' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const action = String(b.action || 'list');
+      if (action === 'list') return sendJSON(res, 200, {
+        ok: true, proposals: state.shiftProposals.slice(0, 30),
+        intervalMin: SHIFT_INTERVAL_MS / 60000, lastPlanAt: lastShiftPlanAt,
+        queued: state.tasks.filter(t => t.status === 'queued').length
+      });
+      if (action === 'generate') {
+        const made = generateShiftProposals(true);
+        return sendJSON(res, 201, { ok: true, proposals: made });
+      }
+      if (action === 'approve' || action === 'reject') {
+        const r = decideShiftProposal(b.id, action === 'approve');
+        return sendJSON(res, r.ok ? 200 : 400, r);
+      }
+      if (action === 'approve-all') {
+        const ids = state.shiftProposals.filter(x => x.status === 'pending').map(x => x.id);
+        const tasks = ids.map(id => decideShiftProposal(id, true)).filter(x => x.ok && x.task).map(x => x.task);
+        return sendJSON(res, 200, { ok: true, tasks });
+      }
+      return sendJSON(res, 400, { ok: false, error: 'Unknown shift action.' });
+    }
     if (p === '/api/routines' && req.method === 'POST') {
       const b = await body(req);
       if (Array.isArray(b.routines)) {
@@ -2065,7 +2697,11 @@ const server = http.createServer(async (req, res) => {
           minutes: Math.max(1, Number(r.minutes) || 60),
           enabled: !!r.enabled,
           lastRun: Number(r.lastRun) || 0,
-          runs: Number(r.runs) || 0
+          runs: Number(r.runs) || 0,
+          weekday: r.weekday === undefined ? undefined : Number(r.weekday),
+          hour: r.hour === undefined ? undefined : Number(r.hour),
+          tz: r.tz ? String(r.tz).slice(0, 40) : undefined,
+          fn: r.fn ? String(r.fn).slice(0, 40) : undefined
         }));
         saveRoutines();
         log('Routines updated (' + state.routines.filter(r => r.enabled).length + ' active)', 'CEO');
@@ -2111,15 +2747,43 @@ const server = http.createServer(async (req, res) => {
       const b = await body(req);
       const t = state.tasks[Number(b.index)];
       if (!t) return sendJSON(res, 400, { ok: false });
-      if (b.approve) { t.approved = true; t.status = 'queued'; log('Approved: ' + t.title, 'CEO'); }
-      else { t.status = 'rejected'; log('Rejected: ' + t.title, 'CEO'); }
+      t.reviewedBy = 'CEO'; t.reviewedAt = Date.now();
+      if (b.approve) {
+        t.approved = true; t.status = 'queued'; auditEvent('Approved task: ' + t.title, 'CEO'); log('Approved: ' + t.title, 'CEO');
+        if (String(t.note || '').indexOf('VIDEO:') === 0) {
+          try {
+            const v = JSON.parse(String(t.note).slice(6));
+            const cfg = videoConfigFrom(v.config || {});
+            cfg.watermark = false;
+            const r = await renderOfficeVideo(cfg, String(v.name || 'video').replace(/-preview$/, '') + '-final');
+            t.note = 'FINAL:' + r.url;
+            t.status = 'done';
+            log('🎬 Final video ready: ' + r.url, 'video');
+          } catch (e) {
+            t.note = 'VIDEO_FINAL_FAILED: ' + e.message;
+            t.status = 'failed';
+          }
+        }
+      }
+      else { t.status = 'rejected'; auditEvent('Rejected task: ' + t.title, 'CEO'); log('Rejected: ' + t.title, 'CEO'); }
+      state.approvalLog.unshift({ id: t.id || '', taskId: t.id || '', title: String(t.title || '').slice(0, 120),
+        bot: t.bot, decision: b.approve ? 'approved' : 'rejected',
+        reviewedBy: 'CEO', at: Date.now(), source: t.source || 'task board' });
+      if (state.approvalLog.length > 300) state.approvalLog.length = 300;
+      saveStateNow();
       return sendJSON(res, 200, { ok: true, tasks: state.tasks });
     }
 
     if (p === '/api/tasks/retry' && req.method === 'POST') {
       const b = await body(req);
       const t = state.tasks[Number(b.index)];
-      if (t) { t.status = 'queued'; t.note = ''; }
+      if (t) {
+        if ((t.attempts || 0) >= 3 && !b.force)
+          return sendJSON(res, 409, { ok: false, error: 'Dead-lettered after 3 attempts. Use force to retry.' });
+        t.status = 'queued'; t.note = ''; t.lastError = ''; t.retriedAt = Date.now();
+        auditEvent('Task retry queued: ' + t.title, 'CEO');
+        log('Retry queued: ' + t.title, 'CEO');
+      }
       return sendJSON(res, 200, { ok: true, tasks: state.tasks });
     }
 
@@ -2717,44 +3381,47 @@ const server = http.createServer(async (req, res) => {
     // 🔑 CEO FACEBOOK SETUP — server-side lang sinusulat; hindi ibinabalik ang secret sa browser
     if (p === '/api/ceo/setup-fb' && req.method === 'POST') {
       const b = await body(req);
-      const real = ceoPassword();
-      if (String(b.pass || '') !== real) return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
+      if (!ceoAuthorized(req, b)) return sendJSON(res, 403, { ok: false, error: 'CEO login required.' });
       const cur = readJSON(SETTINGS_FILE, {});
+      const sec = secrets();
       const id = String(b.fbAppId || '').trim();
       const secret = String(b.fbAppSecret || '').trim();
       const redirect = String(b.fbRedirectUri || '').trim();
       if (id) cur.fbAppId = id;
-      if (secret) cur.fbAppSecret = secret;
+      if (secret) sec.fbAppSecret = secret;
       if (redirect) cur.fbRedirectUri = redirect;
       writeJSON(SETTINGS_FILE, cur);
+      writeJSON(SECRETS_FILE, sec);
       log('🔵 Facebook login credentials updated (server-side only)', 'CEO');
       return sendJSON(res, 200, {
         ok: true,
-        configured: !!(cur.fbAppId && cur.fbAppSecret && cur.fbRedirectUri),
+        configured: !!(cur.fbAppId && sec.fbAppSecret && cur.fbRedirectUri),
         redirect: cur.fbRedirectUri || ''
       });
     }
     // 🛍️ SHOPEE AFFILIATE — Affiliate ID / token, server-side lang; hindi binabalik sa browser
     if (p === '/api/ceo/setup-shopee' && req.method === 'POST') {
       const b = await body(req);
-      if (!ceoPassword() || String(b.pass || '') !== ceoPassword())
-        return sendJSON(res, 403, { ok: false, error: 'CEO password required.' });
+      if (!ceoAuthorized(req, b))
+        return sendJSON(res, 403, { ok: false, error: 'CEO login required.' });
       const cur = readJSON(SETTINGS_FILE, {});
+      const sec = secrets();
       const id = String(b.shopeeAffId || '').trim().slice(0, 64);
       const token = String(b.shopeeAffToken || '').trim().slice(0, 256);
       if (id) cur.shopeeAffId = id;
-      if (token) cur.shopeeAffToken = token;
+      if (token) sec.shopeeAffToken = token;
       writeJSON(SETTINGS_FILE, cur);
+      writeJSON(SECRETS_FILE, sec);
       log('🛍️ Shopee Affiliate credentials updated (server-side only)', 'CEO');
       return sendJSON(res, 200, {
         ok: true,
-        configured: !!(cur.shopeeAffId || cur.shopeeAffToken),
+        configured: !!(cur.shopeeAffId || sec.shopeeAffToken),
         affiliateIdSet: !!cur.shopeeAffId
       });
     }
     // 🔌 CEO CONNECTIONS — status lang ang ipinapadala; secrets hindi lumalabas sa browser
     if (p === '/api/ceo/connections' && req.method === 'POST') {
-      const cfg = readJSON(SETTINGS_FILE, {});
+      const cfg = readSettingsMerged();
       const dep = readJSON(path.join(DATA, 'deploy.json'), {});
       const env = process.env;
       const has = (...vals) => vals.some(x => String(x || '').trim().length > 0);
@@ -2929,6 +3596,14 @@ const server = http.createServer(async (req, res) => {
         if (!ref) return sendJSON(res, 200, { ok: false, error: 'Kailangan ang Shopee order reference.' });
         rd.status = 'fulfilled'; rd.ref = ref; rd.fulfilledAt = Date.now(); rd.fulfilledBy = 'CEO';
         setShipping(rd, 'packed', 'Na-order na sa Shopee. Hintay ng pickup ng courier.', '');
+        // P2: fulfillment is recorded in the finance ledger, separate from game stats.
+        const ledgerGross = Math.round((Number(rd.price) || 0) * BAZAAR_COMMISSION_RATE * 100) / 100;
+        ledgerAdd('confirmed', {
+          type: 'redemption-fulfillment', ref: rd.id, externalRef: ref,
+          amount: Number(rd.price) || 0, commissionEstimate: ledgerGross,
+          source: 'goods-redemption', actor: 'CEO',
+          note: 'CEO fulfilled goods redemption. Shopee order ref ' + ref + '. Manual record only.'
+        });
         // 🎁 Ang goods fulfillment ay actual affiliate order din — idagdag sa office earnings
         const gross = Math.round((Number(rd.price) || 0) * BAZAAR_COMMISSION_RATE * 100) / 100;
         state.bazaarStats.orders++;
@@ -2980,6 +3655,105 @@ const server = http.createServer(async (req, res) => {
       scheduleSave();
       log('👑 CEO granted ' + cleanTxt(v.name) + ': +' + coin + ' tokens, +' + xp + ' XP' + (applied ? ', ' + applied : ''), 'CEO');
       return sendJSON(res, 200, { ok: true, visitor: visitorView(v), applied: applied });
+    }
+
+    /* ===== 🎬 VIDEO FACTORY (Remotion) ===== */
+    if (p === '/api/video/list' && req.method === 'GET') {
+      try {
+        fs.mkdirSync(VIDEO_DIR, {recursive: true});
+        const rows = fs.readdirSync(VIDEO_DIR).filter(f => f.endsWith('.mp4')).map(f => {
+          const st = fs.statSync(path.join(VIDEO_DIR, f));
+          let cfg = {};
+          try { cfg = JSON.parse(fs.readFileSync(path.join(VIDEO_DIR, f.replace(/\.mp4$/, '.json')), 'utf8')); } catch (_) {}
+          return {name: f.replace(/\.mp4$/, ''), url: '/videos/' + f, size: st.size, created: st.mtimeMs, config: cfg};
+        }).sort((a, b) => b.created - a.created).slice(0, 40);
+        return sendJSON(res, 200, {ok: true, videos: rows});
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
+    }
+    if (p === '/api/video/render' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const cfg = videoConfigFrom(b);
+        const r = await renderOfficeVideo(cfg, safeVideoName(b.name || cfg.mode));
+        return sendJSON(res, 200, Object.assign({ok: true}, r));
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
+    }
+    if (p === '/api/video/approve' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const name = safeVideoName(b.name);
+        const cfgFile = path.join(VIDEO_DIR, name + '.json');
+        if (!fs.existsSync(cfgFile)) return sendJSON(res, 404, {ok: false, error: 'Video config not found.'});
+        const cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+        cfg.watermark = false;
+        const r = await renderOfficeVideo(cfg, name.replace(/-preview$/, '') + '-final');
+        return sendJSON(res, 200, Object.assign({ok: true}, r));
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
+    }
+    if (p === '/api/video/batch' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const items = Array.isArray(b.items) ? b.items.slice(0, 10) : [];
+      if (!items.length) return sendJSON(res, 400, {ok: false, error: 'items[] required (max 10).'});
+      const results = [];
+      for (const it of items) {
+        try {
+          const cfg = videoConfigFrom(it);
+          const r = await renderOfficeVideo(cfg, safeVideoName(it.name || cfg.mode));
+          results.push(Object.assign({ok: true}, r));
+        } catch (e) { results.push({ok: false, error: e.message}); }
+      }
+      return sendJSON(res, 200, {ok: true, results});
+    }
+    if (p === '/api/video/recap' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const st = publicState();
+        const agents = (st.agents || []).length;
+        const tasks = (st.tasks || []).length;
+        const products = (st.products || []).length;
+        const routines = (st.routines || []).length;
+        const cfg = videoConfigFrom({
+          name: 'weekly-recap', mode: 'recap', format: b.format || 'wide',
+          title: 'Weekly Office Recap',
+          tagline: agents + ' AI employees · ' + tasks + ' tasks · ' + products + ' products · ' + routines + ' routines',
+          cta: 'Dream Bigger. Let AI Work Harder!',
+          watermark: b.watermark !== false,
+        });
+        const r = await renderOfficeVideo(cfg, 'weekly-recap');
+        return sendJSON(res, 200, Object.assign({ok: true}, r));
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
+    }
+
+    if (p === '/api/video/campus' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const cfg = videoConfigFrom({
+          mode: 'campus', format: b.format || 'wide',
+          title: b.title || 'Cyborg Cheebee HQ',
+          tagline: b.tagline || 'Our 3D AI campus - where agents work 24/7.',
+          cta: b.cta || 'Dream Bigger. Let AI Work Harder!',
+          watermark: b.watermark !== false,
+          imageUrl: b.imageUrl || '', captions: b.captions || [], voiceoverUrl: b.voiceoverUrl || '',
+        });
+        const r = await renderOfficeVideo(cfg, safeVideoName(b.name || 'campus-intro'));
+        state.tasks.push({bot: 'post', title: '🏙️ Video: ' + cfg.title, approval: true, status: 'approval',
+          note: 'VIDEO:' + JSON.stringify({name: r.name, url: r.url, config: cfg})});
+        saveStateNow();
+        return sendJSON(res, 200, Object.assign({ok: true}, r));
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
+    }
+    if (p === '/api/video/brief' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const brief = String(b.brief || '').trim().slice(0, 1500);
+      if (!brief) return sendJSON(res, 400, {ok: false, error: 'Brief required.'});
+      try {
+        const sys = 'You are the AI Video Editor Assistant of Cyborg Cheebee Office. Convert the CEO brief into ONLY a JSON object with keys: title, tagline, cta, format (vertical|wide), mode (product|recap|agent|campus), color1 (#rrggbb), color2 (#rrggbb), imageUrl (string or empty), voiceoverUrl (string or empty), captions (array of short strings). No markdown, no explanation. Match the language of the brief.';
+        const raw = await callAI(sys, 'Brief: ' + brief, 500);
+        const m = String(raw).match(/\{[\s\S]*\}/);
+        if (!m) throw new Error('AI did not return JSON. Raw: ' + String(raw).slice(0, 120));
+        const parsed = JSON.parse(m[0]);
+        return sendJSON(res, 200, {ok: true, config: videoConfigFrom(parsed)});
+      } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
     }
 
     /* static files */
