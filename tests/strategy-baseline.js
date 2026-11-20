@@ -63,7 +63,7 @@ const protectedHashes = {
   // agent error visibility, secrets separation, CEO session tokens, preflight/quota
   // routing, approval/publish/finance ledgers and hashed backup restore drill.
   // Hash below explicitly refreshed for Batch 3.
-  'server.js': '22b165ca9422ed9b847a8e6c454bb1090690fd82dcaa24f9483f86961ca131d1',
+  'server.js': 'fd68b31323ecd20fb7bd701349e8db2560f004c3e281486f518d03b690bdb98b',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -109,7 +109,9 @@ const protectedHashes = {
   // CEO/Lock FABs, office quest strip, chat/overlay panels, and disable parking 3D.
   // 2026-11-21: perf pass - 20fps render cap, slower polling (ping 15s/refresh 12s),
   // hidden-tab skip, throttled frame3D fx updates; cache-bust office-v9 v41/v42.
-  'public/index.html': 'cac991087f89f6eb63af0bccbb4b46db0142df1aa0515d22c9fcfb60a0052e26',
+  // 2026-11-21: ARYASKY-style beautification pass - richer landscape, farm, entrance
+  // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
+  'public/index.html': '5c2a70cba846eaf2d57feccdc7fb927f3aeae95747a45f704902d01dcacabc98',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -167,7 +169,9 @@ const protectedHashes = {
   // role labels, edit/render status and moods — visual only.
   // 2026-11-21: perf pass - default detail low (scenery hidden), hide drones/holo/
   // rooftop/basement by default in buildBatch1World to cut draw calls/CPU.
-  'public/office-v9.js': 'ef4eed8dc3a94a8d07b8dc936bd956e69074d3b780db6a4555b39a51644ec8f5',
+  // 2026-11-21: beautification pass - cohesive exterior/interior visual polish
+  // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
+  'public/office-v9.js': '8d5d5a95246d7ec4adbea5141814e90040813b0dac4cd3c7953484a869502895',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

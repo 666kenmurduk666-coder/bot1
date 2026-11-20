@@ -185,6 +185,15 @@
     t.userData.cv = cv; t.userData.q = q;
     TEX[ck] = t; return t;
   }
+  // Wide, high-resolution canvas for the exterior bot-output billboard.
+  function makeBoardTex(key, w, h) {
+    var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    var q = cv.getContext('2d');
+    var t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; t.needsUpdate = true;
+    t.userData = { cv: cv, q: q };
+    return t;
+  }
   function carpetTex(base, line, rx, ry) {
     return makeTex('carpet-' + base + '-' + line, function (q, S) {
       q.fillStyle = base; q.fillRect(0, 0, S, S);
@@ -477,14 +486,19 @@
   function grassTex() {
     return makeTex('grass', function (q, S) {
       var r = rnd(907);
-      q.fillStyle = '#5f9153'; q.fillRect(0, 0, S, S);
-      for (var i = 0; i < 2000; i++) {
-        q.fillStyle = i % 3 ? 'rgba(126,173,104,.28)' : 'rgba(58,108,62,.32)';
-        q.fillRect(r() * S, r() * S, 2 + r() * 5, 1.5 + r() * 3);
+      q.fillStyle = '#4f8a4a'; q.fillRect(0, 0, S, S);
+      for (var i = 0; i < 2200; i++) {
+        q.fillStyle = i % 4 === 0 ? 'rgba(146,196,118,.26)' : i % 3 ? 'rgba(104,156,86,.24)' : 'rgba(43,92,50,.28)';
+        q.fillRect(r() * S, r() * S, 2 + r() * 5, 1.5 + r() * 4);
       }
-      for (var k = 0; k < 18; k++) {
-        q.fillStyle = 'rgba(226,204,120,.16)';
-        q.beginPath(); q.arc(r() * S, r() * S, 3 + r() * 9, 0, 6.3); q.fill();
+      for (var k = 0; k < 22; k++) {
+        q.fillStyle = k % 3 ? 'rgba(232,214,150,.14)' : 'rgba(255,245,200,.10)';
+        q.beginPath(); q.arc(r() * S, r() * S, 3 + r() * 10, 0, 6.3); q.fill();
+      }
+      // subtle path-like highlights
+      for (var j = 0; j < 120; j++) {
+        q.fillStyle = 'rgba(180,210,150,.08)';
+        q.fillRect(r() * S, r() * S, 6 + r() * 18, 1 + r() * 2);
       }
     }, 14, 14);
   }
@@ -1061,6 +1075,7 @@
   function entranceCanopy(cx, z) {
     box(10.4, .16, 2.3, solid('#2f3d52', { metalness: .35, roughness: .4 }), cx, 3.18, z + 1.15);
     box(10.6, .08, 2.45, solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 }), cx, 3.3, z + 1.15);
+    bx(9.8, .03, 1.8, '#fff4d8', cx, 3.09, z + 1.15, true);
     [-3.4, 0, 3.4].forEach(function (dx) { bx(2.2, .03, .07, '#ffe1a8', cx + dx, 3.08, z + 2.15, true); });
     [-4.6, 4.6].forEach(function (dx) {
       cyl(.045, 2.85, '#8b97a5', cx + dx, 1.62, z + 2.05);
@@ -1076,6 +1091,10 @@
     box(.36, .02, .24, '#e7e9ec', 22.5, 1.13, 30);
     cyl(.025, .02, '#8b97a5', 23.1, 1.13, 30);
     cyl(.05, .14, '#d9c39a', 24.1, 1.18, 30.05);
+    // small greenery accent on reception side
+    cyl(.04, .12, '#5b4632', 24.55, 1.16, 30.08);
+    var recLeaf = new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), solid('#4f9a63', { roughness: .9 }));
+    recLeaf.position.set(24.55, 1.3, 30.08); addO(recLeaf);
     var t = makeTex('welcome-mat', function (q, S) {
       q.fillStyle = '#2f4a52'; q.fillRect(0, 0, S, S);
       q.strokeStyle = '#8fb6b2'; q.lineWidth = 8; q.strokeRect(10, 10, S - 20, S - 20);
@@ -1095,6 +1114,10 @@
     cyl(.2, .02, '#5c6f86', 37, .9, 7.5);
     box(1.2, .05, .08, '#d9dde2', 37, 1.05, .42);
     ['#c94f5f', '#3f9d9a', '#2f4a6d'].forEach(function (c, i) { cyl(.02, .24, c, 36.7 + i * .3, 1.14, .48); });
+    // small tabletop greenery
+    cyl(.05, .1, '#8b5e34', 35.7, .91, 7.5);
+    var meetLeaf = new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), solid('#4ca86a', { roughness: .9 }));
+    meetLeaf.position.set(35.7, 1.04, 7.5); addO(meetLeaf);
     wallSign('HUDDLE', 'SCREEN SHARE', 43.2, 1.75, 16.35, 1.8, .5, -Math.PI / 2, '#5f7fa8');
     wallSign('STUDIO', 'MEETING', 29.12, 1.7, 9.5, .85, .28, Math.PI / 2, '#3f6fa8');
   }
@@ -1111,6 +1134,12 @@
     box(.04, .6, .04, '#b9c3cd', 39.8, 1.72, 32.79);
     box(2.4, .06, .35, '#a9793f', 34.5, 2.05, 28.2);
     for (var i = 0; i < 5; i++) cyl(.08, .12, '#f2eee4', 33.6 + i * .45, 2.14, 28.2);
+    // fruit bowl accent
+    cyl(.18, .05, '#f2eee4', 35.4, 2.11, 28.18);
+    ['#ff7a59', '#ffd27d', '#79e0b2'].forEach(function (c, i) {
+      var fruit = new THREE.Mesh(new THREE.SphereGeometry(.055, 7, 6), solid(c, { roughness: .55 }));
+      fruit.position.set(35.32 + i * .08, 2.16, 28.16 + (i % 2 ? .03 : -.02)); addO(fruit);
+    });
   }
   function serverDetails() {
     box(7.4, .08, .5, solid('#aeb8c4', { map: metalTex(), metalness: .6, roughness: .3 }), 5, 2.72, 25.5);
@@ -1126,7 +1155,7 @@
     exitSign(28.7, 2.72, 33.76, 0, 'EXIT');
     exitSign(37, 2.75, 16.62, 0, 'EXIT');
     wallSign('← WELCOME', 'MAIN STREET →', 12, 2.72, 23.2, 3.2, .55, 0, '#3f9d9a');
-    wallSign('MEET →', '← FOCUS', 33, 2.72, 23.2, 3.0, .55, 0, '#5f7fa8');
+    wallSign('MEET →', '← FOCUS', 33, 2.72, 23.2, 3.0, .55, 0, '#5f7fa8');;
     wallSign('CEO', 'EXECUTIVE', 11.12, 1.7, 27.5, .8, .3, Math.PI / 2, '#b08a3d');
   }
   function greenSurrounds() {
@@ -1136,10 +1165,11 @@
     floor(220, 220, solid('#ffffff', { map: grassTex(), roughness: 1, metalness: 0 }), 23, -.20, 17);
 
     // Rolling hills (bundok) — flattened spheres, cheap from the hero camera.
-    [[-40, 70, 24, 8, 17, '#548a4e'], [4, 88, 30, 11, 20, '#5f9855'],
-     [60, 82, 26, 9, 18, '#4f834a'], [100, 52, 22, 7, 16, '#69a35d'],
-     [-46, -34, 20, 7, 15, '#5c9453'], [78, -40, 24, 8, 17, '#52884c'],
-     [24, 108, 34, 12, 22, '#5a9152']].forEach(function (h) {
+    [[-40, 70, 24, 8, 17, '#4f8550'], [4, 88, 30, 11, 20, '#5b9858'],
+     [60, 82, 26, 9, 18, '#4a7f4b'], [100, 52, 22, 7, 16, '#6aa864'],
+     [-46, -34, 20, 7, 15, '#588f55'], [78, -40, 24, 8, 17, '#4e834d'],
+     [24, 108, 34, 12, 22, '#568d54'], [-78, 44, 18, 6, 13, '#5f9960'],
+     [116, 14, 20, 7, 15, '#4d8650']].forEach(function (h) {
       var hill = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), solid(h[5], { roughness: 1 }));
       hill.scale.set(h[2], h[3], h[4]);
       hill.position.set(h[0], -h[3] * .5, h[1]);
@@ -1149,28 +1179,53 @@
     // Farm belt south of the office: tilled rows, barn, hay bales, fence.
     for (var fr = 0; fr < 6; fr++) {
       var fz = 52 + fr * 3.4;
-      box(30, .14, 1.7, solid('#8c6a44', { roughness: 1 }), 46, -.10, fz);
+      box(30, .16, 1.8, solid(fr % 2 ? '#7a5838' : '#856243', { roughness: 1 }), 46, -.09, fz);
       for (var fc = 0; fc < 15; fc++) {
-        var crop = bx(.55, .45 + (fr % 2) * .15, .55, fr % 2 ? '#4f9a4c' : '#6db35a', 32 + fc * 2, .20, fz);
+        var cropCol = fr % 3 === 0 ? '#4ea657' : fr % 3 === 1 ? '#6fc05f' : '#5ab06a';
+        var crop = bx(.58, .5 + (fr % 2) * .18, .58, cropCol, 32 + fc * 2, .22, fz);
         // v30: crops are interactable (E = water/harvest via the app).
         crop.userData.v9FarmCrop = true;
         fx.crops.push({ m: crop, x: 32 + fc * 2, z: fz, idx: fr % 3 });
       }
     }
-    box(6, 3, 5, '#a8463a', 66, 1.45, 58);
-    box(6.6, .35, 5.6, '#7d3129', 66, 3.12, 58);
-    bx(1.7, 2, .1, '#ead9ae', 66, 1.05, 55.45, true);
-    [[62, 50], [64, 52], [66, 50]].forEach(function (p) { cyl(.7, 1.05, '#d6b45c', p[0], .52, p[1]); });
+    box(6.2, 3.1, 5.2, '#b04a3d', 66, 1.5, 58);
+    box(6.8, .38, 5.8, '#7a2f28', 66, 3.22, 58);
+    box(.18, .3, 5.4, '#e3c07a', 62.9, 3.35, 58);
+    box(.18, .3, 5.4, '#e3c07a', 69.1, 3.35, 58);
+    bx(1.8, 2.05, .1, '#f1e3c2', 66, 1.08, 55.38, true);
+    bx(.22, 2.05, .1, '#8b5e34', 65.05, 1.08, 55.38);
+    bx(.22, 2.05, .1, '#8b5e34', 66.95, 1.08, 55.38);
+    [[62, 50], [64, 52], [66, 50], [68, 51.5]].forEach(function (p, i) { cyl(.72, 1.08, i % 2 ? '#ddb85f' : '#d2a94f', p[0], .54, p[1]); });
     for (var ff = 0; ff < 15; ff++) {
       var fx2 = 31 + ff * 2.3;
-      cyl(.09, .95, '#cdb88f', fx2, .48, 49);
-      if (ff < 14) box(2.3, .09, .09, '#cdb88f', fx2 + 1.15, .62, 49);
+      cyl(.09, .98, '#d6c28f', fx2, .49, 49);
+      if (ff < 14) box(2.3, .1, .1, '#ccb67f', fx2 + 1.15, .64, 49);
     }
 
     // Trees around the perimeter make the place feel alive.
     [[-34, 52], [-10, 62], [8, 66], [76, 50], [88, 68], [-40, 20],
-     [82, 18], [34, -20], [62, -26], [-12, -24], [16, 76], [54, 74]]
-      .forEach(function (p, i) { tree(p[0], p[1], 1.5 + (i % 3) * .35); });
+     [82, 18], [34, -20], [62, -26], [-12, -24], [16, 76], [54, 74],
+     [-58, 6], [96, 36], [-22, 84], [72, 84]]
+      .forEach(function (p, i) { tree(p[0], p[1], 1.45 + (i % 3) * .35); });
+
+    // Soft garden accents near the office approach (low-poly, scenery-tagged).
+    [[10, 37.5], [36, 37.5], [6, 41], [40, 41], [23, 38.5]].forEach(function (p, i) {
+      var cols = ['#6fbf72', '#5cae63', '#7acb7d', '#66b86d'];
+      for (var b = 0; b < 3; b++) {
+        var bush = new THREE.Mesh(new THREE.SphereGeometry(.42 + (b % 2) * .12, 8, 6),
+          solid(cols[(i + b) % cols.length], { roughness: .95 }));
+        bush.position.set(p[0] + (b - 1) * .45, .22 + b * .04, p[1] + (b % 2 ? .18 : -.12));
+        addO(bush);
+      }
+      if (i % 2 === 0) {
+        var flower = new THREE.Mesh(new THREE.SphereGeometry(.14, 7, 5), solid(i % 4 ? '#ffd27d' : '#ff9fc4', { roughness: .7 }));
+        flower.position.set(p[0] + .2, .48, p[1] + .05); addO(flower);
+      }
+    });
+    for (var sp = 0; sp < 7; sp++) {
+      var stone = new THREE.Mesh(new THREE.CylinderGeometry(.38, .42, .06, 7), solid('#c8c2b6', { roughness: .98 }));
+      stone.position.set(23, -.13, 36.2 + sp * 1.35); addO(stone);
+    }
 
     // v30 performance guard: everything above can be hidden in one switch.
     if (structureGroup) {
@@ -1438,11 +1493,12 @@
   function tree(x, z, s) {
     var k = s || 1;
     shadow(x, z, .85 * k, .65 * k, .14);
-    cyl(.32 * k, .5 * k, '#8b5e34', x, .25 * k, z);
-    cyl(.075 * k, 1.5 * k, '#5b4632', x, 1.25 * k, z);
-    [[0, 1.78, .72], [.52, 1.44, .62], [-.5, 1.5, .62], [.08, 2.24, .55], [-.15, 2.0, .48]].forEach(function (p, i) {
+    cyl(.34 * k, .5 * k, '#7a5230', x, .25 * k, z);
+    cyl(.075 * k, 1.55 * k, '#5b4632', x, 1.28 * k, z);
+    [[0, 1.82, .76], [.54, 1.46, .66], [-.52, 1.52, .64], [.1, 2.3, .58], [-.18, 2.04, .5], [.26, 1.98, .46]].forEach(function (p, i) {
+      var cols = ['#2f8558', '#3a9d68', '#2d7a52', '#46a86f', '#2f7f59', '#3f9363'];
       var leaf = new THREE.Mesh(new THREE.SphereGeometry(p[2] * k, 9, 7),
-        solid(i % 2 ? '#358d63' : '#2c7d57', { roughness: .9 }));
+        solid(cols[i % cols.length], { roughness: .88 }));
       leaf.position.set(x + p[0] * k, p[1] * k, z); addO(leaf);
       fx.plants.push({ m: leaf, bz: leaf.rotation.z, bx: leaf.rotation.x, p: i * 1.1 + z });
     });
@@ -1549,6 +1605,119 @@
       fx.screens.push({ t: t, q: t.userData.q, idx: idx, step: idx });
     }
     return t;
+  }
+
+  /* ---------- exterior BOT OUTPUT WALL (large hologram signboard) ---------- */
+  var BOARD_NAMES = {
+    drop: 'Drop Videos', edit: 'Video Editor', rvs: 'RVS Revise', seo: 'SEO Caption Bot',
+    sched: 'Scheduler Bot', post: 'Posting Bot', mgr: 'Bot Manager', cos: 'Chief of Staff',
+    outreach: 'Client Outreach', scraper: 'Community Scraper', social: 'Social Media Manager',
+    product: 'Product Video Bot', joker: 'Office Jester', fixer: 'Office Fixer',
+    hflex: 'HF Script Planner', hfstory: 'HF Storyboard Bot', hfmotion: 'HF Motion Editor',
+    hfcaption: 'HF Caption & Overlay', hfrender: 'HF Render QA'
+  };
+  var boardState = { tex: null, q: null, W: 1024, H: 512, names: {}, timer: null, lastUpdate: '' };
+  function boardShort(s, n) {
+    s = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    return s.length > n ? s.slice(0, n - 1) + '…' : s;
+  }
+  function paintBoard(q, W, H, payload) {
+    var items = (payload && payload.items) || [];
+    var names = (payload && payload.names) || {};
+    var time = (payload && payload.time) || '';
+    var grad = q.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0d2b4a'); grad.addColorStop(.55, '#10203d'); grad.addColorStop(1, '#1b1238');
+    q.fillStyle = grad; q.fillRect(0, 0, W, H);
+    q.fillStyle = 'rgba(95,214,255,.10)';
+    for (var gy = 96; gy < H; gy += 46) q.fillRect(0, gy, W, 1);
+    q.fillStyle = '#5fd6ff'; q.fillRect(0, 0, W, 7);
+    q.fillStyle = '#a78bfa'; q.fillRect(0, 7, W, 3);
+    q.textBaseline = 'middle'; q.textAlign = 'left';
+    q.fillStyle = '#ffffff'; q.font = 'bold 40px Arial, sans-serif';
+    q.fillText('BOT OUTPUT WALL', 44, 52, 700);
+    q.fillStyle = 'rgba(255,255,255,.55)'; q.font = '20px Arial, sans-serif';
+    q.fillText('CYBORG CHEEBEE OFFICE  ·  LIVE', 46, 82, 700);
+    q.textAlign = 'right'; q.fillStyle = '#79e0b2'; q.font = 'bold 20px Arial, sans-serif';
+    q.fillText(time || 'CONNECTING', W - 40, 56);
+    q.textAlign = 'left';
+    q.fillStyle = 'rgba(255,255,255,.18)'; q.fillRect(44, 104, W - 88, 2);
+    if (!items.length) {
+      q.fillStyle = 'rgba(255,255,255,.62)'; q.font = '26px Arial, sans-serif';
+      q.fillText('Waiting for bot outputs…', 48, 190, 900);
+      q.fillStyle = 'rgba(255,255,255,.34)'; q.font = '18px Arial, sans-serif';
+      q.fillText('Run an agent or the full pipeline to light up this wall.', 48, 228, 900);
+    } else {
+      var accent = ['#5fd6ff', '#79e0b2', '#ffd27d', '#ff9fc4', '#a78bfa'];
+      items.slice(0, 7).forEach(function (it, i) {
+        var y = 140 + i * 51;
+        q.fillStyle = 'rgba(8,16,34,.62)'; q.fillRect(44, y - 18, W - 88, 44);
+        q.fillStyle = accent[i % accent.length]; q.fillRect(44, y - 18, 6, 44);
+        q.fillStyle = '#ffffff'; q.font = 'bold 21px Arial, sans-serif';
+        q.fillText(names[it.id] || it.name || it.id, 64, y - 3, 300);
+        q.fillStyle = 'rgba(255,255,255,.72)'; q.font = '19px Arial, sans-serif';
+        q.fillText(boardShort(it.text, 92), 372, y - 3, W - 430);
+      });
+    }
+    q.fillStyle = 'rgba(255,255,255,.28)'; q.font = '16px Arial, sans-serif';
+    q.fillText('AUTO-REFRESH · 45s', 46, H - 26);
+  }
+  function refreshBoard() {
+    if (!boardState.tex || document.hidden) return;
+    fetch('/api/state', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var outputs = (j && j.outputs) || {};
+        var items = Object.keys(outputs).filter(function (id) { return outputs[id]; }).sort().slice(0, 7).map(function (id) {
+          return { id: id, name: BOARD_NAMES[id] || boardState.names[id] || id, text: boardShort(outputs[id], 120) };
+        });
+        var stamp = new Date().toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
+        paintBoard(boardState.q, boardState.W, boardState.H, { items: items, names: boardState.names, time: stamp });
+        boardState.tex.needsUpdate = true;
+        boardState.lastUpdate = new Date().toISOString();
+      })
+      .catch(function () {
+        paintBoard(boardState.q, boardState.W, boardState.H, { items: [], time: 'OFFLINE · RETRY' });
+        boardState.tex.needsUpdate = true;
+      });
+  }
+  function botOutputBoard() {
+    if (boardState.timer) { clearInterval(boardState.timer); boardState.timer = null; }
+    var W = 1024, H = 512;
+    var tex = makeBoardTex('bot-output-board-' + Date.now(), W, H);
+    boardState.tex = tex; boardState.q = tex.userData.q; boardState.W = W; boardState.H = H;
+    boardState.names = {}; boardState.lastUpdate = '';
+    paintBoard(boardState.q, W, H, { items: [], time: 'CONNECTING' });
+    var grp = new THREE.Group();
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(11.7, 5.3, .24),
+      solid('#0b1424', { emissive: '#0a2340', emissiveIntensity: .35 }));
+    frame.position.set(0, 5.55, 0); grp.add(frame);
+    var scr = new THREE.Mesh(new THREE.PlaneGeometry(11.2, 4.8),
+      new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true, opacity: .97, toneMapped: false }));
+    scr.position.set(0, 5.55, .14); grp.add(scr);
+    function edge(w, h, x, y, color) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, .14),
+        solid(color, { emissive: color, emissiveIntensity: .6 }));
+      m.position.set(x, y, .16); grp.add(m);
+    }
+    edge(11.7, .09, 0, 8.22, '#5fd6ff');
+    edge(11.7, .09, 0, 2.88, '#5fd6ff');
+    edge(.09, 5.3, -5.85, 5.55, '#a78bfa');
+    edge(.09, 5.3, 5.85, 5.55, '#a78bfa');
+    [-5.2, 5.2].forEach(function (px) {
+      var post = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, 2.9, 12), solid('#4b586b'));
+      post.position.set(px, 1.45, 0); grp.add(post);
+      var foot = new THREE.Mesh(new THREE.BoxGeometry(1.1, .14, .8), solid('#2e3a4d'));
+      foot.position.set(px, .07, 0); grp.add(foot);
+    });
+    grp.position.set(23, 0, 34.2); grp.rotation.y = 0; addO(grp);
+    reflection(23, 34.2, 6.5, 1.4, '#5fd6ff', 0, .09);
+    fetch('/api/agents', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      ((j && j.agents) || []).forEach(function (a) {
+        if (a && a.id) boardState.names[a.id] = a.n || a.name || a.id;
+      });
+      refreshBoard();
+    }).catch(refreshBoard);
+    boardState.timer = setInterval(refreshBoard, 45000);
   }
   function bench(cx, cz) {
     planeAt(8.4, 4.3, solid('#ffffff', { map: carpetTex('#6f8f8b', '#3f6662', 4, 2), roughness: .95, metalness: 0 }), cx, .008, cz);
@@ -1845,10 +2014,11 @@
       box(.4, .1, .4, '#2e3a4d', px, 3.12, 36.4);
     });
     wallSign('ENTRANCE', 'DROP-OFF · TAXI · VISITORS', 23, 2.85, 36.62, 4.6, 1.0, Math.PI, '#3f9d9a');
+    bx(4.2, .03, .05, '#6bb3a6', 23, 2.38, 36.56, true);
     // street furniture and greenery
     [6, 18, 30].forEach(function (px) {
       box(2.0, .4, 1.0, '#8b5e34', px, .2, 35.6);
-      plant(px - .5, 35.6, .7); plant(px + .5, 35.6, .7);
+      plant(px - .6, 35.55, .72); plant(px, 35.65, .66); plant(px + .6, 35.55, .72);
     });
     [-2, 10, 22, 34].forEach(function (lx) {
       streetLamp(lx, 44.9, 48.6);
@@ -2564,6 +2734,7 @@
     bx(5.6, .035, .05, '#5fd6ff', 23, .055, 29.46, true);
     bx(3.2, .035, .05, '#ffd27d', 23, .055, 30.94, true);
     wallSign('CYBORG CHEEBEE', 'AI AGENTS HEADQUARTERS', 23, 2.52, 33.86, 6.4, 1.35, 0, '#3f9d9a');
+    botOutputBoard();
     sofa(13.5, 30.4, '#3f7d78', Math.PI / 2);
     sofa(32.5, 30.4, '#4a6a9a', -Math.PI / 2);
     box(1.8, .08, .85, '#a9793f', 23, .4, 31.8);
@@ -3946,6 +4117,8 @@
     setSeason: setSeason,
     setWorldFeature: setWorldFeature,
     setBotFeature: setBotFeature,
+    refreshBoard: refreshBoard,
+    get board() { return { lastUpdate: boardState.lastUpdate, active: !!boardState.timer }; },
     get world() {
       return { weather: window.__officeWeather || 'clear', season: window.__officeSeason || 'default',
         night: nightValue(), nightAmount: fx && fx.night ? fx.night.amount : 0,
