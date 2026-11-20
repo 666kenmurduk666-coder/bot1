@@ -990,3 +990,22 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `body.ui-hidden` was active from the H toggle; `.v9bub` CSS remains exempt
   from the hide rule. No console errors.
 
+## v30 — Office Studio editor + polish batch (local)
+### Pinagbago
+- Bagong `public/office-studio.js?v=30`: HQ Layout Editor na may tool palette
+  (select/place/erase/pan), undo/redo, snap/zoom/pan, inspector, lock/duplicate,
+  room resize/rename, presets (Default HQ / Open Studio / Farm Campus), theme
+  select, photo presets + freeze, bot cards, adaptive detail guard, chat quick
+  actions, farm interaction at accessibility mode.
+- `office-v9.js?v=30`: job-status antenna lamps, `freeze/detail/theme` hooks,
+  interactable crops, green-only seasonal material swaps at detail guard cache fix.
+- `index.html`: v9 at studio cache-bust bump; H hide-UI shortcut ay hindi
+  hinawakan. Protected cull line at `t.userData` guard nanatili.
+- Editor shortcuts: V/B/E/Space/Del/Ctrl+Z/arrows/Esc. Hindi ginagamit ang H
+  para hindi mabreak ang Hide UI. Auto-save gamit ang umiiral na `autoSaveLayout()`.
+
+### Verification (lokal)
+- `node --check public/office-studio.js`, `node --check public/office-v9.js`: PASS.
+- `node tests/strategy-baseline.js`: PASS; na-update ang hashes (may bagong
+  `office-studio.js` hash sa baseline).
+
