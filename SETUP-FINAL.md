@@ -28,13 +28,24 @@ QUOTA groq=OK requests=xxx/1000
 
 | Dahilan | Status |
 |---|---|
-| Maling provider sa Render | ✅ Naayos remotely |
-| 24/7 mode = `manual` | ✅ Default na `ON` sa local code (kailangang i-deploy para sa live) |
-| Kailangang i-click ang 24/7 mode | ✅ **Auto-run na tuwing :10 at :40** via `keepalive-ping.ps1` — walang click |
+| Maling provider sa Render | ✅ Naayos remotely: `groq / qwen/qwen3.8-27b` |
+| Kailangang i-click ang 24/7 mode | ✅ **Auto-run na tuwing :10 at :40** — GitHub Actions + `keepalive-ping.ps1`. Walang click, kahit patay ang PC. |
 | Render disk bumubura pag restart | ✅ Auto-heal tuwing :10/:40 + 06:05 PHT via `keepalive-ping.ps1` |
-| Deploy ng auto-on na `index.html` | ⏳ Naka-push na sa `main` — hintayin ang Render auto-deploy |
+| Deploy ng auto-on na `index.html` | ✅ Naka-push na sa `main`; live ay may 10-min interval na |
 
-Kung bumalik ang problema, i-double-click ang `CHECK-BOTS.bat`, tapos tingnan ang `logs\keepalive.log` para sa `LIVE_HEAL` o `LIVE_HEAL_FAIL`.
+Kung bumalik ang problema, i-double-click ang `CHECK-BOTS.bat` — awtomatiko nitong inaayos ang Ollama, provider, at run-all (`AUTO-FIX.ps1`). Detail: `logs\autofix.log` at `logs\keepalive.log`.
+
+## 1c. Mga bagong auto-tools (5 suggestions — LAHAT tapos)
+
+| # | Tool | Status |
+|---|---|---|
+| 1 | `auto-run.yml` (GitHub Actions) | ✅ Cron `:10/:40`, 06:00–24:00 PHT. Tested: `ok:true`, 8 agents. Password nasa **GitHub Secret** (naka-mask sa public logs). |
+| 2 | `CHECK-BOTS.bat` + `AUTO-FIX.ps1` | ✅ Double-click lang — check **at** auto-fix (Ollama + live settings + run-all). |
+| 3 | `/private` command | ✅ OpenCode command gamit ang `ollama/qwen2.5:3b` — offline, walang cloud. |
+| 4 | Vyce key | ✅ Tinanggal sa `settings.json` at `restore-after-deploy.js`. Hindi na bumabalik. |
+| 5 | OpenRouter 4th layer | ✅ `enable-openrouter.js` handa na (dry-run default). **Hindi pa aktibo** — kailangan ng tunay na `sk-or-...` key sa `data/openrouter.key`. Kapag may key: `node enable-openrouter.js --apply`. |
+
+**Tandaan:** Ang password ay hindi na hardcode sa anumang file sa public repo — nasa GitHub Secret at lokal na `data\settings.json` lang.
 
 ## 2. Sino-sino ang AI providers?
 
