@@ -3,7 +3,9 @@
    v24 court/ball/airliner realism and a v25 building pass: concrete columns,
    suspended ceiling tiles, HVAC vents, sprinklers, glass entry doors/canopy,
    wainscot, terrazzo, wayfinding and detailed reception/meeting/pantry/server
-   zones. North city street, x1000 entrance road and east/west side worlds remain.
+   zones. v26 view fix: ceiling tiles fade out in Silip/auto-xray so the bots
+   stay easy to observe. North city street, x1000 entrance road and east/west
+   side worlds remain.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -23,7 +25,7 @@
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [] };
+    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [] };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -657,7 +659,26 @@
   function ceilingPanel(w, d, x, z) {
     var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
       solid('#ffffff', { map: ceilingTex(), roughness: .96, metalness: 0, side: THREE.DoubleSide }));
-    m.rotation.x = Math.PI / 2; m.position.set(x, 3.285, z); return addO(m);
+    m.rotation.x = Math.PI / 2; m.position.set(x, 3.285, z);
+    m.userData.v9Ceiling = true;
+    if (fx.ceilings) fx.ceilings.push(m);
+    return addO(m);
+  }
+  function applyCeilingView() {
+    // The suspended tiles are for the low/normal view only. In Silip/auto-xray
+    // (our default hero camera) they must not become a lid over the whole floor.
+    var on = false;
+    try { on = !!(xrayOn || xrayAuto); } catch (e) {}
+    var op = on ? .04 : 1;
+    if (!fx.ceilings) return;
+    fx.ceilings.forEach(function (m) {
+      if (!m || !m.material) return;
+      if (m.material.opacity === op && m.material.transparent === on && m.material.depthWrite === !on) return;
+      m.material.transparent = on;
+      m.material.opacity = op;
+      m.material.depthWrite = !on;
+      m.material.needsUpdate = true;
+    });
   }
   function hvacVent(x, z) {
     box(1.05, .05, .68, solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 }), x, 3.24, z);
@@ -802,6 +823,7 @@
     [10.5, 19.5, 28.5, 37.5].forEach(function (x) {
       [8.5, 17, 25.5].forEach(function (z) { ceilingPanel(8.2, 7.4, x, z); });
     });
+    applyCeilingView();
     [[10.5, 12.5], [28.5, 12.5], [19.5, 26.5], [37.5, 26.5]].forEach(function (p) { hvacVent(p[0], p[1]); });
     [[6, 4.2], [15, 22.8], [24, 4.2], [33, 22.8], [42, 4.2]].forEach(function (p) {
       fireSprinkler(p[0], p[1]); smokeDetector(p[0] + 1.4, p[1]);
@@ -1987,7 +2009,7 @@
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [] };
+    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [] };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -2279,6 +2301,7 @@
       tameOfficeLights();
       if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .85;
     } catch (e) {}
+    applyCeilingView();
     cuteBots.forEach(function (b, i) {
       b.group.position.y = b.baseY + Math.sin(now / 430 + b.phase) * .055;
       b.group.rotation.y = b.face + Math.sin(now / 1700 + i) * .28;

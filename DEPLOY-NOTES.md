@@ -743,3 +743,34 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
 - `.v9bub` remains visible with `body.ui-hidden`.
 
+## 2026-11-20 — Character view fix (v26 cache-bust)
+
+### Bakit ito
+- Reklamo ng user: `ano yan bakit may kisame sa office wala na kong mapanood sa view`
+  at `gusto ko madaling ma observe mga character`. Ang v25 suspended ceiling
+  tiles ay opaque kahit naka-Silip/auto-xray, kaya naging "takip" ito sa buong
+  floor mula sa hero camera.
+
+### Fix
+- Ang 12 ceiling panels ay nirehistro sa `fx.ceilings` at may
+  `userData.v9Ceiling`. Bagong `applyCeilingView()` ang nagpapalit ng opacity:
+  `0.04` + `transparent` + `depthWrite:false` kapag `xrayOn || xrayAuto`,
+  at bumabalik sa `1` / opaque kapag normal view.
+- Tinawag ito sa `buildingEnhancements()` at sa bawat `tick()`, kahit anong
+  camera angle o Silip toggle ang gamitin. Hindi na kailangang tanggalin ang
+  kisame — makikita pa rin ito sa normal view, pero hindi na humaharang sa
+  pag-observer sa mga bot.
+- Protected v8 runtime, cull line, white-out guards at staggered screen repaint
+  ay hindi binago.
+
+### Verification (v26, lokal)
+- Walang console errors, `bots=6`, script `/office-v9.js?v=26`.
+- Ceiling panels: `ceilings=12`, opacity `0.04`, `transparent=true`,
+  `depthWrite=false` sa auto-xray; bumabalik sa `1 / false / true` kapag
+  normal view.
+- Lahat ng 6 na bot ay **onscreen** sa hero view, kabilang ang active talker.
+- Pixel stats bumalik sa malinis na antas: `bgPct=1.1`, `edgePct=19.5`,
+  `meanLum=100.7`, `highPct=0`, `nearWhitePct=0` (v25 ceiling-blocked view ay
+  `meanLum=122.6`). Guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- **Cache-bust:** `/office-v9.js?v=26`.
+

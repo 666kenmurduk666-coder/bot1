@@ -51,11 +51,11 @@ const protectedHashes = {
   // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
   // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
   // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
-  // Cache-bust bumped v4 -> v25 (the service worker caches by URL, so every
+  // Cache-bust bumped v4 -> v26 (the service worker caches by URL, so every
   // office-v9.js edit needs a fresh query string). Cinematic CSS grade, tighter
   // hero camera (phi .44 / theta .30 / r36 / fov50), brighter .v9bub styling,
   // glass south facade and legible signs remain. White-out guards unchanged.
-  'public/index.html': '92636b29f516d95c66c4ef05ce21c2aeeba1abdfa7202fc86d24c398175e8579',
+  'public/index.html': '836727f4803f10b3597eb85c3c3d40496e7259b11babdd57ccf59c34ff47fbdf',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
@@ -81,9 +81,11 @@ const protectedHashes = {
   // windows and layered contrails. v25 building pass: concrete columns, suspended
   // ceiling tiles, HVAC/sprinklers/smoke detectors, terrazzo slab, wainscot,
   // glass entry doors/canopy, detailed reception/meeting/pantry/server zones and
-  // wayfinding/exit signs. High v9 objects are flagged so the simple-mode cull
-  // keeps them visible. Protected v8 runtime unchanged.
-  'public/office-v9.js': '8381f8fe9e5cf388197f36d266bdfb459e23ca36ea09b5dcbca06903396b4d62',
+  // wayfinding/exit signs. v26 view fix: ceiling tiles fade to .04 in
+  // Silip/auto-xray so all six bots stay easy to observe, then return opaque in
+  // normal view. High v9 objects are flagged so the simple-mode cull keeps them
+  // visible. Protected v8 runtime unchanged.
+  'public/office-v9.js': '77d510fda3ab79d6b75ccd44d1d2bc6c1a4fecbb036fa510121a71651c17332b',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
