@@ -12,6 +12,8 @@
    v29: ceiling tiles are permanently see-through, the gray surround becomes
    grass/hills/farm, and the step/mood sprite leak is fixed (use .parent, not
    .parentNode) so draw calls stay flat instead of climbing into the thousands.
+   v30: job-status antenna cues, freeze/detail/theme hooks and interactable
+   crops for the new Office Studio editor.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -77,7 +79,23 @@
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [] };
+    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
+    scenery: [], crops: [] };
+  // v30 job cues: the antenna tip reads like a tiny status lamp.
+  var JOB_HINTS = {
+    greet: ['#7cf7ff', .85], wave: ['#7cf7ff', 1.1], type: ['#8fd0ff', 1.4],
+    pack: ['#ffd34d', 1.0], joke: ['#ff9fc0', 1.5], plan: ['#b9d7ff', .7],
+    write: ['#8fd0ff', 1.2], design: ['#c9a6ff', 1.3], review: ['#ff9b97', .9],
+    showcase: ['#ffd34d', 1.6], walk: ['#ffffff', .7]
+  };
+  // v30 seasonal material swaps only touch green scenery materials. The
+  // white-out guards (bg/fog/ambient/exposure/night) are never changed here.
+  var THEME_HSL = {
+    default: { h: 0, s: 0, l: 0 },
+    fiesta: { h: .07, s: .18, l: .02 },
+    rainy: { h: .56, s: -.22, l: -.07 },
+    pasko: { h: -.03, s: .1, l: -.01 }
+  };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -1080,6 +1098,7 @@
   function greenSurrounds() {
     // v29: the flat gray surround becomes a living landscape. The dark guard
     // plane stays underneath; a green ground sits just above it.
+    var sceneryStart = structureGroup ? structureGroup.children.length : 0;
     floor(220, 220, solid('#ffffff', { map: grassTex(), roughness: 1, metalness: 0 }), 23, -.20, 17);
 
     // Rolling hills (bundok) — flattened spheres, cheap from the hero camera.
@@ -1098,7 +1117,10 @@
       var fz = 52 + fr * 3.4;
       box(30, .14, 1.7, solid('#8c6a44', { roughness: 1 }), 46, -.10, fz);
       for (var fc = 0; fc < 15; fc++) {
-        bx(.55, .45 + (fr % 2) * .15, .55, fr % 2 ? '#4f9a4c' : '#6db35a', 32 + fc * 2, .20, fz);
+        var crop = bx(.55, .45 + (fr % 2) * .15, .55, fr % 2 ? '#4f9a4c' : '#6db35a', 32 + fc * 2, .20, fz);
+        // v30: crops are interactable (E = water/harvest via the app).
+        crop.userData.v9FarmCrop = true;
+        fx.crops.push({ m: crop, x: 32 + fc * 2, z: fz, idx: fr % 3 });
       }
     }
     box(6, 3, 5, '#a8463a', 66, 1.45, 58);
@@ -1115,6 +1137,48 @@
     [[-34, 52], [-10, 62], [8, 66], [76, 50], [88, 68], [-40, 20],
      [82, 18], [34, -20], [62, -26], [-12, -24], [16, 76], [54, 74]]
       .forEach(function (p, i) { tree(p[0], p[1], 1.5 + (i % 3) * .35); });
+
+    // v30 performance guard: everything above can be hidden in one switch.
+    if (structureGroup) {
+      for (var si = sceneryStart; si < structureGroup.children.length; si++) {
+        var so = structureGroup.children[si];
+        if (so) { so.userData.v9Scenery = true; fx.scenery.push(so); }
+      }
+    }
+    applyDetailLevel(true);
+  }
+  function applyDetailLevel(force) {
+    var low = (typeof window !== 'undefined' && window.__officeDetail === 'low');
+    var count = fx.scenery.length;
+    if (!force && applyDetailLevel.last === low && applyDetailLevel.count === count) return;
+    applyDetailLevel.last = low;
+    applyDetailLevel.count = count;
+    fx.scenery.forEach(function (m) { if (m) m.visible = !low; });
+  }
+  function applyThemeVisuals(theme) {
+    var cfg = THEME_HSL[theme] || THEME_HSL.default;
+    var i = 0;
+    fx.scenery.forEach(function (root) {
+      if (!root || !root.traverse) return;
+      root.traverse(function (o) {
+        var mat = o.material;
+        if (!mat || !mat.color) return;
+        if (!o.userData.v9BaseHex) o.userData.v9BaseHex = mat.color.getHexString();
+        if (theme === 'default') { mat.color.set('#' + o.userData.v9BaseHex); return; }
+        var c = new THREE.Color('#' + o.userData.v9BaseHex), hsl = { h: 0, s: 0, l: 0 };
+        c.getHSL(hsl);
+        var greenish = hsl.h > .18 && hsl.h < .48 && hsl.s > .12;
+        if (!greenish) return;
+        if (theme === 'pasko') {
+          mat.color.set((i++ % 2) ? '#d94f4f' : '#2f9d6a');
+          return;
+        }
+        c.setHSL((hsl.h + cfg.h + 1) % 1,
+          Math.max(.05, Math.min(1, hsl.s + cfg.s)),
+          Math.max(.08, Math.min(.95, hsl.l + cfg.l)));
+        mat.color.copy(c);
+      });
+    });
   }
   function buildingEnhancements() {
     wainscot(.36, 17, .06, 33.6, '#dfe3e6');
@@ -2380,7 +2444,8 @@
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [] };
+      blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
+      scenery: [], crops: [] };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -2690,6 +2755,9 @@
       if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .85;
     } catch (e) {}
     applyCeilingView();
+    applyDetailLevel();
+    // Photo mode: keep camera/render alive but hold every bot and effect still.
+    if (typeof window !== 'undefined' && window.__officeFreeze === true) return;
     cuteBots.forEach(function (b, i) {
       if (!b.walking && now >= b.jobUntil) startBotWalk(b, now);
       if (b.walking) {
@@ -2736,6 +2804,17 @@
         b.refl.position.x = b.group.position.x;
         b.refl.position.z = b.group.position.z + .1;
         b.refl.rotation.z = -b.group.rotation.y;
+      }
+      // v30: antenna tip doubles as a tiny job status lamp.
+      if (b.tip && b.tip.material) {
+        var hint = JOB_HINTS[b.job] || JOB_HINTS.walk;
+        var theme = (typeof window !== 'undefined' && window.__officeTheme) || 'default';
+        var col = theme === 'fiesta' ? '#ff9fc0'
+          : theme === 'pasko' ? '#7cf7a0'
+          : theme === 'rainy' ? '#8fb8ff' : hint[0];
+        if (b.tip.material.color.getHexString() !== col.slice(1)) b.tip.material.color.set(col);
+        if (b.tip.material.emissive) b.tip.material.emissive.set(col);
+        b.tip.material.emissiveIntensity = hint[1] * (.78 + .28 * Math.sin(now / 230 + i));
       }
       b.tx = b.group.position.x; b.tz = b.group.position.z;
     });
@@ -2972,5 +3051,12 @@
 
   window.buildRealOffice3d = buildRealOffice3d;
   window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
-    get fx() { return fx; } };
+    get fx() { return fx; },
+    get crops() { return fx.crops; },
+    setDetail: function (v) { window.__officeDetail = v === 'low' ? 'low' : 'high'; applyDetailLevel(true); },
+    setTheme: function (v) {
+      window.__officeTheme = v || 'default';
+      applyThemeVisuals(window.__officeTheme);
+    }
+  };
 })();

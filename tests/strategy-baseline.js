@@ -57,7 +57,9 @@ const protectedHashes = {
   // glass south facade and legible signs remain. White-out guards unchanged.
   // UI clarity fix: body no longer defaults to ui-hidden (H still toggles);
   // world chat opens as a small 200x100 window, – collapses it to a 24px bar.
-  'public/index.html': '6b323cd4d6a5fcbc6c513564226e3afa1ef94f71b985ce7736addf8c216b06c4',
+  // v30: loads office-v9.js?v=30 and the new office-studio.js?v=30 module after
+  // the main app. The protected H hide-ui shortcut is left untouched.
+  'public/index.html': '54c972e917cd7d0347e6d7838a87cf2c60d8b6e0e7c86ee77ab5335e85567751',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -93,8 +95,13 @@ const protectedHashes = {
   // see-through in normal view, gray surround becomes grass/hills/farm, and
   // step/mood sprites are removed with .parent so draw calls no longer explode.
   // High v9 objects are flagged so the simple-mode cull keeps them visible.
-  // Protected v8 runtime unchanged.
-  'public/office-v9.js': 'b35e7d4a41597433662113ccc3d0dd4443f831562a1d3bb0d0796dbc4f35dca5',
+  // v30: job-status antenna lamps, freeze/detail/theme hooks, interactable crops
+  // and green-only seasonal material swaps. Protected v8 runtime unchanged.
+  'public/office-v9.js': '230fbae98bfbefabf84d24dbe983467e6e263979649441e397bfbad8c59b1961',
+  // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
+  // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
+  // chat quick actions, farm interaction hook and accessibility mode.
+  'public/office-studio.js': 'fd823eda02f986c6c95a7859d79c26eb6f1f197800ac02735f84996112d4c252',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
