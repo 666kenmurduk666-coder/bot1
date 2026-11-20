@@ -1250,8 +1250,18 @@ if(window.speechSynthesis){loadBotVoices();try{speechSynthesis.onvoiceschanged=l
 document.addEventListener('pointerdown',()=>{try{if(window.speechSynthesis)speechSynthesis.resume()}catch(e){}},{once:true});
 function botVoiceFor(id){
   if(!botVoices.length)loadBotVoices();
-  const good=v=>/fil|tl[-_]?ph|en[-_]?ph/i.test(v.lang||'');
-  return botVoices.find(good)||botVoices.find(v=>/^en/i.test(v.lang||''))||null;
+  // Cute-first: Filipino voice kung meron, kundi yung malambot na female voice.
+  const fil=v=>/fil|tl[-_]?ph|en[-_]?ph/i.test(v.lang||'')||/filipino|danica/i.test(v.name||'');
+  const cute=/zira|aria|jenny|ana|victoria|samantha|karen|female|google us english/i;
+  return botVoices.find(fil)||botVoices.find(v=>cute.test(v.name||''))||botVoices.find(v=>/^en/i.test(v.lang||''))||null;
+}
+function taglishForVoice(text){
+  let t=String(text).replace(/[✨🤖🌐🎤🧠🔵🎬🤡👑🧑🐶]/g,'').replace(/\s+/g,' ').trim();
+  // Kapag purong English ang linya, idagdag ang Tagalog na umpisa para Taglish ang dating.
+  if(!/\b(po|opo|sige|kumusta|salamat|nandito|gusto|tayo|ako|ko|mo|lang|na|sa|ng|hindi|pwede|bakit|anong)\b/i.test(t)){
+    t='Sige, '+t.charAt(0).toLowerCase()+t.slice(1);
+  }
+  return t.slice(0,180);
 }
 function speak(text,id,interrupt){
   if(!voiceOn||!window.speechSynthesis||!text)return;
@@ -1260,15 +1270,15 @@ function speak(text,id,interrupt){
   lastSpeak=now;
   try{
     if(interrupt)speechSynthesis.cancel();
-    const clean=String(text).replace(/[✨🤖🌐🎤🧠🔵🎬🤡👑🧑🐶]/g,'').replace(/\s+/g,' ').trim().slice(0,180);
+    const clean=taglishForVoice(text);
     if(!clean)return;
     const u=new SpeechSynthesisUtterance(clean);
     let h=0;for(const c of String(id||'bot'))h=(h*31+c.charCodeAt(0))>>>0;
     const v=botVoiceFor(id);if(v)u.voice=v;
     u.lang=(v&&v.lang)||'fil-PH';
-    u.pitch=.82+(h%7)*.06;   // bawat bot, ibang tono
-    u.rate=.94+(h%5)*.03;
-    u.volume=.9;
+    u.pitch=1.32+(h%6)*.04;   // cute at medyo mataas, pero iba-iba per bot
+    u.rate=1.06+(h%5)*.025;   // masigla, hindi too fast
+    u.volume=.95;
     speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -1282,7 +1292,7 @@ function toggleVoice(){
   const b=$('voice');if(b)b.textContent=label;
   if($('voiceDock'))$('voiceDock').textContent=label;
   toast(voiceOn?'🗣️ Mag-sasalita na ang bots!':'🔇 Naka-mute ang boses ng bots');
-  if(voiceOn)speak('Naka-on na ang boses. Kumusta!','cos',true);
+  if(voiceOn)speak('Voice on na, mga boss! Kumusta kayo? ✨','cos',true);
 }
 function ambientLine(a,i){
   const arr=AMBIENT[a.id]||['Working…'];
