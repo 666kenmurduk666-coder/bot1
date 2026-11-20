@@ -297,14 +297,21 @@
     }, rx, ry);
   }
   function rugTex(base, accent, rx, ry) {
-    return makeTex('rug-' + base + '-' + accent, function (q, S) {
+    return makeTex('rug-' + base + '-' + accent + '-v2', function (q, S) {
       q.fillStyle = base; q.fillRect(0, 0, S, S);
       q.strokeStyle = accent; q.lineWidth = 9; q.strokeRect(13, 13, S - 26, S - 26);
       q.lineWidth = 3; q.strokeRect(28, 28, S - 56, S - 56);
-      q.globalAlpha = .5; q.lineWidth = 6;
+      q.globalAlpha = .45; q.lineWidth = 5;
       for (var p = -S; p < S * 2; p += 46) {
         q.beginPath(); q.moveTo(p, 0); q.lineTo(p + S, S); q.stroke();
       }
+      q.globalAlpha = .22; q.lineWidth = 2;
+      for (var p2 = -S; p2 < S * 2; p2 += 46) {
+        q.beginPath(); q.moveTo(p2 + 22, 0); q.lineTo(p2 + 22 + S, S); q.stroke();
+      }
+      q.globalAlpha = .18;
+      q.strokeStyle = '#ffffff'; q.lineWidth = 2;
+      q.beginPath(); q.arc(S / 2, S / 2, S * 0.18, 0, Math.PI * 2); q.stroke();
       q.globalAlpha = 1;
     }, rx, ry);
   }
@@ -1554,6 +1561,11 @@
     });
     var cushion = new THREE.Mesh(new THREE.BoxGeometry(.8, .14, .72), solid('#d9c9a8'));
     cushion.position.set(-.5, .6, .04); cushion.rotation.z = -.22; g2.add(cushion);
+    // throw blanket draped over right arm
+    var throwB = new THREE.Mesh(new THREE.BoxGeometry(.62, .02, .86), solid('#e8d7b8', { roughness: .95 }));
+    throwB.position.set(.68, .58, -.02); throwB.rotation.z = .12; throwB.rotation.y = -.08; g2.add(throwB);
+    var throwFold = new THREE.Mesh(new THREE.BoxGeometry(.18, .02, .5), solid('#f1e4cc', { roughness: .95 }));
+    throwFold.position.set(.92, .62, -.18); throwFold.rotation.z = .45; g2.add(throwFold);
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function officeChair(x, z, rot, col) {
@@ -1571,6 +1583,17 @@
     });
     var base = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .05, 12), solid('#2f394b'));
     base.position.y = .06; g2.add(base);
+    // caster wheels
+    for (var ci = 0; ci < 5; ci++) {
+      var ca = ci * Math.PI * 2 / 5;
+      var spoke = new THREE.Mesh(new THREE.BoxGeometry(.04, .03, .18), solid('#2f394b'));
+      spoke.position.set(Math.cos(ca) * .18, .04, Math.sin(ca) * .18);
+      spoke.rotation.y = -ca; spoke.userData.v9 = true; g2.add(spoke);
+      var wheel = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, .03, 8), solid('#1f2733'));
+      wheel.rotation.z = Math.PI / 2; wheel.rotation.y = ca;
+      wheel.position.set(Math.cos(ca) * .26, .035, Math.sin(ca) * .26);
+      wheel.userData.v9 = true; g2.add(wheel);
+    }
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function desk(x, z, rot) {
@@ -1584,6 +1607,10 @@
     });
     var mon = new THREE.Mesh(new THREE.BoxGeometry(.88, .54, .06), solid('#1c2637', { roughness: .35 }));
     mon.position.set(0, 1.17, -.22); g2.add(mon);
+    var standNeck = new THREE.Mesh(new THREE.BoxGeometry(.08, .28, .05), solid('#2f394b'));
+    standNeck.position.set(0, .95, -.22); g2.add(standNeck);
+    var standBase = new THREE.Mesh(new THREE.BoxGeometry(.36, .03, .22), solid('#2f394b', { metalness: .4, roughness: .35 }));
+    standBase.position.set(0, .815, -.2); g2.add(standBase);
     var di = screenCounter++;
     var scr = new THREE.Mesh(new THREE.PlaneGeometry(.78, .44),
       new THREE.MeshBasicMaterial({ map: screenTex(di), side: THREE.DoubleSide, toneMapped: false }));
@@ -1597,6 +1624,9 @@
     var lampHead = new THREE.Mesh(new THREE.ConeGeometry(.13, .15, 10),
       solid('#f0c777', { emissive: '#ffd98a', emissiveIntensity: .65 }));
     lampHead.position.set(-.84, 1.23, -.24); lampHead.rotation.x = Math.PI; g2.add(lampHead);
+    // cable grommet/cap
+    var grom = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, .012, 10), solid('#5d6b7d', { metalness: .35, roughness: .4 }));
+    grom.position.set(.55, .81, .08); g2.add(grom);
     if (di % 4 === 0) miniDeskPlant(g2, .62, -.22);
     deskDetails(g2, di);
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
