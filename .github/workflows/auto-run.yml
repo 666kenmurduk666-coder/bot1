@@ -12,10 +12,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Password nasa GitHub variable (hindi public), pero env reference ang gamit
-    # para hindi lumabas ang aktwal na value sa public workflow logs.
+    # GitHub Secret — awtomatikong ma-mask ng GitHub sa public logs.
     env:
-      CEO_PASS: ${{ vars.CEO_PASSWORD }}
+      CEO_PASS: ${{ secrets.CEO_PASSWORD }}
     steps:
       - name: Run all office agents
         run: |
