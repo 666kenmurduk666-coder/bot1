@@ -1,10 +1,10 @@
 /* office-v9.js — Cyborg Cheebee Office.
-   v9 "photographic" + v14/v15/v16 effects + v17/v18/v19/v20/v21/v22/v23 "realistic streets"
-   pass: textured materials, warm light pools, contact shadows, legible signage,
-   a north city street, an x1000 south entrance road, east/west side worlds
-   (café court, basketball court with playing bots, market, EV bay, playground),
-   plus a contrailed airplane crossing the sky. Window reflections, blind shadows,
-   richer trim and cinematic grade remain.
+   v9 "photographic" + v14/v15/v16 effects + v17-v23 "realistic streets" plus a
+   v24 realism pass: hardwood court grain, pebbled ball, numbered jerseys,
+   humanoid limb-swinging players, glass backboards with line nets, moving ball
+   shadow, and a swept-wing airliner with intake rings, windows and contrails.
+   North city street, x1000 entrance road and east/west side worlds remain.
+   Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
 (function () {
@@ -1230,117 +1230,274 @@
     }
   }
   function courtTex() {
-    return makeTex('court', function (q, S) {
-      q.fillStyle = '#b97346'; q.fillRect(0, 0, S, S);
-      var r = rnd(55);
-      for (var i = 0; i < 2600; i++) {
-        q.fillStyle = r() > .5 ? 'rgba(255,255,255,.055)' : 'rgba(60,30,15,.07)';
+    return makeTex('court-hd', function (q, S) {
+      q.fillStyle = '#a96b41'; q.fillRect(0, 0, S, S);
+      var r = rnd(91);
+      // individual hardwood boards with seams + long grain
+      for (var x = 0; x < S; x += 22) {
+        q.fillStyle = r() > .5 ? 'rgba(255,232,198,.055)' : 'rgba(60,30,12,.06)';
+        q.fillRect(x, 0, 21, S);
+        q.fillStyle = 'rgba(52,27,12,.28)'; q.fillRect(x + 21, 0, 1, S);
+        for (var g = 0; g < 14; g++) {
+          var yy = r() * S;
+          q.strokeStyle = 'rgba(88,50,22,.13)'; q.lineWidth = 1;
+          q.beginPath(); q.moveTo(x + 2, yy);
+          q.bezierCurveTo(x + 8, yy - 7, x + 14, yy + 9, x + 20, yy); q.stroke();
+        }
+      }
+      // faded painted key + centre circle, then fine wear/scuffs
+      q.fillStyle = 'rgba(38,88,108,.13)'; q.fillRect(0, S * .34, S, S * .32);
+      q.strokeStyle = 'rgba(255,248,232,.78)'; q.lineWidth = 2;
+      q.beginPath(); q.arc(S / 2, S / 2, 37, 0, 6.3); q.stroke();
+      q.fillStyle = 'rgba(255,248,232,.14)'; q.font = 'bold 20px sans-serif';
+      q.textAlign = 'center'; q.fillText('CYBORG COURT', S / 2, S * .17);
+      for (var i = 0; i < 1100; i++) {
+        q.fillStyle = r() > .5 ? 'rgba(255,255,255,.045)' : 'rgba(22,10,4,.055)';
         q.fillRect(r() * S, r() * S, 1 + r() * 3, 1 + r() * 3);
       }
-      q.fillStyle = 'rgba(38,92,112,.16)'; q.fillRect(0, S * .42, S, S * .16);
+    }, 1, 1);
+  }
+  function ballTex() {
+    return makeTex('ball-pebble', function (q, S) {
+      q.fillStyle = '#d46a32'; q.fillRect(0, 0, S, S);
+      var r = rnd(77);
+      for (var i = 0; i < 1400; i++) {
+        q.fillStyle = r() > .5 ? 'rgba(255,205,150,.10)' : 'rgba(70,28,10,.12)';
+        q.beginPath(); q.arc(r() * S, r() * S, .6 + r() * 1.5, 0, 6.3); q.fill();
+      }
+    }, 1, 1);
+  }
+  function jerseyTex(color, num) {
+    return makeTex('jersey-' + color + '-' + num, function (q, S) {
+      q.fillStyle = color; q.fillRect(0, 0, S, S);
+      q.fillStyle = 'rgba(255,255,255,.10)'; q.fillRect(0, 0, 22, S);
+      q.fillRect(S - 22, 0, 22, S);
+      q.strokeStyle = 'rgba(255,255,255,.5)'; q.lineWidth = 7;
+      q.strokeRect(5, 5, S - 10, S - 10);
+      q.fillStyle = 'rgba(255,255,255,.92)'; q.font = 'bold 126px sans-serif';
+      q.textAlign = 'center'; q.fillText(num, S / 2, S * .66);
+    }, 1, 1);
+  }
+  function contrailTex() {
+    return makeTex('contrail', function (q, S) {
+      var g = q.createLinearGradient(0, 0, S, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(.35, 'rgba(226,241,255,.30)');
+      g.addColorStop(.72, 'rgba(255,255,255,.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = g; q.fillRect(0, S * .34, S, S * .32);
+    }, 1, 1);
+  }
+  function umbrellaTex(color) {
+    return makeTex('umbrella-' + color, function (q, S) {
+      q.fillStyle = color; q.fillRect(0, 0, S, S);
+      q.fillStyle = 'rgba(255,255,255,.42)';
+      for (var i = 0; i < S; i += 42) q.fillRect(i, 0, 21, S);
     }, 1, 1);
   }
   function miniBallBot(x, z, color, phase, rx, rz) {
+    shadow(x, z, .34, .22, .17);
     var g2 = new THREE.Group();
-    var body = new THREE.Mesh(new THREE.CylinderGeometry(.18, .22, .6, 8), solid(color));
-    body.position.y = .72; body.userData.v9 = true; g2.add(body);
-    var jersey = new THREE.Mesh(new THREE.BoxGeometry(.34, .26, .04), solid('#f4f6f8'));
-    jersey.position.set(0, .78, .2); jersey.userData.v9 = true; g2.add(jersey);
-    var head = new THREE.Mesh(new THREE.SphereGeometry(.15, 10, 8), solid('#e8c4a0'));
-    head.position.y = 1.18; head.userData.v9 = true; g2.add(head);
-    var hair = new THREE.Mesh(new THREE.SphereGeometry(.155, 10, 8, 0, 6.3, 0, 1.5), solid('#3b322c'));
-    hair.position.y = 1.21; hair.userData.v9 = true; g2.add(hair);
+    var skin = solid('#d3a278', { roughness: .82 });
+    var jersey = solid('#ffffff', { map: jerseyTex(color, String(11 + Math.floor(phase * 3))), roughness: .86 });
+    var shorts = solid('#2b3a4f', { roughness: .9 });
+    var shoe = solid('#f0f2f4', { roughness: .72 });
+    function part(geo, mat, px, py, pz) {
+      var m = new THREE.Mesh(geo, mat);
+      m.position.set(px, py, pz); m.userData.v9 = true; g2.add(m); return m;
+    }
+    part(new THREE.CylinderGeometry(.17, .22, .52, 14), jersey, 0, .88, 0);
+    part(new THREE.SphereGeometry(.18, 12, 9), jersey, 0, 1.1, 0);
+    part(new THREE.CylinderGeometry(.21, .19, .24, 14), shorts, 0, .62, 0);
+    part(new THREE.SphereGeometry(.145, 14, 10), skin, 0, 1.36, 0);
+    part(new THREE.SphereGeometry(.15, 14, 10, 0, 6.3, 0, 1.35), solid('#3a2d28'), 0, 1.4, 0);
+    [-.145, .145].forEach(function (ex) { part(new THREE.SphereGeometry(.035, 8, 6), skin, ex, 1.35, 0); });
+    [-.05, .05].forEach(function (ex) { part(new THREE.SphereGeometry(.017, 8, 6), solid('#1b2430'), ex, 1.38, .132); });
     var legs = [], arms = [];
     [-.1, .1].forEach(function (dx) {
-      var leg = new THREE.Mesh(new THREE.BoxGeometry(.1, .46, .11), solid('#35455c'));
-      leg.position.set(dx, .27, 0); leg.userData.v9 = true; g2.add(leg); legs.push(leg);
-      var arm = new THREE.Mesh(new THREE.BoxGeometry(.08, .44, .09), solid(color));
-      arm.position.set(dx * 2.7, .84, 0); arm.userData.v9 = true; g2.add(arm); arms.push(arm);
+      var lp = new THREE.Group(); lp.position.set(dx, .58, 0); g2.add(lp);
+      var thigh = new THREE.Mesh(new THREE.CylinderGeometry(.075, .065, .3, 10), skin);
+      thigh.position.y = -.15; lp.add(thigh);
+      var sock = new THREE.Mesh(new THREE.CylinderGeometry(.065, .06, .16, 10), solid('#f4f6f8'));
+      sock.position.y = -.38; lp.add(sock);
+      var sneaker = new THREE.Mesh(new THREE.BoxGeometry(.13, .09, .22), shoe);
+      sneaker.position.set(0, -.49, .05); lp.add(sneaker);
+      legs.push(lp);
+      var ap = new THREE.Group(); ap.position.set(dx * 1.9, 1.05, 0); g2.add(ap);
+      var upper = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .25, 9), jersey);
+      upper.position.y = -.13; ap.add(upper);
+      var fore = new THREE.Mesh(new THREE.CylinderGeometry(.042, .038, .24, 9), skin);
+      fore.position.y = -.37; ap.add(fore);
+      var hand = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6), skin);
+      hand.position.y = -.5; ap.add(hand);
+      arms.push(ap);
     });
     g2.position.set(x, 0, z); addO(g2);
     fx.ballers.push({ g: g2, baseX: x, baseZ: z, phase: phase,
       rx: rx, rz: rz, sp: .65 + (phase % 3) * .12, legs: legs, arms: arms });
   }
   function basketballCourt(cx, cz) {
-    var line = '#f4f6f8';
-    floor(12.4, 16.4, solid('#ffffff', { map: courtTex(), roughness: .9 }), cx, .006, cz);
-    box(12.4, .012, .08, line, cx, .014, cz - 8.2);
-    box(12.4, .012, .08, line, cx, .014, cz + 8.2);
-    box(.08, .012, 16.4, line, cx - 6.2, .014, cz);
-    box(.08, .012, 16.4, line, cx + 6.2, .014, cz);
-    box(12.4, .012, .08, line, cx, .014, cz);
-    var mid = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.55, 28),
-      new THREE.MeshBasicMaterial({ color: line, side: THREE.DoubleSide }));
-    mid.rotation.x = -Math.PI / 2; mid.position.set(cx, .016, cz); addO(mid);
+    var lineMat = solid('#f7f4e9', { transparent: true, opacity: .86, roughness: .9 });
+    var frameMat = solid('#f4f6f8', { roughness: .5, metalness: .1 });
+    function stripe(w, d, x, z) { return box(w, .012, d, lineMat, x, .015, z); }
+    // dark apron then a sealed hardwood surface
+    floor(13.6, 17.6, solid('#ffffff', { map: asphaltTex(4, 5), roughness: .96 }), cx, .004, cz);
+    floor(12.4, 16.4, solid('#ffffff', { map: courtTex(), roughness: .6, metalness: .02 }), cx, .007, cz);
+    stripe(12.4, .07, cx, cz - 8.2); stripe(12.4, .07, cx, cz + 8.2);
+    stripe(.07, 16.4, cx - 6.2, cz); stripe(.07, 16.4, cx + 6.2, cz);
+    stripe(12.4, .07, cx, cz);
+    var mid = new THREE.Mesh(new THREE.RingGeometry(1.42, 1.52, 36),
+      new THREE.MeshBasicMaterial({ color: '#f7f4e9', transparent: true, opacity: .86, side: THREE.DoubleSide }));
+    mid.rotation.x = -Math.PI / 2; mid.position.set(cx, .017, cz); addO(mid);
     [cz - 8.2, cz + 8.2].forEach(function (hz, hi) {
-      var inner = hz + (hi ? -2.4 : 2.4);
-      box(3.4, .012, .08, line, cx, .016, inner);
-      box(.08, .012, 4.8, line, cx - 1.7, .016, inner);
-      box(.08, .012, 4.8, line, cx + 1.7, .016, inner);
-      var arc = new THREE.Mesh(new THREE.RingGeometry(4.2, 4.3, 28, 1,
+      var keyZ = hz + (hi ? -2.4 : 2.4);
+      floor(3.4, 4.8, solid('#2f6f86', { transparent: true, opacity: .12, roughness: .9 }), cx, .011, keyZ);
+      stripe(3.4, .08, cx, keyZ);
+      stripe(.08, 4.8, cx - 1.7, keyZ); stripe(.08, 4.8, cx + 1.7, keyZ);
+      var arc = new THREE.Mesh(new THREE.RingGeometry(4.2, 4.29, 36, 1,
         hi ? Math.PI * 1.15 : Math.PI * .15, Math.PI * .7),
-        new THREE.MeshBasicMaterial({ color: line, side: THREE.DoubleSide }));
-      arc.rotation.x = -Math.PI / 2; arc.position.set(cx, .016, hz); addO(arc);
-      var poleZ = hz + (hi ? -1.1 : 1.1);
-      cyl(.09, 3.4, '#4a5668', cx, 1.7, poleZ);
-      box(3.0, 1.6, .08, '#eef2f4', cx, 3.25, hz + (hi ? -.55 : .55));
-      box(.55, .06, .5, '#e8622c', cx, 2.95, hz + (hi ? -.25 : .25));
-      var rim = new THREE.Mesh(new THREE.TorusGeometry(.34, .05, 8, 16), solid('#e8622c', { metalness: .4 }));
-      rim.rotation.x = Math.PI / 2; rim.position.set(cx, 2.95, hz + (hi ? -.15 : .15)); addO(rim);
-      var net = new THREE.Mesh(new THREE.CylinderGeometry(.33, .2, .45, 10, 1, true),
-        solid('#f4f6f8', { transparent: true, opacity: .6, side: THREE.DoubleSide }));
-      net.position.set(cx, 2.72, hz + (hi ? -.15 : .15)); addO(net);
+        new THREE.MeshBasicMaterial({ color: '#f7f4e9', transparent: true, opacity: .86, side: THREE.DoubleSide }));
+      arc.rotation.x = -Math.PI / 2; arc.position.set(cx, .017, hz); addO(arc);
+
+      // glass backboard with painted frame + shooter's square
+      var boardZ = hz + (hi ? -.55 : .55);
+      var poleZ = hz + (hi ? -1.15 : 1.15);
+      var faceZ = boardZ + (hi ? .05 : -.05);
+      var glass = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.55, .06),
+        solid('#cfe8f2', { transparent: true, opacity: .34, roughness: .06,
+          metalness: .15, side: THREE.DoubleSide, depthWrite: false }));
+      glass.position.set(cx, 3.25, boardZ); glass.userData.v9 = true; addO(glass);
+      box(2.82, .07, .09, frameMat, cx, 4.03, boardZ);
+      box(2.82, .07, .09, frameMat, cx, 2.47, boardZ);
+      box(.07, 1.56, .09, frameMat, cx - 1.38, 3.25, boardZ);
+      box(.07, 1.56, .09, frameMat, cx + 1.38, 3.25, boardZ);
+      box(.72, .055, .07, frameMat, cx, 3.18, faceZ);
+      box(.055, .5, .07, frameMat, cx - .36, 2.93, faceZ);
+      box(.055, .5, .07, frameMat, cx + .36, 2.93, faceZ);
+      cyl(.11, 3.5, '#4a5668', cx, 1.75, poleZ);
+      box(.12, .12, Math.abs(poleZ - boardZ) + .2, '#4a5668', cx, 3.15, (poleZ + boardZ) / 2);
+      box(.55, .55, .55, solid('#2f3d52', { roughness: .9 }), cx, 1.15, poleZ);
+
+      var rimZ = hz + (hi ? -.15 : .15);
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(.32, .035, 10, 24),
+        solid('#e8622c', { metalness: .55, roughness: .35 }));
+      rim.rotation.x = Math.PI / 2; rim.position.set(cx, 2.95, rimZ); addO(rim);
+      box(.12, .1, Math.abs(boardZ - rimZ) + .1, '#e8622c', cx, 2.95, (boardZ + rimZ) / 2);
+      var netPts = [];
+      for (var k = 0; k < 12; k++) {
+        var a = k / 12 * 6.283, b = (k + 1) / 12 * 6.283;
+        var rt = .31, rb = .19, yt = 2.92, yb = 2.5;
+        netPts.push(new THREE.Vector3(cx + Math.cos(a) * rt, yt, rimZ + Math.sin(a) * rt),
+          new THREE.Vector3(cx + Math.cos(b) * rb, yb, rimZ + Math.sin(b) * rb),
+          new THREE.Vector3(cx + Math.cos(b) * rt, yt, rimZ + Math.sin(b) * rt),
+          new THREE.Vector3(cx + Math.cos(a) * rb, yb, rimZ + Math.sin(a) * rb));
+      }
+      var net = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(netPts),
+        new THREE.LineBasicMaterial({ color: '#f4f6f8', transparent: true, opacity: .72 }));
+      addO(net);
     });
+    // chain-link-style perimeter, bleachers and court lighting
+    [-6.8, 6.8].forEach(function (dx) {
+      for (var pz = cz - 8.6; pz <= cz + 8.6; pz += 2.15) cyl(.035, 2.2, '#8b97a5', cx + dx, 1.1, pz);
+      box(.06, .06, 17.4, '#8b97a5', cx + dx, 2.2, cz);
+    });
+    [cz - 8.6, cz + 8.6].forEach(function (pz) {
+      for (var px = cx - 6.8; px <= cx + 6.8; px += 2.15) cyl(.035, 2.2, '#8b97a5', px, 1.1, pz);
+      box(13.7, .06, .06, '#8b97a5', cx, 2.2, pz);
+    });
+    for (var row = 0; row < 3; row++) {
+      box(5.4, .18, .5, solid('#5d6b84', { roughness: .9 }), cx - 3.8, .35 + row * .3, cz - 9.5 - row * .55);
+      box(5.4, .3, .12, '#8b97a5', cx - 3.8, .2 + row * .3, cz - 9.1 - row * .55);
+    }
+    streetLamp(cx - 7.4, cz - 8.8, cz - 8.8);
+    streetLamp(cx + 7.4, cz + 8.8, cz + 8.8);
+    parkBench(cx + 7.4, cz);
     miniBallBot(cx - 3.2, cz - 2.4, '#c94f5f', 0, 2.4, 3.0);
     miniBallBot(cx + 3.0, cz + 2.2, '#4a7fb0', 1.7, 2.2, 3.2);
     miniBallBot(cx + 2.6, cz - 4.0, '#c94f5f', 3.1, 2.6, 2.2);
     miniBallBot(cx - 2.8, cz + 4.2, '#4a7fb0', 4.6, 2.3, 2.6);
-    var ball = new THREE.Mesh(new THREE.SphereGeometry(.19, 12, 10), solid('#e8622c', { roughness: .85 }));
+    var ball = new THREE.Mesh(new THREE.SphereGeometry(.17, 16, 12),
+      solid('#ffffff', { map: ballTex(), roughness: .9 }));
     ball.position.set(cx, .3, cz); addO(ball);
-    var seam = new THREE.Mesh(new THREE.TorusGeometry(.19, .012, 6, 16), solid('#3b2b22'));
+    var seam = new THREE.Mesh(new THREE.TorusGeometry(.17, .012, 8, 18), solid('#3b2b22'));
     seam.rotation.x = Math.PI / 2; ball.add(seam);
-    var seam2 = new THREE.Mesh(new THREE.TorusGeometry(.19, .012, 6, 16), solid('#3b2b22'));
+    var seam2 = new THREE.Mesh(new THREE.TorusGeometry(.17, .012, 8, 18), solid('#3b2b22'));
     seam2.rotation.y = Math.PI / 2; ball.add(seam2);
     ball.cx = cx; ball.cz = cz; ball.cycle = -1; ball.shotStart = 0;
     ball.from = null; ball.to = null;
+    ball.shadow = shadow(cx, cz, .24, .16, .22);
     fx.ball = ball;
   }
   function airplane() {
     var g2 = new THREE.Group();
-    var shell = solid('#eef2f4', { metalness: .22, roughness: .4 });
-    var dark = solid('#33465e', { metalness: .3, roughness: .4 });
-    var accent = solid('#3f9d9a', { emissive: '#3f9d9a', emissiveIntensity: .25 });
-    function part(geo, mat, x, y, z, rx, ry, rz) {
+    var shell = solid('#f2f5f7', { metalness: .45, roughness: .3 });
+    var trim = solid('#2f7d86', { metalness: .4, roughness: .32 });
+    var glassMat = solid('#162b40', { transparent: true, opacity: .78, roughness: .06,
+      metalness: .55, side: THREE.DoubleSide });
+    var metal = solid('#9aa6b3', { metalness: .75, roughness: .28 });
+    function jetPart(geo, mat, x, y, z, rx, ry, rz) {
       var m = new THREE.Mesh(geo, mat);
       m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, rz || 0);
       m.userData.v9 = true; g2.add(m); return m;
     }
-    part(new THREE.CylinderGeometry(.16, .19, 2.5, 12), shell, 0, 0, 0, 0, 0, Math.PI / 2);
-    part(new THREE.ConeGeometry(.16, .45, 12), shell, 1.48, 0, 0, 0, 0, -Math.PI / 2);
-    part(new THREE.BoxGeometry(.85, .05, 3.2), shell, -.12, -.02, 0);
-    part(new THREE.BoxGeometry(.45, .05, 1.35), shell, -.95, .02, 0);
-    part(new THREE.BoxGeometry(.42, .55, .06), accent, -1.02, .32, 0);
-    var cockpit = part(new THREE.SphereGeometry(.14, 10, 8), dark, .72, .1, 0);
-    cockpit.scale.set(1.5, .55, .85);
-    [-.95, .95].forEach(function (dz) {
-      part(new THREE.CylinderGeometry(.11, .11, .5, 10), dark, -.12, -.16, dz, 0, 0, Math.PI / 2);
-    });
-    for (var wx = -.55; wx <= .56; wx += .28) {
-      part(new THREE.BoxGeometry(.08, .04, .025), dark, wx, .1, .175);
-      part(new THREE.BoxGeometry(.08, .04, .025), dark, wx, .1, -.175);
+    function wingGeo(sign, span, root, tip, sweep) {
+      var p = [[root * .45, 0], [-root * .55, 0],
+        [-sweep - tip * .6, span * sign], [-sweep + tip * .4, span * sign]];
+      var v = [];
+      function tri(a, b, c) { v.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); }
+      var top = p.map(function (q) { return [q[0], .028, q[1]]; });
+      var bot = p.map(function (q) { return [q[0], -.028, q[1]]; });
+      tri(top[0], top[1], top[2]); tri(top[0], top[2], top[3]);
+      tri(bot[2], bot[1], bot[0]); tri(bot[3], bot[2], bot[0]);
+      for (var i = 0; i < 4; i++) {
+        var j = (i + 1) % 4;
+        tri(top[i], bot[i], bot[j]); tri(top[i], bot[j], top[j]);
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+      geo.computeVertexNormals(); return geo;
     }
+    // smooth fuselage, rounded nose and tapered tail
+    jetPart(new THREE.CylinderGeometry(.19, .21, 2.4, 16), shell, 0, 0, 0, 0, 0, Math.PI / 2);
+    var nose = jetPart(new THREE.SphereGeometry(.2, 16, 10), shell, 1.18, 0, 0);
+    nose.scale.set(1.5, 1, 1);
+    jetPart(new THREE.ConeGeometry(.2, .5, 16), shell, -1.35, 0, 0, 0, 0, Math.PI / 2);
+    jetPart(new THREE.BoxGeometry(2.2, .045, .02), trim, 0, -.025, .205);
+    jetPart(new THREE.BoxGeometry(2.2, .045, .02), trim, 0, -.025, -.205);
+    var cockpit = jetPart(new THREE.SphereGeometry(.13, 12, 9), glassMat, .85, .1, 0);
+    cockpit.scale.set(1.9, .72, 1.05);
+    for (var wx = -.55; wx <= .66; wx += .22) {
+      jetPart(new THREE.SphereGeometry(.022, 8, 6), glassMat, wx, .075, .186);
+      jetPart(new THREE.SphereGeometry(.022, 8, 6), glassMat, wx, .075, -.186);
+    }
+    // swept main wings + smaller tailplanes + vertical fin
+    jetPart(wingGeo(1, 1.75, 1.1, .75, .45), shell, -.05, -.02, 0);
+    jetPart(wingGeo(-1, 1.75, 1.1, .75, .45), shell, -.05, -.02, 0);
+    jetPart(wingGeo(1, .7, .55, .35, .25), shell, -1.15, .02, 0);
+    jetPart(wingGeo(-1, .7, .55, .35, .25), shell, -1.15, .02, 0);
+    jetPart(new THREE.BoxGeometry(.52, .58, .055), trim, -1.25, .38, 0, 0, 0, .18);
+    // nacelles, intake rings and pylons
+    [-.98, .98].forEach(function (dz) {
+      jetPart(new THREE.CylinderGeometry(.13, .155, .48, 14), metal, -.12, -.16, dz, 0, 0, Math.PI / 2);
+      jetPart(new THREE.TorusGeometry(.135, .025, 8, 18), metal, .13, -.16, dz, 0, Math.PI / 2, 0);
+      jetPart(new THREE.CircleGeometry(.115, 16), solid('#162231', { roughness: .9 }), .135, -.16, dz, 0, Math.PI / 2, 0);
+      jetPart(new THREE.BoxGeometry(.26, .16, .08), shell, -.05, -.03, dz * .62, 0, .15, 0);
+    });
     var beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#ff5f5f',
       transparent: true, opacity: .8, blending: THREE.AdditiveBlending,
       depthWrite: false, toneMapped: false }));
-    beacon.position.set(-1.25, .45, 0); beacon.scale.set(.42, .42, 1); g2.add(beacon);
+    beacon.position.set(-1.5, .48, 0); beacon.scale.set(.4, .4, 1); g2.add(beacon);
     var trails = [];
-    [-.95, .95].forEach(function (dz) {
-      var tr = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#dff4ff',
-        transparent: true, opacity: .16, blending: THREE.AdditiveBlending,
-        depthWrite: false, toneMapped: false }));
-      tr.position.set(-1.9, -.12, dz); tr.scale.set(2.6, .22, 1); g2.add(tr);
-      trails.push(tr);
+    [-.98, .98].forEach(function (dz) {
+      [0, 1].forEach(function (k) {
+        var tr = new THREE.Sprite(new THREE.SpriteMaterial({ map: contrailTex(), color: '#e6f4ff',
+          transparent: true, opacity: .22 - k * .06, blending: THREE.AdditiveBlending,
+          depthWrite: false, toneMapped: false }));
+        tr.position.set(-1.55 - k * .9, -.14 - k * .02, dz);
+        tr.scale.set(2.8 + k * 1.4, .2 + k * .09, 1); g2.add(tr); trails.push(tr);
+      });
     });
+    g2.scale.setScalar(1.15);
     g2.position.set(4, 11, 22); g2.rotation.y = .18; addO(g2);
     fx.planes.push({ g: g2, x0: 4, x1: 42, y: 11, z: 22, sp: 2.6,
       beacon: beacon, trails: trails });
@@ -2076,10 +2233,17 @@
             var ry = handler.g.rotation.y;
             var tx = handler.g.position.x + Math.sin(ry) * .28;
             var tz = handler.g.position.z + Math.cos(ry) * .28;
-            var ty = .22 + Math.abs(Math.sin(now / 150 + 1.1)) * .28;
+            var ty = .19 + Math.abs(Math.sin(now / 150 + 1.1)) * .3;
             ball.position.x += (tx - ball.position.x) * .45;
             ball.position.z += (tz - ball.position.z) * .45;
             ball.position.y = ty;
+          }
+          if (ball.shadow) {
+            var bh = Math.max(0, ball.position.y - .19);
+            ball.shadow.position.x = ball.position.x;
+            ball.shadow.position.z = ball.position.z;
+            ball.shadow.scale.set(.24 + bh * .13, .16 + bh * .08, 1);
+            ball.shadow.material.opacity = .22 / (1 + bh * 2.2);
           }
           ball.rotation.x += dt * 5;
           ball.rotation.z += dt * 2.2;

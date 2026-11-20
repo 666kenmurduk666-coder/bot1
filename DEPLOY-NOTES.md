@@ -610,4 +610,54 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   Pixel stats: `bgPct=0.2`, `edgePct=5.2`, `meanLum=99.5`, `meshes=3537`,
   `textured=314`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - No duplicate function declarations remain.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Deploy:** commit `fc89b72` pushed; Render detected `/office-v9.js?v=23`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live verification:** `bots=6`, Groq bubble visible (`Seo`), `talkers=['seo']`,
+  `convOk=true`, `status=200`, walang console errors. Effects: `cars=14`,
+  `peds=15`, `signals=4`, `plants=165`, `reflections=37`, `sky=1`, `windows=58`,
+  `screens=25`, `ballers=4`, `ball=1`, `planes=1`. Lahat ng basketball, side-world,
+  airplane at entrance projections ay onscreen. Animation probe: ball, 4 ballers,
+  airplane at beacon nagbago. `high=449`, `highHidden=0`, `hidden=0`,
+  `meshes=3537`, `textured=314`. Pixel stats: `bgPct=0.2`, `edgePct=5.2`,
+  `meanLum=99.6`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- **Cache-bust:** `/office-v9.js?v=23`.
+
+## 2026-11-20 — Realism / enhancement pass (v24 cache-bust)
+
+### Bakit ito
+- Sinabi ng user: `ang panget naman gusto enhanced mo yung makatotohanan`.
+  Kaya hindi na nagdagdag ng bagong props; pinino ang itsura ng existing
+  basketball court, mga manlalaro, bola at airplane.
+
+### Mga pinaganda
+- **Hardwood court:** board seams, long grain, faded key, centre circle, wear at
+  scuffs; may dark asphalt apron, line paint, chain-link-style perimeter,
+  bleachers at court lamps.
+- **Glass hoops:** transparent backboard na may frame at shooter's square,
+  padded pole base, orange rim at 12-line net (lines, hindi opaque cone).
+- **Makatotohanang players:** jersey na may number, shorts, socks, sneakers,
+  ears/eyes/hair, at hiwalay na pivot groups para sa legs/arms — talagang
+  gumagalaw ang limbs habang tumatakbo.
+- **Bola:** pebbled orange texture at seams; may contact shadow na sumusunod at
+  lumalaki/humihina ayon sa taas ng dribble/shot.
+- **Airliner:** swept wings, smaller tailplanes, vertical fin, cockpit/windows,
+  nacelles + intake rings, layered contrails, blinking beacon, gentle bob/bank.
+- Local nested helper names (`jetPart`) ay hindi na nagdudulot ng duplicate
+  declarations. Protected v8 runtime at cull line ay hindi binago.
+
+### Verification (v24, lokal — north-side entrance view)
+- Walang console errors, `bots=6`, script `/office-v9.js?v=24`.
+- Effects: `cars=14`, `peds=15`, `signals=4`, `plants=165`, `reflections=39`,
+  `sky=1`, `windows=58`, `screens=25`, `ballers=4`, `ball=1`, `planes=1`.
+- Animation probe: ball, **ball shadow**, 4 ballers, airplane at beacon —
+  **lahat nagbago**.
+- Projection check: court, parehong hoop, bleachers, fence, west market/bench/van,
+  east café/pond/stall/van, airplane, entrance, crosswalk at billboard —
+  **lahat onscreen**.
+- High-object check: `high=478`, `highHidden=0`, `hidden=0`.
+  Pixel stats: `bgPct=0.2`, `edgePct=5.4`, `meanLum=99.3`, `meshes=3690`,
+  `textured=336`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=24`.
 
