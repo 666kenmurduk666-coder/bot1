@@ -1556,6 +1556,23 @@ setInterval(async () => {
   if (due) await runRoutine(due.id, false);
 }, 10000);
 
+/* 💬 Watercooler chatter now runs on the SERVER, so the bots keep talking even
+   when no CEO tab is open / the CEO session expired. generateConversation()
+   reuses the last conversation for 10 minutes, so triggers from open tabs
+   never spend extra AI calls. */
+async function conversationTick() {
+  try {
+    if (state.stopped || state.running || quotaLow()) return;
+    const recent = state.conversations[0];
+    if (recent && Date.now() - (recent.t || 0) < 10 * 60 * 1000) return;
+    await generateConversation();
+  } catch (e) {
+    log('Watercooler tick failed — ' + e.message, 'system');
+  }
+}
+setTimeout(conversationTick, 30000);
+setInterval(conversationTick, 10 * 60 * 1000);
+
 /* ================= 🛒 CYBORG BAZAAR (business-only MMORPG progression) ================= */
 const BAZAAR_LEVELS = [
   { name: 'Intern',   xp: 0 },
