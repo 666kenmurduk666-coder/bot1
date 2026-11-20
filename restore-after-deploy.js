@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* restore-after-deploy.js — ibalik ang lahat ng nawawalang runtime data sa Render pagkatapos ng redeploy.
    Render free tier: walang persistent disk, kaya mabubura ang data/state.json sa BAWAT deploy.
-   Gawain: mall items, commercials, Facebook config, Shopee affiliate ID, Vyce backup key.
-   Kailangan: node (>=18, may fetch), CEO_PASSWORD='cyborg' (dapat naka-set sa Render env),
+   Gawain: mall items, commercials, Facebook config, Shopee affiliate ID, Groq/OVH keys.
+   Kailangan: node (>=18, may fetch), CEO_PASSWORD sa env o lokal na data/settings.json,
    at ang mga lokal na file na ito:
    - data/state.json        (mall at commercials data, galling sa lokal na server)
    - data/fb-config.txt     (FB_APP_ID, FB_APP_SECRET, FB_REDIRECT_URI)
    - data/shopee-config.txt (SHOPEE_AFF_ID)
-   - .env                   (VYCE_API_KEY [+ VYCE_BASE_URL, VYCE_MODEL])
+   - .env                   (GROQ_API_KEY [+ GROQ_MODEL], OPENROUTER_API_KEY kung may key)
 
    Gamitin: node restore-after-deploy.js [LIVE_URL]
    Default: https://cyborgcheebeeoffice.onrender.com
@@ -52,7 +52,11 @@ const get = async (p) => {
 
 (async () => {
   console.log('== RESTORE AFTER DEPLOY => ' + BASE + ' ==');
-  const u = await post('/api/unlock', { pass: 'cyborg' });
+  // Password: env CEO_PASSWORD muna, kung wala ay lokal na settings.json. Hindi na hardcode.
+  let localSettings = null;
+  try { localSettings = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'settings.json'), 'utf8')); } catch (e) {}
+  const ceoPass = process.env.CEO_PASSWORD || (localSettings && localSettings.password) || '';
+  const u = await post('/api/unlock', { pass: ceoPass });
   console.log('UNLOCK', u.status, u.ok ? 'OK' : 'FAIL — ' + u.err + ' (Render env ba ang CEO_PASSWORD?)');
   if (!u.ok) process.exit(1);
 
@@ -63,7 +67,7 @@ const get = async (p) => {
   for (const m of state.mall) {
     if (names.has(String(m.name))) continue;
     const r = await post('/api/mall', {
-      pass: 'cyborg', name: String(m.name), price: Number(m.price) || 0,
+      pass: ceoPass, name: String(m.name), price: Number(m.price) || 0,
       emoji: String(m.emoji || ''), url: String(m.url || ''), cat: String(m.cat || ''), caption: String(m.caption || '')
     });
     if (r.ok) ok++; else { fail++; console.log('MALL_FAIL', r.status, r.err, String(m.name).slice(0, 40)); }
@@ -77,7 +81,7 @@ const get = async (p) => {
     .replace(/[\u2013\u2014\u2212-]/g, '-')   // en/em/minus dashes -> hyphen
     .replace(/\s+/g, ' ')
     .trim();
-  const ceoList = await post('/api/ceo/commercials', { pass: 'cyborg', action: 'list' });
+  const ceoList = await post('/api/ceo/commercials', { pass: ceoPass, action: 'list' });
   const existing = (ceoList.raw && ceoList.raw.commercials) || [];
   const existingTitles = new Set(existing.map((x) => norm(x.title)));
   let cOk = 0, cFail = 0, cSkip = 0;
@@ -86,7 +90,7 @@ const get = async (p) => {
     let featured = null;
     if (c.featured) featured = { name: String(c.featured.name || ''), price: Number(c.featured.price) || 0, url: String(c.featured.url || '') };
     const r = await post('/api/ceo/commercials', {
-      pass: 'cyborg', action: 'create', bot: String(c.bot || ''), angle: String(c.angle || ''),
+      pass: ceoPass, action: 'create', bot: String(c.bot || ''), angle: String(c.angle || ''),
       title: String(c.title || ''), cta: String(c.cta || ''), url: String(c.url || ''), featured
     });
     if (r.ok) cOk++; else { cFail++; console.log('CM_FAIL', r.status, r.err, String(c.title || '').slice(0, 40)); }
@@ -97,14 +101,14 @@ const get = async (p) => {
   // Facebook config
   if (fb.FB_APP_ID && fb.FB_APP_SECRET) {
     const r = await post('/api/ceo/setup-fb', {
-      pass: 'cyborg', fbAppId: fb.FB_APP_ID, fbAppSecret: fb.FB_APP_SECRET, fbRedirectUri: fb.FB_REDIRECT_URI || (BASE + '/api/fb/callback')
+      pass: ceoPass, fbAppId: fb.FB_APP_ID, fbAppSecret: fb.FB_APP_SECRET, fbRedirectUri: fb.FB_REDIRECT_URI || (BASE + '/api/fb/callback')
     });
     console.log('FACEBOOK', r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
   } else console.log('FACEBOOK SKIP (walang data/fb-config.txt)');
 
   // Shopee affiliate
   if (shopee.SHOPEE_AFF_ID) {
-    const r = await post('/api/ceo/setup-shopee', { pass: 'cyborg', shopeeAffId: shopee.SHOPEE_AFF_ID });
+    const r = await post('/api/ceo/setup-shopee', { pass: ceoPass, shopeeAffId: shopee.SHOPEE_AFF_ID });
     console.log('SHOPEE', r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
   } else console.log('SHOPEE SKIP (walang data/shopee-config.txt)');
 
@@ -113,7 +117,7 @@ const get = async (p) => {
   // Render wipes data/ on every deploy; this is what keeps the keys alive.
   let keys = {};
   try {
-    const pv = await post('/api/private', { pass: 'cyborg' });
+    const pv = await post('/api/private', { pass: ceoPass });
     if (pv.ok && pv.raw && pv.raw.keys && typeof pv.raw.keys === 'object') keys = pv.raw.keys;
   } catch (e) {}
 
@@ -129,22 +133,16 @@ const get = async (p) => {
     if (Array.isArray(local.failover) && local.failover.length) localFailover = local.failover;
   } catch (e) {}
 
-  if (envfile.VYCE_API_KEY) {
-    keys.vyce = {
-      apiKey: envfile.VYCE_API_KEY,
-      baseUrl: envfile.VYCE_BASE_URL || 'https://vyceai.com/api/v1',
-      model: envfile.VYCE_MODEL || 'gpt-4o-mini'
-    };
-  }
+  // Vyce TINANGGAL — 503 ang cloud nito. Huwag idagdag muli mula sa .env.
   if (envfile.GROQ_API_KEY) {
     keys.groq = { apiKey: envfile.GROQ_API_KEY, model: envfile.GROQ_MODEL || 'qwen/qwen3.8-27b' };
   }
   // Ollama needs no secret. Registered so the local fallback is always ready.
   if (!keys.ollama) keys.ollama = { apiKey: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'qwen2.5:3b' };
   if (Object.keys(keys).length) {
-    const failover = (localFailover || ['groq', 'vyce', 'ollama']).filter(function (p) { return !!keys[p]; });
-    if (keys.ollama && failover.indexOf('ollama') === -1) failover.push('ollama');
-    const r = await post('/api/settings', { pass: 'cyborg', keys, failover: failover });
+    // OVH ang tanging failover sa live — hindi maabot ng Render ang localhost:11434.
+    const failover = (localFailover || ['ovh']).filter(function (p) { return !!keys[p] && p !== 'ollama' && p !== 'vyce'; });
+    const r = await post('/api/settings', { pass: ceoPass, keys, failover: failover });
     console.log('AI KEYS', Object.keys(keys).join(', '), 'failover=' + (failover.join(', ') || 'none'),
       r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
   } else console.log('AI KEYS SKIP (walang key sa settings.json o .env)');

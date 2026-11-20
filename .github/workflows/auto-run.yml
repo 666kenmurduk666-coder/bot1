@@ -1,0 +1,22 @@
+name: auto-run (agents every 30 min)
+
+on:
+  schedule:
+    # 06:00-24:00 PHT = 22:00-15:59 UTC. Tumutakbo sa :10 at :40 ng bawat oras.
+    - cron: '10,40 22-23,0-15 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run all office agents
+        run: |
+          curl -fsS --max-time 180 -X POST \
+            -H 'Content-Type: application/json' \
+            -d "{\"pass\":\"${{ vars.CEO_PASSWORD }}\"}" \
+            https://cyborgcheebeeoffice.onrender.com/api/run-all \
+            && echo " agents ran" || echo " auto-run failed - keepalive will retry"
