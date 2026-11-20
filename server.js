@@ -11,6 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const zlib = require('zlib');
+// Optional Crawl4AI research service. Fails soft: the original regex scrapers
+// remain the fallback when this module/service is unavailable.
+const researchClient = require('./research-client');
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
@@ -554,7 +557,10 @@ async function callProvider(cfg, system, user, maxTokens) {
   if (!cfg.apiKey && !local) throw new Error('No key for ' + cfg.provider);
   const systemText = (state.memory ? 'Company memory (shared context):\n' + state.memory + '\n\n' : '') + system;
   const headers = { 'Content-Type': 'application/json' };
-  if (cfg.apiKey) headers.Authorization = 'Bearer ' + cfg.apiKey;
+  // Anonymous providers (OVHcloud, Kilo Code, LLM7) reject ANY Authorization header.
+  // Their "key" is only a placeholder that satisfies the shared "has key" guard above.
+  const anonymousProvider = cfg.provider === 'ovh' || cfg.provider === 'kilo' || cfg.provider === 'llm7';
+  if (cfg.apiKey && !anonymousProvider) headers.Authorization = 'Bearer ' + cfg.apiKey;
   if (cfg.provider === 'openrouter') {
     headers['HTTP-Referer'] = 'http://localhost:' + PORT;
     headers['X-Title'] = 'Cyborg Cheebee Office';
@@ -744,10 +750,20 @@ const PROMPTS = {
 };
 
 // Best-effort live fetch of configured community/resource URLs (no key needed).
+// Crawl4AI is tried first; the original regex fetch stays as the fallback.
 async function scrapeSources() {
   const urls = state.sources.slice(0, 4);
   const parts = [];
   for (const url of urls) {
+    let research = null;
+    try { research = await researchClient.crawlSource(url, { mode: 'fast', maxChars: 1200 }); }
+    catch (_) { research = null; }
+    if (research && research.text) {
+      parts.push('SOURCE ' + url + '\nTITLE: ' + research.title +
+        '\nTEXT: ' + research.text.slice(0, 1200) +
+        '\nCHECKED: ' + research.checkedAt + ' (source-grounded, confidence ' + research.confidence + ')');
+      continue;
+    }
     try {
       const r = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'AI-Agents-Office/1.0' } });
       const html = (await r.text()).slice(0, 60000);
@@ -763,6 +779,11 @@ async function scrapeSources() {
 }
 
 async function fetchProductMeta(url) {
+  let researched = null;
+  try { researched = await researchClient.productMeta(url, { mode: 'fast' }); }
+  catch (_) { researched = null; }
+
+  let fallback = { title: '', description: '', price: 0 };
   try {
     const r = await fetch(url, {
       signal: AbortSignal.timeout(8000),
@@ -775,10 +796,22 @@ async function fetchProductMeta(url) {
       || html.match(/"price"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?/i) || [];
     const priceRaw = priceMeta[1] || '';
     const price = Math.max(0, Math.min(1e7, Number(String(priceRaw).replace(/,/g, '')) || 0));
-    return { title: title.slice(0, 200), description: desc.slice(0, 400), price: Math.round(price * 100) / 100 };
+    fallback = { title: title.slice(0, 200), description: desc.slice(0, 400), price: Math.round(price * 100) / 100 };
   } catch (e) {
-    return { title: '', description: 'Fetch failed: ' + e.message };
+    fallback = { title: '', description: 'Fetch failed: ' + e.message, price: 0 };
   }
+
+  // Never let a regex failure overwrite a successful Crawl4AI result.
+  const fallbackDesc = researched && fallback.description.startsWith('Fetch failed') ? '' : fallback.description;
+  return {
+    title: String((researched && researched.title) || fallback.title || '').slice(0, 200),
+    description: String((researched && researched.description) || fallbackDesc || '').slice(0, 400),
+    price: (researched && researched.price > 0) ? researched.price : fallback.price,
+    image: (researched && researched.image) || '',
+    checkedAt: (researched && researched.checkedAt) || null,
+    confidence: (researched && researched.confidence) || null,
+    engine: (researched && researched.engine) || 'regex-fallback'
+  };
 }
 
 async function generateConversation(ids) {
@@ -1442,7 +1475,8 @@ const server = http.createServer(async (req, res) => {
           startedAt: STARTED_AT, stopped: !!state.stopped, running: !!state.running,
           counts: { agents: AGENT_META.length + state.hires.length, tasks: state.tasks.length, products: state.products.length,
             orders: state.orders.length, visitors: Object.keys(state.visitors).length, redemptions: state.redemptions.length,
-            payouts: state.payouts.length }, backups: listDataBackups(), lastAudit: recentAudit(8) });
+            payouts: state.payouts.length }, research: researchClient.getMetrics(),
+          backups: listDataBackups(), lastAudit: recentAudit(8) });
       }
       if (action === 'backup') {
         const backup = createDataBackup();
@@ -1451,6 +1485,53 @@ const server = http.createServer(async (req, res) => {
       }
       if (action === 'audit') return sendJSON(res, 200, { ok: true, events: recentAudit(b.limit || 100) });
       return sendJSON(res, 400, { ok: false, error: 'Unknown operations action.' });
+    }
+    // 🔬 CEO-only source-grounded research records (Crawl4AI). POST is already
+    // behind the CEO password gate above. GET is intentionally not exposed.
+    if (p === '/api/ceo/research' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const action = String(b.action || 'list');
+      if (action === 'list') {
+        return sendJSON(res, 200, {
+          ok: true,
+          config: researchClient.config(),
+          metrics: researchClient.getMetrics(),
+          records: researchClient.getResearchRecords().slice(0, 100),
+          corpusCount: researchClient.getResearchCorpus().length,
+          digest: researchClient.getTrendDigest()
+        });
+      }
+      if (action === 'refresh') {
+        const record = await researchClient.crawlSource(String(b.url || ''), { mode: b.mode || 'fast', fresh: true });
+        if (!record) return sendJSON(res, 502, { ok: false, error: 'Research service unavailable or URL rejected.' });
+        log('Research refreshed: ' + record.url, 'CEO');
+        return sendJSON(res, 200, { ok: true, record });
+      }
+      if (action === 'review') {
+        const item = researchClient.reviewResearch(String(b.url || ''), b.permitted, b.reviewer);
+        if (!item) return sendJSON(res, 404, { ok: false, error: 'Record not found.' });
+        log('Research record reviewed: ' + item.url + ' → ' + item.permitted, 'CEO');
+        return sendJSON(res, 200, { ok: true, record: item });
+      }
+      if (action === 'gate') {
+        const result = researchClient.checkDraft(b.draft, b.urls, { threshold: b.threshold });
+        return sendJSON(res, 200, { ok: true, decision: result });
+      }
+      if (action === 'search') {
+        return sendJSON(res, 200, {
+          ok: true,
+          results: researchClient.searchResearch(String(b.query || ''), Number(b.limit) || 5)
+        });
+      }
+      if (action === 'digest') {
+        const urls = Array.isArray(b.urls) ? b.urls : (b.url ? [b.url] : []);
+        if (!urls.length) return sendJSON(res, 400, { ok: false, error: 'URLs required for digest.' });
+        const digest = await researchClient.buildDigest(urls, { mode: b.mode || 'fast', fresh: Boolean(b.fresh) });
+        log('Trend digest built: ' + digest.itemCount + '/' + digest.sourceCount + ' sources', 'CEO');
+        return sendJSON(res, 200, { ok: true, digest });
+      }
+      if (action === 'metrics') return sendJSON(res, 200, { ok: true, metrics: researchClient.getMetrics() });
+      return sendJSON(res, 400, { ok: false, error: 'Unknown research action.' });
     }
     if (p === '/api/state' && req.method === 'GET') return sendJSON(res, 200, publicState());
     // 🔐 CEO-only private data (keys + vault links) — dumaan sa password gate sa taas
@@ -1665,6 +1746,46 @@ const server = http.createServer(async (req, res) => {
       writeJSON(SETTINGS_FILE, cur);
       log('Failover providers updated: ' + (cur.failover.join(', ') || 'none'), 'CEO');
       return sendJSON(res, 200, { ok: true, keys: cur.keys, failover: cur.failover });
+    }
+
+    // Ollama local status + model auto-detect (no key required).
+    if (p === '/api/ollama/status' && req.method === 'GET') {
+      const s = settings();
+      const qBase = (u.searchParams.get('baseUrl') || '').trim();
+      const cfg = providerCfg('ollama', s);
+      const base = (qBase || cfg.baseUrl || OLLAMA_URL).replace(/\/$/, '');
+      const out = { ok: false, running: false, baseUrl: base, models: [], selected: cfg.model || MODEL_DEFAULTS.ollama };
+      const fetchJson = async (url) => {
+        const r = await fetch(url, { signal: AbortSignal.timeout(2500) });
+        const t = await r.text();
+        let j; try { j = JSON.parse(t); } catch (e) { j = null; }
+        return { status: r.status, json: j };
+      };
+      try {
+        const m = await fetchJson(base + '/models');
+        if (m.status === 200 && m.json) {
+          out.running = true; out.ok = true;
+          const arr = Array.isArray(m.json.data) ? m.json.data : (Array.isArray(m.json.models) ? m.json.models : []);
+          out.models = arr.map(x => (x && (x.id || x.name || x.model)) || '').filter(Boolean);
+        }
+      } catch (e) {}
+      if (!out.running) {
+        try {
+          const host = base.replace(/\/v1\/?$/i, '');
+          const t = await fetchJson(host + '/api/tags');
+          if (t.status === 200 && t.json) {
+            out.running = true; out.ok = true;
+            const arr = Array.isArray(t.json.models) ? t.json.models : [];
+            out.models = arr.map(x => (x && (x.name || x.model)) || '').filter(Boolean);
+          }
+        } catch (e) {}
+      }
+      if (out.models.length) out.models = [...new Set(out.models)];
+      if (!out.models.includes(out.selected) && out.models.length) {
+        out.suggested = out.models.includes('qwen2.5:3b') ? 'qwen2.5:3b' : out.models[0];
+      }
+      if (!out.running) out.error = 'Ollama not reachable at ' + base;
+      return sendJSON(res, 200, out);
     }
 
     // Coarena usage/limits, cached for 30 seconds

@@ -40,9 +40,15 @@ const protectedHashes = {
   // reloads), a 5-minute request timeout, and a reasoning-text fallback.
   // 2026-11-20: office bots chat through the user's Groq key (callGroq),
   // model qwen/qwen3.8-27b (clean Taglish, no reasoning leak), case-insensitive speaker ids.
-  // Ollama is now a first-class no-key provider: default localhost:11434/v1 +
-  // qwen2.5:3b, usable as a primary provider or failover candidate.
-  'server.js': 'b31cb589b1bfdb709164ec05fc6d57b763cade0ad69826eaffa03d5f70eca30d',
+  // Ollama is a first-class no-key provider (localhost:11434/v1, qwen2.5:3b),
+  // usable as primary or failover. 2026-11-20: added GET /api/ollama/status
+  // for auto-detecting local models and runtime status.
+  // 2026-11-20 RESEARCH BATCH (CEO-approved): optional Crawl4AI integration.
+  // server.js only gained require('./research-client'), Crawl4AI-first calls
+  // with the ORIGINAL regex scrapers preserved as fallback, and a CEO-gated
+  // POST /api/ceo/research route. No change to game/office/public runtime.
+  // Pre-batch hash: b31cb589b1bfdb709164ec05fc6d57b763cade0ad69826eaffa03d5f70eca30d
+  'server.js': '08a42b70476150af6cc36b3d3858131096f96a6ba3fd1fca6b279a815938d83d',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -70,9 +76,10 @@ const protectedHashes = {
   // rotating the camera cannot reveal a dark mirror. v36/v38: comic bubbles
   // enlarged and given higher-contrast styling so they stay readable zoomed out.
   // H still restores UI and .v9bub stays visible. Ollama added as a
-  // first-class provider in Setup and in the failover panel. v37/v39: comic
-  // bubbles use a host-relative max-width so narrow panels stay tidy.
-  'public/index.html': '9c1c499d288b1948a8afa5a57a0fde32c4b9cb639ce6ffa15eaf53dd90eaa711',
+  // first-class provider in Setup and in the failover panel with model
+  // auto-detect, status, and offline-mode actions. v37/v39: comic bubbles use
+  // a host-relative max-width so narrow panels stay tidy.
+  'public/index.html': '047e34507f99195d2509e9f92c47e5f7167f2966dc8290f0e6a5f08f03523dc7',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.

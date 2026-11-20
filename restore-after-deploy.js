@@ -142,7 +142,8 @@ const get = async (p) => {
   // Ollama needs no secret. Registered so the local fallback is always ready.
   if (!keys.ollama) keys.ollama = { apiKey: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'qwen2.5:3b' };
   if (Object.keys(keys).length) {
-    const failover = (localFailover || ['groq', 'vyce']).filter(function (p) { return !!keys[p]; });
+    const failover = (localFailover || ['groq', 'vyce', 'ollama']).filter(function (p) { return !!keys[p]; });
+    if (keys.ollama && failover.indexOf('ollama') === -1) failover.push('ollama');
     const r = await post('/api/settings', { pass: 'cyborg', keys, failover: failover });
     console.log('AI KEYS', Object.keys(keys).join(', '), 'failover=' + (failover.join(', ') || 'none'),
       r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);

@@ -432,9 +432,17 @@ dialog::backdrop{background:#000a}
     <p class="hint">When the primary provider fails or is rate-limited, the next one with a key is tried automatically.</p>
     <h3>Groq</h3><label>API key</label><input id="gk" type="password" placeholder="gsk_…"><label>Model</label><input id="gm" placeholder="openai/gpt-oss-20b">
     <h3>Vyce AI / custom gateway</h3><label>API key</label><input id="vk" type="password" placeholder="sk-…"><label>Base URL</label><input id="vu" placeholder="https://…/v1"><label>Model</label><input id="vm">
-    <h3>Ollama (local, no key needed)</h3><p class="hint">Runs on this PC at localhost:11434 — free and private. Add <code>ollama</code> to the failover order to use it when cloud keys fail.</p><label>Base URL</label><input id="olu" placeholder="http://localhost:11434/v1"><label>Model</label><input id="olm" placeholder="qwen2.5:3b">
+    <h3>Ollama (local, no key needed)</h3>
+    <p class="hint">Runs on this PC at localhost:11434 — free and private. Add <code>ollama</code> to the failover order to use it when cloud keys fail.</p>
+    <div class="bar" style="align-items:center;gap:8px;margin:6px 0">
+      <span id="ollamaStatus" class="pill">checking…</span>
+      <button id="ollamaDetect" type="button">Detect models</button>
+      <button id="ollamaOffline" type="button">Use Ollama offline</button>
+    </div>
+    <label>Base URL</label><input id="olu" placeholder="http://localhost:11434/v1"><label>Model</label><input id="olm" placeholder="qwen2.5:3b" list="ollamaModels"><datalist id="ollamaModels"></datalist>
+    <p class="hint" id="ollamaInfo"></p>
     <h3>Failover order</h3><input id="ford" placeholder="groq, vyce, ollama">
-    <div class="bar"><button class="run" id="provSave">Save providers</button><span class="hint" id="provInfo"></span></div>
+    <div class="bar"><button class="run" id="provSave">Save providers</button><button id="failoverDefault" type="button">Use Groq→Vyce→Ollama</button><span class="hint" id="provInfo"></span></div>
   </div></section>
 
   <!-- ACTIVITY -->
@@ -825,6 +833,7 @@ function renderView(){
     $('olu').value=(k.ollama&&k.ollama.baseUrl)||'http://localhost:11434/v1';$('olm').value=(k.ollama&&k.ollama.model)||'qwen2.5:3b';
     $('ford').value=(S.setup.failover||[]).join(', ');
     $('provInfo').textContent='Primary: '+S.setup.provider;
+    loadOllamaStatus(false);
   }
   if(view==='workflows')renderRoutines();
   if(view==='agents')renderAgents();
@@ -885,6 +894,35 @@ $('prodRush').onclick=async()=>{
 };
 $('prodClear').onclick=async()=>{for(const p of (S.products||[]).filter(x=>x.status==='done'))await api('/api/product/delete',{method:'POST',body:JSON.stringify({id:p.id})});toast('Cleared done products');await refresh()};
 $('genConv').onclick=async()=>{toast('Bots are talking…');const r=await api('/api/conversation',{method:'POST',body:'{}'});toast(r.ok?'Conversation ready':'Error: '+r.error);await refresh()};
+async function loadOllamaStatus(showToast){
+  const pill=$('ollamaStatus'),info=$('ollamaInfo'),list=$('ollamaModels');
+  if(!pill||!info||!list)return;
+  pill.textContent='checking…';pill.className='pill';
+  const base=($('olu')&&$('olu').value.trim())||'http://localhost:11434/v1';
+  let j=null;
+  try{const r=await fetch('/api/ollama/status?baseUrl='+encodeURIComponent(base));j=await r.json()}catch(e){j={ok:false,running:false,error:e.message,models:[]}};
+  const models=(j&&j.models)||[];
+  list.innerHTML=models.map(m=>'<option value="'+esc(m)+'"></option>').join('');
+  if(j&&j.running){
+    pill.textContent='Ollama: running';pill.className='pill ok';
+    let msg='Models: '+(models.length?models.join(', '):'(none installed)');
+    if(j.suggested&&!$('olm').value.trim()){$('olm').value=j.suggested;msg+=' · suggested '+j.suggested;}
+    info.textContent=msg;
+    if(showToast)toast('Ollama running — '+models.length+' model(s) found');
+  }else{
+    pill.textContent='Ollama: offline';pill.className='pill warn';
+    info.textContent=(j&&j.error)||'Start Ollama on this PC to use the free local provider.';
+    if(showToast)toast('Ollama offline — start it on this PC');
+  }
+}
+if($('ollamaDetect'))$('ollamaDetect').onclick=()=>loadOllamaStatus(true);
+if($('ollamaOffline'))$('ollamaOffline').onclick=async()=>{
+  const b={provider:'ollama',model:($('olm').value.trim()||'qwen2.5:3b'),baseUrl:($('olu').value.trim()||'http://localhost:11434/v1')};
+  const r=await api('/api/settings',{method:'POST',body:JSON.stringify(b)});
+  toast(r.ok?'Offline mode: using Ollama only':'Error: '+(r.error||'save failed'));
+  await refresh();
+};
+if($('failoverDefault'))$('failoverDefault').onclick=()=>{$('ford').value='groq, vyce, ollama';toast('Failover set to groq, vyce, ollama')};
 $('provSave').onclick=async()=>{
   const keys=JSON.parse(JSON.stringify(S.setup.keys||{}));
   keys.groq={apiKey:$('gk').value.trim(),model:$('gm').value.trim()||'openai/gpt-oss-20b'};
@@ -6769,6 +6807,89 @@ async function openCeoAds(){
     loadOps();
   };
   loadOps();
+
+  /* ---------- 🔬 RESEARCH RECORDS (Crawl4AI, source-grounded) ---------- */
+  body.insertAdjacentHTML('beforeend','<div style="border:1px solid #4f8ac9;border-radius:9px;padding:8px;margin-top:10px;background:rgba(11,23,48,.78)">'+
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#8fd0e8;font-size:11px">🔬 RESEARCH RECORDS</b><span style="flex:1"></span>'+
+    '<button id="rrRefresh" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">↻ Refresh</button>'+
+    '<button id="rrDigest" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">📊 Build digest</button></div>'+
+    '<div id="rrStatus" style="color:#9fb2d0;font-size:9.5px;margin-top:7px">Source-grounded records from Crawl4AI. CEO review pa rin bago gamitin.</div>'+
+    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
+      '<input id="rrUrl" placeholder="https://permitted-source.example/page" style="flex:2;min-width:180px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px">'+
+      '<button id="rrCrawl" style="background:#d97736;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">🕸 Crawl</button>'+
+      '<input id="rrQuery" placeholder="Search sources…" style="flex:1;min-width:120px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px">'+
+      '<button id="rrSearch" style="background:#4f8ac9;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">🔎 Search</button></div>'+
+    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">'+
+      '<input id="rrDraft" placeholder="Draft claim to fact-check" style="flex:2;min-width:180px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px">'+
+      '<input id="rrSources" placeholder="source URLs, comma separated" style="flex:1;min-width:140px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px">'+
+      '<button id="rrGate" style="background:#6b4fa8;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">🛡️ Gate</button></div>'+
+    '<div id="rrExtra" style="color:#8494b4;font-size:9px;line-height:1.5;margin-top:6px"></div>'+
+    '<div id="rrList" style="margin-top:7px;max-height:220px;overflow:auto"></div>'+
+    '<div style="color:#8494b4;font-size:8.5px;margin-top:5px">⚠️ Confidence ay triage signal lang. Hindi ito auto-publish at hindi pinapalitan ang CEO approval.</div></div>');
+  const rrStatus=$('rrStatus'),rrList=$('rrList'),rrExtra=$('rrExtra');
+  const rrSources=()=>String(($('rrSources')||{}).value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const rrLoad=async()=>{
+    if(rrStatus)rrStatus.textContent='⏳ Naglo-load ng research records…';
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'list'})});
+    if(!r||!r.ok){if(rrStatus)rrStatus.textContent='⚠ '+((r&&r.error)||'Hindi makuha ang research records');return;}
+    const m=r.metrics||{},recs=(r.records||[]).slice(0,40);
+    if(rrStatus)rrStatus.textContent='Mode: '+(r.config&&r.config.mode||'—')+' · Crawls: '+(m.crawls||0)+' · Failures: '+(m.crawlFailures||0)+' · Searches: '+(m.searches||0)+' · Corpus: '+(r.corpusCount||0)+' · Records: '+((r.records||[]).length)+(r.config&&r.config.killSwitch?' · 🛑 KILL SWITCH':'');
+    if(rrList)rrList.innerHTML=recs.length?recs.map(x=>'<div style="border-top:1px solid #29405f;padding:6px 0">'+
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#fff;font-size:10px">'+(x.kind==='product'?'🛍️':'🕸️')+' '+bzEsc(String(x.title||x.url).slice(0,70))+'</b>'+
+      '<span style="color:#8494b4;font-size:8.5px">'+bzEsc(x.kind||'')+'</span><span style="flex:1"></span>'+
+      '<span style="color:'+(Number(x.confidence)>=0.7?'#7ee2a8':'#ffd34d')+';font-size:8.5px">conf '+Number(x.confidence||0).toFixed(2)+'</span>'+
+      '<span style="color:'+(x.permitted==='yes'?'#7ee2a8':x.permitted==='no'?'#ff8fa8':'#8494b4')+';font-size:8.5px">'+bzEsc(x.permitted||'unknown')+'</span></div>'+
+      '<div style="color:#8494b4;font-size:8.5px;margin:2px 0">'+bzEsc(String(x.url||'').slice(0,95))+' · '+bzEsc(x.checkedAt||'')+' · '+Number(x.charCount||0)+' chars'+(x.price?' · ₱'+Number(x.price).toFixed(2):'')+'</div>'+
+      ((x.facts||[]).length?'<div style="color:#9fb2d0;font-size:8.5px">• '+bzEsc(String(x.facts[0]).slice(0,110))+'</div>':'')+
+      '<div style="display:flex;gap:4px;margin-top:4px"><button data-rr-permit="'+bzEsc(x.url)+'" style="background:#2b8b68;color:#fff;border:0;border-radius:5px;padding:3px 6px;font-size:8.5px">✓ Permitted</button>'+
+      '<button data-rr-reject="'+bzEsc(x.url)+'" style="background:#8f3f57;color:#fff;border:0;border-radius:5px;padding:3px 6px;font-size:8.5px">✗ Reject</button>'+
+      '<button data-rr-refresh="'+bzEsc(x.url)+'" style="background:#4f8ac9;color:#fff;border:0;border-radius:5px;padding:3px 6px;font-size:8.5px">↻ Recrawl</button></div></div>').join(''):'<div style="color:#8494b4;font-size:9px">Wala pang records. Mag-crawl ng permitted source.</div>';
+    if(rrExtra&&r.digest)rrExtra.innerHTML='<b style="color:#ffd34d">📊 Huling digest:</b> '+bzEsc(r.digest.generatedAt||'')+' · '+Number(r.digest.itemCount||0)+'/'+Number(r.digest.sourceCount||0)+' sources · recommendation only; CEO approval required.';
+  };
+  const rrRefresh=$('rrRefresh');if(rrRefresh)rrRefresh.onclick=rrLoad;
+  const rrCrawl=$('rrCrawl');if(rrCrawl)rrCrawl.onclick=async()=>{
+    const url=String(($('rrUrl')||{}).value||'').trim();if(!url){toast('Ilagay ang URL.');return;}
+    rrCrawl.disabled=true;rrCrawl.textContent='⏳ Crawling…';
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'refresh',url,mode:'fast'})});
+    rrCrawl.disabled=false;rrCrawl.textContent='🕸 Crawl';
+    toast(r&&r.ok?'✅ Na-crawl: '+String(r.record.title||url).slice(0,50):'⚠ '+((r&&r.error)||'Crawl failed'));
+    rrLoad();
+  };
+  const rrDigest=$('rrDigest');if(rrDigest)rrDigest.onclick=async()=>{
+    const urls=rrSources();const fallback=String(($('rrUrl')||{}).value||'').trim();
+    const list=urls.length?urls:(fallback?[fallback]:[]);
+    if(!list.length){toast('Ilagay ang source URLs sa field.');return;}
+    rrDigest.disabled=true;rrDigest.textContent='⏳ Building…';
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'digest',urls:list})});
+    rrDigest.disabled=false;rrDigest.textContent='📊 Build digest';
+    toast(r&&r.ok?'✅ Digest: '+r.digest.itemCount+'/'+r.digest.sourceCount:'⚠ '+((r&&r.error)||'Digest failed'));
+    rrLoad();
+  };
+  const rrSearch=$('rrSearch');if(rrSearch)rrSearch.onclick=async()=>{
+    const q=String(($('rrQuery')||{}).value||'').trim();if(!q){toast('Ilagay ang search query.');return;}
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'search',query:q,limit:5})});
+    const hits=(r&&r.results)||[];
+    if(rrExtra)rrExtra.innerHTML='<b style="color:#8fd0e8">🔎 '+bzEsc(q)+':</b> '+(hits.length?hits.map(h=>'<div>· '+bzEsc(h.title||h.url)+' ['+h.score+'] — '+bzEsc(h.excerpt.slice(0,90))+'</div>').join(''):'Walang resulta.');
+  };
+  const rrGate=$('rrGate');if(rrGate)rrGate.onclick=async()=>{
+    const draft=String(($('rrDraft')||{}).value||'').trim(),urls=rrSources();
+    if(!draft||!urls.length){toast('Kailangan ang draft at source URL.');return;}
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'gate',draft,urls})});
+    const g=r&&r.decision;if(!g)return;
+    if(rrExtra)rrExtra.innerHTML='<b style="color:'+(g.decision==='BLOCK'?'#ff8fa8':g.decision==='AUTO'?'#7ee2a8':'#ffd34d')+'">🛡️ '+bzEsc(g.decision)+'</b> · coverage '+Number(g.coverage||0).toFixed(2)+'<br>'+(g.reasons||[]).map(x=>'• '+bzEsc(x)).join('<br>');
+    toast('Gate: '+g.decision);
+  };
+  if(rrList)rrList.addEventListener('click',async(e)=>{
+    const btn=e.target.closest('button');if(!btn)return;
+    const url=btn.dataset.rrPermit||btn.dataset.rrReject||btn.dataset.rrRefresh;if(!url)return;
+    let r=null;
+    if(btn.dataset.rrRefresh)r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'refresh',url,mode:'fast'})});
+    else r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'review',url,permitted:!!btn.dataset.rrPermit,reviewer:'CEO'})});
+    toast(r&&r.ok?'✅ Na-update.':'⚠ '+((r&&r.error)||'Failed'));
+    rrLoad();
+  });
+  rrLoad();
+
   body.querySelectorAll('[data-order-verify]').forEach(b=>b.onclick=async()=>{
     const code=b.dataset.orderVerify,inp=body.querySelector('[data-order-ref="'+code+'"]');
     const paymentRef=inp?inp.value.trim():'';
