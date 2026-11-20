@@ -602,14 +602,26 @@ let S=null,view='office',selItem=null,selRoom='hq',editRoom='hq',drag=null,selEd
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',3200)}
 /* 💬 MMORPG WORLD CHAT — chatbox sa loob ng 3D game */
 let mmoSpeech=null,mmoAnchor=null;
+/* 🎲 Shuffle-bag: hindi nauulit ang linya hangga't hindi pa nauubos ang pool.
+   In-memory lang — walang nila-lab na history sa disk. */
+const FRESH_BAGS={};
+function pickFresh(key,arr){
+  if(!arr||!arr.length)return '';
+  let b=FRESH_BAGS[key];
+  if(!b||!b.length){
+    b=FRESH_BAGS[key]=arr.slice();
+    for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
+  }
+  return b.pop();
+}
 const CHAT_REPLIES={
-  hi:['Hi CEO! 👋','Kumusta po! ✨','Hello! Sige, nandito lang kami 😊'],
-  shop:['May bagong post sa Cyborg Mall! 🛍️','Check ang Shopee post namin — may presyo at detalye! 🛒','Dito lang ang link, sa loob ng product post 📦'],
-  up:['Aakyat tayo sa gym/kape/bar? ⬆️','Escalator sa labas, CEO! ☕','Kape muna tayo sa taas ☕'],
-  work:['Tapos na ang report ko! ✅','Nagre-review pa ako ng task 🔍','Abangan ang next update ✨'],
-  thanks:['Welcome po! 🙌','Salamat din, CEO! 💛','Happy to help! ✨'],
-  fun:['Party mode na! 🎉','Sayaw tayo! 💃','Game time! 🎮'],
-  default:['Sige, CEO! 👍','Copy that! ✨','Opo, nasa trabaho na kami 🤖','Ping ko ang team 💬']
+  hi:['Hi CEO! 👋','Kumusta po! ✨','Hello! Sige, nandito lang kami 😊','Buti dumating ka, boss! 🥰','Ano yan, CEO? 😄','Yay, may bisita! 🎉','Sige, kumusta ka naman? 💛','Nandito na kami, ready na! 🤖','Hi hi! Sabihin mo lang 👋','Opo,CEO— nakinig kami 😊'],
+  shop:['May bagong post sa Cyborg Mall! 🛍️','Check ang Shopee post namin — may presyo at detalye! 🛒','Dito lang ang link, sa loob ng product post 📦','Presyo na, description pa — complete package! ✨','Sige, i-click mo lang yung stall 👆','May sale pa siguro bukas, abangan! 🛍️','Naka-load na ang(product) details 📦','Pili ka na, CEO, dami na pagpipilian 😄','Mall na tayo, sulat na ang presyo 🏷️','I-share ko na lang sa team 💬'],
+  up:['Aakyat tayo sa gym/kape/bar? ⬆️','Escalator sa labas, CEO! ☕','Kape muna tayo sa taas ☕','Sige, samahan kita papunta sa 2F 🏃','Elevator din, kung tamad tayo 😆','Sa taas may pool pa, promise! 🌊','Gym muna bago kape? 💪','Akyat na tayo, CEO! ⬆️','Hintayin mo ako, kasama na ko 👣','Kape first, gym later ☕'],
+  work:['Tapos na ang report ko! ✅','Nagre-review pa ako ng task 🔍','Abangan ang next update ✨','Opo, nasa queue na ang trabaho 📋','Sige, tapusin ko na ito 💪','May update ako after 5 mins ⏰','Checked ko na, walang issue ✅','Nai-queue ko na sa board 📌','Pwede mo na i-approve 👍','On track tayo, CEO! 🚀'],
+  thanks:['Welcome po! 🙌','Salamat din, CEO! 💛','Happy to help! ✨','Anytime po, bumalik ka ulit 😊','Salamat sa tiwala! 🥰','Opo, salamat din sa iyo! 🙏','Wala yon, trabaho namin yan 💪','Salamat, CEO — solid! ✨','Ikaw ang boss, salamat! 👑','Nagandang araw! 🌞'],
+  fun:['Party mode na! 🎉','Sayaw tayo! 💃','Game time! 🎮','Sige, solo ko ito! 🕺','Discos na sa lounge! ✨','Sino ang ready sa dance-off? 💃','Band na tayo, struggle lang 😆','Sige, i-on ang music! 🎵','Fun mode: ON! 🥳','Joker na naman nag-joke 🤡'],
+  default:['Sige, CEO! 👍','Opo, nasa trabaho na kami 🤖','Ping ko ang team 💬','Copy, boss! ✅','Sige, gagawin ko na 🔧','Handa na po! ✨','Ano pang gusto mo, CEO? 😊','Sabihin mo lang, kami bahala 💪','Opo, nandoon na kami 👣','Ayos, proceed tayo! 🚀','Sige, i-check ko agad 🔍','Noted, CEO! 📝']
 };
 const mmoLogSeen={},loggedConvLines={};
 function mmoLog(who,text,color){
@@ -640,14 +652,14 @@ function mmoSay(who,label,text,actor){
   speak(text,who,true);
 }
 function mmoPickReply(txt){
-  const s=String(txt).toLowerCase();let pool=CHAT_REPLIES.default;
-  if(/hi|hello|hey|kumusta|yo|good morning/.test(s))pool=CHAT_REPLIES.hi;
-  else if(/mall|shopee|bili|sale|presyo|link|post/.test(s))pool=CHAT_REPLIES.shop;
-  else if(/gym|kape|coffee|bar|taas|escalator/.test(s))pool=CHAT_REPLIES.up;
-  else if(/task|trabaho|work|ginagawa|busy/.test(s))pool=CHAT_REPLIES.work;
-  else if(/salamat|thanks|ty/.test(s))pool=CHAT_REPLIES.thanks;
-  else if(/sayaw|party|fun|biro|game/.test(s))pool=CHAT_REPLIES.fun;
-  return pool[Math.floor(Math.random()*pool.length)];
+  const s=String(txt).toLowerCase();let key='default',pool=CHAT_REPLIES.default;
+  if(/hi|hello|hey|kumusta|yo|good morning/.test(s)){key='hi';pool=CHAT_REPLIES.hi;}
+  else if(/mall|shopee|bili|sale|presyo|link|post/.test(s)){key='shop';pool=CHAT_REPLIES.shop;}
+  else if(/gym|kape|coffee|bar|taas|escalator/.test(s)){key='up';pool=CHAT_REPLIES.up;}
+  else if(/task|trabaho|work|ginagawa|busy/.test(s)){key='work';pool=CHAT_REPLIES.work;}
+  else if(/salamat|thanks|ty/.test(s)){key='thanks';pool=CHAT_REPLIES.thanks;}
+  else if(/sayaw|party|fun|biro|game/.test(s)){key='fun';pool=CHAT_REPLIES.fun;}
+  return pickFresh('reply:'+key,pool);
 }
 function mmoSend(){
   const inp=$('mmoChatIn');if(!inp)return;
@@ -1135,28 +1147,28 @@ function moodFor(a,working,i){
   return moods[(Math.floor(Date.now()/9000)+i*3)%moods.length];
 }
 const AMBIENT={
-  drop:['Clips ready na boss!','I organize lahat.','Sino naglipat ng clips ko?','Ready na ako kailan mo gusto!'],
-  edit:['Cutting takes patience?','Perfect frame, finally.','Masyadong maraming transitions.','Kailangan ng kape.'],
-  rvs:['Tinighten ko na ang hook.','Mukhang maganda na ang pacing.','Isa pang pass siguro.','Malinis na ang dating.'],
-  seo:['Caption done na! ✨','Na-update na ang hashtags.','Mag-po-pop ito!','Check mo ang hook ko!'],
-  sched:['Na-schedule na ?','Time is everything.','Naka-lock na ang slot.','12 PM sharp tayo.'],
-  post:['Naka-queue na for posting.','Four platforms, one click.','Approval please!','Launch ready na ✨'],
-  mgr:['Normal lahat ng systems.','Na-file na ang report.','Naghihintay ng approval mo.','On track ang team.'],
-  cos:['Naka-set na ang priorities.','Nagde-delegate na ako.','Stay focused tayo.','Big picture first.'],
-  outreach:['Na-send na ang draft.','Magfo-follow up na lang ako.','Magugustuhan ito ng client.','Naggagawa ng connections.'],
-  scraper:['May bagong resource akong nakita!','Naghahanap pa rin sa communities?','Interesting ang lead na ito.','Na-bookmark ko na.'],
-  social:['Trend alert! ✨','Na-draft na ang post.','Maganda ang engagement.','May story idea akong na-save.'],
-  product:['Product brief ready na!','Demo time na!','Magbebenta ito.','Bigyan mo ako ng link!'],
-  joker:['Bakit tumawid ang bot sa sahig? ✨','Free coffee? Sali ako!','Ako ang dahilan ng morale natin.','Whoop! ✨']
+  drop:['Clips ready na boss!','Ina-organize ko lahat.','Sino naglipat ng clips ko?','Ready na ako kailan mo gusto!','Tapos na ang export, check mo ✅','May extra take pa ako eh 🔍','Sige, i-upload ko na 📦','Ayos na ang file names 👍','Dami ng clips, pero kaya ko 💪','Hintay lang, re-render ako 🔄'],
+  edit:['Cutting takes patience, CEO ✂️','Perfect frame, finally!','Masyadong maraming transitions.','Kailangan ng kape ☕','Tinanggal ko na ang mahabang parts ✂️','Smooth na ang cut ngayon ✨','Isa pa, then tapos na 🎬','Audio ko pa lang i-a-adjust 🎧','Ganda ng shot na ito!','Sige, i-save ko na 💾'],
+  rvs:['Tinighten ko na ang hook.','Mukhang maganda na ang pacing.','Isa pang pass siguro.','Malinis na ang dating ✨','Binawasan ko ang words 🔍','Mas malinaw na ngayon 👌','Ok na, pwedeng i-approve ✅','Sige, revise ko ulit 🔄','Dito mas bagay ang line 🎯','Tapos na, CEO! 🎉'],
+  seo:['Caption done na! ✨','Na-update na ang hashtags.','Mag-po-pop ito! 🚀','Check mo ang hook ko! 🔥','Mas maikli na, mas malinaw 🔍','Trending na ang keyword na ito 📈','Sige, i-test ko sa search 🧪','Ready na ang description 📝','Mag-click pa sana sila 👆','Ayos, i-post na natin ✅'],
+  sched:['Na-schedule na, CEO! 📅','Timing is everything ⏰','Naka-lock na ang slot ✅','12 PM sharp tayo 🕛','Inayos ko ang queue 📋','Walang conflict sa oras 👌','Automated na ang posting 🤖','Sige, i-reschedule ko 🔄','On time tayo, promise ⏱️','Abangan mo ang 3 PM 📆'],
+  post:['Naka-queue na for posting 📤','Four platforms, one click ✅','Approval please, CEO! 🙏','Launch ready na ✨','Naka-post na sa mall 🛍️','Sige, i-push ko na 🚀','May new comment pala 💬','Engagement pa lang umaakyat 📈','Tinag ko na ang link 🔗','Ayos, live na! 🎉'],
+  mgr:['Normal lahat ng systems ✅','Na-file na ang report 📄','Naghihintay ng approval mo 🙏','On track ang team 🚀','Walang issue ngayon 👌','Tiningnan ko ang numbers 📊','Sige, i-escalate ko ⬆️','All good, CEO! 💚','May update ako mamaya ⏰','Team pa rin, solid 💪'],
+  cos:['Naka-set na ang priorities 📌','Nagde-delegate na ako 🤝','Stay focused tayo 🎯','Big picture first 🔭','Sige, planado na ang araw 📅','Tinignan ko ang roadmap 🗺️','Ikaw ang boss, ako ang support 👑','Ready ang briefing 📋','Sabay tayo sa meeting 🤝','Ayos, execute na tayo 🚀'],
+  outreach:['Na-send na ang draft 📨','Magfo-follow up na lang ako 📞','Magugustuhan ito ng client 💚','Naggagawa ng connections 🤝','Reply na ang client! 🎉','Sige, i-email ko ulit ✉️','May meeting request pala 📅','Nakausap ko na ang team 💬','Approved na ang proposal ✅','Solid ang pitch natin 🔥'],
+  scraper:['May bagong resource akong nakita! 🔍','Naghahanap pa rin sa communities 🌐','Interesting ang lead na ito 👀','Na-bookmark ko na 🔖','Dami ng fresh trends 📈','Sige, i-save ko ang link 🔗','May gusto akong i-share 💡','Check ko pa ang ibang sources 🧭','Ayos, may data na tayo 📊','Dependable ang source na ito ✅'],
+  social:['Trend alert! ✨','Na-draft na ang post 📝','Maganda ang engagement 📈','May story idea akong na-save 💡','Sige, i-story ko na 📲','Viral na ito siguro 🔥','May new follower pala 🎉','Reactions pa lang dumadami 💛','Ayos, i-post ko na ✅','Caption ko na lang i-tweak ✍️'],
+  product:['Product brief ready na! 📋','Demo time na! 🎬','Magbebenta ito 💰','Bigyan mo ako ng link 🔗','Sige, i-render ko na 🎥','May bagong product pala 🛍️','Presyo na, details pa 📦','Ayos, i-upload ko na ✅','Check mo ang mockup 👀','Launch na tayo! 🚀'],
+  joker:['Bakit tumawid ang bot sa sahig? ✨','Free coffee? Sali ako! ☕','Ako ang dahilan ng morale natin 🤡','Whoop! ✨','Sige, joke ko na ito! 😆','May punchline pa ako wait 🎤','Hindi ako seryoso, promise 😄','Pwede ba akong mag-joke ulit? 🤡','Seryoso tayo… hindi! 😆','Boss, smile ka! 😁']
 };
 const ACTLINES={
- break:['☕ kape muna ako!','✨ chill lang saglit','☕ coffee break!','✨ ang ganda ng view dito ah','☕ refill muna ako'],
- dance:['✨ feeling the beat!','✨ work hard, party harder!','✨ may pa-disco sa lounge!','✨ ang ganda ng vibe dito!'],
- swim:['✨ ang lamig ng tubig!','✨ pool time na!','✨ living the dream!','✨ dito ako sa Chill Roof forever'],
- nap:['✨ zzz... five minutes lang...','✨ nap muna ako boss...','✨ recharging...','✨ ang comfy ng pod na ito...'],
- drink:['✨ tagay, mga kaibigan!','✨ cheers!','✨ sarap ng inuman dito!','✨ isa pa nga!'],
- band:['✨ boom boom tschak!','✨ rock on!','✨ la la laaa!','✨ sabay-sabay tayo!'],
-  chill:['☕ ang sarap ng kape sa sala...','🛋️ chill lang muna ako...','☕ kape + sofa = perfect...','✨ walang stress, kape lang...']
+ break:['☕ kape muna ako!','✨ chill lang saglit','☕ coffee break!','✨ ang ganda ng view dito ah','☕ refill muna ako','☕ kape pa, CEO? ☕','✨ pahinga muna tayo ⏸️','☕ mainit pa ang kape ☕','✨ breather lang, hindi tamad 😆','☕ sa pantry ako, hintayin nyo 👣'],
+ dance:['✨ feeling the beat!','✨ work hard, party harder!','✨ may pa-disco sa lounge!','✨ ang ganda ng vibe dito!','💃 sayaw na mga boss!','✨ beat pa, energy pa 💪','🕺 ako na ang DJ ngayon','✨ sayaw muna bago trabaho 💃','🎉 party mode: ON!','✨ tayo na sa dance floor!'],
+ swim:['✨ ang lamig ng tubig!','✨ pool time na!','✨ living the dream!','✨ dito ako sa Chill Roof forever','🌊 splash pa isa!','✨ swimming muna, di na ako lalabas 🏊','🌊 tagay sa pool?','✨ workout na sa tubig 💪','🌊 ang init, swak ang pool!','✨ pool party na pala 🎉'],
+ nap:['✨ zzz... five minutes lang...','✨ nap muna ako boss...','✨ recharging...','✨ ang comfy ng pod na ito...','😴 pajar na muna ako 💤','✨ 5 mins lang, promise ⏰','😴 huwag mong gisingin 🤫','✨ charge mode: ON 🔋','😴 panaginip pa, wait 🛌','✨ zzzZzz… 😴'],
+ drink:['✨ tagay, mga kaibigan!','✨ cheers!','✨ sarap ng inuman dito!','✨ isa pa nga!','☕ kape na naman? sige!','✨ tagay pa, CEO? 🥤','💛 salamat sa tagay!','✨ refresh muna ☕','🥤 tagay pa, boss!','✨ inuman pa more 🍹'],
+ band:['✨ boom boom tschak!','✨ rock on!','✨ la la laaa!','✨ sabay-sabay tayo!','🎸 gitara solo ko ito!','🥁 beat pa, sunog pa 🔥','✨ band practice muna 🎵','🎤 kanta na mga boss!','🎸 rock and roll tayo!','✨ music pa more 🎶'],
+ chill:['☕ ang sarap ng kape sa sala...','🛋️ chill lang muna ako...','☕ kape + sofa = perfect...','✨ walang stress, kape lang...','🛋️ sofa muna, trabaho later 😌','☕ kape pa, sala pa ☕','✨ ang ganda ng view sa laban 🌆','🛋️ chill mode: ON 💤','☕ mainit pa ang kape ☕','✨ walang deadline ngayon 😌']
 };
 const SALA_SPOTS=[{x:2.2,z:1.9},{x:4.6,z:1.9}].map(s=>({x:s.x,z:s.z,taken:false,t:0}));
 const BAND_SPOTS=[{x:5,z:10.3},{x:3.1,z:9.5},{x:4.2,z:8.9}].map(s=>({x:s.x,z:s.z,taken:false,t:0}));
@@ -1168,7 +1180,7 @@ function releaseBotSlots(c){
 function startBotAct(c){
   if(!c.actNext)return;
   c.act=c.actNext.type;c.actT=c.actNext.dur;
-  c.actLine=(ACTLINES[c.act]||ACTLINES.break)[Math.floor(Math.random()*(ACTLINES[c.act]||ACTLINES.break).length)];
+  c.actLine=pickFresh('act:'+c.act,ACTLINES[c.act]||ACTLINES.break);
   c.actNext=null;c.wait=3000;
   if(c.cup)c.cup.visible=(c.act==='chill');
   if(c.act==='chill'||c.act==='drink')snd('clink');
@@ -1308,7 +1320,7 @@ function toggleVoice(){
 }
 function ambientLine(a,i){
   const arr=AMBIENT[a.id]||['Working…'];
-  return arr[(Math.floor(Date.now()/4200)+i)%arr.length];
+  return pickFresh('amb:'+a.id,arr); // shuffle-bag: hindi uuulit hangga't hindi nauubos
 }
 function drawBot(a,aa,bb,z,working,mood){
   const t0=Date.now();
@@ -5828,7 +5840,8 @@ function eventShowHostSay(sh,idx){
   if(!sh)return;
   const hosts=Array.isArray(sh.hosts)&&sh.hosts.length?sh.hosts:['🤖 HOST BOT','🛍️ DEMO BOT','🎧 DJ BOT'];
   const i=Math.abs(idx||0)%hosts.length,who=hosts[i],p=sh.product;
-  const line=p?('Next on stage: '+(p.emoji||'🛍️')+' '+p.name+' — ₱'+Number(p.price||0).toLocaleString('en-PH')+'. Pindutin ang stall para makita ang product post!'):'Welcome sa Cyborg Live Event Stage! Abangan ang susunod na demo.';
+  const STAGE_LINES=['Welcome sa Cyborg Live Event Stage! Abangan ang susunod na demo.','🎤 Stage na tayo, mga boss! May demo pa abangan.','✨ Live na ang event! Sige, pindutin ang stall.','🎬 Next up: demo mula sa team — abangan!','🎉 Event Stage na! Maraming salamat sa pag-dayo.','🛍️ May product showcase pa later, stay tuned!','🤖 Host bot na, sabihin lang ang gusto mo.','💚 Welcome! Pwede kang mag-shop habang nandito.'];
+  const line=p?('Next on stage: '+(p.emoji||'🛍️')+' '+p.name+' — ₱'+Number(p.price||0).toLocaleString('en-PH')+'. Pindutin ang stall para makita ang product post!'):pickFresh('stage',STAGE_LINES);
   let actor=null;
   try{
     const crew=((g&&g.sportsBots)||[]).filter(b=>['pitcher','batter','fielder'].indexOf(b.role)>=0);
@@ -7492,18 +7505,29 @@ async function openCeoWish(){
     'Tapos na ang report ko, CEO — walang pending na isyu. ✅',
     'Ok ang numbers! Patuloy lang tayo sa Shopee posts at tasks. 📊',
     'May 3 bagong product posts na naka-ready para sa mall. 🛍️',
-    'All systems go! Handa na ang team para sa susunod na meeting. 🤖'
+    'All systems go! Handa na ang team para sa susunod na meeting. 🤖',
+    'Tiningnan ko ang metrics, pataas ang engagement 📈',
+    'Walang problem sa systems, steady lang tayo 💚',
+    'Na-verify ko na ang list, kumpleto na ✅',
+    'May update pa ako mamaya, CEO ⏰'
   ];
   var TASK=[
     'Opo, gagawin ko na po yan ngayon din. 🔧',
     'Copy, CEO! Ilalagay ko sa task list at ia-update kita. ✅',
     'Sige, ako na ang bahala — tapos ko bago matapos ang araw. ⏰',
-    'Nai-queue ko na. Ping kita pag tapos na! 💬'
+    'Nai-queue ko na. Ping kita pag tapos na! 💬',
+    'Sige, simulan ko na ngayon 💪',
+    'Noted! Ipapasa ko sa tamang bot 🤝',
+    'Opo, nasa board na ang task 📌',
+    'Tapos ko ito bago ang meeting, promise ⏱️'
   ];
   var GREET=[
     'Kumusta, CEO! 👋 Andito na ang buong team sa meeting.',
     'Hi! Sige, nakinig na ako. Ano ang agenda natin? ✨',
-    'Hello po! Handa na akong makipag-usap at tumanggap ng utos. 🤝'
+    'Hello po! Handa na akong makipag-usap at tumanggap ng utos. 🤝',
+    'Buti dumating ka! Sige, tayo na 💚',
+    'Opo, nandito na kami — sabihin mo lang 📋',
+    'Ready na ang team, CEO! 🚀'
   ];
   var DEFAULT=[
     'Sige, CEO! 👍 Naintindihan ko ang sinabi mo.',
@@ -7550,11 +7574,11 @@ async function openCeoWish(){
     }
     /* Status / report */
     if(/report|status|update|ano ang ginagawa|progress|balita|update mo/.test(s)){
-      say(1,pick(REPORT));return;
+      say(1,pickFresh('mtg:report',REPORT));return;
     }
     /* Task / utos sa trabaho */
     if(/task|trabaho|gawin|gawin mo|utos|assign|work mo/.test(s)){
-      say(2,pick(TASK));return;
+      say(2,pickFresh('mtg:task',TASK));return;
     }
     /* Punta sa zone */
     var zone=null;for(var i=0;i<ZONES.length;i++){if(ZONES[i].re.test(s)){zone=ZONES[i];break;}}
@@ -7563,11 +7587,11 @@ async function openCeoWish(){
       say(0,'Sige, punta tayo sa '+zone.n+'! Sumunod ka na! 🏃');return;
     }
     /* Kumusta */
-    if(/hi|hello|hey|kumusta|good morning|yo\b/.test(s)){say(st.turn,pick(GREET));return;}
+    if(/hi|hello|hey|kumusta|good morning|yo\b/.test(s)){say(st.turn,pickFresh('mtg:greet',GREET));return;}
     /* Salamat */
     if(/salamat|thanks|ty\b/.test(s)){say(st.turn,pick(['Welcome po! 🙌','Salamat din! 💛','Happy to help, CEO! ✨']));return;}
     /* Default */
-    say(st.turn,pick(DEFAULT));
+    say(st.turn,pickFresh('mtg:default',DEFAULT));
   }
   /* === UI === */
   function intros(){
