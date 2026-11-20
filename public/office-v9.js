@@ -1,9 +1,9 @@
 /* office-v9.js — Cyborg Cheebee Office.
-   v9 "photographic" + v14/v15/v16 effects + v17-v23 "realistic streets" plus a
-   v24 realism pass: hardwood court grain, pebbled ball, numbered jerseys,
-   humanoid limb-swinging players, glass backboards with line nets, moving ball
-   shadow, and a swept-wing airliner with intake rings, windows and contrails.
-   North city street, x1000 entrance road and east/west side worlds remain.
+   v9 "photographic" + v14/v15/v16 effects + v17-v23 "realistic streets" plus
+   v24 court/ball/airliner realism and a v25 building pass: concrete columns,
+   suspended ceiling tiles, HVAC vents, sprinklers, glass entry doors/canopy,
+   wainscot, terrazzo, wayfinding and detailed reception/meeting/pantry/server
+   zones. North city street, x1000 entrance road and east/west side worlds remain.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -321,13 +321,74 @@
   }
   function wallTex() {
     return makeTex('wall', function (q, S) {
-      q.fillStyle = '#e8e4dc'; q.fillRect(0, 0, S, S);
+      q.fillStyle = '#e6e2da'; q.fillRect(0, 0, S, S);
       var r = rnd(5);
-      for (var i = 0; i < 900; i++) {
-        q.fillStyle = 'rgba(120,115,105,' + (.012 + r() * .018).toFixed(3) + ')';
+      for (var i = 0; i < 1300; i++) {
+        q.fillStyle = 'rgba(110,108,100,' + (.012 + r() * .024).toFixed(3) + ')';
         q.fillRect(r() * S, r() * S, 2, 2);
       }
+      // subtle drywall panel joints read as real architectural seams at distance
+      for (var p = 0; p <= S; p += 64) {
+        q.fillStyle = 'rgba(96,102,108,.10)'; q.fillRect(p, 0, 1, S);
+        q.fillStyle = 'rgba(255,255,255,.16)'; q.fillRect(p + 1, 0, 1, S);
+      }
+      q.fillStyle = 'rgba(96,102,108,.07)'; q.fillRect(0, 128, S, 1);
     }, 6, 3);
+  }
+  function concreteTex() {
+    return makeTex('concrete', function (q, S) {
+      q.fillStyle = '#d9dad5'; q.fillRect(0, 0, S, S);
+      var r = rnd(13);
+      for (var i = 0; i < 1600; i++) {
+        q.fillStyle = 'rgba(72,84,96,' + (.012 + r() * .03).toFixed(3) + ')';
+        q.fillRect(r() * S, r() * S, 2 + r() * 3, 2 + r() * 3);
+      }
+      q.strokeStyle = 'rgba(88,98,108,.10)'; q.lineWidth = 2;
+      for (var p = 0; p <= S; p += 64) {
+        q.beginPath(); q.moveTo(p, 0); q.lineTo(p, S); q.stroke();
+        q.beginPath(); q.moveTo(0, p); q.lineTo(S, p); q.stroke();
+      }
+    }, 2, 2);
+  }
+  function ceilingTex() {
+    return makeTex('ceiling-tile', function (q, S) {
+      q.fillStyle = '#e9edf0'; q.fillRect(0, 0, S, S);
+      var r = rnd(23);
+      for (var i = 0; i < 1900; i++) {
+        q.fillStyle = 'rgba(86,102,118,' + (.018 + r() * .035).toFixed(3) + ')';
+        q.fillRect(r() * S, r() * S, 2, 2);
+      }
+      q.strokeStyle = 'rgba(118,132,146,.34)'; q.lineWidth = 5;
+      q.strokeRect(0, 0, S, S);
+      q.strokeStyle = 'rgba(255,255,255,.55)'; q.lineWidth = 2;
+      q.beginPath(); q.moveTo(5, 5); q.lineTo(S - 5, 5); q.stroke();
+    }, 1, 1);
+  }
+  function metalTex() {
+    return makeTex('brushed-metal', function (q, S) {
+      q.fillStyle = '#aeb8c4'; q.fillRect(0, 0, S, S);
+      var r = rnd(41);
+      for (var y = 0; y < S; y += 2) {
+        q.fillStyle = 'rgba(255,255,255,' + (.02 + r() * .05).toFixed(3) + ')';
+        q.fillRect(0, y, S, 1);
+      }
+      for (var i = 0; i < 260; i++) {
+        q.fillStyle = 'rgba(58,72,90,' + (.015 + r() * .028).toFixed(3) + ')';
+        q.fillRect(r() * S, r() * S, 1 + r() * 12, 1);
+      }
+    }, 1, 1);
+  }
+  function terrazzoTex() {
+    return makeTex('terrazzo', function (q, S) {
+      q.fillStyle = '#d8dad3'; q.fillRect(0, 0, S, S);
+      var r = rnd(67), cols = ['#8d9aa6', '#b98d6d', '#6f7d8c', '#f2eee4'];
+      for (var i = 0; i < 950; i++) {
+        q.fillStyle = cols[Math.floor(r() * cols.length)];
+        q.globalAlpha = .32 + r() * .4;
+        q.beginPath(); q.ellipse(r() * S, r() * S, 1 + r() * 4, 1 + r() * 2, r() * 6.3, 0, 6.3); q.fill();
+      }
+      q.globalAlpha = 1;
+    }, 4, 3);
   }
 
   /* ---------- depth cues: contact shadow + warm light pool ---------- */
@@ -592,6 +653,162 @@
       var l = bx(a[0], a[1], a[2], a[3], a[4], a[5], a[6], true);
       animParts.push({ m: l, k: 'led', p: a[7] });
     });
+  }
+  function ceilingPanel(w, d, x, z) {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
+      solid('#ffffff', { map: ceilingTex(), roughness: .96, metalness: 0, side: THREE.DoubleSide }));
+    m.rotation.x = Math.PI / 2; m.position.set(x, 3.285, z); return addO(m);
+  }
+  function hvacVent(x, z) {
+    box(1.05, .05, .68, solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 }), x, 3.24, z);
+    box(.86, .02, .5, '#4c5a6b', x, 3.21, z);
+    for (var i = -2; i <= 2; i++) box(.045, .015, .48, '#8e9bab', x + i * .16, 3.205, z);
+    box(.9, .012, .05, '#6f7d8c', x, 3.198, z);
+  }
+  function fireSprinkler(x, z) {
+    cyl(.022, .12, '#b8792e', x, 3.19, z);
+    var b = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6),
+      solid('#d94f3d', { emissive: '#7a1f14', emissiveIntensity: .25 }));
+    b.position.set(x, 3.11, z); addO(b);
+  }
+  function smokeDetector(x, z) {
+    cyl(.14, .035, '#e8ecef', x, 3.25, z);
+    cyl(.05, .04, '#7d8b9a', x, 3.23, z);
+  }
+  function exitSign(x, y, z, rot, label) {
+    var txt = label || 'EXIT';
+    var t = makeTex('exit-' + txt, function (q, S) {
+      q.fillStyle = '#0e5b3d'; q.fillRect(0, 0, S, S);
+      q.fillStyle = '#d8ffe8'; q.font = 'bold 108px Arial, sans-serif';
+      q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(txt, S / 2, S / 2);
+    }, 1, 1);
+    var g2 = new THREE.Group();
+    var back = new THREE.Mesh(new THREE.BoxGeometry(1.02, .36, .05), solid('#163a2e'));
+    g2.add(back);
+    var face = new THREE.Mesh(new THREE.PlaneGeometry(.96, .3),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
+    face.position.z = .03; g2.add(face);
+    g2.position.set(x, y, z); g2.rotation.y = rot || 0; addO(g2);
+  }
+  function column(x, z) {
+    shadow(x, z, .42, .42, .1);
+    box(.56, .12, .56, solid('#aeb8c4', { map: metalTex(), metalness: .5, roughness: .4 }), x, .06, z);
+    box(.28, 3.04, .28, solid('#ffffff', { map: concreteTex(), roughness: .88 }), x, 1.62, z);
+    box(.48, .1, .48, solid('#aeb8c4', { map: metalTex(), metalness: .5, roughness: .4 }), x, 3.19, z);
+    [-.15, .15].forEach(function (dx) {
+      box(.03, 3.0, .03, '#c6ced7', x + dx, 1.62, z + .15);
+      box(.03, 3.0, .03, '#c6ced7', x + dx, 1.62, z - .15);
+    });
+  }
+  function wainscot(x, z, w, d, color) {
+    box(w, .92, d, solid(color || '#dfe3e6', { map: wallTex(), roughness: .9 }), x, .55, z);
+    box(w + .04, .06, d + .04, '#b7c0ca', x, 1.04, z);
+  }
+  function glassDoors(cx, z) {
+    var frame = '#223047';
+    [-1.3, 1.3].forEach(function (dx) {
+      glass(2.45, 2.28, .06, cx + dx, 1.22, z, .26, '#cfe6f2');
+      box(.07, 2.38, .1, frame, cx + dx - 1.25, 1.2, z);
+      box(.07, 2.38, .1, frame, cx + dx + 1.25, 1.2, z);
+      box(2.5, .08, .1, frame, cx + dx, 2.42, z);
+      box(2.5, .08, .1, frame, cx + dx, .06, z);
+      var hx = cx + dx + (dx < 0 ? .98 : -.98);
+      cyl(.026, .48, solid('#aeb8c4', { map: metalTex(), metalness: .7, roughness: .28 }), hx, 1.15, z + .08, true);
+      box(.26, .05, .05, '#8b97a5', hx, 1.39, z + .08);
+      box(.26, .05, .05, '#8b97a5', hx, .91, z + .08);
+    });
+    glass(5.2, .42, .06, cx, 2.72, z, .2, '#cfe6f2');
+    box(5.3, .07, .1, frame, cx, 2.95, z);
+    box(5.3, .1, .22, '#8b97a5', cx, .04, z);
+    bx(5.1, .025, .05, '#6fd0c4', cx, .02, z - .14, true);
+  }
+  function entranceCanopy(cx, z) {
+    box(10.4, .16, 2.3, solid('#2f3d52', { metalness: .35, roughness: .4 }), cx, 3.18, z + 1.15);
+    box(10.6, .08, 2.45, solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 }), cx, 3.3, z + 1.15);
+    [-3.4, 0, 3.4].forEach(function (dx) { bx(2.2, .03, .07, '#ffe1a8', cx + dx, 3.08, z + 2.15, true); });
+    [-4.6, 4.6].forEach(function (dx) {
+      cyl(.045, 2.85, '#8b97a5', cx + dx, 1.62, z + 2.05);
+      box(.16, .12, .5, '#8b97a5', cx + dx, 3.02, z + 1.5);
+      shadow(cx + dx, z + 2.05, .2, .2, .1);
+    });
+    wallSign('CYBORG CHEEBEE', 'AI AGENTS HEADQUARTERS', cx, 3.58, z + 2.32, 6.2, .8, 0, '#3f9d9a');
+  }
+  function receptionDetails() {
+    for (var i = 0; i < 9; i++) box(.035, .62, .035, '#6e4a2c', 20.4 + i * .65, .55, 29.51);
+    box(4.9, .08, .05, '#d8c6a4', 23, .92, 29.49);
+    wallSign('CYBORG', 'RECEPTION', 23, .48, 29.47, 1.9, .42, 0, '#3f9d9a');
+    box(.36, .02, .24, '#e7e9ec', 22.5, 1.13, 30);
+    cyl(.025, .02, '#8b97a5', 23.1, 1.13, 30);
+    cyl(.05, .14, '#d9c39a', 24.1, 1.18, 30.05);
+    var t = makeTex('welcome-mat', function (q, S) {
+      q.fillStyle = '#2f4a52'; q.fillRect(0, 0, S, S);
+      q.strokeStyle = '#8fb6b2'; q.lineWidth = 8; q.strokeRect(10, 10, S - 20, S - 20);
+      q.fillStyle = '#e8f2ef'; q.font = 'bold 52px Arial, sans-serif';
+      q.textAlign = 'center'; q.fillText('WELCOME', S / 2, S / 2 + 18);
+    }, 1, 1);
+    planeAt(2.6, 1.15, solid('#ffffff', { map: t, roughness: 1 }), 23, .014, 31.7);
+    box(.55, .9, .35, '#6e7c8f', 19.6, .45, 31.9);
+    ['#e8eef5', '#dce8df', '#f0e4cf'].forEach(function (c, k) {
+      box(.42, .24, .02, c, 19.6, .35 + k * .27, 32.09);
+    });
+  }
+  function meetingDetails() {
+    box(1.3, .12, .16, '#1b2537', 37, 2.62, 4.93);
+    cyl(.07, .07, '#3f9d9a', 37, 2.62, 5.03, true);
+    cyl(.34, .05, '#2f3d52', 37, .86, 7.5);
+    cyl(.2, .02, '#5c6f86', 37, .9, 7.5);
+    box(1.2, .05, .08, '#d9dde2', 37, 1.05, .42);
+    ['#c94f5f', '#3f9d9a', '#2f4a6d'].forEach(function (c, i) { cyl(.02, .24, c, 36.7 + i * .3, 1.14, .48); });
+    wallSign('HUDDLE', 'SCREEN SHARE', 43.2, 1.75, 16.35, 1.8, .5, -Math.PI / 2, '#5f7fa8');
+    wallSign('STUDIO', 'MEETING', 29.12, 1.7, 9.5, .85, .28, Math.PI / 2, '#3f6fa8');
+  }
+  function pantryDetails() {
+    box(7.2, .95, .06, solid('#ffffff', { map: tileTex(5, 2), roughness: .45 }), 37, 1.55, 32.82);
+    [34.8, 39.2].forEach(function (x) {
+      box(2.2, .72, .42, '#8b5e34', x, 2.28, 32.5);
+      glass(2.1, .6, .05, x, 2.28, 32.74, .26, '#cfe6f2');
+      box(.05, .66, .05, '#d8c6a4', x, 2.28, 32.78);
+    });
+    box(.5, .22, .32, '#2f3d52', 34.5, 1.42, 28.1);
+    cyl(.05, .12, '#aeb8c4', 34.5, 1.18, 28.1);
+    cyl(.12, .14, '#f2eee4', 34.5, 1.06, 28.1);
+    box(.04, .6, .04, '#b9c3cd', 39.8, 1.72, 32.79);
+    box(2.4, .06, .35, '#a9793f', 34.5, 2.05, 28.2);
+    for (var i = 0; i < 5; i++) cyl(.08, .12, '#f2eee4', 33.6 + i * .45, 2.14, 28.2);
+  }
+  function serverDetails() {
+    box(7.4, .08, .5, solid('#aeb8c4', { map: metalTex(), metalness: .6, roughness: .3 }), 5, 2.72, 25.5);
+    box(7.4, .05, .05, '#7d8b9a', 5, 2.78, 25.25);
+    box(7.4, .05, .05, '#7d8b9a', 5, 2.78, 25.75);
+    for (var i = 0; i < 6; i++) {
+      box(.04, .04, .35, ['#c94f5f', '#3f9d9a', '#e0a83a', '#4a7fb0'][i % 4], 2.1 + i * 1.1, 2.66, 25.5);
+    }
+    for (var k = 0; k < 7; k++) box(.9, .012, .06, '#b08a3d', 1.6 + k * 1.1, .016, 26.4);
+  }
+  function wayfinding() {
+    exitSign(18.9, 2.72, 33.76, 0, 'EXIT');
+    exitSign(28.7, 2.72, 33.76, 0, 'EXIT');
+    exitSign(37, 2.75, 16.62, 0, 'EXIT');
+    wallSign('← WELCOME', 'MAIN STREET →', 12, 2.72, 23.2, 3.2, .55, 0, '#3f9d9a');
+    wallSign('MEET →', '← FOCUS', 33, 2.72, 23.2, 3.0, .55, 0, '#5f7fa8');
+    wallSign('CEO', 'EXECUTIVE', 11.12, 1.7, 27.5, .8, .3, Math.PI / 2, '#b08a3d');
+  }
+  function buildingEnhancements() {
+    wainscot(.36, 17, .06, 33.6, '#dfe3e6');
+    wainscot(45.64, 17, .06, 33.6, '#dfe3e6');
+    wainscot(8.7, 33.82, 16.8, .06, '#dfe3e6');
+    wainscot(41.7, 33.82, 8.8, .06, '#dfe3e6');
+    [6, 15, 24, 33, 42].forEach(function (x) { column(x, 4.2); column(x, 22.8); });
+    [10.5, 19.5, 28.5, 37.5].forEach(function (x) {
+      [8.5, 17, 25.5].forEach(function (z) { ceilingPanel(8.2, 7.4, x, z); });
+    });
+    [[10.5, 12.5], [28.5, 12.5], [19.5, 26.5], [37.5, 26.5]].forEach(function (p) { hvacVent(p[0], p[1]); });
+    [[6, 4.2], [15, 22.8], [24, 4.2], [33, 22.8], [42, 4.2]].forEach(function (p) {
+      fireSprinkler(p[0], p[1]); smokeDetector(p[0] + 1.4, p[1]);
+    });
+    glassDoors(23, 34);
+    entranceCanopy(23, 34);
+    receptionDetails(); meetingDetails(); pantryDetails(); serverDetails(); wayfinding();
   }
   function presentationScreen(x, z, rot) {
     var g2 = new THREE.Group();
@@ -1795,7 +2012,7 @@
 
     // ---- ground, slab, zone floors ----
     floor(220, 220, '#485567', 23, -.22, 17);
-    floor(46.8, 34.8, '#6f7d90', 23, -.03, 17);
+    floor(46.8, 34.8, solid('#b9c3cc', { map: terrazzoTex(), roughness: .95, metalness: 0 }), 23, -.03, 17);
     floor(27, 19, solid('#ffffff', { map: carpetTex('#718f8b', '#3f6662', 7, 5), roughness: .95, metalness: 0 }), 15, .005, 11);
     floor(16, 15, solid('#ffffff', { map: tileTex(5, 5), roughness: .8 }), 37, .005, 10);
     floor(19, 10, solid('#ffffff', { map: plankTex(7, 4), roughness: .75 }), 23, .005, 29);
@@ -1958,6 +2175,7 @@
     entranceRoad();
     sideWorlds();
     airplane();
+    buildingEnhancements();
 
     // ---- 6 small, cute, happy bots ----
     var host = document.getElementById('oc3d') || document.body;

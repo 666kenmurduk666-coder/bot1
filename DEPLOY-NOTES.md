@@ -672,3 +672,49 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `meanLum=99.4`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - **Cache-bust:** `/office-v9.js?v=24`.
 
+## 2026-11-20 — Building enhancement pass (v25 cache-bust)
+
+### Bakit ito
+- Sinabi ng user: `i enhanced mo lahat lahat pati building`. Kaya ang pinaganda
+  hindi lang ang paligid kundi pati ang mismong shell at interior ng office —
+  mas architectural, hindi dagdag na cartoon props.
+
+### Mga pinaganda
+- **Building shell:** terrazzo slab, concrete column shafts with brushed-metal
+  base/cap and vertical trims, full-height wainscot on the long walls, and a
+  suspended ceiling grid of textured acoustic tiles.
+- **Ceiling details:** brushed-metal HVAC vents with fins, copper sprinkler
+  drops with red heads, smoke detectors, and more cove LED accents.
+- **Entrance:** paired frameless glass doors with metal pulls and transom,
+  brushed canopy with downlights and supports, plus a larger
+  `CYBORG CHEEBEE / AI AGENTS HEADQUARTERS` sign.
+- **Zones:** reception front desk slats/contacts/brochures and WELCOME mat;
+  meeting soundbar, screen-share pucks, table pedestal and huddle/studio signs;
+  pantry tile backsplash, glass cabinets, coffee station and cups; server busway,
+  colored status leads and raised-floor cable markers; wayfinding and EXIT signs.
+- Procedural textures (drywall joints, concrete, ceiling tile, brushed metal,
+  terrazzo) are cached once and stay cheap. Protected Phase D v8 runtime, cull
+  line, white-out guards and staggered screen repaint remain unchanged.
+
+### Verification (v25, lokal — north-side entrance view)
+- Walang console errors, `bots=6`, script `/office-v9.js?v=25`.
+- Effects: `cars=14`, `peds=15`, `signals=4`, `plants=165`, `reflections=39`,
+  `sky=1`, `windows=58`, `screens=25`, `ballers=4`, `ball=1`, `planes=1`.
+- Animation probe: ball, 4 ballers, airplane, cars, peds at bots — **lahat
+  nagbago** (hal. ball `4.3005`, baller `5.3273`, plane `0.6784`, car `0.4485`).
+- Projection check: canopy, glass doors, ceiling tiles, column, EXIT sign,
+  reception mat, pantry, server at wayfinding — **lahat onscreen**. Meeting-room
+  soundbar, screen, table at signs — **lahat onscreen** sa meeting-room view.
+- New-object counts: `ceilingPanels=12`, `hvac=4`, `sprinklers=5`,
+  `detectors=5`, `canopy=9`, `glassDoors=15`, `pantry=18`, `server=9`,
+  `meeting=2`, `signs=3`, `entry=1`.
+- High-object check: `high=545`, `highHidden=0`, `hidden=0`,
+  `unflaggedHigh=0`. Scene: `meshes=3908`, `textured=359`.
+  Pixel stats: `bgPct=2.9`, `edgePct=13.9`, `meanLum=122.6`,
+  `nearWhitePct=0`, `whitePct=0`, `darkPct=6.3`; guards `bg=93a1b3`,
+  `fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
+- Groq bubble visible (`Seo`), `conversations=20`. `.v9bub` remains displayed
+  even with `body.ui-hidden`.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=25`.
+
