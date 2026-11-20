@@ -9,6 +9,9 @@
    v28: ARYASKY joins as the 7th bot/artist and builds the OPISINA ART ZONE —
    blueprint desk, moodboards and zone maquettes as sample works. North city
    street, x1000 entrance road and east/west side worlds remain.
+   v29: ceiling tiles are permanently see-through, the gray surround becomes
+   grass/hills/farm, and the step/mood sprite leak is fixed (use .parent, not
+   .parentNode) so draw calls stay flat instead of climbing into the thousands.
    Window reflections, blind shadows, richer trim and cinematic grade remain.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
@@ -419,6 +422,20 @@
       }
     }, 2, 2);
   }
+  function grassTex() {
+    return makeTex('grass', function (q, S) {
+      var r = rnd(907);
+      q.fillStyle = '#5f9153'; q.fillRect(0, 0, S, S);
+      for (var i = 0; i < 2000; i++) {
+        q.fillStyle = i % 3 ? 'rgba(126,173,104,.28)' : 'rgba(58,108,62,.32)';
+        q.fillRect(r() * S, r() * S, 2 + r() * 5, 1.5 + r() * 3);
+      }
+      for (var k = 0; k < 18; k++) {
+        q.fillStyle = 'rgba(226,204,120,.16)';
+        q.beginPath(); q.arc(r() * S, r() * S, 3 + r() * 9, 0, 6.3); q.fill();
+      }
+    }, 14, 14);
+  }
   function ceilingTex() {
     return makeTex('ceiling-tile', function (q, S) {
       q.fillStyle = '#e9edf0'; q.fillRect(0, 0, S, S);
@@ -720,7 +737,9 @@
     for (i = fx.steps.length - 1; i >= 0; i--) {
       var a = fx.steps[i], p = (now - a.t0) / a.life;
       if (p >= 1) {
-        if (a.m.parentNode) a.m.parentNode.removeChild(a.m);
+        // Three.js Object3D uses .parent (not .parentNode). The old check never
+        // removed these sprites, so thousands accumulated and killed the FPS.
+        if (a.m.parent) a.m.parent.remove(a.m);
         a.m.material.dispose(); fx.steps.splice(i, 1); continue;
       }
       a.m.position.y = a.base + p * .16;
@@ -730,7 +749,7 @@
     for (i = fx.moods.length - 1; i >= 0; i--) {
       var q = fx.moods[i], r = (now - q.t0) / q.life;
       if (r >= 1) {
-        if (q.m.parentNode) q.m.parentNode.removeChild(q.m);
+        if (q.m.parent) q.m.parent.remove(q.m);
         q.m.material.dispose(); fx.moods.splice(i, 1); continue;
       }
       q.m.position.y = q.baseY + r * .48;
@@ -910,18 +929,17 @@
     return addO(m);
   }
   function applyCeilingView() {
-    // The suspended tiles are for the low/normal view only. In Silip/auto-xray
-    // (our default hero camera) they must not become a lid over the whole floor.
-    var on = false;
-    try { on = !!(xrayOn || xrayAuto); } catch (e) {}
-    var op = on ? .04 : 1;
+    // v29: the suspended tiles stay in the scene but are ALWAYS see-through.
+    // No more lid over the floor in the normal view — every bot and zone is
+    // visible from the hero camera without needing Silip/xray.
+    var op = .04;
     if (!fx.ceilings) return;
     fx.ceilings.forEach(function (m) {
       if (!m || !m.material) return;
-      if (m.material.opacity === op && m.material.transparent === on && m.material.depthWrite === !on) return;
-      m.material.transparent = on;
+      if (m.material.opacity === op && m.material.transparent === true && m.material.depthWrite === false) return;
+      m.material.transparent = true;
       m.material.opacity = op;
-      m.material.depthWrite = !on;
+      m.material.depthWrite = false;
       m.material.needsUpdate = true;
     });
   }
@@ -1058,6 +1076,45 @@
     wallSign('← WELCOME', 'MAIN STREET →', 12, 2.72, 23.2, 3.2, .55, 0, '#3f9d9a');
     wallSign('MEET →', '← FOCUS', 33, 2.72, 23.2, 3.0, .55, 0, '#5f7fa8');
     wallSign('CEO', 'EXECUTIVE', 11.12, 1.7, 27.5, .8, .3, Math.PI / 2, '#b08a3d');
+  }
+  function greenSurrounds() {
+    // v29: the flat gray surround becomes a living landscape. The dark guard
+    // plane stays underneath; a green ground sits just above it.
+    floor(220, 220, solid('#ffffff', { map: grassTex(), roughness: 1, metalness: 0 }), 23, -.20, 17);
+
+    // Rolling hills (bundok) — flattened spheres, cheap from the hero camera.
+    [[-40, 70, 24, 8, 17, '#548a4e'], [4, 88, 30, 11, 20, '#5f9855'],
+     [60, 82, 26, 9, 18, '#4f834a'], [100, 52, 22, 7, 16, '#69a35d'],
+     [-46, -34, 20, 7, 15, '#5c9453'], [78, -40, 24, 8, 17, '#52884c'],
+     [24, 108, 34, 12, 22, '#5a9152']].forEach(function (h) {
+      var hill = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), solid(h[5], { roughness: 1 }));
+      hill.scale.set(h[2], h[3], h[4]);
+      hill.position.set(h[0], -h[3] * .5, h[1]);
+      addO(hill);
+    });
+
+    // Farm belt south of the office: tilled rows, barn, hay bales, fence.
+    for (var fr = 0; fr < 6; fr++) {
+      var fz = 52 + fr * 3.4;
+      box(30, .14, 1.7, solid('#8c6a44', { roughness: 1 }), 46, -.10, fz);
+      for (var fc = 0; fc < 15; fc++) {
+        bx(.55, .45 + (fr % 2) * .15, .55, fr % 2 ? '#4f9a4c' : '#6db35a', 32 + fc * 2, .20, fz);
+      }
+    }
+    box(6, 3, 5, '#a8463a', 66, 1.45, 58);
+    box(6.6, .35, 5.6, '#7d3129', 66, 3.12, 58);
+    bx(1.7, 2, .1, '#ead9ae', 66, 1.05, 55.45, true);
+    [[62, 50], [64, 52], [66, 50]].forEach(function (p) { cyl(.7, 1.05, '#d6b45c', p[0], .52, p[1]); });
+    for (var ff = 0; ff < 15; ff++) {
+      var fx2 = 31 + ff * 2.3;
+      cyl(.09, .95, '#cdb88f', fx2, .48, 49);
+      if (ff < 14) box(2.3, .09, .09, '#cdb88f', fx2 + 1.15, .62, 49);
+    }
+
+    // Trees around the perimeter make the place feel alive.
+    [[-34, 52], [-10, 62], [8, 66], [76, 50], [88, 68], [-40, 20],
+     [82, 18], [34, -20], [62, -26], [-12, -24], [16, 76], [54, 74]]
+      .forEach(function (p, i) { tree(p[0], p[1], 1.5 + (i % 3) * .35); });
   }
   function buildingEnhancements() {
     wainscot(.36, 17, .06, 33.6, '#dfe3e6');
@@ -2513,6 +2570,7 @@
     airplane();
     buildingEnhancements();
     aryaskyArtZone();
+    greenSurrounds();
 
     // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;

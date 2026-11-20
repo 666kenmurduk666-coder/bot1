@@ -549,7 +549,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=28"></script>
+<script src="/office-v9.js?v=29"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -3762,7 +3762,8 @@ function buildBasketball3d(){
     for(let i=0;i<8;i++){
       const a=i/8*Math.PI*2;
       const net=cyl3(.012,.42,'#f2f6ff',hx-side*.38+Math.cos(a)*.2,2.68,cz+Math.sin(a)*.2);
-      net.rotation.z=Math.cos(a)*.16;net.rotation.x=Math.sin(a)*.16;
+      // Net must flare OUT at the rim and taper IN at the bottom.
+      net.rotation.z=-Math.cos(a)*.16;net.rotation.x=-Math.sin(a)*.16;
     }
   });
   // upuan sa tabi ng court

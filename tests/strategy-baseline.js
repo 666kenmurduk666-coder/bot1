@@ -57,7 +57,7 @@ const protectedHashes = {
   // glass south facade and legible signs remain. White-out guards unchanged.
   // UI clarity fix: body no longer defaults to ui-hidden (H still toggles);
   // world chat opens as a small 200x100 window, – collapses it to a 24px bar.
-  'public/index.html': 'e09b1ee0574f1de717a8ab0c77528df04036aff21985e1b36e8c1d8ca3f5c28c',
+  'public/index.html': '6b323cd4d6a5fcbc6c513564226e3afa1ef94f71b985ce7736addf8c216b06c4',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -89,9 +89,12 @@ const protectedHashes = {
   // job-specific animations, independent moods, shining shoes, heart cheeks,
   // star sparkles and step/mood particles. v28: ARYASKY is the 7th bot/artist;
   // OPISINA ART ZONE adds a blueprint desk, two moodboards and three zone
-  // maquettes (plaza/arena/flight) as sample works. High v9 objects are flagged
-  // so the simple-mode cull keeps them visible. Protected v8 runtime unchanged.
-  'public/office-v9.js': '7eaf5c9903793b62f0d21c5e511428939aed1a0e3e1f5c1829e6767b16fd5c5c',
+  // maquettes (plaza/arena/flight) as sample works. v29: ceiling tiles stay
+  // see-through in normal view, gray surround becomes grass/hills/farm, and
+  // step/mood sprites are removed with .parent so draw calls no longer explode.
+  // High v9 objects are flagged so the simple-mode cull keeps them visible.
+  // Protected v8 runtime unchanged.
+  'public/office-v9.js': 'b35e7d4a41597433662113ccc3d0dd4443f831562a1d3bb0d0796dbc4f35dca5',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
