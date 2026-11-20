@@ -108,12 +108,27 @@ const get = async (p) => {
     console.log('SHOPEE', r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
   } else console.log('SHOPEE SKIP (walang data/shopee-config.txt)');
 
-  // AI keys — /api/settings REPLACES the whole keys object, so merge first.
+  // AI keys — /api/settings REPLACES the whole keys object, so merge every
+  // source first: live keys, locally saved CEO keys, then .env fallbacks.
+  // Render wipes data/ on every deploy; this is what keeps the keys alive.
   let keys = {};
   try {
     const pv = await post('/api/private', { pass: 'cyborg' });
     if (pv.ok && pv.raw && pv.raw.keys && typeof pv.raw.keys === 'object') keys = pv.raw.keys;
   } catch (e) {}
+
+  let localFailover = null;
+  try {
+    const local = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'settings.json'), 'utf8'));
+    if (local.keys && typeof local.keys === 'object') {
+      Object.keys(local.keys).forEach(function (p) {
+        const v = local.keys[p];
+        if (v && (typeof v === 'string' ? v : v.apiKey)) keys[p] = v;
+      });
+    }
+    if (Array.isArray(local.failover) && local.failover.length) localFailover = local.failover;
+  } catch (e) {}
+
   if (envfile.VYCE_API_KEY) {
     keys.vyce = {
       apiKey: envfile.VYCE_API_KEY,
@@ -124,10 +139,14 @@ const get = async (p) => {
   if (envfile.GROQ_API_KEY) {
     keys.groq = { apiKey: envfile.GROQ_API_KEY, model: envfile.GROQ_MODEL || 'qwen/qwen3.8-27b' };
   }
+  // Ollama needs no secret. Registered so the local fallback is always ready.
+  if (!keys.ollama) keys.ollama = { apiKey: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'qwen2.5:3b' };
   if (Object.keys(keys).length) {
-    const r = await post('/api/settings', { pass: 'cyborg', keys, failover: ['groq', 'vyce'] });
-    console.log('AI KEYS (vyce + groq)', r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
-  } else console.log('AI KEYS SKIP (walang key sa .env)');
+    const failover = (localFailover || ['groq', 'vyce']).filter(function (p) { return !!keys[p]; });
+    const r = await post('/api/settings', { pass: 'cyborg', keys, failover: failover });
+    console.log('AI KEYS', Object.keys(keys).join(', '), 'failover=' + (failover.join(', ') || 'none'),
+      r.status, r.ok ? 'OK' : 'FAIL — ' + r.err);
+  } else console.log('AI KEYS SKIP (walang key sa settings.json o .env)');
 
   const fm = (await get('/api/mall')).mall || [];
   const fc = (await get('/api/bazaar/commercials')).commercials || [];

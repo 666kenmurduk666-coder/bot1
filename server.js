@@ -511,9 +511,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const MODEL_DEFAULTS = {
   openrouter: 'openai/gpt-4o-mini', coarena: 'gemini-3-8-flash',
-  groq: 'qwen/qwen3.8-27b', openai: 'gpt-4o-mini', vyce: ''
+  groq: 'qwen/qwen3.8-27b', openai: 'gpt-4o-mini', vyce: '',
+  ollama: 'qwen2.5:3b'
 };
+const OLLAMA_URL = 'http://localhost:11434/v1';
 function providerCfg(name, s) {
+  if (name === 'ollama') {
+    // Ollama's OpenAI-compatible endpoint needs no real key. A placeholder
+    // keeps the shared request path simple while allowing a custom base URL.
+    const k = s.keys.ollama || {};
+    return {
+      provider: 'ollama', apiKey: k.apiKey || 'ollama',
+      model: k.model || (name === s.provider ? s.model : '') || MODEL_DEFAULTS.ollama,
+      baseUrl: k.baseUrl || (name === s.provider ? s.baseUrl : '') || OLLAMA_URL
+    };
+  }
   if (name === s.provider) return { provider: name, apiKey: s.apiKey, model: s.model, baseUrl: s.baseUrl };
   const k = s.keys[name] || {};
   return {
@@ -523,7 +535,8 @@ function providerCfg(name, s) {
   };
 }
 function endpointFor(cfg) {
-  if ((cfg.provider === 'vyce' || cfg.baseUrl) && cfg.baseUrl) return cfg.baseUrl.replace(/\/$/, '') + '/chat/completions';
+  if ((cfg.provider === 'vyce' || cfg.provider === 'ollama' || cfg.baseUrl) && cfg.baseUrl) return cfg.baseUrl.replace(/\/$/, '') + '/chat/completions';
+  if (cfg.provider === 'ollama') return OLLAMA_URL + '/chat/completions';
   if (cfg.provider === 'groq') return 'https://api.groq.com/openai/v1/chat/completions';
   if (cfg.provider === 'coarena') return 'https://coarena.ai/api/v1/chat/completions';
   if (cfg.provider === 'openrouter') return 'https://openrouter.ai/api/v1/chat/completions';
@@ -537,10 +550,11 @@ function isLocalAI(cfg) {
   return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(String(cfg.baseUrl || ''));
 }
 async function callProvider(cfg, system, user, maxTokens) {
-  if (!cfg.apiKey) throw new Error('No key for ' + cfg.provider);
   const local = isLocalAI(cfg);
+  if (!cfg.apiKey && !local) throw new Error('No key for ' + cfg.provider);
   const systemText = (state.memory ? 'Company memory (shared context):\n' + state.memory + '\n\n' : '') + system;
-  const headers = { 'Authorization': 'Bearer ' + cfg.apiKey, 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) headers.Authorization = 'Bearer ' + cfg.apiKey;
   if (cfg.provider === 'openrouter') {
     headers['HTTP-Referer'] = 'http://localhost:' + PORT;
     headers['X-Title'] = 'Cyborg Cheebee Office';
@@ -608,13 +622,15 @@ async function callAI(system, user, maxTokens) {
   const s = settings();
   if (!/JSON/.test(system)) system += ' Always write in casual TAGLISH — natural Tagalog mixed with English, like Filipino office workers chatting. Use proper Tagalog spelling and grammar. Keep it natural, short, and friendly.';
   const candidates = [s.provider, ...s.failover].filter((v, i, a) => a.indexOf(v) === i);
-  if (!s.apiKey && !candidates.some(n => providerCfg(n, s).apiKey)) {
-    throw new Error('No API key yet. Open Setup and paste your key.');
+  if (!s.apiKey && !candidates.some(n => {
+    const c = providerCfg(n, s); return c.apiKey || isLocalAI(c);
+  })) {
+    throw new Error('No API key yet. Open Setup and paste your key, or run Ollama locally.');
   }
   let lastErr = null;
   for (const name of candidates) {
     const cfg = providerCfg(name, s);
-    if (!cfg.apiKey) continue;
+    if (!cfg.apiKey && !isLocalAI(cfg)) continue;
     try {
       const r = await callProvider(cfg, system, user, maxTokens);
       lastReply = { id: r.id, model: cfg.model, provider: r.provider };

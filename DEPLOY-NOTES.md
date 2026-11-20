@@ -1189,3 +1189,37 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   camera rotations (no mirror edge, no sky split).
 - Left/right render halves matched: mean `91.2` vs `90.8` (no vertical split).
 - World chat computed display `flex` in the clean view; no console errors.
+
+## 2026-11-20 - Comic bubbles, all keys restored, Ollama provider
+
+### Comic conversation bubbles (user: readable when zoomed out)
+- `updateBubbles()` now shows up to 3 consecutive conversation lines at once,
+  anchored above their speaking bots.
+- Bubbles are DOM overlays: font stays `clamp(16px,1.35vw,20px)` (17.5px at
+  1294px wide) at r=20, r=36 and r=90. No shrinking when zoomed out.
+- Viewport clamping + iterative collision stacking: 3 bubbles, 0 overlaps,
+  all inside the scene at every tested zoom.
+- Styling upgraded: wider max-width 360px, bold text, stronger border/shadow,
+  amber ring on the currently talking bubble.
+- Cache keys: `/office-v9.js?v=36`, `/office-studio.js?v=38`.
+
+### Keys
+- `restore-after-deploy.js` now merges EVERY key source: live `/api/private`
+  keys, local `data/settings.json` keys, then `.env` fallbacks. Before this it
+  only restored Vyce/Groq from `.env`, so a fresh Render deploy lost keys.
+- Applied live: `AI KEYS coarena, groq, vyce failover=groq, vyce` (OK).
+- Verified the stored Groq key directly against `api.groq.com`: models 200,
+  `qwen/qwen3.8-27b` present, chat completion 200. So cloud conversations work;
+  the repeated generic lines came from stale state after deploys, not a bad key.
+
+### Ollama (first-class, no key required)
+- `server.js`: added `ollama` provider with default `http://localhost:11434/v1`
+  and model `qwen2.5:3b`; local providers may call without an API key.
+  Existing keep_alive=30m / reasoning_effort=none / reasoning fallback preserved.
+- `callAI()` accepts local failover candidates without keys.
+- Setup dropdown gained "Ollama (local, free)"; Failover panel gained Base URL
+  and Model fields; `restore-after-deploy.js` registers the no-key Ollama entry.
+- Verified with a mock endpoint on 11434: setting provider `ollama` and calling
+  `/api/chat` returned `provider=ollama` with the mock reply. Ollama is installed
+  on this PC but was not running during the check.
+- Baseline hashes updated for `server.js`, `index.html`, `office-v9.js`.

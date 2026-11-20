@@ -40,7 +40,9 @@ const protectedHashes = {
   // reloads), a 5-minute request timeout, and a reasoning-text fallback.
   // 2026-11-20: office bots chat through the user's Groq key (callGroq),
   // model qwen/qwen3.8-27b (clean Taglish, no reasoning leak), case-insensitive speaker ids.
-  'server.js': 'fb95aaf36e4109031416e562f27ee15ba08d4312c0a20c3e11f71f0759d9c8c2',
+  // Ollama is now a first-class no-key provider: default localhost:11434/v1 +
+  // qwen2.5:3b, usable as a primary provider or failover candidate.
+  'server.js': 'b31cb589b1bfdb709164ec05fc6d57b763cade0ad69826eaffa03d5f70eca30d',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -65,9 +67,11 @@ const protectedHashes = {
   // nameplates, status, idle, outfits, pets). v34/v36 (clarity pass): clean
   // full-screen 3D view by default, softer night veil, compact ceiling tile.
   // v35/v37: veil mesh hidden; night uses a canvas CSS brightness filter so
-  // rotating the camera cannot reveal a dark mirror. H still restores UI and
-  // .v9bub stays visible.
-  'public/index.html': 'ca5099af71ab0705ae3d4e033e52cd466001e51eb9a12c9b2a2f0a8589761968',
+  // rotating the camera cannot reveal a dark mirror. v36/v38: comic bubbles
+  // enlarged and given higher-contrast styling so they stay readable zoomed out.
+  // H still restores UI and .v9bub stays visible. Ollama added as a
+  // first-class provider in Setup and in the failover panel.
+  'public/index.html': '9be450ca4d42cedd689466caf4baf9b6cd513b208023729ffd45faa2e9741b33',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -116,7 +120,9 @@ const protectedHashes = {
   // a compact projector tile, floating name/status labels default OFF.
   // v35: veil mesh hidden; night shading moved to a canvas CSS brightness
   // filter so camera rotation cannot reveal a dark mirror.
-  'public/office-v9.js': 'be9c89c2e2bb7c3c19ef295cd0ad866a3d0b6a47acbf8a984a9513fd4061bc2d',
+  // v36: up to 3 comic lines shown at once, anchored above their bots with
+  // viewport clamping and overlap stacking; readable at any zoom level.
+  'public/office-v9.js': 'af9b4fb0efe920525a8d606859cfc05b6f260c30145b18740d37331fc8454373',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

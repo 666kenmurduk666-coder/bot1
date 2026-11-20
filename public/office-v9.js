@@ -2730,29 +2730,64 @@
     } catch (e) {}
     return null;
   }
+  // Comic conversations: up to three consecutive lines, anchored above their
+  // bots. The bubbles are DOM overlays, so their on-screen size never shrinks
+  // when the camera zooms out. Collisions are resolved by stacking them neatly.
   function updateBubbles(now) {
-    var conv = currentConv(), active = null;
+    var conv = currentConv(), lines = null, start = 0;
     if (conv && now - conv.t < 180000 && conv.lines && conv.lines.length) {
-      active = conv.lines[Math.floor(now / 3800) % conv.lines.length];
+      lines = conv.lines;
+      start = Math.floor(now / 3800) % lines.length;
     }
     var host = document.getElementById('oc3d');
     if (!host) return;
     try { if (camera3d && camera3d.updateMatrixWorld) camera3d.updateMatrixWorld(true); } catch (e) {}
     var w = host.clientWidth || 900, h = host.clientHeight || 520;
+    var placed = [];
     cuteBots.forEach(function (b) {
-      var show = active && active.id === b.id && typeof camera3d !== 'undefined' && camera3d;
-      if (show) {
-        var v = new THREE.Vector3(b.group.position.x, b.group.position.y + 1.75, b.group.position.z).project(camera3d);
-        show = v.z < 1;
-        if (show) {
-          b.bubble.innerHTML = '<b>' + esc(b.n) + '</b>' + esc(active.text);
-          b.bubble.style.left = ((v.x * .5 + .5) * w) + 'px';
-          b.bubble.style.top = ((-v.y * .5 + .5) * h) + 'px';
-        }
-      }
-      b.talking = !!show;
-      b.bubble.style.display = show ? 'block' : 'none';
+      b.bubble.style.display = 'none';
+      b.bubble.classList.remove('talking');
+      b.talking = false;
     });
+    if (!lines || typeof camera3d === 'undefined' || !camera3d) return;
+    var count = Math.min(3, lines.length);
+    for (var n = 0; n < count; n++) {
+      var line = lines[(start + n) % lines.length];
+      var bot = null;
+      for (var i = 0; i < cuteBots.length; i++) {
+        if (cuteBots[i].id === line.id) { bot = cuteBots[i]; break; }
+      }
+      if (!bot) continue;
+      var v = new THREE.Vector3(bot.group.position.x, bot.group.position.y + 2.15, bot.group.position.z).project(camera3d);
+      if (v.z >= 1) continue;
+      var el = bot.bubble;
+      el.innerHTML = '<b>' + esc(bot.n) + '</b>' + esc(line.text);
+      el.style.display = 'block';
+      el.classList.add('talking');
+      var bw = el.offsetWidth || 280, bh = el.offsetHeight || 70;
+      var x0 = (v.x * .5 + .5) * w - bw / 2;
+      var y0 = (-v.y * .5 + .5) * h - bh - 16;
+      x0 = Math.max(8, Math.min(w - bw - 8, x0));
+      y0 = Math.max(8, Math.min(h - bh - 8, y0));
+      for (var pass = 0; pass < 6; pass++) {
+        var hit = false;
+        for (var p = 0; p < placed.length; p++) {
+          var r = placed[p];
+          if (x0 < r.x + r.w + 8 && x0 + bw + 8 > r.x && y0 < r.y + r.h + 8 && y0 + bh + 8 > r.y) {
+            y0 = r.y + r.h + 10;
+            if (y0 + bh > h - 8) y0 = Math.max(8, r.y - bh - 10);
+            hit = true;
+          }
+        }
+        if (!hit) break;
+      }
+      y0 = Math.max(8, Math.min(h - bh - 8, y0));
+      // .bub3d is transformed translate(-50%,-100%), so anchor at bottom-center.
+      el.style.left = (x0 + bw / 2) + 'px';
+      el.style.top = (y0 + bh) + 'px';
+      placed.push({ x: x0, y: y0, w: bw, h: bh });
+      bot.talking = true;
+    }
   }
   function tick() {
     animId = requestAnimationFrame(tick);

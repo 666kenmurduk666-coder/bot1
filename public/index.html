@@ -81,9 +81,12 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .bub3d{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#182032;font-size:16px;line-height:1.35;padding:9px 13px;border-radius:13px;border:2px solid #182032;max-width:280px;white-space:normal;text-align:center;box-shadow:4px 4px 0 rgba(24,32,50,.2);pointer-events:none;z-index:4}
 .bub3d b{display:block;font-size:12px;color:#5a6474;margin-bottom:3px}
 .bub3d:after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-6px;border:6px solid transparent;border-top-color:#182032}
-.v9bub{background:linear-gradient(180deg,#ffffff,#f3f7fb);border:2px solid #2f4a6d;box-shadow:0 8px 24px #0b183c66;border-radius:16px;font-size:15px;max-width:300px;padding:10px 14px}
-.v9bub b{color:#2f6f7a;font-size:12px;letter-spacing:.3px}
-.v9bub:after{border-top-color:#2f4a6d}
+/* Comic bubbles stay legible at any zoom: DOM overlays, fixed readable size. */
+.v9bub{background:linear-gradient(180deg,#ffffff,#eaf5ff);border:2px solid #2f6f9e;box-shadow:0 10px 28px #06152e88;border-radius:18px;font-size:clamp(16px,1.35vw,20px);font-weight:700;line-height:1.35;max-width:min(360px,48vw);padding:12px 16px;text-align:center}
+.v9bub b{color:#0b6f8f;font-size:.78em;letter-spacing:.5px;margin-bottom:4px}
+.v9bub.talking{border-color:#ffb648;box-shadow:0 0 0 2px #ffd88a77,0 10px 28px #06152e99}
+.v9bub:after{border-top-color:#2f6f9e}
+.v9bub.talking:after{border-top-color:#ffb648}
 /* MMORPG world chat */
 #mmoChat{position:absolute;left:10px;bottom:10px;width:min(300px,60%);height:124px;min-width:200px;max-width:min(560px,90%);min-height:96px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
 #mmoChat.min{height:24px!important;min-height:0!important;width:auto!important;min-width:0!important;max-width:none!important}
@@ -429,7 +432,8 @@ dialog::backdrop{background:#000a}
     <p class="hint">When the primary provider fails or is rate-limited, the next one with a key is tried automatically.</p>
     <h3>Groq</h3><label>API key</label><input id="gk" type="password" placeholder="gsk_…"><label>Model</label><input id="gm" placeholder="openai/gpt-oss-20b">
     <h3>Vyce AI / custom gateway</h3><label>API key</label><input id="vk" type="password" placeholder="sk-…"><label>Base URL</label><input id="vu" placeholder="https://…/v1"><label>Model</label><input id="vm">
-    <h3>Failover order</h3><input id="ford" placeholder="groq, vyce">
+    <h3>Ollama (local, no key needed)</h3><p class="hint">Runs on this PC at localhost:11434 — free and private. Add <code>ollama</code> to the failover order to use it when cloud keys fail.</p><label>Base URL</label><input id="olu" placeholder="http://localhost:11434/v1"><label>Model</label><input id="olm" placeholder="qwen2.5:3b">
+    <h3>Failover order</h3><input id="ford" placeholder="groq, vyce, ollama">
     <div class="bar"><button class="run" id="provSave">Save providers</button><span class="hint" id="provInfo"></span></div>
   </div></section>
 
@@ -531,7 +535,7 @@ dialog::backdrop{background:#000a}
 </dialog>
 "
 <dialog id="setup"><h2>Setup ⚙️ AI provider</h2>
-  <label>Provider</label><select id="provider"><option value="auto">Auto-detect</option><option value="openai">OpenAI</option><option value="openrouter">OpenRouter</option><option value="coarena">Coarena (free)</option><option value="vyce">Vyce AI (custom base URL)</option></select>
+  <label>Provider</label><select id="provider"><option value="auto">Auto-detect</option><option value="openai">OpenAI</option><option value="openrouter">OpenRouter</option><option value="coarena">Coarena (free)</option><option value="groq">Groq</option><option value="vyce">Vyce AI (custom base URL)</option><option value="ollama">Ollama (local, free)</option></select>
   <label>Base URL (for custom / Vyce)</label><input id="baseurl" placeholder="https://…/v1">
   <label>API key</label><input id="key" type="password" placeholder="sk-... or coa_...">
   <label>Model</label><input id="model" placeholder="gemini-3-8-flash">
@@ -548,7 +552,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=35"></script>
+<script src="/office-v9.js?v=36"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -818,6 +822,7 @@ function renderView(){
     const k=S.setup.keys||{};
     $('gk').value=(k.groq&&k.groq.apiKey)||'';$('gm').value=(k.groq&&k.groq.model)||'openai/gpt-oss-20b';
     $('vk').value=(k.vyce&&k.vyce.apiKey)||'';$('vu').value=(k.vyce&&k.vyce.baseUrl)||'';$('vm').value=(k.vyce&&k.vyce.model)||'';
+    $('olu').value=(k.ollama&&k.ollama.baseUrl)||'http://localhost:11434/v1';$('olm').value=(k.ollama&&k.ollama.model)||'qwen2.5:3b';
     $('ford').value=(S.setup.failover||[]).join(', ');
     $('provInfo').textContent='Primary: '+S.setup.provider;
   }
@@ -884,6 +889,7 @@ $('provSave').onclick=async()=>{
   const keys=JSON.parse(JSON.stringify(S.setup.keys||{}));
   keys.groq={apiKey:$('gk').value.trim(),model:$('gm').value.trim()||'openai/gpt-oss-20b'};
   keys.vyce={apiKey:$('vk').value.trim(),baseUrl:$('vu').value.trim(),model:$('vm').value.trim()};
+  keys.ollama={apiKey:'ollama',baseUrl:$('olu').value.trim()||'http://localhost:11434/v1',model:$('olm').value.trim()||'qwen2.5:3b'};
   const failover=$('ford').value.split(',').map(s=>s.trim()).filter(Boolean);
   const r=await api('/api/providers',{method:'POST',body:JSON.stringify({keys,failover})});
   toast(r.ok?'Providers saved':'Error');await refresh();
@@ -7088,5 +7094,5 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=37"></script></body>
+<script src="/office-studio.js?v=38"></script></body>
 </html>
