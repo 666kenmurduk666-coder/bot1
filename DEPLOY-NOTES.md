@@ -774,3 +774,17 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `meanLum=122.6`). Guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - **Cache-bust:** `/office-v9.js?v=26`.
 
+### Deploy + live verification (v26)
+- **Deploy:** commit `a9504f8` pushed; Render detected `/office-v9.js?v=26`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live:** `bots=6`, Groq bubble visible (`Cos`), walang console errors.
+  `/api/mall` at `/api/bazaar/commercials` return 200; data `mall=23`,
+  `commercials=12`.
+- Ceiling panels live: `ceilings=12`, `opacity=0.04`, `transparent=true`,
+  `depthWrite=false`. Lahat ng 6 na bot ay **onscreen** sa hero view.
+- Pixel stats live: `bgPct=1.3`, `edgePct=18.2`, `meanLum=100.6`,
+  `highPct=0`, `nearWhitePct=0`; guards `bg=fog=93a1b3`, `amb=0.58`,
+  `exposure=0.85`, `isNight=0`.
+- `.v9bub` active bubble visible. Ceiling returns to opaque `1` when Silip is
+  turned off; building detail is preserved without blocking character view.
+
