@@ -12,11 +12,15 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Password nasa GitHub variable (hindi public), pero env reference ang gamit
+    # para hindi lumabas ang aktwal na value sa public workflow logs.
+    env:
+      CEO_PASS: ${{ vars.CEO_PASSWORD }}
     steps:
       - name: Run all office agents
         run: |
           curl -fsS --max-time 180 -X POST \
             -H 'Content-Type: application/json' \
-            -d "{\"pass\":\"${{ vars.CEO_PASSWORD }}\"}" \
-            https://cyborgcheebeeoffice.onrender.com/api/run-all \
-            && echo " agents ran" || echo " auto-run failed - keepalive will retry"
+            -d "{\"pass\":\"$CEO_PASS\"}" \
+            https://cyborgcheebeeoffice.onrender.com/api/run-all
+          echo "agents ran"
