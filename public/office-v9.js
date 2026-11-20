@@ -1022,11 +1022,13 @@
   function hvacVent(x, z) {
     box(1.05, .05, .68, solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 }), x, 3.24, z);
     box(.86, .02, .5, '#4c5a6b', x, 3.21, z);
-    for (var i = -2; i <= 2; i++) box(.045, .015, .48, '#8e9bab', x + i * .16, 3.205, z);
+    for (var i = -3; i <= 3; i++) box(.04, .015, .48, '#8e9bab', x + i * .12, 3.205, z);
     box(.9, .012, .05, '#6f7d8c', x, 3.198, z);
+    box(.92, .01, .02, '#aab6c2', x, 3.196, z + .22);
   }
   function fireSprinkler(x, z) {
     cyl(.022, .12, '#b8792e', x, 3.19, z);
+    cyl(.055, .012, '#d8dde2', x, 3.245, z);
     var b = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6),
       solid('#d94f3d', { emissive: '#7a1f14', emissiveIntensity: .25 }));
     b.position.set(x, 3.11, z); addO(b);
@@ -1034,6 +1036,7 @@
   function smokeDetector(x, z) {
     cyl(.14, .035, '#e8ecef', x, 3.25, z);
     cyl(.05, .04, '#7d8b9a', x, 3.23, z);
+    bx(.018, .018, .018, '#5fd6ff', x + .06, 3.232, z + .06, true);
   }
   function exitSign(x, y, z, rot, label) {
     var txt = label || 'EXIT';
@@ -1076,6 +1079,7 @@
       cyl(.026, .48, solid('#aeb8c4', { map: metalTex(), metalness: .7, roughness: .28 }), hx, 1.15, z + .08, true);
       box(.26, .05, .05, '#8b97a5', hx, 1.39, z + .08);
       box(.26, .05, .05, '#8b97a5', hx, .91, z + .08);
+      box(2.2, .22, .02, '#7d8b9a', cx + dx, .18, z + .04);
     });
     glass(5.2, .42, .06, cx, 2.72, z, .2, '#cfe6f2');
     box(5.3, .07, .1, frame, cx, 2.95, z);
@@ -1101,6 +1105,9 @@
     box(.36, .02, .24, '#e7e9ec', 22.5, 1.13, 30);
     cyl(.025, .02, '#8b97a5', 23.1, 1.13, 30);
     cyl(.05, .14, '#d9c39a', 24.1, 1.18, 30.05);
+    // service bell
+    cyl(.07, .03, '#e8b04a', 21.9, 1.125, 30.02);
+    cyl(.02, .025, '#f4f6f8', 21.9, 1.15, 30.02);
     // small greenery accent on reception side
     cyl(.04, .12, '#5b4632', 24.55, 1.16, 30.08);
     var recLeaf = new THREE.Mesh(new THREE.SphereGeometry(.16, 8, 6), solid('#4f9a63', { roughness: .9 }));
@@ -1504,6 +1511,7 @@
     var k = s || 1;
     shadow(x, z, .42 * k, .34 * k, .13);
     cyl(.24 * k, .42 * k, '#a06d43', x, .21 * k, z);
+    cyl(.255 * k, .03, '#c89a6b', x, .41 * k, z);
     cyl(.19 * k, .05, '#7a5236', x, .44 * k, z);
     var cols = ['#2f8c56', '#3da167', '#287a4c'];
     for (var i = 0; i < 5; i++) {
@@ -1513,6 +1521,10 @@
       l.position.set(x + Math.cos(a) * .22 * k, .94 * k + (i % 2) * .16 * k, z + Math.sin(a) * .22 * k);
       l.rotation.z = Math.cos(a) * .22; l.rotation.x = Math.sin(a) * .22; addO(l);
       fx.plants.push({ m: l, bz: l.rotation.z, bx: l.rotation.x, p: i * 1.3 + x });
+    }
+    if ((Math.abs(Math.round(x * 10 + z * 7)) % 3) === 0) {
+      var bud = new THREE.Mesh(new THREE.SphereGeometry(.06 * k, 7, 6), solid('#ffd27d', { roughness: .7 }));
+      bud.position.set(x + .06 * k, 1.12 * k, z - .04 * k); addO(bud);
     }
   }
   function tree(x, z, s) {
