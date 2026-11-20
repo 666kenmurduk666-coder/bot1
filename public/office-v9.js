@@ -2200,22 +2200,39 @@
   function parkBench(x, z) {
     box(1.3, .1, .45, '#a9793f', x, .45, z);
     box(1.3, .5, .08, '#7d5634', x, .7, z - .2);
-    [-.52, .52].forEach(function (dx) { box(.08, .45, .08, '#4a5668', x + dx, .22, z); });
+    // armrests and seat slats detail
+    [-.58, .58].forEach(function (dx) {
+      box(.06, .12, .38, '#6e4a2c', x + dx, .56, z);
+      box(.08, .45, .08, '#4a5668', x + dx, .22, z);
+    });
+    [-.22, 0, .22].forEach(function (dz) { box(1.18, .015, .02, '#8b653e', x, .505, z + dz * .35); });
   }
   function umbrella(x, z, color) {
     cyl(.04, 2.2, '#4a5668', x, 1.1, z);
     var c = new THREE.Mesh(new THREE.ConeGeometry(1.1, .5, 10), solid(color, { roughness: .85 }));
     c.position.set(x, 2.2, z); addO(c);
+    // finial and base weight
+    var finial = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 6), solid('#d8c39a', { metalness: .35, roughness: .4 }));
+    finial.position.set(x, 2.47, z); addO(finial);
     box(1.0, .08, 1.0, '#b9c1c9', x, .76, z);
     cyl(.08, .7, '#8b97a5', x, .38, z);
+    cyl(.18, .06, '#6e7c8f', x, .05, z);
   }
   function marketStall(x, z, color) {
     box(2.4, .9, 1.2, solid('#e8e4dc'), x, .45, z);
     box(2.6, .12, 1.5, solid(color, { roughness: .8 }), x, 2.15, z);
+    // canopy valance
+    box(2.62, .14, .06, color, x, 2.03, z + .74);
     [-1.2, 1.2].forEach(function (dx) {
       [-.65, .65].forEach(function (dz) { cyl(.05, 2.1, '#5d6b7d', x + dx, 1.05, z + dz); });
     });
     box(1.6, .5, .06, color, x, 1.2, z + .63);
+    // counter crate
+    box(.42, .18, .28, '#8b5e34', x - .55, .99, z + .18);
+    [[- .62, .18, '#e0a83a'], [-.48, .2, '#d95f55'], [-.55, .26, '#6fbe63']].forEach(function (f) {
+      var fr = new THREE.Mesh(new THREE.SphereGeometry(.055, 7, 6), solid(f[2], { roughness: .6 }));
+      fr.position.set(x + f[0], 1.11, z + f[1]); addO(fr);
+    });
     var led = bx(.18, .12, .18, '#ffd98a', x, 2.0, z + .5, true);
     animParts.push({ m: led, k: 'led', p: x });
   }
