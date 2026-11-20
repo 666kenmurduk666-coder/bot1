@@ -302,6 +302,11 @@ dialog::backdrop{background:#000a}
           <button id="sfx">🔊 Sounds</button>
           <button id="voice" title="I-on ang actual na boses ng bots">🗣️ Voice</button>
         </div>
+        <!-- Always-visible audio controls (works even in UI-hidden / full-screen mode) -->
+        <div id="audioDock" style="position:fixed;right:10px;bottom:10px;z-index:9999;display:flex;gap:6px;background:rgba(9,16,34,.88);border:1px solid #3a6bb5;border-radius:9px;padding:5px;box-shadow:0 3px 12px #0009;backdrop-filter:blur(3px)">
+          <button id="sfxDock" data-no-sfx title="Sound effects on/off" style="background:#1c2b49;border:1px solid #3a6bb5;color:#e6ecf7;border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer">🔊 Sounds</button>
+          <button id="voiceDock" data-no-sfx title="Bot voice on/off" style="background:#1c2b49;border:1px solid #3a6bb5;color:#e6ecf7;border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer">🗣️ Voice</button>
+        </div>
         <div class="bar" id="officeTools" style="flex-wrap:wrap"></div>
         <div id="healthBanner" style="display:none;margin:8px 0;padding:8px 10px;border-radius:9px;background:#4a2b12;border:1px solid #b97a2b;color:#ffd9a0;font-size:12px">
           <b id="healthBannerText"></b> <button class="reloadBtn" style="margin-left:8px">🔄 Reload UI</button>
@@ -1024,8 +1029,16 @@ const xrayApply=()=>{
   });
 };
 $('xray').onclick=()=>{xrayOn=!xrayOn;$('xray').textContent=xrayOn?'👁 Normal view':'👁 Silip';xrayApply();toast(xrayOn?'X-ray: makikita mo na ang loob ng mga building!':'Balik sa normal view')};
-$('sfx').onclick=()=>{soundOn=!soundOn;$('sfx').textContent=soundOn?'🔊 Sounds':'🔇 Mute';toast(soundOn?'Sound effects: ON! ✨':'Sound effects: mute ✨')};
+$('sfx').onclick=()=>{
+  soundOn=!soundOn;
+  const label=soundOn?'🔊 Sounds':'🔇 Mute';
+  $('sfx').textContent=label;
+  if($('sfxDock'))$('sfxDock').textContent=label;
+  toast(soundOn?'Sound effects: ON! ✨':'Sound effects: mute ✨');
+};
 $('voice').onclick=toggleVoice;
+$('sfxDock').onclick=()=>$('sfx').click();
+$('voiceDock').onclick=toggleVoice;
 $('mmoChatIn').addEventListener('keydown',e=>{if(e.key&&e.key.length===1)snd('type')},{passive:true});
 // ⚙️ Controls — iisa ang toggle, hindi na puno ang bar sa baba
 $('officeMoreBtn').onclick=()=>{
@@ -1265,7 +1278,9 @@ function toggleVoice(){
     if(voiceOn){loadBotVoices();speechSynthesis.resume();}
     else speechSynthesis.cancel();
   }catch(e){}
-  const b=$('voice');if(b)b.textContent=voiceOn?'🗣️ Voice ON':'🗣️ Voice';
+  const label=voiceOn?'🗣️ Voice ON':'🗣️ Voice';
+  const b=$('voice');if(b)b.textContent=label;
+  if($('voiceDock'))$('voiceDock').textContent=label;
   toast(voiceOn?'🗣️ Mag-sasalita na ang bots!':'🔇 Naka-mute ang boses ng bots');
   if(voiceOn)speak('Naka-on na ang boses. Kumusta!','cos',true);
 }
