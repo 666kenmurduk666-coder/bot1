@@ -954,3 +954,39 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   cull line na-confirm (`cull=true`). Walang console errors.
 - Isang malinis na live tab ang naiwang focused; sarado ang local tab.
 
+## v29 — Clear view, living surroundings, basket fix at FPS recovery (local)
+### Problema
+- Kisame (suspended ceiling tiles) nagtatakip sa view kahit normal na tingin.
+- Paligid kulay abo (`#485567` 220×220 ground) kaya patay itsura.
+- Basketball net struts sa lumang court ay lumalapad paitaas (baligtad).
+- Live speed test: `0.8 FPS`, `22,189 calls`, `4,032 geometries` — step/mood
+  sprites hindi naaalis kaya dami ng draw calls tumaas habang tumatakbo.
+
+### Pinagbago
+- `office-v9.js?v=29`: `applyCeilingView()` ay palaging `.04` opacity,
+  `transparent=true`, `depthWrite=false` — walang lid sa normal view.
+- Bagong `grassTex()` + `greenSurrounds()`: damuhan, 7 bundok, farm rows/barn/
+  hay/fence at 12 puno; nasa ibabaw lang ng dark guard plane.
+- Leak fix sa `updateBotParticles()`: gamitin ang `.parent` ng Three.js hindi
+  `.parentNode`, kaya natatanggal ang step/mood sprites pagkatapos ng buhay nila.
+- `index.html`: basketball net tilt flags binago ang sign (`-Math.cos/-Math.sin`)
+  para lumapad sa rim at yumukot paitaas; script tag ay `/office-v9.js?v=29`.
+
+### Verification (lokal, focused tab)
+- `node --check` at `tests/strategy-baseline.js`: PASADO; hash na-update.
+- 6s stress: sprites `80 → 105`, calls `2809 → 2959` (hindi pumutok).
+- 10s FPS sa iisang focused tab: `29.5 FPS`, calls `3236 → 3172`.
+- Hero camera render: `meanLum=96.9`, `dark=12%`, `green=9.3%`, `edge=18.8%`,
+  `bg=fog=93a1b3`, `isNight=0`, `bots=7`, ceiling `opacity=.04`.
+
+### Live verification (v29 production)
+- Commit `61b7526`; Render served `/office-v9.js?v=29` after 3 polls.
+- `restore-after-deploy.js` run: `mall=23`, `commercials=12` final.
+- Live `?v29live=...`: `bots=7`, ceiling `12 tiles opacity=.04 transparent=true
+  depthWrite=false`, `bg=fog=93a1b3`, `amb=.58`, `exposure=.85`, `isNight=0`.
+- 10s live perf on one focused tab: `28.8 FPS`, calls `2702 → 2720`,
+  sprites `89 → 114`, geometries flat at `2831` — no slow-motion leak.
+- Hero pixels: `meanLum=95.2`, `dark=13.3%`, `green=8.8%`, `edge=19.4%`.
+- `body.ui-hidden` was active from the H toggle; `.v9bub` CSS remains exempt
+  from the hide rule. No console errors.
+
