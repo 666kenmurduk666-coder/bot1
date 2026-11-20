@@ -64,8 +64,10 @@ const protectedHashes = {
   // bumped for the character-life layer (barista, plants, fish, skyline,
   // nameplates, status, idle, outfits, pets). v34/v36 (clarity pass): clean
   // full-screen 3D view by default, softer night veil, compact ceiling tile.
-  // H still restores the UI and .v9bub stays visible.
-  'public/index.html': 'bb562714f42d92a90615a2d01c47cc0613e0b8eb98da7a83b483da9704f17c87',
+  // v35/v37: veil mesh hidden; night uses a canvas CSS brightness filter so
+  // rotating the camera cannot reveal a dark mirror. H still restores UI and
+  // .v9bub stays visible.
+  'public/index.html': 'ca5099af71ab0705ae3d4e033e52cd466001e51eb9a12c9b2a2f0a8589761968',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -112,7 +114,9 @@ const protectedHashes = {
   // job outfits and two follower pets; all Studio-toggleable via setBotFeature.
   // v34 clarity pass: night veil capped at .32, giant ceiling plane replaced by
   // a compact projector tile, floating name/status labels default OFF.
-  'public/office-v9.js': '79af6c9017f4373dbda453bfc72c492f792e1467eaed1e6f1e793c161bac96b0',
+  // v35: veil mesh hidden; night shading moved to a canvas CSS brightness
+  // filter so camera rotation cannot reveal a dark mirror.
+  'public/office-v9.js': 'be9c89c2e2bb7c3c19ef295cd0ad866a3d0b6a47acbf8a984a9513fd4061bc2d',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

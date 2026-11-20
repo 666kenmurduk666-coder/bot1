@@ -3120,6 +3120,10 @@
       new THREE.MeshBasicMaterial({ color: '#0a1633', transparent: true, opacity: 0,
         depthTest: false, depthWrite: false, toneMapped: false, fog: false }));
     veil.renderOrder = 9998; veil.frustumCulled = false; addO(veil);
+    // The old camera-facing plane showed up as a dark "mirror" when rotating.
+    // Night shading now uses a canvas CSS filter; the mesh stays only as a
+    // state holder for the API / verification.
+    veil.visible = false;
     fx.night = { veil: veil, amount: 0, target: 0 };
 
     // ---- 2. weather: rain, lightning flash, puddles, rainbow ----
@@ -3408,7 +3412,16 @@
     fx.night.amount += (nt - fx.night.amount) * Math.min(1, dt * 1.8 + .012);
     if (Math.abs(nt - fx.night.amount) < .002) fx.night.amount = nt;
     var veil = fx.night.veil;
-    if (veil) { faceCamera(veil, 1.4); veil.material.opacity = fx.night.amount * .32; }
+    if (veil) {
+      // Track opacity for diagnostics, but never render the plane. A CSS
+      // brightness filter cannot lag behind camera rotation or show edges.
+      veil.material.opacity = fx.night.amount * .32;
+      try {
+        var cv = (typeof renderer3d !== 'undefined' && renderer3d) ? renderer3d.domElement : null;
+        if (cv) cv.style.filter = fx.night.amount > .002
+          ? 'brightness(' + (1 - fx.night.amount * .2).toFixed(3) + ')' : '';
+      } catch (e) {}
+    }
 
     // 2 — rain + lightning + puddles shimmer + rainbow.
     var w = fx.weather || {}, storm = window.__officeWeather === 'storm';
@@ -3670,8 +3683,6 @@
     proj.rotation.x = Math.PI / 2; proj.position.set(23, 3.18, 17);
     proj.renderOrder = 1; proj.userData.v9 = true; addO(proj);
     fx.ceilingProj = proj;
-    var housing = box(.9, .08, .9, solid('#26334a'), 23, 3.24, 17);
-    housing.userData.v9 = true;
   }
   function makeBatch2Pet(kind, owner, color, idx) {
     if (!owner || !owner.group) return;

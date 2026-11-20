@@ -1173,3 +1173,19 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Toggle round-trip for ceiling/nameplates/status: `[false,true,false]`.
 - 60 forced ticks flat: geometries `4511 -> 4511`, textures `144 -> 144`,
   render calls `3190 -> 3190`.
+
+### Follow-up fixes in the same clarity pass
+- Dark "mirror" during camera rotation: the camera-facing night veil plane was
+  hidden entirely. Night shading now comes from a canvas CSS brightness filter
+  (`brightness(1 - amount*.20)`), which cannot lag or show plane edges.
+- The compact projector housing box was removed too, so no dark square remains
+  overhead.
+- World chat disappeared because the clean-view rule hid `#mmoChat`; that rule
+  was removed. World chat stays visible in the clean 3D view.
+- Cache keys: `/office-v9.js?v=35`, `/office-studio.js?v=37`.
+
+### Verified after the dark-mirror / sky-split fix
+- Veil mesh `visible=false`; canvas filter stays `brightness(0.8)` across 12
+  camera rotations (no mirror edge, no sky split).
+- Left/right render halves matched: mean `91.2` vs `90.8` (no vertical split).
+- World chat computed display `flex` in the clean view; no console errors.
