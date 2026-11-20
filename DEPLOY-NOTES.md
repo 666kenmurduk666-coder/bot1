@@ -355,3 +355,34 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - **Cache-bust:** `/office-v9.js?v=13`. Bumump ng ilang beses habang inaayos ang
   texture upload at ang simple-mode cull; huling URL ang `?v=13`.
 
+## 2026-11-20 — "More effects" pass (v14b cache-bust)
+
+### Mga idinagdag
+- **Buhay na monitors:** 24 desk screens ang may animated dashboard (bars, status,
+  scan line); 5 lang ang ine-edit bawat update para hindi mabigat sa CPU.
+- **Atmosphere:** light shafts sa ilalim ng pendants, 150 drifting dust motes, at
+  isang gumagalaw na floor sheen sa MAIN STREET.
+- **Small life:** bumubula ang water cooler, umuuga ang coffee steam, kumikislap na
+  sparkles sa tabi ng 6 bots, at bahagyang umuuga ang mga halaman/puno.
+- **Background life:** scanning LED bars sa server rack, flickering skyline windows,
+  at 3 ibon na lumilipad sa likod ng office.
+- **Compatibility fix:** ligtas na ngayon ang procedural texture metadata kahit sa
+  mas lumang three.js build na walang `Texture.userData` (`t.userData = t.userData || {}`).
+- Protected Phase D v8 runtime ay hindi binago; lahat ng effects ay nasa
+  `public/office-v9.js` lang.
+
+### Verification (v14b, lokal)
+- `bots=6`, `built=true`, walang build error; effects arrays: `screens=24`,
+  `shafts=11`, `dust=1`, `bubbles=7`, `steam=6`, `sparkles=12`, `plants=85`,
+  `birds=3`, `scan=3`, `windows=27`, `sheen=1`.
+- Animation probe (dalawang manual ticks na may 700ms gap): 5 screen canvases
+  nagbago, pati dust/bubbles/birds/scan/sheen/sparkles.
+- Pixel stats: `bgPct=0`, `edgePct=3.7`, `meanLum=112.4`, `hidden=0`,
+  `meshes=1569`, `textured=221` — walang white-out. `bgHex=93a1b3`, `amb=0.58`,
+  `exposure=0.85` — pareho pa rin.
+- Console: walang errors. Ang Canvas2D `willReadFrequently` warnings ay galing lang
+  sa diagnostic `getImageData`, hindi sa app.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=14b` (fresh URL para hindi maulit ang v13/v14
+  service-worker cache).
+

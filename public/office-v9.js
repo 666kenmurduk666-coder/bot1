@@ -16,7 +16,8 @@
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   var cuteBots = [], lastEmo = 0, animId = null, animParts = [];
-  var TEX = {};
+  var TEX = {}, screenCounter = 0;
+  var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -61,13 +62,15 @@
     var ck = key + '|' + (rx || 1) + '|' + (ry || 1);
     if (TEX[ck]) return TEX[ck];
     var cv = document.createElement('canvas'); cv.width = cv.height = 256;
-    painter(cv.getContext('2d'), 256);
+    var q = cv.getContext('2d'); painter(q, 256);
     var t = new THREE.CanvasTexture(cv);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(rx || 1, ry || 1);
     t.encoding = THREE.sRGBEncoding;
     t.anisotropy = 4;
     t.needsUpdate = true;
+    t.userData = t.userData || {}; // older three builds do not initialise Texture.userData
+    t.userData.cv = cv; t.userData.q = q;
     TEX[ck] = t; return t;
   }
   function carpetTex(base, line, rx, ry) {
@@ -186,6 +189,15 @@
       q.fillStyle = g; q.fillRect(0, 0, S, S);
     }, 1, 1);
   }
+  function dotTex() {
+    return makeTex('dot', function (q, S) {
+      var g = q.createRadialGradient(S / 2, S / 2, 1, S / 2, S / 2, S / 2);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(.45, 'rgba(255,255,255,.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = g; q.fillRect(0, 0, S, S);
+    }, 1, 1);
+  }
   function wallTex() {
     return makeTex('wall', function (q, S) {
       q.fillStyle = '#e8e4dc'; q.fillRect(0, 0, S, S);
@@ -209,6 +221,68 @@
       new THREE.MeshBasicMaterial({ map: glowTex(), color: color || '#ffd6a0', transparent: true,
         opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false }));
     m.rotation.x = -Math.PI / 2; m.position.set(x, .017, z); m.renderOrder = 2; return addO(m);
+  }
+  function lightShaft(x, z, r, color) {
+    var m = new THREE.Mesh(new THREE.ConeGeometry(r, 2.42, 16, 1, true),
+      new THREE.MeshBasicMaterial({ color: color || '#ffd7a0', transparent: true, opacity: .06,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    m.position.set(x, 1.21, z); m.renderOrder = 3; addO(m);
+    fx.shafts.push({ m: m, p: x + z });
+  }
+  function dustField() {
+    var pos = [], ph = [], N = 150;
+    for (var i = 0; i < N; i++) {
+      pos.push(2 + Math.random() * 42, .4 + Math.random() * 2.7, 1 + Math.random() * 32);
+      ph.push(Math.random() * 6.3);
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    var mat = new THREE.PointsMaterial({ map: dotTex(), color: '#ffe9c0', size: .09,
+      transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    var pts = new THREE.Points(geo, mat); addO(pts);
+    fx.dust = { pts: pts, pos: pos, ph: ph };
+  }
+  function coffeeSteam(x, z) {
+    for (var i = 0; i < 2; i++) {
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#fff2dd',
+        transparent: true, opacity: .16, blending: THREE.AdditiveBlending,
+        depthWrite: false, toneMapped: false }));
+      s.position.set(x + (i ? .035 : -.035), 1.13 + i * .1, z + .04);
+      s.scale.set(.13, .2, 1); s.renderOrder = 4; addO(s);
+      fx.steam.push({ m: s, x: s.position.x, z: z, base: s.position.y, p: x + i * 2.1 });
+    }
+  }
+  function birds() {
+    for (var i = 0; i < 3; i++) {
+      var g = new THREE.Group();
+      var mat = solid('#334155', { roughness: 1 });
+      [-1, 1].forEach(function (side) {
+        var w = new THREE.Mesh(new THREE.BoxGeometry(.3, .025, .02), mat);
+        w.position.x = side * .14; w.rotation.z = side * .3; w.userData.v9 = true; g.add(w);
+      });
+      var body = new THREE.Mesh(new THREE.SphereGeometry(.045, 6, 4), mat);
+      body.userData.v9 = true; g.add(body);
+      g.position.set(-12 + i * 9, 5.6 + i * .9, -12 - i * 2);
+      g.scale.setScalar(.75 + i * .12); addO(g);
+      fx.birds.push({ g: g, base: g.position.y, p: i * 2.1, sp: .45 + i * .12 });
+    }
+  }
+  function floorSheen() {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.15),
+      new THREE.MeshBasicMaterial({ map: dotTex(), color: '#fff0cc', transparent: true, opacity: .08,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(4, .026, 23.2); m.renderOrder = 4; addO(m);
+    fx.sheen = m;
+  }
+  function botSparkles(group, idx) {
+    for (var i = 0; i < 2; i++) {
+      var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: i ? '#fff0a8' : '#ffffff',
+        transparent: true, opacity: .5, blending: THREE.AdditiveBlending,
+        depthWrite: false, toneMapped: false }));
+      s.position.set(i ? .42 : -.42, 1.35 + i * .28, .12);
+      s.scale.setScalar(.1 + i * .03); s.userData.v9 = true; group.add(s);
+      fx.sparkles.push({ m: s, base: s.position.x, p: idx * 1.7 + i * 2.4 });
+    }
   }
 
   /* ---------- legible signage (fixed orientation: south signs face +Z) ---------- */
@@ -270,6 +344,7 @@
       solid('#fff1c9', { emissive: '#ffd489', emissiveIntensity: .9 }));
     bulb.position.set(x, 2.44, z); addO(bulb);
     lightPool(x, z, 2.7, '#ffd7a0');
+    lightShaft(x, z, 1.55, col === '#3f6fa8' || col === '#5f7fa8' ? '#bcdcff' : '#ffd7a0');
     animParts.push({ m: bulb, k: 'bulb', p: x + z });
   }
   function strip(x1, z1, x2, z2, c, w) {
@@ -292,6 +367,7 @@
         solid(cols[i % 3], { roughness: .85 }));
       l.position.set(x + Math.cos(a) * .22 * k, .94 * k + (i % 2) * .16 * k, z + Math.sin(a) * .22 * k);
       l.rotation.z = Math.cos(a) * .22; l.rotation.x = Math.sin(a) * .22; addO(l);
+      fx.plants.push({ m: l, bz: l.rotation.z, bx: l.rotation.x, p: i * 1.3 + x });
     }
   }
   function tree(x, z, s) {
@@ -303,6 +379,7 @@
       var leaf = new THREE.Mesh(new THREE.SphereGeometry(p[2] * k, 9, 7),
         solid(i % 2 ? '#358d63' : '#2c7d57', { roughness: .9 }));
       leaf.position.set(x + p[0] * k, p[1] * k, z); addO(leaf);
+      fx.plants.push({ m: leaf, bz: leaf.rotation.z, bx: leaf.rotation.x, p: i * 1.1 + z });
     });
   }
   function sofa(x, z, col, rot) {
@@ -350,7 +427,7 @@
     var mon = new THREE.Mesh(new THREE.BoxGeometry(.88, .54, .06), solid('#1c2637', { roughness: .35 }));
     mon.position.set(0, 1.17, -.22); g2.add(mon);
     var scr = new THREE.Mesh(new THREE.PlaneGeometry(.78, .44),
-      new THREE.MeshBasicMaterial({ map: screenTex(), side: THREE.DoubleSide, toneMapped: false }));
+      new THREE.MeshBasicMaterial({ map: screenTex(screenCounter++), side: THREE.DoubleSide, toneMapped: false }));
     scr.position.set(0, 1.17, -.185); g2.add(scr);
     var kb = new THREE.Mesh(new THREE.BoxGeometry(.66, .03, .22), solid('#e7e9ec'));
     kb.position.set(0, .83, .23); g2.add(kb);
@@ -363,16 +440,47 @@
     lampHead.position.set(-.84, 1.23, -.24); lampHead.rotation.x = Math.PI; g2.add(lampHead);
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
   }
-  function screenTex() {
-    return makeTex('screen', function (q, S) {
-      var g = q.createLinearGradient(0, 0, S, S);
-      g.addColorStop(0, '#3aa0d8'); g.addColorStop(1, '#173a63');
-      q.fillStyle = g; q.fillRect(0, 0, S, S);
-      q.fillStyle = 'rgba(255,255,255,.8)';
-      for (var i = 0; i < 7; i++) q.fillRect(24, 26 + i * 27, 60 + ((i * 61) % 130), 7);
-      q.fillStyle = 'rgba(120,235,200,.85)';
-      for (var k = 0; k < 5; k++) q.fillRect(36 + k * 44, 196 - ((k * 37) % 90), 22, 90);
-    }, 1, 1);
+  function paintScreen(q, S, idx, step) {
+    var accent = ['#5fd6ff', '#79e0b2', '#ffd27d', '#ff9fc4'][idx % 4];
+    var g = q.createLinearGradient(0, 0, S, S);
+    g.addColorStop(0, '#2a6f9e'); g.addColorStop(.55, '#1b4e7c'); g.addColorStop(1, '#102c4a');
+    q.fillStyle = g; q.fillRect(0, 0, S, S);
+    q.fillStyle = 'rgba(8,20,38,.55)'; q.fillRect(0, 0, S, 34);
+    q.fillStyle = accent; q.fillRect(0, 0, S, 4);
+    q.fillStyle = 'rgba(255,255,255,.88)'; q.font = 'bold 13px sans-serif';
+    q.fillText('CHEEBEE OS', 14, 23);
+    q.fillStyle = 'rgba(255,255,255,.45)'; q.fillText('live', S - 34, 23);
+    q.fillStyle = 'rgba(8,20,38,.42)'; q.fillRect(0, 34, 42, S - 34);
+    for (var n = 0; n < 5; n++) {
+      q.fillStyle = n === (idx + step) % 5 ? accent : 'rgba(255,255,255,.23)';
+      q.fillRect(11, 50 + n * 38, 20, 20);
+      q.fillStyle = 'rgba(255,255,255,.35)'; q.fillRect(7, 57 + n * 38, 28, 3);
+    }
+    q.fillStyle = 'rgba(255,255,255,.82)'; q.fillRect(56, 48, 90, 8); q.fillRect(56, 63, 140, 4);
+    q.fillStyle = 'rgba(255,255,255,.35)'; q.fillRect(56, 76, S - 66, 1);
+    for (var k = 0; k < 8; k++) {
+      var hh = 18 + 46 * (.5 + .5 * Math.sin(step * .7 + k * 1.3 + idx));
+      q.fillStyle = k % 3 === 0 ? accent : 'rgba(120,220,255,.55)';
+      q.fillRect(58 + k * 23, 208 - hh, 15, hh);
+      q.fillStyle = 'rgba(255,255,255,.18)'; q.fillRect(58 + k * 23, 210, 15, 2);
+    }
+    q.strokeStyle = 'rgba(255,255,255,.2)'; q.lineWidth = 1;
+    q.beginPath(); q.moveTo(56, 210); q.lineTo(S - 10, 210); q.stroke();
+    q.fillStyle = 'rgba(8,20,38,.45)'; q.fillRect(56, 222, S - 66, 25);
+    q.fillStyle = '#79e0b2'; q.fillRect(63, 231, 7, 7);
+    q.fillStyle = 'rgba(255,255,255,.7)'; q.fillRect(78, 233, 84, 4); q.fillRect(170, 233, 30, 4);
+    var sy = 40 + ((step * 11 + idx * 23) % 170);
+    q.fillStyle = 'rgba(255,255,255,.10)'; q.fillRect(42, sy, S - 42, 9);
+    q.fillStyle = 'rgba(255,255,255,.045)'; q.fillRect(0, 0, S, S);
+  }
+  function screenTex(idx) {
+    idx = idx || 0;
+    var t = makeTex('screen-' + idx, function (q, S) { paintScreen(q, S, idx, idx); }, 1, 1);
+    if (!t.userData.fxScreen) {
+      t.userData.fxScreen = true;
+      fx.screens.push({ t: t, q: t.userData.q, idx: idx, step: idx });
+    }
+    return t;
   }
   function bench(cx, cz) {
     planeAt(8.4, 4.3, solid('#ffffff', { map: carpetTex('#6f8f8b', '#3f6662', 4, 2), roughness: .95, metalness: 0 }), cx, .008, cz);
@@ -415,6 +523,11 @@
       animParts.push({ m: led, k: 'led', p: i * .7 + x });
       box(.62, .012, .02, '#4b5a70', x, .53 + i * .27, z + .405);
     }
+    var scan = new THREE.Mesh(new THREE.PlaneGeometry(.64, .055),
+      new THREE.MeshBasicMaterial({ color: '#9aeaff', transparent: true, opacity: .34,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    scan.position.set(x, 1.1, z + .42); scan.renderOrder = 3; addO(scan);
+    fx.scan.push({ m: scan, x: x, p: x });
   }
   function cabinet(x, z, col) {
     shadow(x, z, .72, .42, .13);
@@ -434,8 +547,21 @@
   function waterCooler(x, z) {
     shadow(x, z, .35, .3, .12);
     box(.5, 1.0, .44, '#e4eaf0', x, .5, z);
-    cyl(.21, .4, '#79c9e8', x, 1.2, z, true);
+    var bottle = new THREE.Mesh(new THREE.CylinderGeometry(.21, .21, .4, 14),
+      solid('#79c9e8', { transparent: true, opacity: .58, roughness: .18, metalness: .05 }));
+    bottle.position.set(x, 1.2, z); addO(bottle);
+    cyl(.22, .035, '#c8d8e4', x, 1.41, z);
     box(.24, .06, .2, '#5d6b7d', x, .82, z + .24);
+    var bm = new THREE.MeshBasicMaterial({ color: '#eaffff', transparent: true, opacity: .5,
+      blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    for (var i = 0; i < 7; i++) {
+      var r = .045 + (i % 3) * .018;
+      var b = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 5), bm.clone());
+      var a = i * 2.4;
+      b.position.set(x + Math.cos(a) * .09, 1.04 + (i % 4) * .08, z + Math.sin(a) * .09);
+      b.renderOrder = 3; addO(b);
+      fx.bubbles.push({ m: b, x0: b.position.x, z0: b.position.z, base: 1.02 + (i % 4) * .08, p: i * 1.7, sp: .35 + (i % 3) * .12 });
+    }
   }
   function fruitBowl(x, z) {
     cyl(.3, .08, '#d9c39a', x, .96, z);
@@ -477,7 +603,10 @@
       box(5.6, h, 4, solid(i % 2 ? '#5d6b84' : '#68778f', { roughness: .9 }), x, h / 2, -14);
       for (var wy = 2; wy < h - 1; wy += 2.1) {
         for (var wx = -1.8; wx <= 1.8; wx += 1.8) {
-          bx(.55, .42, .03, (wy + wx + i) % 3 ? '#dfe9f2' : '#ffd89a', x + wx, wy, -11.93, true);
+          var win = bx(.55, .42, .03, (wy + wx + i) % 3 ? '#dfe9f2' : '#ffd89a', x + wx, wy, -11.93, true);
+          if ((Math.round(wy * 10) + Math.round(wx * 10) + i * 3) % 5 === 0) {
+            fx.windows.push({ m: win, p: i + wx + wy });
+          }
         }
       }
     }
@@ -538,7 +667,8 @@
   function buildRealOffice3d() {
     if (typeof THREE === 'undefined' || !g || !g.level) return false;
     cuteBots.forEach(function (b) { if (b.bubble && b.bubble.parentNode) b.bubble.parentNode.removeChild(b.bubble); });
-    cuteBots.length = 0; animParts.length = 0;
+    cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
+    fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -559,6 +689,7 @@
       l.position.set(p[0], p[1], p[2]); l.userData.v9Light = true; addO(l);
     });
     tameOfficeLights();
+    dustField();
 
     // ---- ground, slab, zone floors ----
     floor(220, 220, '#485567', 23, -.22, 17);
@@ -589,6 +720,7 @@
     box(46, .09, .16, '#d8dee6', 23, 2.93, .17);
     skyBackdrop();
     skyline();
+    birds();
 
     // ---- open ceiling: beams, fixture grid, pendants ----
     for (var lx = 6; lx <= 42; lx += 6) for (var lz = 5; lz <= 31; lz += 6) {
@@ -618,6 +750,7 @@
     // ---- MAIN STREET ----
     floor(42, 2.8, solid('#ffffff', { map: stoneTex(12, 1), roughness: .85 }), 23, .009, 23.2);
     for (var s = 4; s <= 42; s += 4) bx(1.8, .02, .08, '#c8a86a', s, .022, 23.2, true);
+    floorSheen();
     wallSign('MAIN STREET', 'RECEPTION  ←  WORK  →  PANTRY', 41, 2.35, 23.2, 3.4, .9, -Math.PI / 2, '#b08a3d');
     [12, 23, 34].forEach(function (x) { pendant(x, 23.2, '#3f6fa8'); });
     plant(5.4, 23.2, .85); plant(29.6, 23.2, .85);
@@ -671,6 +804,7 @@
     [35.6, 37, 38.4].forEach(function (px) {
       cyl(.29, .14, '#d9c9a8', px, .74, 28.1);
       cyl(.05, .6, '#5a4632', px, .34, 28.1);
+      coffeeSteam(px, 28.1);
     });
     waterCooler(31.4, 30.2);
     fruitBowl(37, 29.2);
@@ -738,6 +872,7 @@
         id: b.id, n: b.n, group: c.group, emo: c.emo, arm: arm, bubble: el,
         baseY: 0, phase: idx * 1.1, face: b.face, tx: b.x, tz: b.z
       });
+      botSparkles(c.group, idx);
     });
 
     if (!animId) animId = requestAnimationFrame(tick);
@@ -806,6 +941,79 @@
           : .7 + .22 * Math.sin(now / 720 + a.p);
       });
     }
+    try {
+      // Animated monitor dashboards (staggered so 24 canvases never repaint at once).
+      if (now - (tick.screens || 0) > 320 && fx.screens.length) {
+        tick.screens = now;
+        for (var si = 0; si < 5; si++) {
+          var sc = fx.screens[(tick.screenPtr || 0) % fx.screens.length];
+          tick.screenPtr = ((tick.screenPtr || 0) + 1) % fx.screens.length;
+          sc.step++;
+          try { paintScreen(sc.q, 256, sc.idx, sc.step); sc.t.needsUpdate = true; } catch (e) {}
+        }
+      }
+      fx.shafts.forEach(function (a) {
+        a.m.material.opacity = .045 + .025 * (.5 + .5 * Math.sin(now / 900 + a.p));
+      });
+      if (fx.dust && fx.dust.pts) {
+        var arr = fx.dust.pts.geometry.attributes.position.array;
+        for (var di = 0; di < fx.dust.ph.length; di++) {
+          var baseY = .4 + ((fx.dust.pos[di * 3 + 1] - .4 + now / 9000 + fx.dust.ph[di] * .4) % 2.7);
+          arr[di * 3] = fx.dust.pos[di * 3] + Math.sin(now / 1600 + fx.dust.ph[di]) * .35;
+          arr[di * 3 + 1] = baseY;
+        }
+        fx.dust.pts.geometry.attributes.position.needsUpdate = true;
+      }
+      fx.bubbles.forEach(function (a) {
+        var ph = (now / 1000 * a.sp + a.p) % 1;
+        a.m.position.y = a.base + ph * .3;
+        a.m.position.x = a.x0 + Math.sin(now / 700 + a.p) * .03;
+        a.m.material.opacity = .12 + .45 * Math.sin(ph * Math.PI);
+        a.m.scale.setScalar(.7 + .5 * ph);
+      });
+      fx.steam.forEach(function (a) {
+        var ph = (now / 1700 + a.p / 7) % 1;
+        a.m.position.y = a.base + ph * .55;
+        a.m.position.x = a.x + Math.sin(now / 900 + a.p) * .12;
+        a.m.material.opacity = .18 * (1 - ph);
+        a.m.scale.set(.12 + ph * .1, .2 + ph * .16, 1);
+      });
+      fx.sparkles.forEach(function (a) {
+        var v = .5 + .5 * Math.sin(now / 520 + a.p);
+        a.m.material.opacity = .15 + .6 * v;
+        a.m.position.x = a.base + Math.sin(now / 900 + a.p) * .07;
+        a.m.scale.setScalar(.07 + .06 * v);
+      });
+      if (now - (tick.plants || 0) > 80) {
+        tick.plants = now;
+        fx.plants.forEach(function (a) {
+          a.m.rotation.z = a.bz + Math.sin(now / 1200 + a.p) * .035;
+          a.m.rotation.x = a.bx + Math.cos(now / 1450 + a.p) * .03;
+        });
+      }
+      fx.birds.forEach(function (a) {
+        a.g.position.x = -12 + ((now / 1000 * a.sp + a.p * 4) % 64);
+        a.g.position.y = a.base + Math.sin(now / 900 + a.p) * .25;
+        if (a.g.children[0]) a.g.children[0].rotation.z = .3 + Math.sin(now / 160 + a.p) * .25;
+        if (a.g.children[1]) a.g.children[1].rotation.z = -.3 - Math.sin(now / 160 + a.p) * .25;
+      });
+      fx.scan.forEach(function (a) {
+        a.m.position.y = .32 + ((now / 1800 + a.p * 2) % 1.7);
+        a.m.material.opacity = .25 + .18 * (.5 + .5 * Math.sin(now / 500 + a.p));
+      });
+      if (now - (tick.windows || 0) > 260) {
+        tick.windows = now;
+        fx.windows.forEach(function (a) {
+          if (a.m.material && a.m.material.emissiveIntensity !== undefined) {
+            a.m.material.emissiveIntensity = .45 + .55 * (.5 + .5 * Math.sin(now / 730 + a.p * 2.3));
+          }
+        });
+      }
+      if (fx.sheen) {
+        fx.sheen.position.x = 2 + ((now / 55) % 42);
+        fx.sheen.material.opacity = .055 + .035 * (.5 + .5 * Math.sin(now / 700));
+      }
+    } catch (e) {}
     updateBubbles(now);
   }
 
@@ -833,5 +1041,6 @@
   }, 700);
 
   window.buildRealOffice3d = buildRealOffice3d;
-  window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick };
+  window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
+    get fx() { return fx; } };
 })();

@@ -51,11 +51,11 @@ const protectedHashes = {
   // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
   // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
   // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
-  // Cache-bust bumped v4 -> v13 (the service worker caches by URL, so every
+  // Cache-bust bumped v4 -> v14b (the service worker caches by URL, so every
   // office-v9.js edit needs a fresh query string). v9 look: lower hero camera
   // (phi .40 / theta .34 / r38 / fov52), brighter .v9bub styling, glass south
   // facade, exterior approach and legible signs. White-out guards unchanged.
-  'public/index.html': '7f86161fe4428f8b7f7948cc251f3984242bf9e62f4780bff06d964fa6e92e09',
+  'public/index.html': '0aacd2729952796b55bbf38c937d093e26b494d7c8de47b84e7bec3c60597c06',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
@@ -64,7 +64,11 @@ const protectedHashes = {
   // v9 look: procedural carpet/wood/plank/tile/stone/fabric textures, warm light
   // pools, contact shadows, dark-framed glass, south-facing signs, exterior
   // plaza + skyline, and correctly oriented wall signage. No new runtime feature.
-  'public/office-v9.js': 'c0c0bb6f27ed7169fd139c6a8c8c2f78a3fee4630daf7cf430d60635b427cf4',
+  // v14 effects: animated monitor dashboards, light shafts + drifting dust,
+  // water-cooler bubbles, coffee steam, bot sparkles, swaying plants, server
+  // scan bars, flickering skyline windows, birds and a floor sheen. Still the
+  // same protected v8 runtime; only visual polish inside office-v9.js.
+  'public/office-v9.js': '2070993883f008952ba4491e2c9719c307590e8da682fd1418833c13eba8dfc7',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
