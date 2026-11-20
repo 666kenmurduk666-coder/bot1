@@ -1797,6 +1797,7 @@
     [-.42, .42].forEach(function (oy) {
       box(1.04, .82, .025, '#8492a5', x, 1.35 + oy, z + .29);
       box(.06, .16, .03, '#dbe2ea', x + .4, 1.35 + oy, z + .31);
+      box(.18, .03, .02, '#d6dde6', x - .25, 1.35 + oy, z + .31);
     });
   }
   function printer(x, z) {
@@ -1805,6 +1806,9 @@
     box(.9, .15, .64, '#3b475b', x, .9, z);
     box(.74, .025, .48, '#f4f5f7', x, 1.0, z + .06);
     bx(.3, .04, .02, '#6cc2f0', x + .22, .95, z + .37, true);
+    // output paper stack
+    box(.42, .06, .28, '#f7f8fa', x - .12, 1.03, z + .18);
+    box(.38, .01, .24, '#e8ecf1', x - .12, 1.065, z + .16);
   }
   function waterCooler(x, z) {
     shadow(x, z, .35, .3, .12);
@@ -1844,12 +1848,20 @@
     [-.7, .1, .75].forEach(function (px, i) {
       box(.62, .035, .02, ['#c94f4f', '#4a7fb0', '#3f9d6a'][i], x + px, y + .15 - i * .28, z + .07);
     });
+    [[-.25, .42, '#ffe08a'], [.05, .36, '#ff9fc4'], [.32, .45, '#b7f0a1']].forEach(function (n) {
+      box(.18, .18, .012, n[2], x + n[0], y + n[1], z + .07);
+    });
+    box(.22, .02, .08, '#5d6b7d', x + .82, y - .58, z + .08);
+    cyl(.015, .18, '#2f3d52', x + .78, y - .56, z + .12);
   }
   function clock(x, y, z) {
     var c = cyl(.28, .07, '#f4f6f8', x, y, z); c.rotation.x = Math.PI / 2;
     cyl(.29, .035, '#2f3d52', x, y, z - .02).rotation.x = Math.PI / 2;
     box(.025, .19, .02, '#2f3d52', x, y + .09, z + .05);
     box(.14, .025, .02, '#2f3d52', x + .06, y, z + .05);
+    [[0, .22], [.22, 0], [0, -.22], [-.22, 0]].forEach(function (p) {
+      box(.018, .05, .015, '#2f3d52', x + p[0], y + p[1], z + .045);
+    });
   }
   function coatRack(x, z) {
     cyl(.035, 1.75, '#3d495c', x, .88, z);
@@ -1859,6 +1871,9 @@
       box(.2, .12, .34, ['#4a7fb0', '#3f9d6a', '#b07b3d', '#8f6fd8'][i],
         x + Math.cos(a) * .22, 1.5, z + Math.sin(a) * .22);
     }
+    // umbrella/cane detail
+    cyl(.02, .95, '#2f3d52', x + .12, .48, z - .08);
+    cyl(.11, .03, '#5f7fa8', x + .12, .96, z - .08);
   }
 
   /* ---------- exterior context so the camera never sees empty gray ---------- */
@@ -2510,6 +2525,13 @@
     var sign = new THREE.Mesh(new THREE.BoxGeometry(.4, .5, .06),
       solid('#3f9d9a', { emissive: '#3f9d9a', emissiveIntensity: .45 }));
     sign.position.set(1.72, 2.0, 0); sign.userData.v9 = true; g2.add(sign);
+    // small route poster and planter
+    var poster = new THREE.Mesh(new THREE.BoxGeometry(.45, .55, .02), solid('#f4f6f8'));
+    poster.position.set(-1.05, 1.55, -.53); poster.userData.v9 = true; g2.add(poster);
+    var pot = new THREE.Mesh(new THREE.CylinderGeometry(.12, .14, .18, 8), solid('#8b5e34'));
+    pot.position.set(-1.3, .09, .3); pot.userData.v9 = true; g2.add(pot);
+    var leaf = new THREE.Mesh(new THREE.SphereGeometry(.16, 7, 6), solid('#5ea86b', { roughness: .9 }));
+    leaf.position.set(-1.3, .28, .3); leaf.userData.v9 = true; g2.add(leaf);
     g2.position.set(x, 0, z); addO(g2);
   }
   function tactileTex() {
@@ -2775,6 +2797,7 @@
     wallFrame(4.6, 2.0, 33.86, 1.6, 1.0, 0, 1);
     wallFrame(.14, 1.95, 18.5, 1.5, 1.0, Math.PI / 2, 0);
     wallFrame(45.86, 1.95, 18.5, 1.5, 1.0, -Math.PI / 2, 2);
+    wallFrame(45.86, 1.95, 26.8, 1.4, .9, -Math.PI / 2, 3);
     reflection(23, 30.3, 4.4, 1.3, '#ffd9a6', 0, .05);
 
     // ---- MAIN STREET ----
@@ -2798,6 +2821,7 @@
       box(1.8, 2.2, 2, solid('#5c6f86', { map: fabricTex('#5c6f86', 1, 1), roughness: .9 }), qx, 1.1, 17.8);
       glass(1.5, 1.55, .08, qx, 1.3, 16.78, .4);
       box(1.3, .07, .55, '#a9793f', qx, .8, 17.8);
+      box(1.05, .06, .42, '#7a8fa6', qx, .85, 17.85);
       mullion(qx - .8, 16.78, 'z', 2.2); mullion(qx + .8, 16.78, 'z', 2.2);
     }
     wallSign('QUIET BOOTHS', 'CALL · FOCUS · RESET', 25.5, 2.4, 19.3, 3.2, .8, 0, '#5f7fa8');
