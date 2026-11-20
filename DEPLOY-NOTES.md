@@ -1015,3 +1015,24 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Local interaction check: place `24→25`, undo `25→24`; theme/freeze/detail/a11y
   at bot-card click ay gumana, walang errors.
 
+### Live verification (v30 / v30.1 production)
+- Commits: `1854941` (v30 app), `c435606` (v30 docs), `3deb942` (v30.1 app
+  fix), `4826f24` (v30.1 docs). Render serves `/office-v9.js?v=30` and
+  `/office-studio.js?v=32`.
+- `node restore-after-deploy.js`: `mall=23`, `commercials=12`, FB/Shopee/AI keys
+  OK. (Script reported `COMMERCIALS ok=19` before server-side dedupe; final 12.)
+- Live editor mounted: `data-studio=1`, 4 tools, 25 palette items, inspector,
+  presets, theme, auto-detail, a11y at status `Ready · autosave on`.
+- Live modules: 7 bots, 90 interactive crops, 12 ceiling tiles at `opacity=.04`,
+  photo/freeze/bot-card/chat-quick controls present, no console errors.
+- Auto night was active (Manila 20:xx) on first load. After forcing manual day:
+  `bg=fog=93a1b3`, `amb=.58`, `exposure=.85`, `isNight=0`; after forced tick the
+  guards stayed correct. The v9 tick reasserts day colors even at auto-night;
+  no code was changed for this existing app behavior.
+- Forced 60-frame stability check (`tick.last=Date.now()-100` + `frame3D()`):
+  calls `2955→2953`, geometries flat `2900`, transient sprites `28`, bots `7`.
+  Natural rAF was throttled to zero in the headless review tab, so no live FPS
+  number was taken in this session.
+- Hero-pixel render: `meanLum=96.2`, `dark=19.3%`, `green=22.2%`, `bg=3.7%`
+  — no white-out; farm/greens clearly visible.
+
