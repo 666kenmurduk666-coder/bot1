@@ -942,3 +942,15 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Lahat ng 4 na tests ay PASADO pagkatapos i-update ang index.html hash sa
   `tests/strategy-baseline.js`.
 
+### Live verification (UI fix, production)
+- Commit `161be23`; Render nagsilbi ng bagong HTML (3 poll attempts bago
+  lumabas ang `noHidden=true smallChat=true v28=true`).
+- `restore-after-deploy.js` pinatakbo: final `mall=23`, `commercials=12`.
+- Live `?uifixfinal=1795154129695`: `bodyClass=""`, `uiHidden=false`,
+  `sidebar=flex`, `officeBar=flex`, `sidebar/topbar/chatBtn` makikita.
+- World chat: `display=flex`, `200×100`, may laman ang log
+  (`🌐 SYSTEM: Maligayang pagdating! …`), `bots=7`, ARYASKY present.
+- Guards `bg=fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`;
+  cull line na-confirm (`cull=true`). Walang console errors.
+- Isang malinis na live tab ang naiwang focused; sarado ang local tab.
+
