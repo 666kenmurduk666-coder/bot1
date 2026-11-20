@@ -1,9 +1,10 @@
 /* office-v9.js — Cyborg Cheebee Office.
-   v9 "photographic" + v14/v15/v16 effects + v17/v18 "realistic streets" pass:
+   v9 "photographic" + v14/v15/v16 effects + v17/v18/v19 "realistic streets" pass:
    textured materials, warm light pools, contact shadows, legible signage, a real
-   north city street with traffic, pedestrians, bike lane, tactile paving, signs,
-   billboard, detailed sky/skyline, window reflections, blind shadows, reflections,
-   richer trim and a cinematic grade.
+   north city street plus an x1000 super-detailed south entrance road: taxi bay,
+   canopy, zebra crossings, bike lane, tactile paving, drains, lamps, signals,
+   bus stop, billboard, moving traffic and pedestrians. Window reflections,
+   blind shadows, richer trim and a cinematic grade remain intact.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
 (function () {
@@ -1037,7 +1038,132 @@
       box(.08, .16, .9, '#e2694f', x - 1.26, .42, 46.2, true);
     });
   }
-  function streetLamp(x, z) {
+  function parkedTaxi(x, z) {
+    shadow(x, z, 1.3, .62, .13);
+    var g2 = new THREE.Group();
+    var yellow = solid('#e0a83a', { metalness: .45, roughness: .35 });
+    var body = new THREE.Mesh(new THREE.BoxGeometry(2.3, .4, 1.05), yellow);
+    body.position.y = .38; body.userData.v9 = true; g2.add(body);
+    var cabin = new THREE.Mesh(new THREE.BoxGeometry(1.15, .35, .86),
+      solid('#b9d7ea', { transparent: true, opacity: .7, metalness: .2 }));
+    cabin.position.set(-.1, .76, 0); cabin.userData.v9 = true; g2.add(cabin);
+    [-.5, .5].forEach(function (dz) {
+      var stripe = new THREE.Mesh(new THREE.BoxGeometry(2.32, .08, .1), solid('#2f394b'));
+      stripe.position.set(0, .47, dz); stripe.userData.v9 = true; g2.add(stripe);
+    });
+    var top = new THREE.Mesh(new THREE.BoxGeometry(.55, .16, .3),
+      solid('#5fd6ff', { emissive: '#5fd6ff', emissiveIntensity: .9 }));
+    top.position.set(-.1, 1.0, 0); top.userData.v9 = true; g2.add(top);
+    [-.68, .68].forEach(function (dx) {
+      [-.5, .5].forEach(function (dz) {
+        var w = new THREE.Mesh(new THREE.CylinderGeometry(.19, .19, .1, 12), solid('#1b2029'));
+        w.rotation.x = Math.PI / 2; w.position.set(dx, .21, dz); w.userData.v9 = true; g2.add(w);
+        var hub = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, .11, 10), solid('#9aa5b3', { metalness: .6 }));
+        hub.rotation.x = Math.PI / 2; hub.position.set(dx, .21, dz); hub.userData.v9 = true; g2.add(hub);
+      });
+    });
+    g2.position.set(x, 0, z); addO(g2);
+  }
+  function entranceBillboard() {
+    var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 384;
+    var q = cv.getContext('2d');
+    var g = q.createLinearGradient(0, 0, 1024, 384);
+    g.addColorStop(0, '#10365f'); g.addColorStop(.5, '#2f6f9e'); g.addColorStop(1, '#3f9d9a');
+    q.fillStyle = g; q.fillRect(0, 0, 1024, 384);
+    q.fillStyle = 'rgba(255,255,255,.07)';
+    for (var i = 0; i < 9; i++) q.fillRect(i * 130, 0, 54, 384);
+    q.fillStyle = '#ffe6a8'; q.font = 'bold 78px sans-serif'; q.textAlign = 'center';
+    q.fillText('CYBORG CHEEBEE HQ', 512, 160);
+    q.fillStyle = '#ffffff'; q.font = '40px sans-serif';
+    q.fillText('WELCOME · DROP-OFF · OPEN 24/7', 512, 242);
+    var t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+    box(10.4, 3.9, .16, '#2e3a4d', 23, 7.4, 54.6);
+    box(.18, 5.6, .18, '#4a5668', 18, 2.8, 54.6);
+    box(.18, 5.6, .18, '#4a5668', 28, 2.8, 54.6);
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(10, 3.5),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
+    m.position.set(23, 7.4, 54.48); m.rotation.y = Math.PI; m.userData.v9 = true; addO(m);
+  }
+  function entranceRoad() {
+    // Super-detailed street directly outside the south entrance (z ~ 46..52).
+    floor(70, 11.6, solid('#ffffff', { map: stoneTex(14, 1), roughness: .95 }), 23, .004, 40.2);
+    floor(70, 6.8, solid('#ffffff', { map: asphaltTex(16, 2), roughness: .96, metalness: .02 }), 23, .003, 49);
+    floor(70, 2.8, solid('#ffffff', { map: stoneTex(14, 1), roughness: .95 }), 23, .004, 53.7);
+    // curbs + bike lane + edge lines
+    box(70, .14, .18, '#b9c1c9', 23, .07, 45.55);
+    box(70, .14, .18, '#b9c1c9', 23, .07, 52.45);
+    floor(70, .9, solid('#4a7f6e', { roughness: .95 }), 23, .008, 46.6);
+    for (var bxd = -8; bxd <= 58; bxd += 3) box(1.3, .012, .07, '#eef2f4', bxd, .014, 46.9);
+    box(70, .012, .09, '#d4dbe0', 23, .014, 47.1);
+    box(70, .012, .09, '#d4dbe0', 23, .014, 51.9);
+    for (var x = -8; x <= 58; x += 4) box(2.1, .014, .11, '#e8d9a0', x, .016, 49.3, true);
+    // Zebra crossings right in front of the entrance and the side gate.
+    [8, 23].forEach(function (cx) {
+      for (var z = 46.1; z <= 51.9; z += .72) box(2.4, .015, .34, '#eef2f4', cx, .017, z);
+    });
+    [2, 17, 32].forEach(function (ax) { roadArrow(ax, 48.3, 1); });
+    // Taxi / drop-off hatching along the entrance curb.
+    for (var hx = -2; hx <= 34; hx += 2.2) {
+      var hatch = box(1.2, .012, .5, '#e0b34a', hx, .018, 45.95);
+      hatch.rotation.y = -.5;
+    }
+    // tactile paving, drains, manholes, wet reflections
+    floor(70, .42, solid('#ffffff', { map: tactileTex(), roughness: .95 }), 23, .012, 45.25);
+    floor(70, .42, solid('#ffffff', { map: tactileTex(), roughness: .95 }), 23, .012, 52.75);
+    for (var gx = -4; gx <= 52; gx += 7) {
+      box(.62, .022, .3, '#39414c', gx, .019, 45.68);
+      for (var sl = -1; sl <= 1; sl++) box(.04, .006, .26, '#78828f', gx + sl * .16, .03, 45.68);
+    }
+    [4, 19, 34].forEach(function (mx) {
+      cyl(.3, .03, '#59616c', mx, .018, 49.4);
+      cyl(.22, .032, '#707a86', mx, .02, 49.4);
+    });
+    [6, 20, 32].forEach(function (px) { reflection(px, 50.7, 2.2, .8, '#bcd9ec', 0, .06); });
+    // bollards, parking meters, bike racks
+    for (var bx = -2; bx <= 34; bx += 3.5) cyl(.07, .5, '#8b97a5', bx, .25, 45.15);
+    [4, 16, 28].forEach(function (mx) {
+      cyl(.06, .8, '#5d6b7d', mx, .4, 45.15);
+      box(.18, .24, .12, '#3f9d9a', mx, .86, 45.15, true);
+    });
+    [12, 18].forEach(function (rx) {
+      [-.4, .4].forEach(function (dz) { cyl(.04, .5, '#8b97a5', rx, .25, 44.4 + dz); });
+      box(.9, .04, .04, '#9aa6b3', rx, .5, 44.4);
+    });
+    // entrance canopy, lit edge and hanging sign
+    box(13, .14, 2.6, solid('#2e3a4d', { metalness: .4 }), 23, 3.25, 35.3);
+    box(12.4, .05, .1, '#5fd6ff', 23, 3.15, 36.55, true);
+    [17, 29].forEach(function (px) {
+      cyl(.1, 3.1, '#4a5668', px, 1.55, 36.4);
+      box(.4, .1, .4, '#2e3a4d', px, 3.12, 36.4);
+    });
+    wallSign('ENTRANCE', 'DROP-OFF · TAXI · VISITORS', 23, 2.85, 36.62, 4.6, 1.0, Math.PI, '#3f9d9a');
+    // street furniture and greenery
+    [6, 18, 30].forEach(function (px) {
+      box(2.0, .4, 1.0, '#8b5e34', px, .2, 35.6);
+      plant(px - .5, 35.6, .7); plant(px + .5, 35.6, .7);
+    });
+    [-2, 10, 22, 34].forEach(function (lx) {
+      streetLamp(lx, 44.9, 48.6);
+      streetLamp(lx, 53.2, 49.5);
+    });
+    trafficLight(9, 45.4); trafficLight(29, 45.4);
+    busStop(32, 44.3);
+    roadSign(6, 45.1, 'ENTER', '#3f9d9a');
+    roadSign(26, 45.1, 'EXIT', '#b08a3d');
+    fence(-4, 16, 54.9); fence(20, 34, 54.9);
+    entranceBillboard();
+    // moving traffic + a row of parked taxis
+    car(-8, 48.1, 1, '#c94f5f'); car(6, 48.1, 1, '#4a7fb0'); car(20, 48.1, 1, '#e0a83a');
+    car(-2, 50.7, -1, '#3f9d6a'); bus(14, 50.7, -1); car(30, 50.7, -1, '#8f6fd8');
+    [4, 16, 28].forEach(function (tx) { parkedTaxi(tx, 45.8); });
+    // people using the entrance and the far sidewalk
+    pedestrian(2, 44.2, 1, '#c94f4f');
+    pedestrian(18, 44.2, -1, '#4a7fb0');
+    pedestrian(31, 44.2, 1, '#3f9d6a');
+    pedestrian(8, 54.2, -1, '#e0a83a');
+    pedestrian(24, 54.2, 1, '#8f6fd8');
+  }
+  function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();
     var pole = new THREE.Mesh(new THREE.CylinderGeometry(.07, .1, 4.0, 10), solid('#4a5668', { metalness: .6 }));
     pole.position.y = 2.0; pole.userData.v9 = true; g2.add(pole);
@@ -1053,7 +1179,7 @@
     var base = new THREE.Mesh(new THREE.CylinderGeometry(.18, .22, .22, 10), solid('#394456'));
     base.position.y = .11; base.userData.v9 = true; g2.add(base);
     g2.position.set(x, 0, z); addO(g2);
-    reflection(x + 1, -7.2, 2.6, 1.4, '#ffdca8', 0, .05);
+    reflection(x + 1, rz === undefined ? -7.2 : rz, 2.6, 1.4, '#ffdca8', 0, .05);
   }
   function trafficLight(x, z) {
     var g2 = new THREE.Group();
@@ -1436,6 +1562,7 @@
 
     exterior();
     northStreet();
+    entranceRoad();
 
     // ---- 6 small, cute, happy bots ----
     var host = document.getElementById('oc3d') || document.body;
@@ -1482,6 +1609,15 @@
       botSparkles(c.group, idx);
     });
 
+    // The main app's simple-mode cull hides any unflagged object above y=3.15.
+    // Everything now in level3d belongs to this v9 office, so flag it all —
+    // this keeps the skyline, billboard, sun glow, birds and lamps visible.
+    try {
+      level3d.traverse(function (o) {
+        if (!o.userData) o.userData = {};
+        o.userData.v9 = true;
+      });
+    } catch (e) {}
     if (!animId) animId = requestAnimationFrame(tick);
     return true;
   }

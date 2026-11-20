@@ -512,5 +512,51 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Pixel stats: `bgPct=0`, `edgePct=4.5`, `meanLum=102.6`, `hidden=0`,
   `meshes=2550`, `textured=268` — walang white-out. `bgHex=93a1b3`, `amb=0.58`,
   `exposure=0.85`.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Deploy:** commit `c6da9b2` pushed; Render detected `/office-v9.js?v=18`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live verification:** `bots=6`, Groq bubble visible (`Product`), `talkers=['product']`,
+  `convOk=true`, walang console errors. Effects: `peds=6`, `cars=8`, `signals=2`,
+  `reflections=19`, `sky=1`, `windows=51`, `plants=105`. Lahat ng projection checks
+  (car, bus, lamp, skyline, billboard, road sign, pedestrian, bike lane, tactile)
+  ay onscreen. Animation probe: carX, pedX, pedLeg, skyX, reflection offset at blind
+  lahat nagbago. Pixel stats: `bgPct=0`, `edgePct=4.5`, `meanLum=102.5`, `hidden=0`,
+  `meshes=2595`, `textured=276`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - **Cache-bust:** `/office-v9.js?v=18`.
+
+## 2026-11-20 — "Entrance road x1000" pass (v19 cache-bust)
+
+### Bakit ito
+- Ang user ay nasa north-side view na nakatingin pabalik sa **south entrance**;
+  doon makikita ang kalsada sa labas ng entrance (z≈46..52), hindi ang north street.
+
+### Mga idinagdag
+- **Entrance plaza + road:** textured stone plaza (z34.4..46), asphalt road
+  (z45.6..52.4), far sidewalk, curbs, edge lines at bike lane sa harap ng entrance.
+- **Zebra crossings** sa x=8 at x=23 (diretso sa entrance), road arrows, at
+  yellow taxi/drop-off hatching sa curb.
+- **Taxi bay:** 3 parked yellow taxis na may roof light, stripe, wheels at shadow.
+- **Canopy:** lit entrance canopy, cyan LED edge, support columns, at
+  `ENTRANCE · DROP-OFF · TAXI · VISITORS` hanging sign.
+- **Full street furniture:** 8 street lamps (may banners at ground reflections),
+  2 traffic signals, bus stop, ENTER/EXIT signs, bollards, parking meters, bike
+  racks, fence, planters/trees, tactile paving, drains, manholes at puddles.
+- **Billboard:** malaking `CYBORG CHEEBEE HQ · WELCOME · DROP-OFF · OPEN 24/7`
+  sign sa likod ng kalsada, nakaharap sa camera.
+- **Traffic:** +6 moving cars at +1 bus sa dalawang lane; +5 pedestrians.
+- **Cull visibility fix:** lahat ng v9 objects ay nilagyan ng `userData.v9`, kaya
+  hindi itinatago ng simple-mode cull ang skyline, billboard, sun glow, birds at
+  lamps (ang cull line sa index.html ay hindi binago).
+- Protected Phase D v8 runtime ay hindi pa rin binabago.
+
+### Verification (v19, lokal — north-side entrance view)
+- `bots=6`, walang build error, walang console errors.
+- Effects: `cars=14`, `peds=11`, `signals=4`, `plants=135`, `reflections=30`,
+  `sky=1`, `windows=51`, `blinds=5`, `screens=25`.
+- Projection check: taxi, crosswalk, canopy, billboard, lamp, signal, bus stop,
+  bike lane at tactile paving — **lahat onscreen** sa user's current view.
+- High-object check: `high=388`, `highHidden=0`, `hidden=0` — walang naitago ang cull.
+- Pixel stats: `bgPct=0.2`, `edgePct=4.8`, `meanLum=99.8`, `meshes=3105`,
+  `textured=288`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- **Cache-bust:** `/office-v9.js?v=19`.
 
