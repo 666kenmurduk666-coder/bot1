@@ -827,11 +827,13 @@
   function miniDeskPlant(g2, x, z) {
     var pot = new THREE.Mesh(new THREE.CylinderGeometry(.055, .045, .09, 8), solid('#c07a52'));
     pot.position.set(x, .85, z); pot.userData.v9 = true; g2.add(pot);
-    for (var i = 0; i < 4; i++) {
-      var leaf = new THREE.Mesh(new THREE.ConeGeometry(.045, .16, 5), solid(i % 2 ? '#3f9d6a' : '#57ad78'));
-      leaf.position.set(x + (i - 1.5) * .022, .96, z);
-      leaf.rotation.z = (i - 1.5) * .3; leaf.userData.v9 = true; g2.add(leaf);
+    for (var i = 0; i < 5; i++) {
+      var leaf = new THREE.Mesh(new THREE.ConeGeometry(.042, .155, 5), solid(i % 2 ? '#3f9d6a' : '#57ad78'));
+      leaf.position.set(x + (i - 2) * .018, .965, z);
+      leaf.rotation.z = (i - 2) * .22; leaf.userData.v9 = true; g2.add(leaf);
     }
+    var peb = new THREE.Mesh(new THREE.SphereGeometry(.018, 6, 5), solid('#d8c39a'));
+    peb.position.set(x + .02, .895, z + .02); peb.userData.v9 = true; g2.add(peb);
   }
   function glassGlint(x, y, z, w, h, rot) {
     var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
@@ -1383,6 +1385,8 @@
     mat.rotation.x = -Math.PI / 2; mat.position.set(0, .812, .22); mat.userData.v9 = true; g2.add(mat);
     var tablet = bx(.36, .22, .025, '#5fd6ff', .56, 1.02, -.04, true);
     tablet.rotation.z = -.12; tablet.rotation.x = -.28; tablet.userData.v9 = true; g2.add(tablet);
+    var pad = new THREE.Mesh(new THREE.PlaneGeometry(.28, .2), solid('#4a5668', { roughness: .95 }));
+    pad.rotation.x = -Math.PI / 2; pad.position.set(-.42, .812, .18); pad.userData.v9 = true; g2.add(pad);
     var cup = new THREE.Mesh(new THREE.CylinderGeometry(.065, .055, .13, 8), solid('#3f5a76'));
     cup.position.set(.72, .875, -.2); cup.userData.v9 = true; g2.add(cup);
     [-.03, .02, .06].forEach(function (ox, k) {
@@ -1394,6 +1398,8 @@
     if (di % 2 === 0) {
       var n1 = box(.09, .09, .012, '#ffe08a', -.26, 1.45, -.18); n1.userData.v9 = true; g2.add(n1);
       var n2 = box(.09, .09, .012, '#ff9fc4', -.11, 1.45, -.18); n2.userData.v9 = true; g2.add(n2);
+    } else {
+      var photo = box(.11, .08, .012, '#dfe6ee', -.18, 1.45, -.18); photo.userData.v9 = true; g2.add(photo);
     }
   }
   function tableCenterpiece(x, z) {
@@ -1436,6 +1442,10 @@
     var grp = new THREE.Group();
     var back = new THREE.Mesh(new THREE.BoxGeometry(w + .12, h + .12, .07), solid('#0f1b2e'));
     grp.add(back);
+    [[-w / 2, h / 2], [w / 2, h / 2], [-w / 2, -h / 2], [w / 2, -h / 2]].forEach(function (p) {
+      var bolt = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .02, 6), solid('#8b97a5', { metalness: .5, roughness: .35 }));
+      bolt.rotation.x = Math.PI / 2; bolt.position.set(p[0], p[1], .04); grp.add(bolt);
+    });
     var face = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
       new THREE.MeshBasicMaterial({ map: signTexture(txt, sub, accent), side: THREE.DoubleSide }));
     face.position.z = .045; grp.add(face);
@@ -1473,6 +1483,8 @@
     var shade = new THREE.Mesh(new THREE.ConeGeometry(.38, .3, 14, 1, true),
       solid(col || '#b07b3d', { side: THREE.DoubleSide, roughness: .45, metalness: .35 }));
     shade.position.set(x, 2.62, z); shade.rotation.x = Math.PI; addO(shade);
+    var trim = new THREE.Mesh(new THREE.TorusGeometry(.35, .012, 6, 18), solid('#f3e3c2', { metalness: .35, roughness: .4 }));
+    trim.rotation.x = Math.PI / 2; trim.position.set(x, 2.47, z); addO(trim);
     var bulb = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8),
       solid('#fff1c9', { emissive: '#ffd489', emissiveIntensity: .9 }));
     bulb.position.set(x, 2.44, z); addO(bulb);
@@ -2480,6 +2492,8 @@
     var g2 = new THREE.Group();
     var pole = new THREE.Mesh(new THREE.CylinderGeometry(.07, .1, 4.0, 10), solid('#4a5668', { metalness: .6 }));
     pole.position.y = 2.0; pole.userData.v9 = true; g2.add(pole);
+    var panel = new THREE.Mesh(new THREE.BoxGeometry(.08, .22, .03), solid('#5d6b7d'));
+    panel.position.set(0, 1.2, .08); panel.userData.v9 = true; g2.add(panel);
     var arm = new THREE.Mesh(new THREE.BoxGeometry(1.1, .08, .08), solid('#4a5668', { metalness: .6 }));
     arm.position.set(.5, 3.95, 0); arm.userData.v9 = true; g2.add(arm);
     var head = new THREE.Mesh(new THREE.BoxGeometry(.7, .1, .3),
@@ -2502,6 +2516,8 @@
     housing.position.set(0, 3.0, 0); housing.userData.v9 = true; g2.add(housing);
     var lamps = [];
     ['#e2523a', '#f2c14e', '#54d18a'].forEach(function (c, i) {
+      var hood = new THREE.Mesh(new THREE.BoxGeometry(.24, .03, .12), solid('#1b2430'));
+      hood.position.set(0, 3.38 - i * .3, .22); hood.userData.v9 = true; g2.add(hood);
       var l = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8),
         solid(c, { emissive: c, emissiveIntensity: i === 2 ? 1.0 : .06 }));
       l.position.set(0, 3.3 - i * .3, .16); l.userData.v9 = true; g2.add(l); lamps.push(l);
@@ -2858,6 +2874,11 @@
     bx(.62, .62, .04, '#6cc2f0', 39.8, 1.9, 32.78, true);
     box(1.1, 1.7, .72, '#c3ccd6', 34.5, .85, 32.4);
     box(.04, 1.1, .03, '#8a96a5', 34.95, .95, 32.78);
+    // coffee jars on counter
+    [[36.1, 32.55, '#8b5e34'], [36.45, 32.55, '#5f7fa8'], [36.78, 32.55, '#b08a3d']].forEach(function (j) {
+      cyl(.07, .16, j[2], j[0], 1.14, j[1]);
+      cyl(.08, .02, '#d9c39a', j[0], 1.23, j[1]);
+    });
     box(4.4, .14, 1.5, solid('#a9793f', { map: woodTex('#a9793f', '#77522e', 3, 1) }), 37, .87, 29.2);
     [35.6, 37, 38.4].forEach(function (px) {
       cyl(.29, .14, '#d9c9a8', px, .74, 28.1);
