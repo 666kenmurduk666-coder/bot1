@@ -611,7 +611,7 @@ const CHAT_REPLIES={
   fun:['Party mode na! 🎉','Sayaw tayo! 💃','Game time! 🎮'],
   default:['Sige, CEO! 👍','Copy that! ✨','Opo, nasa trabaho na kami 🤖','Ping ko ang team 💬']
 };
-const mmoLogSeen={};
+const mmoLogSeen={},loggedConvLines={};
 function mmoLog(who,text,color){
   const log=$('mmoChatLog');if(!log)return;
   // Huwag ulitin ang same line (hal. event stage welcome) sa loob ng 1 minuto.
@@ -4912,7 +4912,14 @@ function frame3D(){
     if(bub3d.dataset.who!==speaker||bub3d.dataset.line!==line){
       bub3d.dataset.who=speaker;bub3d.dataset.line=line;bub3d.dataset.t0=t;
       bub3d.innerHTML='<b>'+esc(whoLabel||(meta(speaker).i||'✨')+' '+meta(speaker).n)+'</b>'+esc(line);
-      if(!isChat){const m=meta(speaker);mmoLog((m.i||'✨')+' '+m.n,line,m.c||'#7fc7ff');}
+      if(!isChat){
+        // Ang 3D bubble ay umiikot sa iisang 4-line conversation — isang beses lang ilagay sa chat.
+        const ck=useConv?((conv&&conv.id||'conv')+'|'+speaker+'|'+line):null;
+        if(!ck||!loggedConvLines[ck]){
+          if(ck)loggedConvLines[ck]=1;
+          const m=meta(speaker);mmoLog((m.i||'✨')+' '+m.n,line,m.c||'#7fc7ff');
+        }
+      }
     }
     bub3d.style.display=(t-Number(bub3d.dataset.t0||0)<3400)?'block':'none';
     bub3d.style.left=((v.x*.5+.5)*w)+'px';bub3d.style.top=((-v.y*.5+.5)*h)+'px';
