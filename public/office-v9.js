@@ -3309,7 +3309,7 @@
         }
       }
       fx.shafts.forEach(function (a) {
-        a.m.material.opacity = .045 + .025 * (.5 + .5 * Math.sin(now / 900 + a.p));
+        a.m.material.opacity = .04 + .03 * (.5 + .5 * Math.sin(now / 900 + a.p)) + .01 * (.5 + .5 * Math.sin(now / 2300 + a.p * .7));
       });
       if (fx.dust && fx.dust.pts) {
         var arr = fx.dust.pts.geometry.attributes.position.array;
@@ -3335,16 +3335,20 @@
         a.m.scale.set(.12 + ph * .1, .2 + ph * .16, 1);
       });
       fx.sparkles.forEach(function (a) {
+        if (a.baseY === undefined) a.baseY = a.m.position.y;
         var v = .5 + .5 * Math.sin(now / 520 + a.p);
-        a.m.material.opacity = .15 + .6 * v;
+        var v2 = .5 + .5 * Math.sin(now / 1300 + a.p * 1.4);
+        a.m.material.opacity = .12 + .55 * v + .15 * v2;
         a.m.position.x = a.base + Math.sin(now / 900 + a.p) * .07;
-        a.m.scale.setScalar(.07 + .06 * v);
+        a.m.position.y = a.baseY + Math.sin(now / 1100 + a.p * .8) * .03;
+        a.m.scale.setScalar(.065 + .055 * v + .02 * v2);
       });
       if (now - (tick.plants || 0) > 80) {
         tick.plants = now;
         fx.plants.forEach(function (a) {
-          a.m.rotation.z = a.bz + Math.sin(now / 1200 + a.p) * .035;
-          a.m.rotation.x = a.bx + Math.cos(now / 1450 + a.p) * .03;
+          var breathe = .5 + .5 * Math.sin(now / 4200 + a.p * .3);
+          a.m.rotation.z = a.bz + Math.sin(now / 1200 + a.p) * (.03 + .015 * breathe) + Math.sin(now / 2600 + a.p * 1.7) * .01;
+          a.m.rotation.x = a.bx + Math.cos(now / 1450 + a.p) * (.025 + .012 * breathe) + Math.cos(now / 3100 + a.p * 1.3) * .008;
         });
       }
       fx.birds.forEach(function (a) {
@@ -3375,16 +3379,16 @@
         }
       });
       fx.glints.forEach(function (a) {
-        a.m.material.opacity = .08 + .07 * (.5 + .5 * Math.sin(now / 1100 + a.p));
+        a.m.material.opacity = .07 + .06 * (.5 + .5 * Math.sin(now / 1100 + a.p)) + .03 * (.5 + .5 * Math.sin(now / 2700 + a.p * .6));
       });
       fx.bands.forEach(function (a) {
-        a.m.material.opacity = .1 + .05 * (.5 + .5 * Math.sin(now / 1600 + a.p));
+        a.m.material.opacity = .09 + .045 * (.5 + .5 * Math.sin(now / 1600 + a.p)) + .02 * (.5 + .5 * Math.sin(now / 3400 + a.p * .8));
       });
       fx.blinds.forEach(function (a) {
-        a.m.material.opacity = .13 + .04 * (.5 + .5 * Math.sin(now / 2100 + a.p));
+        a.m.material.opacity = .12 + .035 * (.5 + .5 * Math.sin(now / 2100 + a.p)) + .015 * (.5 + .5 * Math.sin(now / 5200 + a.p * .5));
       });
       fx.reflections.forEach(function (a) {
-        a.m.material.opacity = a.base * (.8 + .35 * (.5 + .5 * Math.sin(now / 1400 + a.p)));
+        a.m.material.opacity = a.base * (.78 + .28 * (.5 + .5 * Math.sin(now / 1400 + a.p)) + .12 * (.5 + .5 * Math.sin(now / 3600 + a.p * .7)));
       });
       var dt = Math.min(.12, (now - (tick.carLast || now)) / 1000);
       tick.carLast = now;

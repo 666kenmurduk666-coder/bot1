@@ -63,7 +63,7 @@ const protectedHashes = {
   // agent error visibility, secrets separation, CEO session tokens, preflight/quota
   // routing, approval/publish/finance ledgers and hashed backup restore drill.
   // Hash below explicitly refreshed for Batch 3.
-  'server.js': 'fd68b31323ecd20fb7bd701349e8db2560f004c3e281486f518d03b690bdb98b',
+  'server.js': '2d838c4fe8051fd4763282b00f952eedd5b66f45947c64e52a7a7a422798d230',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -111,7 +111,7 @@ const protectedHashes = {
   // hidden-tab skip, throttled frame3D fx updates; cache-bust office-v9 v41/v42.
   // 2026-11-21: ARYASKY-style beautification pass - richer landscape, farm, entrance
   // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
-  'public/index.html': '1ac030a124135e9eb8865a2d5e5ba13500e9cd00752017235230dd02c9b82c3a',
+  'public/index.html': '2b513cbc8a525e331f508a972c0330c662add4f5cfa1c9dda492594b917ba4ac',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -171,7 +171,7 @@ const protectedHashes = {
   // rooftop/basement by default in buildBatch1World to cut draw calls/CPU.
   // 2026-11-21: beautification pass - cohesive exterior/interior visual polish
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
-  'public/office-v9.js': 'cfde64acc1acd576b2d95d77ddfb2100df9867d0223784d1c87fc4e75e57a786',
+  'public/office-v9.js': '2ec56122729b3b90642f5e1d05cd8bb72aa235181c96ec0056653f69e8023d09',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
