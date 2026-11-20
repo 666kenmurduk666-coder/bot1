@@ -580,7 +580,7 @@
     var dom = renderer3d && renderer3d.domElement; if (!dom || dom.dataset.studioPick) return; dom.dataset.studioPick = '1';
     window.addEventListener('mouseup', function (e) {
       var card = $('botCard');
-      if (card && card.contains(e.target)) return;
+      if (card && e.target && e.target.nodeType && card.contains(e.target)) return;
       if (e.button !== 0 || !camera3d || !window.__officeV9) return;
       if (typeof view === 'undefined' || view !== 'office') return;
       var r = dom.getBoundingClientRect();
@@ -633,7 +633,7 @@
 
   // ---------- boot ----------
   function boot() {
-    if ($('#v-layout .card')) buildShell();
+    if (document.querySelector('#v-layout .card')) buildShell();
     addPhotoTools();
     addChatQuick();
     addBotCard();
