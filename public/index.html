@@ -86,7 +86,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .v9bub:after{border-top-color:#2f4a6d}
 /* MMORPG world chat */
 #mmoChat{position:absolute;left:10px;bottom:10px;width:min(300px,60%);height:124px;min-width:200px;max-width:min(560px,90%);min-height:96px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
-#mmoChat.min{height:24px!important;width:auto!important;min-width:0!important;max-width:none!important}
+#mmoChat.min{height:24px!important;min-height:0!important;width:auto!important;min-width:0!important;max-width:none!important}
 #mmoChat.min #mmoChatHead{padding:2px 6px;font-size:11px}
 #mmoChat.min #mmoChatFull,#mmoChat.min #mmoChatHint,#mmoChat.min #mmoChatSize,#mmoChat.min #mmoChatMin,#mmoChat.min #mmoChatBody,#mmoChat.min #mmoChatResize{display:none}
 #mmoChat.min #mmoChatTiny{display:inline}
@@ -191,7 +191,7 @@ dialog::backdrop{background:#000a}
 .tileLabel{position:absolute;left:8px;top:8px;background:#0d1b38d9;border:1px solid #3a6bb5;border-radius:6px;padding:3px 8px;font-size:10px}
 </style>
 </head>
-<body class="ui-hidden">
+<body>
 <div class="app">
 <aside class="sidebar">
   <div class="profile">
@@ -255,7 +255,7 @@ dialog::backdrop{background:#000a}
         </div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
-      <div id="mmoChat">
+      <div id="mmoChat" style="width:200px;height:100px" title="💬 World chat — pindutin ang – para mas maliit pa">
         <div id="mmoChatHead" title="Click para itago / ipakita"><span>💬 WORLD CHAT</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
         <div id="mmoChatBody">
           <div id="mmoChatLog"></div>
@@ -6656,7 +6656,7 @@ function createUiHideBtn(){
   const bar=document.getElementById('officeTools');if(!bar)return;
   const b=document.createElement('button');b.id='uiHideBtn';b.title='Itago / ipakita ang floating panels (shortcut: H)';
   b.onclick=()=>toggleUiHide();bar.appendChild(b);
-  try{const v=localStorage.getItem('uiHidden');if(v==='0')document.body.classList.remove('ui-hidden');else{document.body.classList.add('ui-hidden');if(v===null)localStorage.setItem('uiHidden','1');}}catch(e){}
+  try{const v=localStorage.getItem('uiHidden2');if(v==='1')document.body.classList.add('ui-hidden');else document.body.classList.remove('ui-hidden');}catch(e){}
   updateUiHideBtn();
 }
 function toggleUiHide(force){
@@ -6668,7 +6668,7 @@ function toggleUiHide(force){
     try{var cv=document.querySelector('#oc3d canvas');if(cv&&cv.focus)cv.focus();}catch(e){}
   }
   document.body.classList.toggle('ui-hidden',on);
-  try{localStorage.setItem('uiHidden',on?'1':'0');}catch(e){}
+  try{localStorage.setItem('uiHidden2',on?'1':'0');}catch(e){}
   try{window.dispatchEvent(new Event('resize'));}catch(e){}
   updateUiHideBtn();
 }

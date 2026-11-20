@@ -911,3 +911,34 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Live data APIs: `/api/mall` → `mall` array `23` entries;
   `/api/bazaar/commercials` → `commercials` array `12` entries.
 
+## 2026-11-20 — UI clarity + maliit na world chat (index.html only)
+
+### Problema
+- May screenshot na sinend ang user; hindi makikita ng model ang image, kaya
+  tiningnan ang live DOM. Natagpuan: `document.body.className === "ui-hidden"`
+  at `getComputedStyle(#mmoChat).display === "none"` — buong UI at world chat
+  ay nakatago kaya "hindi ma-gets" ang itsura.
+- Dalawang dahilan: (1) `<body class="ui-hidden">` ang default sa HTML, at
+  (2) `createUiHideBtn()` ay nagsave ng `localStorage.uiHidden='1'` kahit
+  walang explicit choice, kaya persistant ang hidden state.
+
+### Changes (walang binagong JS module — `/office-v9.js?v=28` ang laban)
+- `<body class="ui-hidden">` → `<body>`: makikita agad ang sidebar, topbar,
+  office bar at mga pindutan. Ang `H` key at `👁 Hide/Show UI` button ay
+  nananatiling available para sa full-screen 3D view.
+- Bagong preference key na `uiHidden2`: `null`/`0` = UI visible, `1` = hidden.
+  Hindi na maaapektuhan ng lumang `uiHidden='1'` na auto-save.
+- `#mmoChat` ay lalabas na **maliit na 200×100 window** (hindi nakatago),
+  may welcome/message log agad. Ang `–` button ay nagc-collapse sa 24px bar;
+  click sa header para ibalik. Naayos din ang `min-height:96px` na nag-iwan
+  ng walang lamang 96px box sa min state (`min-height:0!important`).
+- Service worker ay allowlist lang ng static assets, hindi naka-cache ang
+  HTML — kaya walang bagong `?v=` bump na kailangan.
+
+### Verification (lokal)
+- `bodyClass=""`, `uiHidden=false`, `sidebar=flex`, `officeBar=flex`.
+- Chat `200×100` @ bottom-left, `logText` may laman; `–` → `108×24`;
+  header click → bumalik sa `200×100`. Walang console errors.
+- Lahat ng 4 na tests ay PASADO pagkatapos i-update ang index.html hash sa
+  `tests/strategy-baseline.js`.
+

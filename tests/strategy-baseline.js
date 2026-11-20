@@ -55,7 +55,9 @@ const protectedHashes = {
   // office-v9.js edit needs a fresh query string). Cinematic CSS grade, tighter
   // hero camera (phi .44 / theta .30 / r36 / fov50), brighter .v9bub styling,
   // glass south facade and legible signs remain. White-out guards unchanged.
-  'public/index.html': '55998418719f5cc7ee7347f75c18238a4f718b73bd18fbf7bf81064a838aae08',
+  // UI clarity fix: body no longer defaults to ui-hidden (H still toggles);
+  // world chat opens as a small 200x100 window, – collapses it to a 24px bar.
+  'public/index.html': 'e09b1ee0574f1de717a8ab0c77528df04036aff21985e1b36e8c1d8ca3f5c28c',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
