@@ -83,6 +83,13 @@
     cuteBots.forEach(function (b) { if (b.bubble && b.bubble.parentNode) b.bubble.parentNode.removeChild(b.bubble); });
     cuteBots.length = 0;
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
+    // Safe when called standalone (self-heal): replace the mounted scene instead
+    // of stacking a second office on top of the fallback zone map.
+    try {
+      level3d.clear();
+      structureGroup = new THREE.Group();
+      level3d.add(structureGroup);
+    } catch (e) {}
 
     scene3d.background = new THREE.Color('#e9eef5');
     scene3d.fog = new THREE.Fog('#e9eef5', 75, 190);
@@ -252,6 +259,7 @@
     if (conv && Date.now() - conv.t < 120000) return;
     try {
       var pass = (typeof ceoPass !== 'undefined' && ceoPass) ? ceoPass : '';
+      if (!pass) return; // /api/conversation is CEO-only — never fire a doomed 403
       fetch('/api/conversation', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pass: pass }) })
         .then(function (r) { return r.json(); })
         .then(function (j) { if (j && j.ok && typeof refresh === 'function') refresh(); })
@@ -263,14 +271,17 @@
   // (slow network / early init3D). In that case it builds the old zone map and
   // never comes back to HQ. Self-heal: if we are in HQ with a level but no v9
   // bots, rebuild once the dust has settled.
-  setTimeout(function () {
+  var healTries = 0;
+  var healTimer = setInterval(function () {
+    healTries++;
     try {
       if (typeof selRoom !== 'undefined' && selRoom === 'hq' &&
           typeof level3d !== 'undefined' && level3d && cuteBots.length === 0) {
         buildRealOffice3d();
       }
     } catch (e) {}
-  }, 600);
+    if (cuteBots.length || healTries >= 40) clearInterval(healTimer);
+  }, 700);
 
   window.buildRealOffice3d = buildRealOffice3d;
   // Expose tick for diagnostics: some embedded browsers pause requestAnimationFrame.

@@ -211,3 +211,17 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - **Lesson:** palaging i-check ang console sa **warning** level, hindi lang error —
   dito lumalabas ang "officeLoop recovered" na mga nahuling exception.
 
+### Final fix para sa load-order (v4)
+- Ang 600ms self-heal ay hindi sapat sa live — ang `init3D()` ay tumatakbo sa
+  iba't ibang oras depende sa network. **Kaya inilipat ang `<script>` ng
+  `office-v9.js?v=4` bago ang main inline script** (agad pagkatapos ng
+  `three.min.js`). Laging defined na ang `buildRealOffice3d()` pag tinawag ito
+  ng `buildRoom3d()` — wala nang race.
+- Idinagdag pa rin ang **repeating self-heal** (70ms x hanggang 40 tries) bilang
+  backup, at ginawang **standalone-safe** ang `buildRealOffice3d()` (clear muna
+  ng `level3d` + bagong `structureGroup`) para hindi mag-stack ang dalawang scene.
+- Hindi na nagfi-fire ng `/api/conversation` nang walang `ceoPass` — kaya wala
+  nang 403 sa console ng mga bisitang hindi pa naka-unlock.
+- Cache-bust: `?v=4`. Kapag binago ulit ang module, bump ang `?v=` sa **dalawang**
+  lugar: ang bagong early `<script>` tag (malapit sa `three.min.js`).
+
