@@ -357,15 +357,19 @@
     }, 1, 1);
   }
   function blindTex() {
-    return makeTex('blind', function (q, S) {
+    return makeTex('blind-v2', function (q, S) {
       q.clearRect(0, 0, S, S);
-      for (var i = 0; i < 6; i++) {
-        var y = 12 + i * 42, h = 22;
+      for (var i = 0; i < 7; i++) {
+        var y = 8 + i * 36, h = 18;
         var g = q.createLinearGradient(0, y, 0, y + h);
         g.addColorStop(0, 'rgba(12,22,40,0)');
-        g.addColorStop(.5, 'rgba(12,22,40,.85)');
+        g.addColorStop(.35, 'rgba(12,22,40,.55)');
+        g.addColorStop(.5, 'rgba(12,22,40,.82)');
+        g.addColorStop(.65, 'rgba(12,22,40,.55)');
         g.addColorStop(1, 'rgba(12,22,40,0)');
         q.fillStyle = g; q.fillRect(0, y, S, h);
+        q.fillStyle = 'rgba(255,255,255,.04)';
+        q.fillRect(0, y + 1, S, 2);
       }
     }, 1, 1);
   }
@@ -510,17 +514,21 @@
     }, 14, 14);
   }
   function ceilingTex() {
-    return makeTex('ceiling-tile', function (q, S) {
+    return makeTex('ceiling-tile-v2', function (q, S) {
       q.fillStyle = '#e9edf0'; q.fillRect(0, 0, S, S);
       var r = rnd(23);
-      for (var i = 0; i < 1900; i++) {
-        q.fillStyle = 'rgba(86,102,118,' + (.018 + r() * .035).toFixed(3) + ')';
+      for (var i = 0; i < 2200; i++) {
+        q.fillStyle = 'rgba(86,102,118,' + (.015 + r() * .04).toFixed(3) + ')';
         q.fillRect(r() * S, r() * S, 2, 2);
       }
       q.strokeStyle = 'rgba(118,132,146,.34)'; q.lineWidth = 5;
       q.strokeRect(0, 0, S, S);
       q.strokeStyle = 'rgba(255,255,255,.55)'; q.lineWidth = 2;
       q.beginPath(); q.moveTo(5, 5); q.lineTo(S - 5, 5); q.stroke();
+      // subtle inner tile cross
+      q.strokeStyle = 'rgba(118,132,146,.12)'; q.lineWidth = 2;
+      q.beginPath(); q.moveTo(S / 2, 8); q.lineTo(S / 2, S - 8); q.stroke();
+      q.beginPath(); q.moveTo(8, S / 2); q.lineTo(S - 8, S / 2); q.stroke();
     }, 1, 1);
   }
   function metalTex() {
@@ -931,6 +939,13 @@
     });
     var grille = new THREE.Mesh(new THREE.BoxGeometry(.04, .12, .52), solid('#2f394b'));
     grille.position.set(dir * 1.2, .36, 0); grille.userData.v9 = true; g2.add(grille);
+    // side mirrors and rear plate
+    [-.54, .54].forEach(function (dz) {
+      var mirror = new THREE.Mesh(new THREE.BoxGeometry(.08, .06, .1), paint);
+      mirror.position.set(dir * .36, .68, dz); mirror.userData.v9 = true; g2.add(mirror);
+    });
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(.03, .08, .28), solid('#f4f6f8'));
+    plate.position.set(-dir * 1.185, .34, 0); plate.userData.v9 = true; g2.add(plate);
     [-.68, .68].forEach(function (dx) {
       [-.49, .49].forEach(function (dz) {
         var w = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .11, 12), solid('#1b2029'));
@@ -2172,6 +2187,15 @@
       transparent: true, opacity: .35, blending: THREE.AdditiveBlending,
       depthWrite: false, toneMapped: false }));
     s.position.set(cx, .78, cz); s.scale.set(1.4, 1.4, 1); addO(s);
+    // lily pads and edge stones
+    [[-.35, .28, .18], [.32, -.22, .15], [.05, .38, .12]].forEach(function (p) {
+      var pad = new THREE.Mesh(new THREE.CircleGeometry(p[2], 12), solid('#4f9a63', { roughness: .85 }));
+      pad.rotation.x = -Math.PI / 2; pad.position.set(cx + p[0] * r, .016, cz + p[1] * r); addO(pad);
+    });
+    [[.9, .1], [-.85, -.2], [.2, -.92]].forEach(function (p) {
+      var stone = new THREE.Mesh(new THREE.SphereGeometry(.09, 7, 6), solid('#aeb8c4', { roughness: .9 }));
+      stone.scale.y = .55; stone.position.set(cx + p[0] * r, .02, cz + p[1] * r); addO(stone);
+    });
   }
   function parkBench(x, z) {
     box(1.3, .1, .45, '#a9793f', x, .45, z);
