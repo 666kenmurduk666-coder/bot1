@@ -1073,3 +1073,21 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `H`/`.v9bub` CSS exemption were verified.
 - Render sample (day): `meanLum=91.6`, `dark=33%`, `green=9.5%` — no white-out.
 
+### Live verification (production, commit `f04e62e`)
+- Render served the new HTML: `/office-v9.js?v=32`, `/office-studio.js?v=34`.
+- Ran `node restore-after-deploy.js`: `MALL ok=23`, `COMMERCIALS ok=19`,
+  `AI KEYS 200 OK`; final `mall=23`, `commercials=12`.
+- Studio World bar mounted live; v9 API (`setNight/setWeather/setSeason/
+  setWorldFeature`) present; no console errors.
+- Day check (after `frame3D()`): `bg=fog=93a1b3`, `amb=.58`, `expo=.85`,
+  `isNight=0`, veil `0`.
+- Storm check: veil `.62`, rain/flash/puddles/rainbow all visible, guards still
+  `bg=fog=93a1b3`, `amb=.58`, `expo=.85` (`isNight=1` only from the explicit
+  night toggle, owned by the app).
+- 60 forced ticks live: geometries `2933→2933`, textures `133→133`, render
+  calls `3041→3041` — flat, no leak.
+- DOM controls verified: day/rain/fiesta selections, drones/neon toggles;
+  settings restored to defaults in the test profile afterward.
+- Live hero pixels: `meanLum=108.9`, `dark=19.5%`, `green=10.5%`,
+  `bg=0.1%` — no white-out; greens clearly visible.
+
