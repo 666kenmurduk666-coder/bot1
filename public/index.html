@@ -2252,6 +2252,10 @@ function botStep(c,dx,dz,st,t,baseY){
   // 💃 masiglang bounce habang naglalakad + konting tapon ng katawan
   g.position.y=(baseY||0)+.06+Math.abs(Math.sin(t/150+c.ph))*.17;
   g.rotation.z=Math.sin(t/150+c.ph)*.06;
+  // 👣 mahinang footsteps (max isa bawat ~600ms, buong opisina)
+  if(typeof soundOn!=='undefined'&&soundOn&&Date.now()-(window.__lastStepSnd||0)>600){
+    window.__lastStepSnd=Date.now();try{snd('step')}catch(e){}
+  }
 }
 // MGA SPOT SA 1F LANG — walang elevator/roof, iwas sa pagkakapisan
 const GROUND_SPOTS={
@@ -2270,6 +2274,26 @@ function groundRoute(c,tx,tz){
     if(to!=='corr'){const b=OFFICE_ROOMS.find(q=>q.id===to).door;r.push({x:b.x,z:7.2,y:0},{x:b.x,z:b.z,y:0});}
   }
   r.push({x:tx,z:tz,y:0});c.route=r;c.routeT=0;c.target={x:tx,z:tz};
+}
+/* 🚶 GALA-GALA: pumili ng bagong pupuntahan sa loob ng office.
+   Madalas malapit sa current room, minsan sa ibang zone — hindi nakatayo lang. */
+function pickWanderSpot(c){
+  const g=c.group;
+  const here=roomAtXY(g.position.x,g.position.z)||'work';
+  const ids=[here,here,here,'work','pantry','fun','bay',here==='ceo'?'work':'ceo'];
+  const id=ids[Math.floor(Math.random()*ids.length)];
+  const a=GROUND_SPOTS[id]||GROUND_SPOTS.work;
+  const free=a.filter(p=>!SPOT_TAKEN[p[0]+','+p[1]]||SPOT_TAKEN[p[0]+','+p[1]]<Date.now());
+  const pool=free.length?free:a;
+  const p=pool[Math.floor(Math.random()*pool.length)];
+  SPOT_TAKEN[p[0]+','+p[1]]=Date.now()+12000;
+  return {x:p[0]+(Math.random()-.5)*.6,z:p[1]+(Math.random()-.5)*.6};
+}
+function wander(c){const p=pickWanderSpot(c);groundRoute(c,p.x,p.z);}
+function botArrived(c){
+  c.target={x:c.group.position.x,z:c.group.position.z};
+  if(c.actNext)startBotAct(c);
+  else{c.wait=200+Math.random()*250;wander(c);} // walang activity → tuloy ang gala
 }
 /* ===== 🪑 MALINAW NA KAGAMITAN: sofa, upuan, printer, cabinet, telepono ===== */
 function chair3d(x,z,col){
@@ -4289,7 +4313,7 @@ function frame3D(){
       }
       // WATCHDOG: kung >2.5s hindi naabot ang waypoint, i-reset
       c.routeT=(c.routeT||0)+dt*16.667;
-      if(c.routeT>2500){c.route=[];c.actNext=null;releaseBotSlots(c);c.wait=600;c.target={x:g.position.x,z:g.position.z};}
+      if(c.routeT>4000){c.route=[];c.actNext=null;releaseBotSlots(c);c.wait=250;wander(c);}
     } else c.routeT=0;
     // contact shadow: sumusunod sa bot, nakadikit sa sahig na tinatayuan
     if(c.shadow){
@@ -4316,8 +4340,7 @@ function frame3D(){
         g.rotation.y=dir>0?0:Math.PI;
         if(dir<0?g.position.z<=wp.z+.05:g.position.z>=wp.z-.05){
           g.position.z=wp.z;g.position.y=wp.y;c.route.shift();
-          if(!c.route.length){c.target={x:g.position.x,z:g.position.z};
-            startBotAct(c);}
+          if(!c.route.length)botArrived(c);
         }
       } else if(wp.lift){
         // glass elevator: pumasok sa cage, tapos inaanod pataas/pababa
@@ -4334,8 +4357,7 @@ function frame3D(){
           g.rotation.y+=.01;
           if(Math.abs(g.position.y-wp.y)<.06){
             g.position.y=wp.y;c.floorY=wp.y;c.route.shift();snd('ding');
-            if(!c.route.length){c.target={x:g.position.x,z:g.position.z};
-            startBotAct(c);}
+            if(!c.route.length)botArrived(c);
           }
         }
       } else {
@@ -4344,8 +4366,7 @@ function frame3D(){
         if(d>.08)botStep(c,dx,dz,Math.min(d,.022*dt),t,wp.y||0);
         else {
           c.floorY=0;c.route.shift();c.routeT=0;
-          if(!c.route.length){c.target={x:g.position.x,z:g.position.z};
-            startBotAct(c);}
+          if(!c.route.length)botArrived(c);
         }
       }
       return;
@@ -4368,12 +4389,12 @@ function frame3D(){
       }
       else{g.position.y=.05+Math.sin(t/420+c.ph)*.03;g.rotation.y+=.002*dt;}
       if(c.act!=='chill')g.rotation.x+=(0-g.rotation.x)*.1;
-      if(c.actT<=0){releaseBotSlots(c);c.act=null;c.wait=1200;}
+      if(c.actT<=0){releaseBotSlots(c);c.act=null;c.wait=200;wander(c);}
     } else {
       g.position.y=.045+Math.sin(t/420+c.ph)*.03;
       g.rotation.y+=.002*dt;
       if(c.wait<=0){
-        c.wait=3200+Math.random()*4200;
+        c.wait=1600+Math.random()*2200;
         c.tower=null;
         const here=roomAtXY(g.position.x,g.position.z)||'work';
         const spot=id=>{
@@ -4384,9 +4405,9 @@ function frame3D(){
           return {x:pick[0]+(Math.random()-.5)*.5,z:pick[1]+(Math.random()-.5)*.5};
         };
         const roll=Math.random();
-        if(roll<.36){ // gala malapit sa kwarto
-          const a=spot(here==='corr'?'work':here);groundRoute(c,a.x,a.z);
-        } else if(roll<.60){ // 🛋️ chill sa sala: nakaupo sa sofa + may tasa ng kape
+        if(roll<.62){ // 🚶 gala-gala: palaging may bagong pupuntahan
+          wander(c);
+        } else if(roll<.70){ // 🛋️ chill sa sala: nakaupo sa sofa + may tasa ng kape
           const slot=SALA_SPOTS.find(s=>!s.taken||s.t<Date.now());
           if(slot){
             slot.taken=true;slot.t=Date.now()+50000;c.salaSlot=slot;
@@ -4396,15 +4417,15 @@ function frame3D(){
             const a=spot('pantry');groundRoute(c,a.x,a.z);
             c.actNext={type:'break',dur:6000+Math.random()*4000};
           }
-        } else if(roll<.72){ // kape sa pantry
+        } else if(roll<.80){ // kape sa pantry
           const a=spot('pantry');groundRoute(c,a.x,a.z);
           c.actNext={type:Math.random()<.5?'drink':'break',dur:6000+Math.random()*4000};
-        } else if(roll<.84){ // sayawan / banda sa sala
+        } else if(roll<.90){ // sayawan / banda sa sala
           const slot=roll<.76?BAND_SPOTS.find(s=>!s.taken||s.t<Date.now()):null;
           const a=spot('fun');groundRoute(c,slot?slot.x:a.x,slot?slot.z:a.z);
           if(slot){slot.taken=true;slot.t=Date.now()+45000;c.bandSlot=slot;c.actNext={type:'band',dur:12000+Math.random()*6000};}
           else c.actNext={type:'dance',dur:7000+Math.random()*3000};
-        } else if(roll<.94){ // pahinga sa sala
+        } else if(roll<.96){ // pahinga sa sala
           const a=spot('fun');groundRoute(c,a.x,a.z);c.actNext={type:'nap',dur:8000+Math.random()*4000};
         } else { // cool-down sa pantry (pool nasa 2F, bots nasa 1F lang)
           const a=spot('pantry');groundRoute(c,a.x,a.z);c.actNext={type:'swim',dur:6000+Math.random()*3000};
