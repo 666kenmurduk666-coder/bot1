@@ -3165,6 +3165,8 @@
     var w = host.clientWidth || 900, h = host.clientHeight || 520;
     var placed = [];
     cuteBots.forEach(function (b) {
+      b.wasShown = !!b.shown;
+      b.shown = false;
       b.bubble.style.display = 'none';
       b.bubble.classList.remove('talking');
       b.talking = false;
@@ -3182,7 +3184,11 @@
       var v = new THREE.Vector3(bot.group.position.x, bot.group.position.y + 2.15, bot.group.position.z).project(camera3d);
       if (v.z >= 1) continue;
       var el = bot.bubble;
-      el.innerHTML = '<b>' + esc(bot.n) + '</b>' + esc(line.text);
+      var html = '<b>' + esc(bot.n) + '</b>' + esc(line.text);
+      // ⏱ 4D time-life: a new line (or a freshly visible bubble) starts a fresh
+      // pop-in clock; the transform below keeps it floating while it talks.
+      if (el.innerHTML !== html || !bot.wasShown) { bot.bornAt = now; el.innerHTML = html; }
+      bot.shown = true;
       el.style.display = 'block';
       el.classList.add('talking');
       var bw = el.offsetWidth || 280, bh = el.offsetHeight || 70;
@@ -3209,6 +3215,17 @@
     placed.forEach(function (r) {
       r.el.style.left = (r.x + r.w / 2) + 'px';
       r.el.style.top = (r.y + r.h) + 'px';
+      // ⏱ 4D: pop-in ease + tiny overshoot, gentle float, sway and a soft
+      // talking pulse — all driven by time (the 4th dimension).
+      var bot = r.bot, age = Math.max(0, now - (bot.bornAt || now));
+      var t = Math.min(1, age / 300);
+      var ease = 1 - Math.pow(1 - t, 3);
+      var pop = Math.sin(t * Math.PI) * 0.055;
+      var sc = (0.74 + 0.26 * ease + pop) * (1 + Math.sin(now / 300 + (bot.phase || 0)) * 0.012);
+      var fl = Math.sin(now / 660 + (bot.phase || 0)) * 3.2;
+      var sw = Math.sin(now / 1000 + (bot.phase || 0) * 1.6) * 1.3;
+      r.el.style.transform = 'translate(-50%,-100%) translateY(' + fl.toFixed(2) + 'px) rotate(' + sw.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+      r.el.style.opacity = Math.min(1, age / 170).toFixed(3);
     });
   }
   function tick() {
