@@ -869,6 +869,11 @@
     var face = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
       new THREE.MeshBasicMaterial({ map: artTex(seed), side: THREE.DoubleSide }));
     face.position.z = .04; face.userData.v9 = true; g2.add(face);
+    // picture light
+    var lightBar = new THREE.Mesh(new THREE.BoxGeometry(w * 0.45, .03, .06), solid('#3f4f63', { metalness: .35, roughness: .4 }));
+    lightBar.position.set(0, h / 2 + .1, .07); lightBar.userData.v9 = true; g2.add(lightBar);
+    var glow = new THREE.Mesh(new THREE.BoxGeometry(w * 0.38, .015, .02), solid('#ffe8b8', { emissive: '#ffd89a', emissiveIntensity: .45 }));
+    glow.position.set(0, h / 2 + .085, .1); glow.userData.v9 = true; g2.add(glow);
     g2.position.set(x, y, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function bookshelf(x, z, rot) {
@@ -1391,6 +1396,17 @@
     post.position.y = .52; post.userData.v9 = true; g2.add(post);
     var foot = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .5), solid('#3b475b'));
     foot.position.y = .04; foot.userData.v9 = true; g2.add(foot);
+    // webcam and speaker bar
+    var cam = new THREE.Mesh(new THREE.BoxGeometry(.12, .06, .05), solid('#2f394b'));
+    cam.position.set(0, 2.52, .08); cam.userData.v9 = true; g2.add(cam);
+    var camLens = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .02, 8), solid('#5fd6ff', { emissive: '#5fd6ff', emissiveIntensity: .3 }));
+    camLens.rotation.x = Math.PI / 2; camLens.position.set(0, 2.52, .11); camLens.userData.v9 = true; g2.add(camLens);
+    var speaker = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .05), solid('#2c3648'));
+    speaker.position.set(0, 1.06, .06); speaker.userData.v9 = true; g2.add(speaker);
+    for (var si = -2; si <= 2; si++) {
+      var dot = new THREE.Mesh(new THREE.BoxGeometry(.03, .015, .01), solid('#5d6b7d'));
+      dot.position.set(si * .12, 1.06, .09); dot.userData.v9 = true; g2.add(dot);
+    }
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
     reflection(x, z, 1.5, .7, '#7fc7ff', rot || 0, .05);
   }
@@ -1804,6 +1820,12 @@
   function meetingTable(x, z, w) {
     shadow(x, z, w / 2 + .5, 1.25, .17);
     box(w, .13, 1.8, solid('#9a6d40', { map: woodTex('#9a6d40', '#6d4a29', 3, 1), roughness: .45 }), x, .79, z);
+    // edge band and cable ports
+    box(w + .02, .02, 1.82, '#6d4a29', x, .86, z);
+    [-w * 0.22, w * 0.22].forEach(function (ox) {
+      cyl(.05, .015, '#4b586b', x + ox, .862, z);
+      cyl(.032, .016, '#2f394b', x + ox, .863, z);
+    });
     [-w / 2 + .5, w / 2 - .5].forEach(function (px) {
       box(.16, .72, 1.2, '#4b586b', x + px, .38, z);
     });
