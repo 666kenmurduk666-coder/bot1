@@ -718,3 +718,28 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
 - **Cache-bust:** `/office-v9.js?v=25`.
 
+### Deploy + live verification (v25)
+- **Deploy:** commit `35f01a6` pushed; Render detected `/office-v9.js?v=25`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live:** `bots=6`, Groq bubble visible (`Seo`, `talkers=['seo']`),
+  `conversations=1`, no app console errors. `/api/health`, `/api/state`,
+  `/api/mall` and `/api/bazaar/commercials` all return 200; live data
+  `mall=23`, `commercials=12`.
+- Effects: `cars=14`, `peds=15`, `signals=4`, `plants=165`, `reflections=39`,
+  `sky=1`, `windows=58`, `screens=25`, `ballers=4`, `ball=1`, `planes=1`.
+- Animation probe: ball, ball shadow, 4 ballers, airplane, cars, peds at bots —
+  **lahat nagbago** (hal. ball `4.0944`, ball shadow `4.0943`, baller `2.6557`,
+  plane `0.5927`, car `0.4088`, ped `0.0981`, bot `0.0916`).
+- Projection check: canopy, glass doors, ceiling tiles, column, EXIT sign,
+  reception mat, pantry, server at wayfinding — **lahat onscreen**. Meeting-room
+  soundbar, screen, table at signs — **lahat onscreen** sa meeting-room view.
+- New-object counts match local: `ceilingPanels=12`, `hvac=4`, `sprinklers=5`,
+  `detectors=5`, `canopy=9`, `glassDoors=15`, `pantry=18`, `server=9`,
+  `meeting=2`, `signs=3`, `entry=1`.
+- High-object check: `high=545`, `highHidden=0`, `hidden=0`,
+  `unflaggedHigh=0`. Scene: `meshes=3908`, `textured=359`.
+  Pixel stats: `bgPct=2.9`, `edgePct=13.9`, `meanLum=122.6`,
+  `nearWhitePct=0`, `whitePct=0`, `darkPct=6.3`; guards `bg=93a1b3`,
+  `fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
+- `.v9bub` remains visible with `body.ui-hidden`.
+
