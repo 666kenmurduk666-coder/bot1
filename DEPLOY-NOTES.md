@@ -282,3 +282,32 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   lumabas (`display:block`, naka-position sa tabi ni Cos). Walang console errors.
 - `node tests/strategy-baseline.js` at smoke/office-layout/server-security: PASS.
 
+## 2026-11-20 — Office enhancement pass (v8)
+
+### Mga idinagdag para mas mukhang tunay na opisina
+- **Open-ceiling detail:** exposed beams, carved ceiling-light grid, at pendant
+  lights sa reception, Main Street, boardroom, huddle, pantry, at executive desk.
+  Walang solid ceiling slab — kung may slab, matatakpan nito ang buong office
+  dahil nasa ibabaw ang camera.
+- **Glass rooms na may frame:** mullions + doorways sa FOCUS partition, quiet
+  booths, boardroom, huddle, at executive cabin.
+- **Furniture props:** mouse, mug, notebook, at glow desk lamp sa bawat desk;
+  round collaboration table + stools; printer station; filing cabinets; water
+  cooler; fruit bowl sa pantry island; coat rack; notice board; wall art;
+  wall clock; mas bushy na potted trees.
+- **Floor texture:** carpet-tile grid sa FOCUS, plank lines sa WELCOME/GATHER,
+  at tile joints sa MEET — hindi na patag na kulay lang.
+- **City context:** may maliit na skyline sa likod ng windows para hindi walang
+  laman ang view sa labas.
+- **Buhay na bots:** role props — headset (Cos), magnifier (Seo), package
+  (Product), party hat (Joker), clipboard (Mgr), pen (Writer). Blinking server
+  LEDs at pulsing pendant bulbs tuwing tick.
+- **Cache-bust:** `office-v9.js?v=8`. ~1000 simple meshes, walang shadow map,
+  30 FPS cap — walang heavy GPU feature.
+
+### Verification (v8, lokal)
+- `bots=6`, `meshes=1000`, lahat ng bots visible; bg `#93a1b3`, amb `0.58`,
+  exposure `0.85`; walang white-out, walang console errors.
+- Groq conversation + `.v9bub` speech bubble: OK.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+
