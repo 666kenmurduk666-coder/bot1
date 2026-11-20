@@ -1,7 +1,8 @@
 /* office-v9.js — Cyborg Cheebee Office.
-   v9 "photographic" pass + v14 effects + v15 "beautiful" pass: textured materials,
-   warm light pools, contact shadows, legible signage, a real exterior approach,
-   living details and a lower hero camera.
+   v9 "photographic" + v14 effects + v15 "beautiful" + v16 "cinematic" pass:
+   textured materials, warm light pools, contact shadows, legible signage, a real
+   exterior approach, window-blind shadows, fake reflections, richer trim,
+   detailed desks/meeting rooms and a cinematic grade.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
 (function () {
@@ -19,7 +20,8 @@
   var cuteBots = [], lastEmo = 0, animId = null, animParts = [];
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
-    auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null };
+    auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
+    blinds: [], reflections: [] };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -200,6 +202,19 @@
       q.fillStyle = g; q.fillRect(0, 0, S, S);
     }, 1, 1);
   }
+  function blindTex() {
+    return makeTex('blind', function (q, S) {
+      q.clearRect(0, 0, S, S);
+      for (var i = 0; i < 6; i++) {
+        var y = 12 + i * 42, h = 22;
+        var g = q.createLinearGradient(0, y, 0, y + h);
+        g.addColorStop(0, 'rgba(12,22,40,0)');
+        g.addColorStop(.5, 'rgba(12,22,40,.85)');
+        g.addColorStop(1, 'rgba(12,22,40,0)');
+        q.fillStyle = g; q.fillRect(0, y, S, h);
+      }
+    }, 1, 1);
+  }
   function glintTex() {
     return makeTex('glint', function (q, S) {
       q.clearRect(0, 0, S, S);
@@ -341,6 +356,7 @@
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
     aura.rotation.x = -Math.PI / 2; aura.position.set(bot.x, .028, bot.z); aura.renderOrder = 3; addO(aura);
     fx.auras.push({ m: aura, p: idx * 1.9 });
+    reflection(bot.x, bot.z + .1, .75, .95, bot.c, 0, .075);
     return { armL: armL, aura: aura, tip: tip };
   }
   function miniDeskPlant(g2, x, z) {
@@ -416,6 +432,94 @@
     lamp.position.set(dir * 1.16, .42, 0); lamp.userData.v9 = true; g2.add(lamp);
     g2.position.set(x, 0, z); addO(g2);
     fx.cars.push({ g: g2, dir: dir, speed: .9 + Math.random() * .5 });
+  }
+
+  /* ---------- v16 cinematic detail ---------- */
+  function blindShadow(x, z, w, d, rot) {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
+      new THREE.MeshBasicMaterial({ map: blindTex(), color: '#0b1728', transparent: true, opacity: .16,
+        depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2; m.rotation.z = rot || 0;
+    m.position.set(x, .016, z); m.renderOrder = 2; addO(m);
+    fx.blinds.push({ m: m, p: x + z });
+    return m;
+  }
+  function reflection(x, z, w, d, color, rot, op) {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
+      new THREE.MeshBasicMaterial({ map: glowTex(), color: color || '#ffe6bd', transparent: true,
+        opacity: op || .06, blending: THREE.AdditiveBlending, depthWrite: false,
+        side: THREE.DoubleSide, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2; m.rotation.z = rot || 0;
+    m.position.set(x, .013, z); m.renderOrder = 2; addO(m);
+    fx.reflections.push({ m: m, base: op || .06, p: x + z });
+    return m;
+  }
+  function roomTrim() {
+    // Interior baseboards + crown molding give the big volume a finished edge.
+    box(46.8, .14, .09, '#4b5566', 23, .07, 33.90);
+    box(46.8, .14, .09, '#4b5566', 23, .07, .30);
+    box(.09, .14, 34.8, '#4b5566', .30, .07, 17);
+    box(.09, .14, 34.8, '#4b5566', 45.70, .07, 17);
+    box(46.8, .09, .14, '#e8e4dc', 23, 2.92, 33.90);
+    box(46.8, .09, .14, '#e8e4dc', 23, 2.92, .30);
+    box(.14, .09, 34.8, '#e8e4dc', .30, 2.92, 17);
+    box(.14, .09, 34.8, '#e8e4dc', 45.70, 2.92, 17);
+    // Cove LEDs tucked under the ceiling: warm at reception/pantry, cool at work zones.
+    [[45.4, .035, .05, '#ffdca8', 23, 3.02, 33.84, 0],
+     [45.4, .035, .05, '#bfe4ff', 23, 3.02, .38, 1.1],
+     [.05, .035, 33.5, '#bfe4ff', .38, 3.02, 17, 2.2],
+     [.05, .035, 33.5, '#ffdca8', 45.62, 3.02, 17, 3.3]].forEach(function (a) {
+      var l = bx(a[0], a[1], a[2], a[3], a[4], a[5], a[6], true);
+      animParts.push({ m: l, k: 'led', p: a[7] });
+    });
+  }
+  function presentationScreen(x, z, rot) {
+    var g2 = new THREE.Group();
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.42, .09), solid('#1b2537'));
+    frame.position.y = 1.76; frame.userData.v9 = true; g2.add(frame);
+    var scr = new THREE.Mesh(new THREE.PlaneGeometry(2.52, 1.24),
+      new THREE.MeshBasicMaterial({ map: screenTex(screenCounter++), side: THREE.DoubleSide, toneMapped: false }));
+    scr.position.set(0, 1.76, .055); scr.userData.v9 = true; g2.add(scr);
+    var post = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, 1.05, 8), solid('#4b586b'));
+    post.position.y = .52; post.userData.v9 = true; g2.add(post);
+    var foot = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .5), solid('#3b475b'));
+    foot.position.y = .04; foot.userData.v9 = true; g2.add(foot);
+    g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
+    reflection(x, z, 1.5, .7, '#7fc7ff', rot || 0, .05);
+  }
+  function deskDetails(g2, di) {
+    var mat = new THREE.Mesh(new THREE.PlaneGeometry(.92, .32), solid('#2f3d52', { roughness: .95 }));
+    mat.rotation.x = -Math.PI / 2; mat.position.set(0, .812, .22); mat.userData.v9 = true; g2.add(mat);
+    var tablet = bx(.36, .22, .025, '#5fd6ff', .56, 1.02, -.04, true);
+    tablet.rotation.z = -.12; tablet.rotation.x = -.28; tablet.userData.v9 = true; g2.add(tablet);
+    var cup = new THREE.Mesh(new THREE.CylinderGeometry(.065, .055, .13, 8), solid('#3f5a76'));
+    cup.position.set(.72, .875, -.2); cup.userData.v9 = true; g2.add(cup);
+    [-.03, .02, .06].forEach(function (ox, k) {
+      var pen = new THREE.Mesh(new THREE.CylinderGeometry(.009, .009, .2, 5),
+        solid(['#e0a83a', '#c94f4f', '#79e0b2'][k]));
+      pen.position.set(.72 + ox, .98, -.2 + ox * .4); pen.rotation.z = ox * 2;
+      pen.userData.v9 = true; g2.add(pen);
+    });
+    if (di % 2 === 0) {
+      var n1 = box(.09, .09, .012, '#ffe08a', -.26, 1.45, -.18); n1.userData.v9 = true; g2.add(n1);
+      var n2 = box(.09, .09, .012, '#ff9fc4', -.11, 1.45, -.18); n2.userData.v9 = true; g2.add(n2);
+    }
+  }
+  function tableCenterpiece(x, z) {
+    cyl(.18, .045, '#2f3d52', x, .88, z);
+    bx(.12, .02, .12, '#6cc2f0', x, .91, z, true);
+    var notes = new THREE.Mesh(new THREE.BoxGeometry(.34, .02, .24), solid('#f2eee4'));
+    notes.rotation.y = .24; notes.position.set(x + .62, .87, z); notes.userData.v9 = true; addO(notes);
+    var pen = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .26, 6), solid('#3f5a76'));
+    pen.rotation.y = .24; pen.rotation.z = Math.PI / 2; pen.position.set(x + .62, .89, z + .04);
+    pen.userData.v9 = true; addO(pen);
+  }
+  function ensureGrade() {
+    var host = document.getElementById('oc3d');
+    if (!host || document.getElementById('v16Grade')) return;
+    var el = document.createElement('div');
+    el.id = 'v16Grade'; el.setAttribute('aria-hidden', 'true');
+    host.appendChild(el);
   }
 
   /* ---------- legible signage (fixed orientation: south signs face +Z) ---------- */
@@ -573,6 +677,7 @@
       solid('#f0c777', { emissive: '#ffd98a', emissiveIntensity: .65 }));
     lampHead.position.set(-.84, 1.23, -.24); lampHead.rotation.x = Math.PI; g2.add(lampHead);
     if (di % 4 === 0) miniDeskPlant(g2, .62, -.22);
+    deskDetails(g2, di);
     g2.position.set(x, 0, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function paintScreen(q, S, idx, step) {
@@ -639,6 +744,8 @@
       var px = x - w / 2 + .7 + i * ((w - 1.4) / (n - 1 || 1));
       officeChair(px, z - 1.45, 0, '#35455c'); officeChair(px, z + 1.45, Math.PI, '#35455c');
     }
+    tableCenterpiece(x, z);
+    reflection(x, z, w * .8, 1.5, '#ffe6bd', 0, .045);
   }
   function roundTable(x, z) {
     shadow(x, z, 1.2, 1.2, .15);
@@ -802,10 +909,12 @@
 
   function buildRealOffice3d() {
     if (typeof THREE === 'undefined' || !g || !g.level) return false;
+    ensureGrade();
     cuteBots.forEach(function (b) { if (b.bubble && b.bubble.parentNode) b.bubble.parentNode.removeChild(b.bubble); });
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
-      auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null };
+      auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
+    blinds: [], reflections: [] };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -857,7 +966,11 @@
     for (var wx = 1; wx <= 45; wx += 4) mullion(wx, .16, 'x', 2.55);
     box(46, .09, .16, '#d8dee6', 23, 1.02, .17);
     box(46, .09, .16, '#d8dee6', 23, 2.93, .17);
-    [5, 13, 21, 29, 37].forEach(function (bx2) { windowBand(bx2, 3.4, 4.2, 5.5, .08); });
+    [5, 13, 21, 29, 37].forEach(function (bx2) {
+      windowBand(bx2, 3.4, 4.2, 5.5, .08);
+      blindShadow(bx2, 5.4, 4.0, 3.4, .08);
+    });
+    roomTrim();
     skyBackdrop();
     sunGlow();
     skyline();
@@ -892,6 +1005,7 @@
     wallFrame(4.6, 2.0, 33.86, 1.6, 1.0, 0, 1);
     wallFrame(.14, 1.95, 18.5, 1.5, 1.0, Math.PI / 2, 0);
     wallFrame(45.86, 1.95, 18.5, 1.5, 1.0, -Math.PI / 2, 2);
+    reflection(23, 30.3, 4.4, 1.3, '#ffd9a6', 0, .05);
 
     // ---- MAIN STREET ----
     floor(42, 2.8, solid('#ffffff', { map: stoneTex(12, 1), roughness: .85 }), 23, .009, 23.2);
@@ -927,6 +1041,7 @@
     glass(.1, 2.5, 7, 45, 1.25, 12.5, .28);
     glassGlint(29, 1.25, 7.2, 4.2, 2.0, Math.PI / 2);
     glassGlint(37, 1.25, 16.35, 4.6, 2.0, 0);
+    presentationScreen(37, 4.5, 0);
     meetingTable(37, 7.5, 5.4);
     wallBoard(37, 1.75, .34, 'STUDIO');
     wallSign('THE STUDIO', 'BOARDROOM · 8 SEATS', 37, 2.62, 16.42, 4.6, 1.05, 0, '#3f6fa8');
@@ -962,6 +1077,7 @@
     cabinet(41.2, 32.3, '#8b5e34'); cabinet(33.4, 32.3, '#8b5e34');
     bookshelf(44.6, 29.4, -Math.PI / 2);
     lightPool(37, 29.2, 4.6, '#ffd9a6');
+    reflection(37, 32.5, 5.4, 1.2, '#ffd9a6', 0, .05);
 
     // ---- SUPPORT: executive + server / IT ----
     glass(.1, 2.45, 6.4, 11, 1.22, 27.5, .3);
@@ -1182,6 +1298,12 @@
       });
       fx.bands.forEach(function (a) {
         a.m.material.opacity = .1 + .05 * (.5 + .5 * Math.sin(now / 1600 + a.p));
+      });
+      fx.blinds.forEach(function (a) {
+        a.m.material.opacity = .13 + .04 * (.5 + .5 * Math.sin(now / 2100 + a.p));
+      });
+      fx.reflections.forEach(function (a) {
+        a.m.material.opacity = a.base * (.8 + .35 * (.5 + .5 * Math.sin(now / 1400 + a.p)));
       });
       var dt = Math.min(.12, (now - (tick.carLast || now)) / 1000);
       tick.carLast = now;

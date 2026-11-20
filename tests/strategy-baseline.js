@@ -51,11 +51,11 @@ const protectedHashes = {
   // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
   // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
   // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
-  // Cache-bust bumped v4 -> v15 (the service worker caches by URL, so every
-  // office-v9.js edit needs a fresh query string). v9 look: lower hero camera
-  // (phi .40 / theta .34 / r38 / fov52), brighter .v9bub styling, glass south
-  // facade, exterior approach and legible signs. White-out guards unchanged.
-  'public/index.html': 'e93b23f1d3c8221087da9d19bff81e644d091385ef7af613472ea63f5b3ee946',
+  // Cache-bust bumped v4 -> v16 (the service worker caches by URL, so every
+  // office-v9.js edit needs a fresh query string). v16 look: cinematic CSS grade
+  // over the canvas, tighter hero camera (phi .44 / theta .30 / r36 / fov50),
+  // brighter .v9bub styling, glass south facade and legible signs. White-out guards unchanged.
+  'public/index.html': 'a3eb483c2c607cb1499e6d6d95bec6d9563d114d61ae5e0c7c6809c1c1b0048e',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
@@ -69,8 +69,10 @@ const protectedHashes = {
   // scan bars, flickering skyline windows, birds and a floor sheen.
   // v15 beauty pass: bot feet/hands/antennae/talking auras, glass glints,
   // window-light bands, framed art, bookshelves, desk plants, a sun glow and
-  // moving cars. Still the same protected v8 runtime; visual polish only.
-  'public/office-v9.js': 'dcf2824ba2d8275f96d5a9ef2f5769f841b8ca30952519af41a022ab62532d44',
+  // moving cars. v16 cinematic pass: window-blind shadows, floor reflections,
+  // baseboards/crown/cove LEDs, detailed desks + meeting presentation screen,
+  // and the DOM grade layer. Still the same protected v8 runtime; visual polish only.
+  'public/office-v9.js': 'a635c227f8615d03227219a3bb5f5027f9d4df3b9bad0579ec6d3c3fc539c5f4',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

@@ -416,3 +416,37 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
 - **Cache-bust:** `/office-v9.js?v=15`.
 
+## 2026-11-20 — "Cinematic" pass (v16 cache-bust)
+
+### Mga idinagdag
+- **Cinematic grade:** subtle vignette + warm/cool split-tone + fine film grain
+  bilang lightweight DOM overlay (`#v16Grade`) sa ibabaw ng WebGL canvas.
+  `pointer-events:none`, `z-index:2` — nasa ilalim ng bubbles, minimap at chat.
+- **Better framing:** hero camera ay bahagyang mas malapit at mas mababa ang
+  anggulo (`phi .44 / theta .30 / r36 / fov50`); fit/reset at HQ jump preset
+  ay inayos din para mas buo ang office.
+- **Window-blind shadows:** 5 soft striped shadow planes mula sa north glazing,
+  may banayad na pulso (hindi shadow map).
+- **Reflections:** 11 fake floor reflections — 6 bots, 2 meeting tables,
+  reception, pantry at presentation screen — additive at mababa ang opacity.
+- **Finished architecture:** interior baseboards, crown molding, at cove LEDs
+  sa perimeter (warm sa reception/pantry, cool sa work zones).
+- **Denser desks:** desk mat, tablet, pen cup + pens, sticky notes.
+- **Meeting room:** freestanding animated presentation screen, table phone at
+  notepad sa bawat meeting table.
+- Protected Phase D v8 runtime ay hindi pa rin binabago; lahat nasa
+  `office-v9.js` (geometry/effects) at `index.html` (CSS + camera) lang.
+
+### Verification (v16, lokal)
+- `bots=6`, walang build error, walang console errors.
+- Effects arrays: `blinds=5`, `reflections=11`, `screens=25`, plus buong v15 set
+  (`auras=6`, `antennae=6`, `glints=4`, `bands=5`, `cars=2`, `sun=1`, atbp.).
+- Grade overlay: `grade=true`, `z-index=2`; camera `fov=50`, `phi=.44`, `theta=.30`, `r=36`.
+- Talking probe: may Groq bubble si Product, `talkers=['product']`.
+- Animation probe: carX, blind, reflection, glint, band, sun at antenna lahat nagbago.
+- Pixel stats: `bgPct=0`, `edgePct=4.1`, `meanLum=109`, `hidden=0`,
+  `meshes=1953`, `textured=253` — walang white-out. `bgHex=93a1b3`, `amb=0.58`,
+  `exposure=0.85` — pareho pa rin.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=16`.
+
