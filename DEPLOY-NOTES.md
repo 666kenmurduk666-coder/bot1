@@ -450,3 +450,37 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
 - **Cache-bust:** `/office-v9.js?v=16`.
 
+## 2026-11-20 — "Realistic streets & sky" pass (v17 cache-bust)
+
+### Bakit ito ang pinaka-kapansin-pansin
+- Noon, ang kalsada at mga kotse ay nasa **south side** (z≈49) — nasa likod ng
+  default camera. Kaya kahit may bagong effects, hindi talaga nakikita.
+- Ngayon, may buong **north city street** na diretso sa likod ng malaking north
+  glass wall — makikita agad sa default view.
+
+### Mga idinagdag
+- **North street:** two-lane asphalt with lane dashes, crosswalks, curbs,
+  sidewalks, bollards, 4 street lamps, 2 traffic lights, bus stop, at 4 trees.
+- **Traffic:** 5 cars + 1 bus ang gumagalaw sa dalawang lane; traffic lights
+  ay nagpapalit-palit ng red/amber/green.
+- ** upgraded vehicles:** hood/trunk, windshield + side glass, roof, grille,
+  paired headlights/taillights, wheel hubs at contact shadow.
+- **Asphalt texture:** noise, wear bands, patches at cracks (procedural canvas).
+- **Skyline:** 12 varied buildings, roof caps, rooftop units, antennas, blinking
+  beacons, at mas maraming lit windows.
+- **Sky:** mas malalim na gradient, sun disc + halo, 3 layers ng clouds, at
+  warm horizon haze — parehong sa window strip at sa malaking sky backdrop.
+- Protected Phase D v8 runtime ay hindi pa rin binabago.
+
+### Verification (v17, lokal)
+- `bots=6`, walang build error, walang console errors.
+- Effects: `cars=8`, `signals=2`, `windows=51`, `plants=105`, `reflections=15`,
+  plus buong v16 set (`blinds=5`, `screens=25`, atbp.).
+- Projection check: near car, bus, street lamp at skyline ay **onscreen** sa
+  default camera — kaya kita agad ang pagbabago.
+- Animation probe: carX, traffic signal, blind at reflection lahat nagbago.
+- Pixel stats: `bgPct=0`, `edgePct=4.4`, `meanLum=102.5`, `hidden=0`,
+  `meshes=2376` — walang white-out. `bgHex=93a1b3`, `amb=0.58`, `exposure=0.85`.
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=17`.
+
