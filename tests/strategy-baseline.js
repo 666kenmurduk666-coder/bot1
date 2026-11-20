@@ -51,15 +51,20 @@ const protectedHashes = {
   // race), 2-min chatter, dangling references fixed, old 2F layout skipped.
   // White-out fix: player spawn/camera centred in the 46x34 office at r=45,
   // phi=.52; ui-hidden hides only the legacy bubble so .v9bub stays visible.
-  // Cache-bust bumped v4 -> v8 (the service worker caches by URL, so every
-  // office-v9.js edit needs a fresh query string).
-  'public/index.html': 'bbdb958e96180a6280ed4349fb86d6b462e0daefce5540f6fe0e3107b1382818',
+  // Cache-bust bumped v4 -> v13 (the service worker caches by URL, so every
+  // office-v9.js edit needs a fresh query string). v9 look: lower hero camera
+  // (phi .40 / theta .34 / r38 / fov52), brighter .v9bub styling, glass south
+  // facade, exterior approach and legible signs. White-out guards unchanged.
+  'public/index.html': '7f86161fe4428f8b7f7948cc251f3984242bf9e62f4780bff06d964fa6e92e09',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 6 small happy bots.
   // Dark surround plane + muted palette (exposure .85, ambient .58) and a
   // palette re-assert in tick defeat the day/night reset that caused white-out.
-  'public/office-v9.js': '5184061a22ff851e663bc42cd0a2d2f36ff6b612efb01f501c97cccb5a12a672',
+  // v9 look: procedural carpet/wood/plank/tile/stone/fabric textures, warm light
+  // pools, contact shadows, dark-framed glass, south-facing signs, exterior
+  // plaza + skyline, and correctly oriented wall signage. No new runtime feature.
+  'public/office-v9.js': 'c0c0bb6f27ed7169fd139c6a8c8c2f78a3fee4630daf7cf430d60635b427cf4',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

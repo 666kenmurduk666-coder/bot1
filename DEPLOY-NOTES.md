@@ -311,3 +311,47 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Groq conversation + `.v9bub` speech bubble: OK.
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
 
+## 2026-11-20 — "Photographic office" upgrade (v13 cache-bust)
+
+### Bakit pangit pa rin pagkatapos ng v8
+- Hindi lang kulang sa props. Apat na bagay ang nagpapalat ng itsura:
+  1. **Flat materials** — halos lahat ng sahig/desk/pader ay iisang `MeshStandardMaterial`
+     na walang texture, kaya parang color blocks.
+  2. **Walang depth cues** — walang shadow map (sinadya, para sa weak GPU), kaya
+     lumulutang ang muwebles; walang light pools sa ilalim ng ilaw.
+  3. **Nakaharap sa maling direksyon ang ilang signage** — ang signs sa south wall
+     ay `rot=Math.PI`, kaya ang likod lang ang nakikita ng camera.
+  4. **Nakatago ang langit at ceiling!** May "SIMPLE MODE" cull sa `index.html` na
+     nagtatago ng **anumang mesh na `y > 3.15`**. Kasama rito ang bagong sky
+     backdrop, exposed beams, at ceiling fixture grid — kahit nasa loob ng v9.
+- **Fix:** lahat ng v9 meshes ay minarkahan ng `userData.v9 = true`; ang cull ay
+  naging `if(!o.userData.v9 && ...)`. Maski nasa itaas ng 3.15m, hindi na tinatanggal.
+
+### Mga pinaganda
+- **Procedural textures (walang download):** carpet flecks + tile grid, wood grain,
+  plank seams, ceramic tile, stone plaza, fabric weave, rugs, monitor UI, at isang
+  malawak na sky gradient na may ulap.
+- **Warm light pools + contact shadows:** radial additive planes sa ilalim ng bawat
+  pendant at dark ellipse sa ilalim ng desks/chairs/plants/bots — hindi gumagamit
+  ng shadow map, kaya magaan pa rin sa GPU.
+- **Glass at framing:** dark nav frames, mullions, doorways, at **glass south facade**
+  para makita ang loob mula sa bagong mababang camera angle.
+- **Mababang "hero" camera:** `phi=.40`, `theta=.34`, `r=38`, `fov=52`;
+  mas kita ang harapan ng mesa, signage, at mga bot kumpara sa dating top-down view.
+- **Legible signage:** canvas-based dark boards na may malaking teksto + subtitle,
+  tama ang orientation (south signs face `+Z`).
+- **Exterior context:** stone approach plaza, planters, benches, kotse, road dashes,
+  skyline, at skydome — wala nangpatag na gray sa itaas ng frame.
+- **Bots:** scale `0.74` + role props + contact shadow; `.v9bub` na may mas makapal
+  na border at shadow para basahin ang Groq lines.
+
+### Verification (v13, lokal)
+- `bots=6`, `meshes=1541`, `textured=191`, **`hidden=0`** (walang naitagong v9 mesh).
+- Pixel stats: `bgPct=0` (dati 20%), `edgePct=4` (dati 2–3%), sky row `~112,156,204`,
+  walang white-out. `bgHex=93a1b3`, `amb=0.58`, `exposure=0.85` — pareho pa rin.
+- 6/6 bots nasa frame; walang console errors; sariwang Groq conversation at isang
+  `.v9bub` bubble ang lumabas (`display:block`).
+- `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Cache-bust:** `/office-v9.js?v=13`. Bumump ng ilang beses habang inaayos ang
+  texture upload at ang simple-mode cull; huling URL ang `?v=13`.
+

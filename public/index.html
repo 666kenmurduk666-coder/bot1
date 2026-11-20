@@ -65,7 +65,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .agent-card .top{display:flex;gap:9px;align-items:center}
 .agent-card b{font-size:13px}
 #oc{width:100%;max-width:900px;display:block;image-rendering:auto;border-radius:11px;box-shadow:0 0 30px #1b3a7a55}
-#oc3d{width:100%;height:clamp(520px,72vh,900px);min-height:460px;position:relative;border-radius:14px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#243b68,#090f20 78%);box-shadow:0 0 34px #1b3a7a66;border:1px solid #35527e;isolation:isolate}
+#oc3d{width:100%;height:clamp(520px,72vh,900px);min-height:460px;position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#a9b6c6,#7a899d);box-shadow:0 0 34px #243a5c55;border:1px solid #35527e;isolation:isolate}
 #oc3d canvas{display:block;width:100%;height:100%;touch-action:none}
 #officeCamTools{position:absolute;z-index:10001;top:10px;right:10px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:min(560px,75%);padding:6px;background:rgba(7,13,29,.82);border:1px solid #45689b;border-radius:12px;backdrop-filter:blur(8px);box-shadow:0 4px 18px #0008}
 #officeCamTools button{min-width:34px;padding:6px 9px;font-size:12px;background:linear-gradient(135deg,#1a3154,#14213a);border-color:#45689b;color:#e8f3ff}
@@ -78,6 +78,9 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .bub3d{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#182032;font-size:16px;line-height:1.35;padding:9px 13px;border-radius:13px;border:2px solid #182032;max-width:280px;white-space:normal;text-align:center;box-shadow:4px 4px 0 rgba(24,32,50,.2);pointer-events:none;z-index:4}
 .bub3d b{display:block;font-size:12px;color:#5a6474;margin-bottom:3px}
 .bub3d:after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-6px;border:6px solid transparent;border-top-color:#182032}
+.v9bub{background:linear-gradient(180deg,#ffffff,#f3f7fb);border:2px solid #2f4a6d;box-shadow:0 8px 24px #0b183c66;border-radius:16px;font-size:15px;max-width:300px;padding:10px 14px}
+.v9bub b{color:#2f6f7a;font-size:12px;letter-spacing:.3px}
+.v9bub:after{border-top-color:#2f4a6d}
 /* MMORPG world chat */
 #mmoChat{position:absolute;left:10px;bottom:10px;width:min(300px,60%);height:124px;min-width:200px;max-width:min(560px,90%);min-height:96px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
 #mmoChat.min{height:24px!important;width:auto!important;min-width:0!important;max-width:none!important}
@@ -543,7 +546,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=8"></script>
+<script src="/office-v9.js?v=13"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -921,11 +924,11 @@ $('fsBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.ex
 const qHead=$('officeQuestHead');
 if(qHead)qHead.onclick=()=>{const l=$('officeQuestList'),c=$('officeQuestCaret');if(!l)return;const show=l.style.display==='none';l.style.display=show?'flex':'none';if(c)c.textContent=show?'▾':'▸';};
 // floor view: isang pindot, kita lahat sa LOOB — transparent ang mga pader + wide-angle lens!
-const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(23,fy+1.2,17);cam3d.phi=.52;cam3d.theta=.42;cam3d.r=45;cam3d.lastUser=Date.now();
-  camera3d.fov=58;camera3d.updateProjectionMatrix();
+const floorView=(fy,name)=>{if(!cam3d)return;cam3d.target.set(23,fy+1.2,17);cam3d.phi=.40;cam3d.theta=.34;cam3d.r=38;cam3d.lastUser=Date.now();
+  camera3d.fov=52;camera3d.updateProjectionMatrix();
   if(!xrayOn){xrayOn=true;const xb=$('xray');if(xb)xb.textContent='⊙ Normal view';xrayApply();}
   toast('Loob ng '+name+' ? wide-angle view, kita lahat! ✨')};
-$('v1f').onclick=()=>{if(!cam3d)return;cam3d.target.set(23,1.2,17);cam3d.phi=.52;cam3d.theta=.42;cam3d.r=45;cam3d.lastUser=Date.now();camera3d.fov=58;camera3d.updateProjectionMatrix();toast('🏢 Buong office — reception + workstations + meeting + pantry!')};
+$('v1f').onclick=()=>{if(!cam3d)return;cam3d.target.set(23,1.5,17);cam3d.phi=.40;cam3d.theta=.34;cam3d.r=38;cam3d.lastUser=Date.now();camera3d.fov=52;camera3d.updateProjectionMatrix();toast('🏢 Buong office — reception + workstations + meeting + pantry!')};
 $('resetLayout').onclick=$('resetLayout2').onclick=async()=>{await api('/api/layout/reset',{method:'POST',body:'{}'});toast('Layout reset');await refresh();drawEditor()};
 $('saveLayout').onclick=async()=>{const r=await api('/api/layout',{method:'POST',body:JSON.stringify({layout:S.layout})});toast(r.ok?'Layout saved':'Error');await refresh()};
 
@@ -1781,8 +1784,8 @@ function init3D(){
   scene3d=new THREE.Scene();
   scene3d.background=new THREE.Color('#93a1b3');
   scene3d.fog=new THREE.Fog('#93a1b3',40,200);
-  camera3d=new THREE.PerspectiveCamera(45,(host.clientWidth||900)/(host.clientHeight||520),.1,500);
-  camera3d.position.set(9,11,16);camera3d.lookAt(6,0,6);
+  camera3d=new THREE.PerspectiveCamera(52,(host.clientWidth||900)/(host.clientHeight||520),.1,500);
+  camera3d.position.set(35,16,50);camera3d.lookAt(23,1.5,17);
   const amb=new THREE.AmbientLight(0x8fa4c4,.58);scene3d.add(amb);g.amb=amb;
   const dl=new THREE.DirectionalLight(0xfff8e8,1.6);dl.position.set(12,18,8);dl.castShadow=true;
   dl.shadow.mapSize.width=1024;dl.shadow.mapSize.height=1024;
@@ -2462,9 +2465,9 @@ function buildRoom3d(id){
      Falls back to the old zone map if the new module did not load. */
   const v9ok = typeof buildRealOffice3d==='function' && buildRealOffice3d();
   if(!v9ok)buildCyborgOffice3d();
-  // orbit camera — close, centred framing so the 46x34 office FILLS the view
-  // (the old r=58 / phi=.42 view left 4/5 of the frame as empty background).
-  cam3d={target:new THREE.Vector3(23,1.2,17),theta:.42,phi:.52,r:45,lastUser:0};
+  // orbit camera — lower, closer "hero" angle so furniture, signage and bots read clearly.
+  cam3d={target:new THREE.Vector3(23,1.5,17),theta:.34,phi:.40,r:38,lastUser:0};
+  camera3d.fov=52;camera3d.updateProjectionMatrix();
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
    const updLast=()=>{if(cam3d)cam3d.lastUser=Date.now();};
@@ -2654,7 +2657,7 @@ function buildRoom3d(id){
     const wp=new THREE.Vector3();o.updateWorldMatrix(true,false);o.getWorldPosition(wp);
     // glassMat was declared inside the disabled if(false) office block, so the
     // old `o.material===glassMat` check threw a ReferenceError on every build.
-    if(o.isSprite?wp.y>3.6:wp.y>3.15) o.visible=false;
+    if(!o.userData.v9 && (o.isSprite?wp.y>3.6:wp.y>3.15)) o.visible=false;
   });
   // (tinanggal ang exterior shell — open plan, walang walls/base)
   // Ground-floor mall connector TINANGGAL — mall nasa 2F resort na lang
@@ -5188,7 +5191,7 @@ function spawnPlayer(){
   player={group:grp,shadow:sh,x:grp.position.x,z:grp.position.z,y:0,theta:0,vy:0,onGround:true,head:head,crown:crown,crownBits:crownBits};
   try{applyOutfit()}catch(e){}
   // Default view = wide framing ng buong office, hindi close-up sa player.
-  if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.52;cam3d.theta=.42;cam3d.r=45;}
+  if(cam3d){cam3d.target.set(player.x,player.y+1.2,player.z);cam3d.phi=.40;cam3d.theta=.34;cam3d.r=38;camera3d.fov=52;camera3d.updateProjectionMatrix();}
   toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!');
 }
 function despawnPlayer(){
