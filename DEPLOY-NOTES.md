@@ -1126,3 +1126,22 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   render calls `3015 -> 3015`.
 - Day hero pixels after 120 settling ticks: `meanLum=95.7`, `dark=21.2%`,
   `green=21.1%`, `bg=0.2%` - no white-out.
+
+### Live verification (production, commit `c520b80`)
+- Render served `/office-v9.js?v=33` and `/office-studio.js?v=35`.
+- Ran `node restore-after-deploy.js`: UNLOCK 200, MALL ok=23, COMMERCIALS ok=19,
+  FACEBOOK 200, SHOPEE 200, AI KEYS 200; final `mall=23`, `commercials=12`.
+- No console errors. Studio World and BOT bars both mounted live (8 + 10 buttons).
+- Live feature counts: barista present, plants 3, fish 5, skyline panes 72,
+  ceiling projection present, outfits 3, pets 2, nameplates 7, status sprites 7.
+- Night link verified: skyline opacity `0.126 -> 0.525` and ceiling opacity
+  `0.056 -> 0.186` as night amount `0 -> 1`; veil `0 -> .62` with bg/fog still
+  `93a1b3`, ambient `.58`, exposure `.85`.
+- Toggle round-trip live: fish `[true,false,true]`, nameplates `[true,false,true]`,
+  pets `[true,false,true]`.
+- 60 forced ticks live: geometries `2923 -> 2923`, textures `146 -> 146`,
+  render calls `3015 -> 3015` - flat, no leak.
+- Day guards after `frame3D()`: bg/fog `93a1b3`, ambient `.58`, exposure `.85`,
+  `isNight=0`, veil `0`.
+- Live hero pixels: `meanLum=115.9`, `dark=14.6%`, `green=27%`, `bg=0.4%` -
+  no white-out; greens and Batch 2 props render.
