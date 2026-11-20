@@ -1008,4 +1008,10 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `node --check public/office-studio.js`, `node --check public/office-v9.js`: PASS.
 - `node tests/strategy-baseline.js`: PASS; na-update ang hashes (may bagong
   `office-studio.js` hash sa baseline).
+- Headless local check: 7 bots, editor shell mounted, 4 tools, 25 palette items,
+  inspector/presets/theme/perf/a11y controls present, walang console errors.
+- v31/v32 fixes mula sa headless test: `querySelector` boot guard para talagang
+  mag-mount ang editor shell; safe `contains()` guard para sa synthetic clicks.
+- Local interaction check: place `24→25`, undo `25→24`; theme/freeze/detail/a11y
+  at bot-card click ay gumana, walang errors.
 
