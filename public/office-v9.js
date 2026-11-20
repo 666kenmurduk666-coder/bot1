@@ -867,17 +867,25 @@
     var wood = solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 1, 1), roughness: .6 });
     var back = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.0, .38), wood);
     back.userData.v9 = true; g2.add(back);
-    var cols = ['#c94f4f', '#4a7fb0', '#3f9d6a', '#e0a83a', '#8f6fd8', '#e8e2d4'];
+    var cols = ['#c94f4f', '#4a7fb0', '#3f9d6a', '#e0a83a', '#8f6fd8', '#e8e2d4', '#5f8fa8'];
     for (var sh = 0; sh < 4; sh++) {
       var shelf = new THREE.Mesh(new THREE.BoxGeometry(1.5, .05, .4), solid('#6d4929'));
       shelf.position.y = -0.72 + sh * .48; shelf.userData.v9 = true; g2.add(shelf);
       for (var bk = 0; bk < 7; bk++) {
-        var b = new THREE.Mesh(new THREE.BoxGeometry(.14, .3 + (bk % 3) * .05, .24),
+        var bh = .26 + (bk % 4) * .045;
+        var b = new THREE.Mesh(new THREE.BoxGeometry(.13, bh, .23),
           solid(cols[(sh * 7 + bk) % cols.length]));
-        b.position.set(-.6 + bk * .2, -.53 + sh * .48, .06);
-        b.rotation.z = (bk % 4 === 0) ? .11 : 0; b.userData.v9 = true; g2.add(b);
+        b.position.set(-.6 + bk * .2, -.72 + sh * .48 + .025 + bh / 2, .06);
+        b.rotation.z = (bk % 5 === 0) ? .09 : (bk % 7 === 0 ? -.06 : 0); b.userData.v9 = true; g2.add(b);
       }
     }
+    // small decor on top
+    var vase = new THREE.Mesh(new THREE.CylinderGeometry(.055, .07, .18, 8), solid('#6cc2f0', { roughness: .35 }));
+    vase.position.set(.35, .92, .04); vase.userData.v9 = true; g2.add(vase);
+    var sprig = new THREE.Mesh(new THREE.SphereGeometry(.09, 7, 6), solid('#5ea86b', { roughness: .9 }));
+    sprig.position.set(.35, 1.04, .04); sprig.userData.v9 = true; g2.add(sprig);
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(.22, .16, .02), solid('#d8c6a4'));
+    frame.position.set(-.28, .88, .05); frame.rotation.z = -.08; frame.userData.v9 = true; g2.add(frame);
     g2.position.set(x, 1.02, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function car(x, z, dir, color) {
@@ -1391,11 +1399,16 @@
   function tableCenterpiece(x, z) {
     cyl(.18, .045, '#2f3d52', x, .88, z);
     bx(.12, .02, .12, '#6cc2f0', x, .91, z, true);
+    cyl(.14, .03, '#3f4f63', x, .885, z);
+    cyl(.03, .02, '#79e0b2', x, .905, z);
     var notes = new THREE.Mesh(new THREE.BoxGeometry(.34, .02, .24), solid('#f2eee4'));
     notes.rotation.y = .24; notes.position.set(x + .62, .87, z); notes.userData.v9 = true; addO(notes);
     var pen = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .26, 6), solid('#3f5a76'));
     pen.rotation.y = .24; pen.rotation.z = Math.PI / 2; pen.position.set(x + .62, .89, z + .04);
     pen.userData.v9 = true; addO(pen);
+    cyl(.045, .06, '#8b5e34', x - .58, .89, z + .04);
+    var succ = new THREE.Mesh(new THREE.SphereGeometry(.07, 7, 6), solid('#63b07a', { roughness: .85 }));
+    succ.position.set(x - .58, .95, z + .04); succ.userData.v9 = true; addO(succ);
   }
   function ensureGrade() {
     var host = document.getElementById('oc3d');
@@ -1729,6 +1742,10 @@
     });
     box(7.9, .46, .1, solid('#3f6f69', { map: fabricTex('#3f6f69', 4, 1), roughness: .95 }), cx, .95, cz);
     box(8, .06, .16, '#2e3a4d', cx, .72, cz);
+    // soft end-cap greenery
+    box(.22, .14, .22, '#d9c39a', cx - 3.85, .81, cz);
+    var benchLeaf = new THREE.Mesh(new THREE.SphereGeometry(.14, 7, 6), solid('#5ca86b', { roughness: .9 }));
+    benchLeaf.position.set(cx - 3.85, .95, cz); benchLeaf.userData.v9 = true; addO(benchLeaf);
   }
   function meetingTable(x, z, w) {
     shadow(x, z, w / 2 + .5, 1.25, .17);
@@ -1748,6 +1765,9 @@
     shadow(x, z, 1.2, 1.2, .15);
     cyl(.9, .1, '#a9793f', x, .77, z);
     cyl(.11, .72, '#4b586b', x, .38, z);
+    cyl(.09, .08, '#d9c39a', x, .86, z);
+    var bloom = new THREE.Mesh(new THREE.SphereGeometry(.08, 7, 6), solid('#ff9fc4', { roughness: .7 }));
+    bloom.position.set(x, .93, z); addO(bloom);
     for (var i = 0; i < 4; i++) {
       var a = i * Math.PI / 2;
       officeChair(x + Math.cos(a) * 1.5, z + Math.sin(a) * 1.5, a + Math.PI / 2, '#4b6a86');
@@ -1762,6 +1782,9 @@
       animParts.push({ m: led, k: 'led', p: i * .7 + x });
       box(.62, .012, .02, '#4b5a70', x, .53 + i * .27, z + .405);
     }
+    // subtle cable bundle
+    cyl(.04, .18, '#2f3d52', x - .22, .09, z + .46);
+    cyl(.03, .14, '#4a7fb0', x - .12, .07, z + .48);
     var scan = new THREE.Mesh(new THREE.PlaneGeometry(.64, .055),
       new THREE.MeshBasicMaterial({ color: '#9aeaff', transparent: true, opacity: .34,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
@@ -1791,6 +1814,9 @@
     bottle.position.set(x, 1.2, z); addO(bottle);
     cyl(.22, .035, '#c8d8e4', x, 1.41, z);
     box(.24, .06, .2, '#5d6b7d', x, .82, z + .24);
+    // cup holder/stack
+    box(.18, .16, .14, '#d9e2ea', x + .28, .38, z + .16);
+    for (var c = 0; c < 3; c++) cyl(.055, .03, '#f4f6f8', x + .28, .48 + c * .03, z + .16);
     var bm = new THREE.MeshBasicMaterial({ color: '#eaffff', transparent: true, opacity: .5,
       blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
     for (var i = 0; i < 7; i++) {
@@ -1803,9 +1829,10 @@
     }
   }
   function fruitBowl(x, z) {
-    cyl(.3, .08, '#d9c39a', x, .96, z);
-    [[-.12, 0, '#c94f4f'], [.1, .05, '#e0a83a'], [0, -.12, '#7bbf66'], [.14, -.1, '#d4724f']].forEach(function (p) {
-      var f = new THREE.Mesh(new THREE.SphereGeometry(.075, 8, 6), solid(p[2]));
+    cyl(.32, .085, '#e2cfaa', x, .955, z);
+    cyl(.28, .02, '#f4e6c8', x, .995, z);
+    [[-.12, .02, '#d95f55'], [.1, .06, '#f0b63c'], [0, -.12, '#6fbe63'], [.13, -.09, '#e07a4a'], [-.02, .08, '#8ccf6a']].forEach(function (p) {
+      var f = new THREE.Mesh(new THREE.SphereGeometry(.072, 8, 6), solid(p[2], { roughness: .55 }));
       f.position.set(x + p[0], 1.04, z + p[1]); addO(f);
     });
   }
@@ -1997,7 +2024,7 @@
     });
     [6, 20, 32].forEach(function (px) { reflection(px, 50.7, 2.2, .8, '#bcd9ec', 0, .06); });
     // bollards, parking meters, bike racks
-    for (var bx = -2; bx <= 34; bx += 3.5) cyl(.07, .5, '#8b97a5', bx, .25, 45.15);
+    for (var bxi = -2; bxi <= 34; bxi += 3.5) cyl(.07, .5, '#8b97a5', bxi, .25, 45.15);
     [4, 16, 28].forEach(function (mx) {
       cyl(.06, .8, '#5d6b7d', mx, .4, 45.15);
       box(.18, .24, .12, '#3f9d9a', mx, .86, 45.15, true);
@@ -2834,10 +2861,13 @@
     [2.8, 5, 7.2].forEach(function (px) { serverRack(px, 25.5); });
     wallSign('SERVER / IT', 'SYSTEMS · NETWORK', 5, 2.3, 23.18, 3.0, .8, 0, '#5f7fa8');
     plant(10.5, 32, .95); plant(23, 20.8, .9);
+    plant(3.4, 30.2, .85);
     for (var mz4 = 24.4; mz4 <= 30.6; mz4 += 1.6) mullion(11, mz4, 'z', 2.45);
     doorway(11, 27.5, 'z');
     pendant(5.5, 28.4, '#b08a3d');
     cabinet(9.4, 31.6, '#6e7c8f'); printer(8.6, 26.1);
+    box(.5, .04, .34, '#b08a3d', 6.9, .85, 28.0);
+    cyl(.04, .08, '#2f3d52', 6.82, .9, 28.0);
 
     exterior();
     northStreet();
