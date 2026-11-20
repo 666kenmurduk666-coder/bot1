@@ -1,8 +1,9 @@
 /* office-v9.js — Cyborg Cheebee Office.
-   v9 "photographic" + v14/v15/v16 effects + v17 "realistic streets" pass:
+   v9 "photographic" + v14/v15/v16 effects + v17/v18 "realistic streets" pass:
    textured materials, warm light pools, contact shadows, legible signage, a real
-   north city street with traffic, upgraded cars/bus, detailed sky/skyline,
-   window-blind shadows, reflections, richer trim and a cinematic grade.
+   north city street with traffic, pedestrians, bike lane, tactile paving, signs,
+   billboard, detailed sky/skyline, window reflections, blind shadows, reflections,
+   richer trim and a cinematic grade.
    Layout still follows published planning concepts: WELCOME -> MAIN STREET ->
    FOCUS / MEET / GATHER -> SUPPORT. Loaded BEFORE the main app script. */
 (function () {
@@ -21,7 +22,7 @@
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [] };
+    blinds: [], reflections: [], signals: [], peds: [] };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -244,6 +245,46 @@
         q.fillStyle = g; q.fillRect(0, y, S, h);
       }
     }, 1, 1);
+  }
+  function windowReflectionTex() {
+    return makeTex('winrefl', function (q, S) {
+      var W = S, H = S;
+      q.clearRect(0, 0, W, H);
+      var g = q.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(190,222,246,.55)');
+      g.addColorStop(.45, 'rgba(150,195,230,.18)');
+      g.addColorStop(1, 'rgba(255,236,206,.12)');
+      q.fillStyle = g; q.fillRect(0, 0, W, H);
+      var r = rnd(137);
+      // reflected clouds, squashed into the narrow strip
+      for (var i = 0; i < 14; i++) {
+        var cx = r() * W, cy = 20 + r() * H * .55, rw = 40 + r() * 100, rh = 10 + r() * 20;
+        var cg = q.createRadialGradient(cx, cy, 1, cx, cy, rw);
+        cg.addColorStop(0, 'rgba(255,255,255,' + (.22 + r() * .22).toFixed(2) + ')');
+        cg.addColorStop(1, 'rgba(255,255,255,0)');
+        q.save(); q.translate(cx, cy); q.scale(1, rh / rw); q.translate(-cx, -cy);
+        q.fillStyle = cg; q.beginPath(); q.arc(cx, cy, rw, 0, 6.3); q.fill(); q.restore();
+      }
+      // reflected buildings along the bottom edge
+      q.fillStyle = 'rgba(38,54,78,.32)';
+      for (var bx = 0; bx < W;) {
+        var bw = 28 + r() * 46, bh = 20 + r() * 42;
+        q.fillRect(bx, H - bh, bw, bh); bx += bw + 5 + r() * 12;
+      }
+      // diagonal glass sheen
+      q.strokeStyle = 'rgba(255,255,255,.20)'; q.lineWidth = 12;
+      for (var s = -W; s < W * 1.5; s += 240) {
+        q.beginPath(); q.moveTo(s, H); q.lineTo(s + H * 1.3, 0); q.stroke();
+      }
+    }, 1, 1);
+  }
+  function windowReflection() {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(46, 2.5),
+      new THREE.MeshBasicMaterial({ map: windowReflectionTex(), transparent: true, opacity: .24,
+        depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false }));
+    m.position.set(23, 1.95, .20); m.renderOrder = 3; addO(m);
+    fx.sky = fx.sky || {}; fx.sky.refl = m;
+    fx.reflections.push({ m: m, base: .24, p: 9.3 });
   }
   function glintTex() {
     return makeTex('glint', function (q, S) {
@@ -939,6 +980,7 @@
         }
       }
     }
+    billboard();
   }
   function skyBackdrop() {
     var cv = document.createElement('canvas'); cv.width = 1536; cv.height = 768;
@@ -975,6 +1017,7 @@
     var m = new THREE.Mesh(new THREE.PlaneGeometry(260, 110),
       new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, depthWrite: false, fog: false, toneMapped: false }));
     m.position.set(23, 30, -34); addO(m);
+    fx.sky = fx.sky || {}; fx.sky.m = m;
   }
   function exterior() {
     floor(80, 16, solid('#ffffff', { map: stoneTex(10, 2), roughness: .95, metalness: 0 }), 23, .004, 41);
@@ -1004,6 +1047,9 @@
       solid('#ffe9bd', { emissive: '#ffd98a', emissiveIntensity: 1.0 }));
     head.position.set(1.0, 3.86, 0); head.userData.v9 = true; g2.add(head);
     animParts.push({ m: head, k: 'led', p: x * .3 });
+    var banner = new THREE.Mesh(new THREE.BoxGeometry(.04, .85, .3),
+      solid(x % 2 ? '#3f9d9a' : '#b08a3d', { roughness: .9 }));
+    banner.position.set(-.14, 2.75, 0); banner.userData.v9 = true; g2.add(banner);
     var base = new THREE.Mesh(new THREE.CylinderGeometry(.18, .22, .22, 10), solid('#394456'));
     base.position.y = .11; base.userData.v9 = true; g2.add(base);
     g2.position.set(x, 0, z); addO(g2);
@@ -1042,11 +1088,97 @@
     sign.position.set(1.72, 2.0, 0); sign.userData.v9 = true; g2.add(sign);
     g2.position.set(x, 0, z); addO(g2);
   }
+  function tactileTex() {
+    return makeTex('tactile', function (q, S) {
+      q.fillStyle = '#c8a86a'; q.fillRect(0, 0, S, S);
+      for (var y = 14; y < S; y += 24) for (var x = 14; x < S; x += 24) {
+        q.fillStyle = 'rgba(255,242,196,.95)';
+        q.beginPath(); q.arc(x, y, 4.5, 0, 6.3); q.fill();
+      }
+    }, 22, 1);
+  }
+  function roadSign(x, z, label, color) {
+    var g2 = new THREE.Group();
+    var pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .06, 2.2, 8), solid('#5d6b7d'));
+    pole.position.y = 1.1; pole.userData.v9 = true; g2.add(pole);
+    var cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    var q = cv.getContext('2d');
+    q.fillStyle = color || '#3f9d9a'; q.fillRect(0, 0, 256, 128);
+    q.strokeStyle = '#f4f6f8'; q.lineWidth = 8; q.strokeRect(6, 6, 244, 116);
+    q.fillStyle = '#ffffff'; q.font = 'bold 54px sans-serif';
+    q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(label, 128, 68);
+    var t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+    var face = new THREE.Mesh(new THREE.PlaneGeometry(1.0, .5),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
+    face.position.set(0, 2.05, .04); face.userData.v9 = true; g2.add(face);
+    g2.position.set(x, 0, z); addO(g2);
+  }
+  function fence(x1, x2, z) {
+    for (var x = x1; x <= x2; x += 1.6) {
+      var p = new THREE.Mesh(new THREE.BoxGeometry(.06, .9, .06), solid('#8b97a5', { metalness: .5 }));
+      p.position.set(x, .45, z); p.userData.v9 = true; addO(p);
+    }
+    [.38, .82].forEach(function (y) {
+      var r = new THREE.Mesh(new THREE.BoxGeometry(x2 - x1, .05, .05), solid('#9aa6b3', { metalness: .5 }));
+      r.position.set((x1 + x2) / 2, y, z); r.userData.v9 = true; addO(r);
+    });
+  }
+  function billboard() {
+    var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 384;
+    var q = cv.getContext('2d');
+    var g = q.createLinearGradient(0, 0, 1024, 384);
+    g.addColorStop(0, '#123a63'); g.addColorStop(.5, '#2f6f9e'); g.addColorStop(1, '#3f9d9a');
+    q.fillStyle = g; q.fillRect(0, 0, 1024, 384);
+    q.fillStyle = 'rgba(255,255,255,.07)';
+    for (var i = 0; i < 9; i++) q.fillRect(i * 130, 0, 54, 384);
+    q.fillStyle = '#ffe6a8'; q.font = 'bold 92px sans-serif'; q.textAlign = 'center';
+    q.fillText('CYBORG CITY', 512, 170);
+    q.fillStyle = '#ffffff'; q.font = '42px sans-serif';
+    q.fillText('FUTURE IS OPEN 24/7', 512, 250);
+    var t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(9.3, 3.7, .14), solid('#2e3a4d'));
+    frame.position.set(0, 8.5, -12.05); frame.userData.v9 = true; addO(frame);
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.4),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
+    m.position.set(0, 8.5, -11.94); m.userData.v9 = true; addO(m);
+  }
+  function pedestrian(x, z, dir, color) {
+    shadow(x, z, .24, .18, .08);
+    var g2 = new THREE.Group();
+    var torso = new THREE.Mesh(new THREE.CylinderGeometry(.15, .19, .68, 8), solid(color, { roughness: .9 }));
+    torso.position.y = .98; torso.userData.v9 = true; g2.add(torso);
+    var head = new THREE.Mesh(new THREE.SphereGeometry(.14, 10, 8), solid('#e8c4a0', { roughness: .85 }));
+    head.position.y = 1.48; head.userData.v9 = true; g2.add(head);
+    var hair = new THREE.Mesh(new THREE.SphereGeometry(.145, 10, 8, 0, 6.3, 0, 1.5), solid('#3b322c'));
+    hair.position.y = 1.51; hair.userData.v9 = true; g2.add(hair);
+    var legs = [], arms = [];
+    [-.09, .09].forEach(function (dx) {
+      var leg = new THREE.Mesh(new THREE.BoxGeometry(.1, .56, .12), solid('#35455c'));
+      leg.position.set(dx, .36, 0); leg.userData.v9 = true; g2.add(leg); legs.push(leg);
+      var arm = new THREE.Mesh(new THREE.BoxGeometry(.08, .5, .1), solid(color, { roughness: .9 }));
+      arm.position.set(dx * 2.6, 1.0, 0); arm.userData.v9 = true; g2.add(arm); arms.push(arm);
+    });
+    var bag = new THREE.Mesh(new THREE.BoxGeometry(.22, .24, .1), solid('#b08a3d'));
+    bag.position.set(.28, .78, 0); bag.userData.v9 = true; g2.add(bag);
+    g2.rotation.y = dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    g2.position.set(x, 0, z); addO(g2);
+    fx.peds.push({ g: g2, dir: dir, speed: .45 + Math.random() * .3,
+      legs: legs, arms: arms, phase: x * .7 });
+  }
+  function roadArrow(x, z, dir) {
+    var shaft = box(1.1, .014, .12, '#eef2f4', x, .013, z);
+    var h1 = box(.55, .014, .12, '#eef2f4', x + dir * .6, .013, z - .19);
+    var h2 = box(.55, .014, .12, '#eef2f4', x + dir * .6, .013, z + .19);
+    h1.rotation.y = dir * .62; h2.rotation.y = -dir * .62;
+  }
   function northStreet() {
     // Visible through the north glazing: a real two-lane city street.
     floor(70, 3.4, solid('#ffffff', { map: stoneTex(12, 1), roughness: .95 }), 23, .006, -2.1);
     floor(70, 6.4, solid('#ffffff', { map: asphaltTex(14, 2), roughness: .96, metalness: .02 }), 23, .004, -7.2);
     floor(70, 2.8, solid('#ffffff', { map: stoneTex(12, 1), roughness: .95 }), 23, .006, -11.7);
+    // painted bike lane + edge lines
+    floor(70, .85, solid('#4a7f6e', { roughness: .95 }), 23, .009, -4.85);
+    for (var bxd = -8; bxd <= 54; bxd += 3) box(1.4, .012, .07, '#eef2f4', bxd, .013, -5.3);
     box(70, .14, .18, '#b9c1c9', 23, .07, -4.12);
     box(70, .14, .18, '#b9c1c9', 23, .07, -10.28);
     for (var x = -8; x <= 54; x += 4) box(2.1, .014, .11, '#e8d9a0', x, .012, -7.2, true);
@@ -1055,6 +1187,19 @@
     [12, 34].forEach(function (cx) {
       for (var z = -4.5; z >= -9.9; z -= .72) box(2.8, .014, .34, '#eef2f4', cx, .013, z);
     });
+    [8, 26, 44].forEach(function (ax) { roadArrow(ax, -6.2, 1); });
+    [14, 38].forEach(function (mx) {
+      cyl(.28, .03, '#59616c', mx, .014, -7.2);
+      cyl(.2, .032, '#707a86', mx, .016, -7.2);
+    });
+    [10, 30, 50].forEach(function (px) { reflection(px, -9.9, 1.8, .7, '#bcd9ec', 0, .06); });
+    // Tactile paving and drainage grates make the sidewalks feel finished.
+    floor(70, .42, solid('#ffffff', { map: tactileTex(), roughness: .95 }), 23, .011, -3.78);
+    floor(70, .42, solid('#ffffff', { map: tactileTex(), roughness: .95 }), 23, .011, -10.62);
+    for (var gx = 2; gx <= 52; gx += 8) {
+      box(.62, .022, .3, '#39414c', gx, .017, -4.02);
+      for (var sl = -1; sl <= 1; sl++) box(.04, .006, .26, '#78828f', gx + sl * .16, .03, -4.02);
+    }
     // Moving traffic — near lane goes right, far lane goes left.
     car(-6, -6.2, 1, '#c94f5f'); car(17, -6.2, 1, '#4a7fb0'); car(42, -6.2, 1, '#e0a83a');
     car(6, -8.4, -1, '#3f9d6a'); bus(31, -8.4, -1); car(51, -8.4, -1, '#8f6fd8');
@@ -1065,6 +1210,21 @@
     trafficLight(12, -3.6); trafficLight(34, -3.6);
     busStop(43, -2.5);
     for (var bx2 = -4; bx2 <= 50; bx2 += 6) cyl(.07, .42, '#8b97a5', bx2, .21, -3.5);
+    [6, 18, 30, 42].forEach(function (mx) {
+      cyl(.06, .8, '#5d6b7d', mx, .4, -3.5);
+      box(.18, .24, .12, '#3f9d9a', mx, .86, -3.5, true);
+    });
+    roadSign(8, -2.9, 'BUS', '#3f9d9a');
+    roadSign(35, -2.9, 'CITY', '#3f6f9d');
+    fence(2, 18, -13.2);
+    fence(24, 52, -13.2);
+    // People walking on both sidewalks.
+    pedestrian(4, -2.6, 1, '#c94f4f');
+    pedestrian(22, -2.6, -1, '#4a7fb0');
+    pedestrian(40, -2.6, 1, '#3f9d6a');
+    pedestrian(10, -11.2, -1, '#e0a83a');
+    pedestrian(30, -11.2, 1, '#8f6fd8');
+    pedestrian(48, -11.2, -1, '#d4724f');
   }
 
   /* The old scene left a 1.6 hemisphere and a purple 26-intensity point light
@@ -1091,7 +1251,7 @@
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
-    blinds: [], reflections: [], signals: [] };
+    blinds: [], reflections: [], signals: [], peds: [] };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -1143,6 +1303,7 @@
     for (var wx = 1; wx <= 45; wx += 4) mullion(wx, .16, 'x', 2.55);
     box(46, .09, .16, '#d8dee6', 23, 1.02, .17);
     box(46, .09, .16, '#d8dee6', 23, 2.93, .17);
+    windowReflection();
     [5, 13, 21, 29, 37].forEach(function (bx2) {
       windowBand(bx2, 3.4, 4.2, 5.5, .08);
       blindShadow(bx2, 5.4, 4.0, 3.4, .08);
@@ -1490,6 +1651,20 @@
         if (a.dir > 0 && a.g.position.x > 58) a.g.position.x = -12;
         if (a.dir < 0 && a.g.position.x < -12) a.g.position.x = 58;
       });
+      fx.peds.forEach(function (a) {
+        a.g.position.x += a.dir * a.speed * dt * 1.35;
+        if (a.dir > 0 && a.g.position.x > 56) a.g.position.x = -10;
+        if (a.dir < 0 && a.g.position.x < -10) a.g.position.x = 56;
+        var sw = Math.sin(now / 190 + a.phase) * .42;
+        if (a.legs[0]) a.legs[0].rotation.x = sw;
+        if (a.legs[1]) a.legs[1].rotation.x = -sw;
+        if (a.arms[0]) a.arms[0].rotation.x = -sw * .8;
+        if (a.arms[1]) a.arms[1].rotation.x = sw * .8;
+      });
+      if (fx.sky && fx.sky.m) fx.sky.m.position.x = 23 + Math.sin(now / 17000) * 1.5;
+      if (fx.sky && fx.sky.refl && fx.sky.refl.material && fx.sky.refl.material.map) {
+        fx.sky.refl.material.map.offset.x = .03 * Math.sin(now / 9000);
+      }
       if (now - (tick.signals || 0) > 2200) {
         tick.signals = now;
         fx.signals.forEach(function (a) {

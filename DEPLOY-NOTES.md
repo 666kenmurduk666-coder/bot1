@@ -484,3 +484,33 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
 - **Cache-bust:** `/office-v9.js?v=17`.
 
+## 2026-11-20 — "Super-enhanced whole road" pass (v18 cache-bust)
+
+### Mga idinagdag
+- **Living street:** 6 pedestrians sa dalawang sidewalk, may swinging legs/arms,
+  pasulong-balik na lakad, at wrapping kapag lumampas sa dulo ng kalsada.
+- **Bike lane:** berdeng lane, puting divider dashes, at 3 directional road arrows.
+- **Road finish:** tactile paving sa magkabilang curb, 7 drainage grates na may
+  slats, manholes, puddles/reflections, at edge lines.
+- **Furniture:** 4 parking meters, metal fence sa likod ng sidewalk, BUS/CITY
+  road signs, at street-lamp banners.
+- **Billboard:** malaking `CYBORG CITY / FUTURE IS OPEN 24/7` sign na kita sa
+  window view; inayos ang depth para hindi matakpan ng skyline building.
+- **Real glass:** additive window-reflection strip sa north glazing na may
+  reflected clouds, buildings, at diagonal sheen; dahan-dahang gumagalaw.
+- **Living sky:** buong sky backdrop dahan-dahang nag-d drift; reflection offset
+  ay nag-aanimate din.
+- Protected Phase D v8 runtime ay hindi pa rin binabago.
+
+### Verification (v18, lokal)
+- `bots=6`, walang build error, walang console errors.
+- Effects: `peds=6`, `cars=8`, `signals=2`, `windows=51`, `plants=105`,
+  `reflections=19` (may window-reflection strip), `sky=1`, `blinds=5`, `screens=25`.
+- Projection check: car, bus, lamp, skyline, billboard, road sign, pedestrian,
+  bike lane at tactile paving — **lahat onscreen** sa default camera.
+- Animation probe: carX, pedX, pedLeg, skyX, reflection offset, blind lahat nagbago.
+- Pixel stats: `bgPct=0`, `edgePct=4.5`, `meanLum=102.6`, `hidden=0`,
+  `meshes=2550`, `textured=268` — walang white-out. `bgHex=93a1b3`, `amb=0.58`,
+  `exposure=0.85`.
+- **Cache-bust:** `/office-v9.js?v=18`.
+
