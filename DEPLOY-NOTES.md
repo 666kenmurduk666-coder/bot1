@@ -1145,3 +1145,31 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `isNight=0`, veil `0`.
 - Live hero pixels: `meanLum=115.9`, `dark=14.6%`, `green=27%`, `bg=0.4%` -
   no white-out; greens and Batch 2 props render.
+
+## 2026-11-20 - Clarity pass (user report: sobrang dilim + HUD/nakaharang)
+
+### Changes
+- Night veil cap lowered `.62 -> .32`; guarded values still untouched
+  (bg/fog `93a1b3`, ambient `.58`, exposure `.85`).
+- Full-ceiling `46x26` additive projection plane replaced with a compact
+  `1.2x1.2` projector tile + small housing, off by default. The big plane sat
+  between the high hero camera and the bots and blocked the view.
+- Studio BOT bar clarity defaults: `ceiling`, `nameplates`, `status` now start
+  OFF; they can still be enabled from the bar. Other 7 features stay ON.
+- Default view is clean full-screen 3D (`ui-hidden` on first load); H / the eye
+  button still restores the full HUD. `.v9bub` remains exposed when forced.
+- Cache keys bumped: `/office-v9.js?v=34`, `/office-studio.js?v=36`.
+
+### Local headless verification
+- `node --check` both modules PASS; `node tests/strategy-baseline.js` PASS.
+- No console errors. Default `botFeatures` confirmed: ceiling/nameplates/status
+  false, others true.
+- HUD hidden: camTools, camHint, minimap, gameHud, mmoChat, eventShowCard,
+  ceoFab, lockFab all `display:none`; `.v9bub` forced display `block` OK.
+- Night with clarity defaults: veil `.32`, amount `1`, guards unchanged.
+  Pixels `mean=91.9`, `dark=14.4%`, `green=16.3%`, `blue=22.9%` vs the reported
+  dark screenshot `mean=50.7`, `dark=38.6%`, `green=0%`, `blue=86.1%`.
+- Day: veil `0`, guards unchanged, `mean=115.1`, `green=25.2%`.
+- Toggle round-trip for ceiling/nameplates/status: `[false,true,false]`.
+- 60 forced ticks flat: geometries `4511 -> 4511`, textures `144 -> 144`,
+  render calls `3190 -> 3190`.

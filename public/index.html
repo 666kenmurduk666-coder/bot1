@@ -549,7 +549,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=33"></script>
+<script src="/office-v9.js?v=34"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -6657,7 +6657,9 @@ function createUiHideBtn(){
   const bar=document.getElementById('officeTools');if(!bar)return;
   const b=document.createElement('button');b.id='uiHideBtn';b.title='Itago / ipakita ang floating panels (shortcut: H)';
   b.onclick=()=>toggleUiHide();bar.appendChild(b);
-  try{const v=localStorage.getItem('uiHidden2');if(v==='1')document.body.classList.add('ui-hidden');else document.body.classList.remove('ui-hidden');}catch(e){}
+  /* Clarity pass: default to a clean full-screen 3D view so HUD overlays do
+     not block the bots. H / the eye button still restores the full UI. */
+  try{const v=localStorage.getItem('uiHidden2');if(v==='0')document.body.classList.remove('ui-hidden');else document.body.classList.add('ui-hidden');}catch(e){}
   updateUiHideBtn();
 }
 function toggleUiHide(force){
@@ -7087,5 +7089,5 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=35"></script></body>
+<script src="/office-studio.js?v=36"></script></body>
 </html>

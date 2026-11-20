@@ -720,13 +720,19 @@
     ['status', '💬 Status'], ['idle', '😴 Idle'], ['outfits', '🎩 Outfits'],
     ['pets', '🐾 Pets']
   ];
+  // Clarity defaults: full-ceiling projection and stacked floating labels sat
+  // between the hero camera and the bots, so they start OFF. H still toggles UI.
+  var BOT_DEFAULT_OFF = { ceiling: 1, nameplates: 1, status: 1 };
   function addBotBar() {
     var card = document.querySelector('#v-layout .card');
     if (!card || $('edBotBar')) return;
     var v9 = window.__officeV9;
     var saved = store.get('ccStudioBots', {});
     var features = {};
-    BOT_FEATURES.forEach(function (f) { features[f[0]] = saved.features ? (saved.features[f[0]] !== false) : (saved[f[0]] !== false); });
+    BOT_FEATURES.forEach(function (f) {
+      var k = f[0], def = BOT_DEFAULT_OFF[k] ? false : true;
+      features[k] = saved.features ? (saved.features[k] !== false) : (saved[k] !== false && def);
+    });
     var bar = document.createElement('div');
     bar.className = 'ed-toolbar'; bar.id = 'edBotBar';
     bar.innerHTML = '<span class="ed-group" style="margin:0">🤖 BOT</span>' +

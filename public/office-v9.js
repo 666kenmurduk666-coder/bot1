@@ -87,8 +87,8 @@
     // Batch 2 character layer (items 11-20).
     barista: null, growthPlants: [], fish: null, skylineLights: [], ceilingProj: null,
     pets: [], outfits: [],
-    botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: true,
-      nameplates: true, status: true, idle: true, outfits: true, pets: true } };
+    botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: false,
+      nameplates: false, status: false, idle: true, outfits: true, pets: true } };
   // v30 job cues: the antenna tip reads like a tiny status lamp.
   var JOB_HINTS = {
     greet: ['#7cf7ff', .85], wave: ['#7cf7ff', 1.1], type: ['#8fd0ff', 1.4],
@@ -2458,8 +2458,8 @@
       seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null,
       barista: null, growthPlants: [], fish: null, skylineLights: [], ceilingProj: null,
       pets: [], outfits: [],
-      botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: true,
-        nameplates: true, status: true, idle: true, outfits: true, pets: true } };
+      botFeatures: { barista: true, plants: true, fish: true, skyline: true, ceiling: false,
+        nameplates: false, status: false, idle: true, outfits: true, pets: true } };
     if (animId) { try { cancelAnimationFrame(animId); } catch (e) {} animId = null; }
     try {
       level3d.clear();
@@ -3408,7 +3408,7 @@
     fx.night.amount += (nt - fx.night.amount) * Math.min(1, dt * 1.8 + .012);
     if (Math.abs(nt - fx.night.amount) < .002) fx.night.amount = nt;
     var veil = fx.night.veil;
-    if (veil) { faceCamera(veil, 1.4); veil.material.opacity = fx.night.amount * .62; }
+    if (veil) { faceCamera(veil, 1.4); veil.material.opacity = fx.night.amount * .32; }
 
     // 2 — rain + lightning + puddles shimmer + rainbow.
     var w = fx.weather || {}, storm = window.__officeWeather === 'storm';
@@ -3660,13 +3660,18 @@
         q.fillRect(r2() * S, r2() * S, 1.4, 1.4);
       }
     }, 1, 1);
-    var proj = new THREE.Mesh(new THREE.PlaneGeometry(46, 26),
+    // Kept small on purpose: a full-ceiling plane sat between the high hero
+    // camera and the bots and blocked the view. This is a compact projector
+    // tile only, off by default; Studio can still enable it.
+    var proj = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2),
       new THREE.MeshBasicMaterial({ map: projTex, transparent: true, opacity: .08,
         blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
         toneMapped: false, fog: false }));
-    proj.rotation.x = Math.PI / 2; proj.position.set(23, 3.22, 17);
+    proj.rotation.x = Math.PI / 2; proj.position.set(23, 3.18, 17);
     proj.renderOrder = 1; proj.userData.v9 = true; addO(proj);
     fx.ceilingProj = proj;
+    var housing = box(.9, .08, .9, solid('#26334a'), 23, 3.24, 17);
+    housing.userData.v9 = true;
   }
   function makeBatch2Pet(kind, owner, color, idx) {
     if (!owner || !owner.group) return;

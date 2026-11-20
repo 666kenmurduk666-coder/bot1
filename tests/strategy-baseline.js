@@ -62,9 +62,10 @@ const protectedHashes = {
   // click-guard fixes. v31/v32/v34 (Batch 1): cache keys bumped again for the
   // living-world layer and night-state sync. v33/v35 (Batch 2): cache keys
   // bumped for the character-life layer (barista, plants, fish, skyline,
-  // nameplates, status, idle, outfits, pets). The protected H hide-ui shortcut
-  // is left untouched.
-  'public/index.html': 'cd0586065ad97381ff6b3d0a6ce9aa4e7c2f070fa2b7dfe9d8120b58631c82cd',
+  // nameplates, status, idle, outfits, pets). v34/v36 (clarity pass): clean
+  // full-screen 3D view by default, softer night veil, compact ceiling tile.
+  // H still restores the UI and .v9bub stays visible.
+  'public/index.html': 'bb562714f42d92a90615a2d01c47cc0613e0b8eb98da7a83b483da9704f17c87',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -109,7 +110,9 @@ const protectedHashes = {
   // v32 Batch 2: barista bot, growth-stage plants, lounge fish tank,
   // night-linked skyline/ceiling projection, role + status sprites, idle beats,
   // job outfits and two follower pets; all Studio-toggleable via setBotFeature.
-  'public/office-v9.js': '66bb8519beb909cb72b2599165ad7ac4b788102f029946b4825e3a438b7b0cf2',
+  // v34 clarity pass: night veil capped at .32, giant ceiling plane replaced by
+  // a compact projector tile, floating name/status labels default OFF.
+  'public/office-v9.js': '79af6c9017f4373dbda453bfc72c492f792e1467eaed1e6f1e793c161bac96b0',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
@@ -119,7 +122,9 @@ const protectedHashes = {
   // to __officeV9 world controls, persisted in localStorage.
   // v35 Batch 2: BOT bar with 10 character toggles persisted in
   // localStorage.ccStudioBots; H remains reserved for Hide UI.
-  'public/office-studio.js': '1cc874492a2c2f42ce673fe0a0edf0df24f3e7c5c205bf6ae2ba2a6c731a9880',
+  // v36 clarity pass: ceiling/nameplates/status start OFF so they cannot block
+  // the bot view; users can still enable them from the BOT bar.
+  'public/office-studio.js': 'eafd53ee29487ff02d9c91aeb7f82d2d0a74246bb9e94bf03975cb003ce10bda',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
