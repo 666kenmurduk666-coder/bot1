@@ -611,8 +611,13 @@ const CHAT_REPLIES={
   fun:['Party mode na! 🎉','Sayaw tayo! 💃','Game time! 🎮'],
   default:['Sige, CEO! 👍','Copy that! ✨','Opo, nasa trabaho na kami 🤖','Ping ko ang team 💬']
 };
+const mmoLogSeen={};
 function mmoLog(who,text,color){
   const log=$('mmoChatLog');if(!log)return;
+  // Huwag ulitin ang same line (hal. event stage welcome) sa loob ng 1 minuto.
+  const key=String(text||'').trim().toLowerCase(),now=Date.now();
+  if(key&&mmoLogSeen[key]&&now-mmoLogSeen[key]<60000)return;
+  if(key)mmoLogSeen[key]=now;
   const d=document.createElement('div');d.style.cssText='margin:2px 0;word-break:break-word';
   d.innerHTML='<b style="color:'+(color||'#7fc7ff')+'">'+esc(who)+'</b>: '+esc(text);
   log.appendChild(d);while(log.children.length>50)log.removeChild(log.firstChild);
@@ -624,7 +629,11 @@ function mmoAnchorObj(){
   mmoAnchor.position.set(cam3d?cam3d.target.x:10.6,1.5,cam3d?cam3d.target.z:14);
   return mmoAnchor;
 }
+const mmoSaySeen={};
 function mmoSay(who,label,text,actor){
+  const key=String(text||'').trim().toLowerCase(),now=Date.now();
+  if(key&&mmoSaySeen[key]&&now-mmoSaySeen[key]<60000)return;
+  if(key)mmoSaySeen[key]=now;
   mmoSpeech={who:who,label:label,line:text,t0:Date.now(),actor:actor||mmoAnchorObj()};
   mmoLog(label,text);
   try{snd('blip',who)}catch(e){}
@@ -1263,15 +1272,18 @@ function taglishForVoice(text){
   }
   return t.slice(0,180);
 }
+const speakSeen={};
 function speak(text,id,interrupt){
   if(!voiceOn||!window.speechSynthesis||!text)return;
-  const now=Date.now();
+  const clean=taglishForVoice(text);
+  if(!clean)return;
+  const now=Date.now(),skey=clean.toLowerCase();
+  if(speakSeen[skey]&&now-speakSeen[skey]<45000)return;
+  speakSeen[skey]=now;
   if(!interrupt&&now-lastSpeak<400)return;
   lastSpeak=now;
   try{
     if(interrupt)speechSynthesis.cancel();
-    const clean=taglishForVoice(text);
-    if(!clean)return;
     const u=new SpeechSynthesisUtterance(clean);
     let h=0;for(const c of String(id||'bot'))h=(h*31+c.charCodeAt(0))>>>0;
     const v=botVoiceFor(id);if(v)u.voice=v;
@@ -4943,7 +4955,7 @@ setInterval(()=>{
 /* ---------- boot ---------- */
 const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'})};
 tick();setInterval(tick,30000);
-refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!'),4000)});
+refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! 🔊 Sounds + 🗣️ Voice = sa kanan-baba, i-click ang Voice para magsalita sila!'),4000)});
 setInterval(refresh,12000);
 /* P0: queued tasks are now driven by the SERVER (serverTaskRunner), not by this tab.
    Closing the browser will no longer stop the office queue. */
