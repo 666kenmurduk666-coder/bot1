@@ -1103,16 +1103,69 @@ async function fetchProductMeta(url) {
   };
 }
 
+const CONVO_POOL = ['cos', 'seo', 'product', 'joker', 'mgr', 'edit', 'rvs', 'sched', 'post', 'outreach', 'social', 'scraper', 'fixer'];
+const CONVO_SCENES = [
+  'a coffee run in the pantry',
+  'a funny debate about which AI tool is best',
+  'reacting to a task that just finished',
+  'planning the next short-form video',
+  'a new customer order that just came in',
+  'weekend plans and a lazy Monday joke',
+  'a bug that became an inside joke',
+  'a newbie asking the team for advice',
+  'friendly competition over who worked hardest',
+  'gossip about a new product or price change',
+  'an offline-mode / power-outage drill',
+  'celebrating a small quiet win'
+];
+function convoTooSimilar(lines, prev) {
+  try {
+    if (!prev || !prev.lines || !lines || !lines.length) return false;
+    const words = s => new Set(String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3));
+    const a = words(lines.join(' ')), b = words(prev.lines.map(x => x.text).join(' '));
+    if (!a.size) return false;
+    let hit = 0; a.forEach(w => { if (b.has(w)) hit++; });
+    return hit / a.size > 0.45;
+  } catch (e) { return false; }
+}
+
 async function generateConversation(ids) {
   // Reuse the last conversation for 10 minutes. Multiple open tabs or a UI
-  // refresh must not each spend a separate Groq call.
+  // refresh must not each spend a separate AI call.
   const recent = state.conversations[0];
   if (recent && Date.now() - (recent.t || 0) < 10 * 60 * 1000) return recent;
-  const chosen = (ids && ids.length ? ids : ['cos', 'seo', 'product', 'joker']).slice(0, 4);
-  const sys = 'You write a short, natural office conversation between AI coworkers in the Philippines. Write in casual but CORRECT TAGLISH (natural Tagalog mixed with English), like real Filipino office workers. Use proper Tagalog spelling and grammar. Each line must start with the agent id exactly as given, followed by a colon. Exactly 4 lines, one speaker per line, natural turn-taking (a reply reacts to the previous line). Keep it light and funny. Output only the lines.';
-  const user = 'Agents: ' + chosen.map(id => id + ' (' + (BOT_NAMES[id] || id) + ')').join(', ') +
-    '\nOffice: Cyborg Cheebee Office. Niche: ' + state.config.niche +
-    '\nWrite 4 short lines of casual watercooler talk. Format: "id: line".';
+
+  // Rotate the speakers and the scene so each chat feels like a different moment.
+  let chosen;
+  if (ids && ids.length) chosen = ids.slice(0, 4);
+  else {
+    const pool = CONVO_POOL.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    chosen = pool.slice(0, 4);
+  }
+  const scene = CONVO_SCENES[Math.floor(Math.random() * CONVO_SCENES.length)];
+  const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }).format(new Date()));
+  const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  const running = (state.tasks || []).filter(t => t.status === 'running').slice(0, 3)
+    .map(t => t.title || t.name || t.bot).join(', ') || '(none)';
+  const activity = (state.activity || []).slice(0, 4)
+    .map(a => a.who + ': ' + a.text).join(' | ') || '(quiet right now)';
+  const recentText = (state.conversations || []).slice(0, 3).map(c =>
+    (c.lines || []).map(l => l.id + ': ' + l.text).join(' | ')).filter(Boolean).join('\n') || '(none)';
+
+  const sys = 'You write a REAL slice-of-life conversation between AI coworkers in a small Filipino AI office. ' +
+    'Write natural, casually witty TAGLISH (real Tagalog mixed with English), like actual coworkers teasing each other while working. ' +
+    'Every line must start with the exact agent id followed by a colon. Exactly 4 lines, one speaker per line, and a true back-and-forth: each line directly reacts to the previous line. ' +
+    'Never reuse an old topic, joke, or phrasing. Output ONLY the 4 lines, no intro and no narration.';
+  const user = 'Agents in this scene: ' + chosen.map(id => id + ' (' + (BOT_NAMES[id] || id) + ')').join(', ') +
+    '\nScene: ' + scene +
+    '\nTime: ' + timeOfDay + ' in Manila.' +
+    '\nOffice niche: ' + state.config.niche +
+    '\nWhat just happened in the office: ' + activity +
+    '\nTasks running right now: ' + running +
+    '\nOld conversations — DO NOT repeat these topics or wording:\n' + recentText +
+    '\nWrite a brand-new 4-line watercooler exchange about the scene above. Keep each line under 20 words. Format: "id: line".';
+
   let lines;
   try {
     // Prefer Groq for the office watercooler when the user's key is present.
@@ -1123,6 +1176,14 @@ async function generateConversation(ids) {
     } catch (e2) {
       lines = [chosen[0] + ': Coffee first, work later.', chosen[1] + ': Boss is watching. Back to work!'];
     }
+  }
+  // If the model fell back to the same joke again, give it one explicit second chance.
+  if (convoTooSimilar(lines, recent)) {
+    try {
+      const fresh = (await callAI(sys, user + '\nIMPORTANT: Pick a COMPLETELY different topic and totally new wording.', 500))
+        .split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
+      if (fresh.length && !convoTooSimilar(fresh, recent)) lines = fresh;
+    } catch (e) { /* keep the first result */ }
   }
   const conv = {
     id: 'c' + Date.now(), t: Date.now(),
