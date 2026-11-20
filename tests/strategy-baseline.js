@@ -56,6 +56,13 @@ const protectedHashes = {
   // (current value below is the same content hash, re-verified).
   // 2026-11-20: added Office Fixer agent (fixer) with diagnosis prompt and a
   // default disabled health-check routine to help troubleshoot office issues.
+  // 2026-11-20 HYPERFRAMES BATCH (CEO-approved): added the five-agent
+  // "video editor" group (hflex/hfstory/hfmotion/hfcaption/hfrender) with
+  // prompts + AGENT_META; no multiplayer/MMORPG runtime was introduced.
+  // 2026-11-20 BATCH 3 (CEO-approved): server-side task runner, drift/quota health,
+  // agent error visibility, secrets separation, CEO session tokens, preflight/quota
+  // routing, approval/publish/finance ledgers and hashed backup restore drill.
+  // Hash below explicitly refreshed for Batch 3.
   'server.js': '22b165ca9422ed9b847a8e6c454bb1090690fd82dcaa24f9483f86961ca131d1',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
@@ -90,7 +97,17 @@ const protectedHashes = {
   // 2026-11-20 RESEARCH BATCH 2 (CEO-approved): added the CEO-only 🔬 RESEARCH
   // RECORDS panel (refresh/digest/crawl/search/gate + per-record review).
   // Prior approved hash: 047e34507f99195d2509e9f92c47e5f7167f2966dc8290f0e6a5f08f03523dc7
-  'public/index.html': '4198f144494de74f34ff28cae07ba910934bd051023b8986fecb3807310eed8a',
+  // HYPERFRAMES BATCH: loads /hyperframes.js?v=3 (video editor group panel,
+  // routed through the main app's CEO-token-aware api() helper and reporting
+  // partial failures instead of falsely claiming a full run succeeded).
+  // 2026-11-20 BATCH 3 (CEO-approved): Reload UI/cache-clear button, drift banner,
+  // agent error badges, token-based CEO boot, research service status/controls and
+  // the governance panel (approvals, publish ledger, finance ledger, backup drill).
+  // Hash below explicitly refreshed for Batch 3, then again for HyperFrames:
+  // office-v9.js v38 -> v39 so the 3 new 3D bots bypass the one-day static cache.
+  // 2026-11-21: temporary declutter - hide Ticket/Party/Ulan/Gabi buttons,
+  // CEO/Lock FABs, office quest strip, chat/overlay panels, and disable parking 3D.
+  'public/index.html': '5d4482742face2e3c236eca3c537ca47b822fe30a7059beef2cef6bb14dfbeab',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -144,6 +161,8 @@ const protectedHashes = {
   // v37: deterministic vertical stack pass; narrow panels show 2 bubbles so
   // they never overlap or leave the view.
   // v38: added Fixer 3D bot (route + role label) as office troubleshooter.
+  // HYPERFRAMES BATCH: 3 more 3D bots (HF Lead, HF Motion, HF QA) with routes,
+  // role labels, edit/render status and moods — visual only.
   'public/office-v9.js': 'b1442816116479b7a56a70b476a93d3683c499f525776b35bb656fce07a1ac48',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
@@ -163,7 +182,9 @@ const protectedHashes = {
   'public/phaseB.js': '0c796db8016af42a5c14df3cc606c51636b53845ba08ec1952e3a4048e330262',
   'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
   'public/phaseD.js': '770a2e8c53d96cd8fa109482a7a221f1a96c1b0175c4acda23d28978220ab831',
-  'public/sw.js': '654ff5f56e4f9a5110cb8419964a45e674a9536405c987fa5e35ec7321a7406f'
+  // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
+  // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
+  'public/sw.js': '6b269c3d38413fe4ac49bbb87dc6beed247fccb1054e7715a77f530e3bb7f674'
 };
 for (const [file, expected] of Object.entries(protectedHashes)) {
   const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');

@@ -297,10 +297,14 @@ dialog::backdrop{background:#000a}
           <button id="rainBtn">☔ Ulan</button>
           <button id="nightBtn">🌙 Gabi</button>
           <button id="auto" class="ceoOnly">⏸ Pause 24/7 mode</button>
+          <button class="reloadBtn" title="I-clear ang cache at i-reload ang dashboard">🔄 Reload UI</button>
           <button id="xray">👁 Silip</button>
           <button id="sfx">🔊 Sounds</button>
         </div>
         <div class="bar" id="officeTools" style="flex-wrap:wrap"></div>
+        <div id="healthBanner" style="display:none;margin:8px 0;padding:8px 10px;border-radius:9px;background:#4a2b12;border:1px solid #b97a2b;color:#ffd9a0;font-size:12px">
+          <b id="healthBannerText"></b> <button class="reloadBtn" style="margin-left:8px">🔄 Reload UI</button>
+        </div>
         <div class="hint" style="color:#9fb2d0;font-size:11px">🗺️ <b style="color:#c9a227">👑 HQ OPIS</b> · <b style="color:#e8622c">🛍️ MALL</b> · <b style="color:#2bb3a6">🌊 POOL</b> · <b style="color:#b89ff2">🧪 LAB</b></div>
       </div>
     </div>
@@ -345,6 +349,22 @@ dialog::backdrop{background:#000a}
       <textarea id="prodUrls" rows="3" placeholder="https://shopee.ph/...&#10;https://shopee.ph/..."></textarea>
       <div class="bar"><button class="run" id="prodAdd">+ Add links</button><button class="gold" id="prodAll">⚡ Generate all</button><button id="prodRush" style="background:linear-gradient(135deg,#d97736,#c9a227);color:#fff;font-weight:700">🚀 BOT RUSH — auto post + ad</button><button id="prodClear">Clear done</button></div>
       <p class="hint" id="prodRushInfo">🚀 Bot Rush = kukunin ng bots ang pangalan/presyo/description, gagawa ng Shopee-compliant product post sa office, video package, at bot commercial. I-paste lang ang links at pindutin ang Rush.</p>
+    </div>
+    <div class="card" id="videoFactoryCard"><h2>🎞️ AI Video Editor Assistant <span class="pill">Remotion</span></h2>
+      <p class="hint">Katulong ng video editor: isang brief → preview MP4 (may watermark). I-Approve para makakuha ng final na walang watermark. CEO login kung may lock.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+        <div><label>Product / title</label><input id="vfTitle" placeholder="Cyborg Cheebee Pro"></div>
+        <div><label>Tagline</label><input id="vfTagline" placeholder="Your AI Company. Your AI Team."></div>
+        <div><label>CTA</label><input id="vfCta" placeholder="Dream Bigger. Let AI Work Harder!"></div>
+        <div><label>Format</label><select id="vfFormat"><option value="vertical">9:16 — Reels / Shorts</option><option value="wide">16:9 — Wide / YouTube</option></select></div>
+        <div><label>Color 1</label><input id="vfColor1" type="color" value="#77eaff"></div>
+        <div><label>Color 2</label><input id="vfColor2" type="color" value="#8b5cf6"></div>
+      </div>
+      <label>AI brief — isulat sa Tagalog o English, hal. "Gawan ng reels promo ang bagong robot, hype tone, cyan at purple"</label>
+      <textarea id="vfBrief" rows="2" placeholder="I-describe lang ang gustong video…"></textarea>
+      <div class="bar"><button class="gold" id="vfBriefBtn">🤖 AI → auto-config</button><button class="run" id="vfRender">🎬 Render preview</button><button id="vfRecap">📊 Weekly recap</button><button id="vfBatch">⚡ Batch from products</button><button id="vfRefresh">⟳ Refresh</button></div>
+      <p class="hint" id="vfStatus">Ready.</p>
+      <div id="vfResults" class="grid" style="margin-top:10px"></div>
     </div>
     <div id="prodList" class="grid" style="margin-top:12px"></div>
   </section>
@@ -560,7 +580,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=38"></script>
+<script src="/office-v9.js?v=39"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -620,13 +640,22 @@ function mmoSend(){
   chars3d.forEach(c=>{const d=Math.hypot(c.group.position.x-px,c.group.position.z-pz);if(d<bd){bd=d;near=c}});
   if(near)setTimeout(()=>{if(!near.agent)return;const m=meta(near.agent.id);mmoSay(near.agent.id,(m.i||'🤖')+' '+m.n,mmoPickReply(txt),near);},700+Math.random()*800);
 }
-let ceoPass=localStorage.getItem('ceoPass')||'';
+/* P1: ceoPass now holds a session TOKEN — the password is never stored in the browser. */
+let ceoPass=localStorage.getItem('ceoToken')||'';
+function ceoHeaders(){const h={'Content-Type':'application/json'};if(ceoPass)h['X-CEO-Token']=ceoPass;return h}
+function ceoLogout(msg){
+  ceoPass='';localStorage.removeItem('ceoToken');localStorage.removeItem('ceoPass');
+  if(typeof applyLock==='function')applyLock();
+  if(msg)toast(msg);
+}
 async function api(p,o){o=o||{};
-  if(o.method==='POST'&&p.startsWith('/api/')&&p!=='/api/unlock'&&p!=='/api/orders'){
-    if(!ceoPass){toast('🔒 CEO Login muna! Pindutin ang 👑 button sa kaliwa.');return{ok:false,error:'locked'}}
-    try{const b=o.body?JSON.parse(o.body):{};b.pass=ceoPass;o.body=JSON.stringify(b)}catch(e){}
-  }
-  try{const r=await fetch(p,Object.assign({headers:{'Content-Type':'application/json'}},o));return await r.json()}catch(e){toast('Server error: '+e.message);return{ok:false,error:e.message}}
+  const isPost=o.method==='POST'&&p.startsWith('/api/')&&p!=='/api/unlock'&&p!=='/api/orders';
+  if(isPost&&!ceoPass){toast('🔒 CEO Login muna! Pindutin ang 👑 button sa kaliwa.');return{ok:false,error:'locked'}}
+  try{
+    const r=await fetch(p,Object.assign({headers:ceoHeaders()},o));
+    if(r.status===403||r.status===401){ceoLogout('🔑 Session expired — mag-login uli.');return{ok:false,error:'session-expired'}}
+    return await r.json();
+  }catch(e){toast('Server error: '+e.message);return{ok:false,error:e.message}}
 }
 async function refresh(){S=await api('/api/state');if(S)renderAll()}
 const esc=s=>String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
@@ -646,7 +675,7 @@ const PERSONA={
  scraper:{style:'round',trait:'Curious and nosy',moods:['✨','✨','✨']},
  social:{style:'tri',trait:'Trend obsessed',moods:['✨','✨','✨']},
  product:{style:'square',trait:'Show-off, energetic',moods:['✨','✨','✨']},
- joker:{style:'jester',trait:'Class clown',moods:['✨','✨','✨']}
+ joker:{style:'jester',trait:'Class clown',moods:['✨','✨','✨']},
  fixer:{style:'square',trait:'Calm troubleshooter',moods:['🛠️','🔧','✅']},
 };
 
@@ -681,7 +710,9 @@ function tasksHTML(list){
   return list.length?list.map((t,i)=>{
     const realIndex=S.tasks.indexOf(t),b=meta(t.bot);
     const label={queued:'Waiting',running:'Running',approval:'Needs approval',done:'Completed',failed:'Failed',rejected:'Rejected'}[t.status]||t.status;
-    return '<div class="row">'+icon(b)+'<div class="grow"><b>'+esc(t.title)+'</b><small>'+b.n+(t.note?', '+esc(t.note):'')+'</small></div><span class="status '+t.status+'">'+label+'</span>'+
+    const err=t.lastError?'<span style="color:#ff7b7b"> · ⚠ '+esc(t.lastError)+'</span>':'';
+    const att=t.attempts?' <small>(try '+t.attempts+')</small>':'';
+    return '<div class="row">'+icon(b)+'<div class="grow"><b>'+esc(t.title)+'</b>'+att+'<small>'+b.n+(t.note?', '+esc(t.note):'')+err+'</small></div><span class="status '+t.status+'">'+label+'</span>'+
       (t.status==='approval'?'<button data-a="ok" data-i="'+realIndex+'">Approve</button><button data-a="no" data-i="'+realIndex+'">Reject</button>':'')+
       (t.status==='failed'?'<button data-a="retry" data-i="'+realIndex+'">Retry</button>':'')+'</div>';
   }).join(''):'<p class="hint">Nothing here yet.</p>';
@@ -842,12 +873,33 @@ function renderView(){
   if(view==='layout')drawEditor();
   wireTasks();
 }
+let _loadedBuildHash=null;
 function renderAll(){
   $('setupPill').textContent=(S.setup&&S.setup.hasKey)?'AI · Online':'⚠ I-setup ang AI';
   $('officeStatus').innerHTML='<b>'+S.agents.length+'</b> bots na nagtatrabaho · <b>'+Object.keys(S.outputs).length+'</b> tapos na · mode: '+(autoOn?'<b>24/7</b>':'<b>manual</b>');
+  /* P0: drift / quota banner + new-build detection + agent error badges */
+  const H=S.health||{}, banner=$('healthBanner'), btext=$('healthBannerText');
+  const prev=_loadedBuildHash;
+  if(H.codeHash){
+    if(prev&&prev!==H.codeHash)toast('🆕 Bagong server build — pindutin ang 🔄 Reload UI');
+    _loadedBuildHash=H.codeHash;
+  }
+  if(banner){
+    const msgs=[];
+    if(H.drift)msgs.push('⚠️ Bagong server code sa disk — i-restart ang server.');
+    else if(prev&&H.loadedCodeHash&&prev!==H.loadedCodeHash)msgs.push('🆕 Bagong build ang tumatakbo — pindutin ang 🔄 Reload UI.');
+    if(H.quotaLow)msgs.push('⏸ Mababa ang quota — AI calls ay naka-HOLD.');
+    banner.style.display=msgs.length?'block':'none';
+    if(btext)btext.textContent=msgs.join(' ');
+  }
   $('officeFeed').innerHTML=feedHTML(20);
   $('convFeed').innerHTML=(S.conversations||[]).slice(0,3).map(c=>'<div style="padding:6px 0;border-bottom:1px solid #292f3d">'+c.lines.map(l=>'<div class="row" style="padding:3px 0;border:0">'+icon(meta(l.id))+'<b>'+meta(l.id).n+':</b> '+esc(l.text)+'</div>').join('')+'</div>').join('')||'<p class="hint">No conversations yet — generate one.</p>';
-  $('pipeNodes').innerHTML=S.agents.map(a=>'<div class="agent-card"><div class="top">'+icon(a)+'<b>'+a.n+'</b></div><p class="hint">'+a.desc+'</p><div class="out" style="max-height:70px">'+esc((S.outputs||{})[a.id]||'No output')+'</div></div>').join('');
+  const ah=H.agentHealth||{};
+  $('pipeNodes').innerHTML=S.agents.map(a=>{
+    const h=ah[a.id]||{};
+    const badge=h.lastError?'<small style="display:block;color:#ff7b7b;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(h.lastError)+'">⚠ '+esc(h.lastError)+(h.failCount?' ('+h.failCount+'x)':'')+'</small>':'';
+    return '<div class="agent-card"><div class="top">'+icon(a)+'<b>'+a.n+'</b>'+(h.status==='error'?' <span style="color:#ff7b7b;font-size:11px">● error</span>':'')+'</div><p class="hint">'+a.desc+'</p><div class="out" style="max-height:70px">'+esc((S.outputs||{})[a.id]||'No output')+'</div>'+badge+'</div>';
+  }).join('');
   renderMenu();renderView();
 }
 
@@ -935,6 +987,15 @@ $('provSave').onclick=async()=>{
 };
 let autoOn=true; // Quota saver + auto-heal: 24/7 mode starts automatically for the CEO
 $('auto').onclick=()=>{autoOn=!autoOn;$('auto').textContent=autoOn?'⏸ Pause 24/7 mode':'▶ Start 24/7 mode';toast(autoOn?'24/7 mode on':'Paused')};
+/* P0: cache-busting reload — unregister service worker, clear caches, reload. */
+document.querySelectorAll('.reloadBtn').forEach(b=>{
+  b.onclick=async()=>{
+    try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister();}}catch(e){}
+    try{if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k);}}catch(e){}
+    toast('🔄 Clearing cache, reloading…');
+    location.reload();
+  };
+});
 const xrayApply=()=>{
   if(!level3d)return;
   const on=xrayOn||xrayAuto; // manual Silip O auto-Silip (malapit/mababa ang camera)
@@ -2998,6 +3059,7 @@ function buildFarm3d(){
 }
 // ===== ✨ PARKING LOT: slots + cars + ticket booth + barrier =====
 function buildParking3d(){
+  return; // declutter: hidden for now
   const z=42.5;
   box3(36,.04,6,'#555b63',15,-.62,z); // aspalto
   mkLabel('PARKING 🎫',15,z-3.4,1.2);
@@ -4721,13 +4783,16 @@ const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeStr
 tick();setInterval(tick,30000);
 refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!'),4000)});
 setInterval(refresh,6000);
-setInterval(async()=>{if(!autoOn||!S||S.stopped||S.running)return;const t=S.tasks.filter(a=>a.status==='queued');if(t.length)await api('/api/tasks/run',{method:'POST',body:'{}'});await refresh()},5000);
+/* P0: queued tasks are now driven by the SERVER (serverTaskRunner), not by this tab.
+   Closing the browser will no longer stop the office queue. */
 /* Quota saver: watercooler chat every 10 minutes instead of 2 (720 -> 144 Groq calls/day). */
 setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;const r=await api('/api/conversation',{method:'POST',body:'{}'});if(r.ok)await refresh()},600000);
 </script>
 
 <!-- CEO Chat -->
 <style>
+/* declutter: temporarily hide requested UI clutter/sagabal */
+#officeQuestStrip,#ceoFab,#lockFab,#ceoChat,#eventShowCard,#mmoChat,#officeCamTools,#officeMiniMap,#officeCamHint,#gameHud,#bzPanel,#bzQuestPanel,#jumpPanel,#ticketBtn,#partyBtn,#rainBtn,#nightBtn,#officeMorePanel,#officeMoreBtn{display:none!important}
 .ceoFab{position:fixed;right:18px;bottom:18px;width:54px;height:54px;border-radius:50%;border:none;background:#e8622c;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 6px 20px #0008;z-index:60}
 .ceoFab:hover{background:#f0723c}
 .ceoChat{position:fixed;right:18px;bottom:82px;width:min(340px,calc(100vw - 36px));height:min(460px,calc(100vh - 130px));background:#1b1b20;border:1px solid #33333c;border-radius:14px;display:none;flex-direction:column;overflow:hidden;z-index:60;box-shadow:0 10px 30px #000a}
@@ -4758,6 +4823,7 @@ setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;
 <script>
 (function(){
   const fab=$('ceoFab'),panel=$('ceoChat'),body=$('ceoBody'),input=$('ceoInput'),send=$('ceoSend');
+  if(!fab||!panel||!body||!input||!send){return;}
   let loaded=false;
   const esc2=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;body.appendChild(d);body.scrollTop=body.scrollHeight;return d}
@@ -4772,14 +4838,13 @@ setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;
   function open(){panel.classList.add('open');if(!loaded)loadChat();input.focus()}
   fab.onclick=()=>panel.classList.contains('open')?panel.classList.remove('open'):open();
   $('ceoClose').onclick=()=>panel.classList.remove('open');
-  $('ceoClear').onclick=async()=>{if(!ceoPass)return;await fetch('/api/chat/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass:ceoPass})});loaded=false;loadChat()};
+  $('ceoClear').onclick=async()=>{if(!ceoPass)return;await api('/api/chat/clear',{method:'POST',body:'{}'});loaded=false;loadChat()};
   async function submit(){
     const t=input.value.trim();if(!t||!ceoPass){if(!ceoPass)toast('🔒 CEO Login muna para mag-utos!');return;}
     input.value='';add('u',t);send.disabled=true;
     const wait=add('a','● ● ●');
     try{
-      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,pass:ceoPass})});
-      const j=await r.json();
+      const j=await api('/api/chat',{method:'POST',body:JSON.stringify({message:t})});
       wait.textContent=j.ok?(j.answer||'...'):'⚠ '+(j.error||'Failed');
     }catch(e){wait.textContent='⚠ Hindi maka-connect sa server.'}
     wait.className='m a';body.scrollTop=body.scrollHeight;send.disabled=false;input.focus();
@@ -4812,7 +4877,7 @@ lockModal.innerHTML='<div style="background:#122040;border:1px solid #2f5fa8;bor
 document.body.appendChild(lockModal);
 const lp=lockModal.querySelector('#lockPass'),lerr=lockModal.querySelector('#lockErr');
 $('lockFab').onclick=()=>{
-  if(ceoPass){ceoPass='';localStorage.removeItem('ceoPass');applyLock();toast('Visitor mode 👀 — tingin ka lang sa office!');return;}
+  if(ceoPass){ceoLogout('Visitor mode 👀 — tingin ka lang sa office!');return;}
   lockModal.style.display='flex';lerr.style.display='none';lp.value='';setTimeout(()=>lp.focus(),50);
 };
 lockModal.querySelector('#lockCancel').onclick=()=>lockModal.style.display='none';
@@ -4821,15 +4886,20 @@ async function tryUnlock(){
   const pw=lp.value;if(!pw)return;
   lerr.style.display='none';
   const r=await api('/api/unlock',{method:'POST',body:JSON.stringify({pass:pw})});
-  if(r.ok){ceoPass=pw;localStorage.setItem('ceoPass',pw);lockModal.style.display='none';applyLock();if(typeof loadPrivate==='function')await loadPrivate();toast('Welcome, CEO! 👑 Na-unlock ang lahat ng powers!');}
+  if(r.ok){
+    ceoPass=r.token;localStorage.setItem('ceoToken',r.token);localStorage.removeItem('ceoPass');
+    lp.value='';lockModal.style.display='none';applyLock();
+    if(typeof loadPrivate==='function')await loadPrivate();
+    toast('Welcome, CEO! 👑 Na-unlock ang lahat ng powers!');
+  }
   else{lerr.style.display='block';lp.select();}
 }
 lockModal.querySelector('#lockGo').onclick=tryUnlock;
 lp.onkeydown=e=>{if(e.key==='Enter')tryUnlock()};
-// boot: i-verify ang naka-save na password
+// boot: i-verify ang naka-save na session token (hindi password)
 if(ceoPass){
-  api('/api/unlock',{method:'POST',body:JSON.stringify({pass:ceoPass})}).then(async j=>{
-    if(!j.ok){ceoPass='';localStorage.removeItem('ceoPass');}
+  api('/api/session').then(async j=>{
+    if(!j.ok)ceoLogout();
     else if(typeof loadPrivate==='function')await loadPrivate();
     applyLock();
   }).catch(()=>applyLock());
@@ -4978,7 +5048,7 @@ $('mallBtn').onclick=async()=>{  const j=await api('/api/state');if(typeof S!=='
 $('mallClear').onclick=()=>{cart=[];updateCart()};
 document.querySelectorAll('[data-mtab]').forEach(b=>b.onclick=()=>{mallTab=b.dataset.mtab;renderMall();});
 /* ✨ PARTY MODE: sayawan + confetti + tugtog sa buong office! */
-$('partyBtn').onclick=()=>{
+const _partyBtn=$('partyBtn'); if(_partyBtn) _partyBtn.onclick=()=>{
   partyUntil=Date.now()+15000;
   chars3d.forEach(c=>{
     if(!c.route||!c.route.length){
@@ -5019,7 +5089,7 @@ $('mallAdd').onclick=async()=>{
   if(r.ok){const j=await api('/api/state');if(typeof S!=='undefined'&&S)S.mall=j.mall;$('mallName').value='';$('mallUrl').value='';$('mallPrice').value='';renderMall();toast('🛍️ Nasa mall na ang bagong paninda!')}
 };
 /* ? ULAN + ✨ NIGHT MODE buttons */
-$('rainBtn').onclick=()=>{
+const _rainBtn=$('rainBtn'); if(_rainBtn) _rainBtn.onclick=()=>{
   rainOn=!rainOn;
   $('rainBtn').textContent=rainOn?'☔ Tumitila':'☔ Ulan';
   if(rainOn&&!rainDrops.length){
@@ -5039,7 +5109,7 @@ $('rainBtn').onclick=()=>{
   }
   toast(rainOn?'☔ Umuulan sa campus! 💧':'🌤️ Tumigil ang ulan!');
 };
-$('nightBtn').onclick=()=>{
+const _nightBtn=$('nightBtn'); if(_nightBtn) _nightBtn.onclick=()=>{
   if(nightManual===null)nightManual=true;
   else if(nightManual===true)nightManual=false;
   else nightManual=null;
@@ -5047,7 +5117,7 @@ $('nightBtn').onclick=()=>{
   toast(nightManual===null?'✨ AUTO: gabi tuwing 18:00-6:00 sa Pilipinas!':(nightManual?'✨ Manual night mode ? city of lights!':'✨ Manual: araw!'));
 };
 /* ✨ PARKING TICKET: parang sa mall ? kunin ang ticket bago pumasok! */
-$('ticketBtn').onclick=()=>{
+const _ticketBtn=$('ticketBtn'); if(_ticketBtn) _ticketBtn.onclick=()=>{
   const code='PB-'+(1000+Math.floor(Math.random()*9000));
   const slot='A-'+(1+Math.floor(Math.random()*10));
   const dt=new Date();
@@ -6809,11 +6879,96 @@ async function openCeoAds(){
   };
   loadOps();
 
+  /* ---------- 🏛️ GOVERNANCE (CEO approvals / publish ledger / finance ledger / backup drill) ---------- */
+  const gi='background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:4px 6px;font-size:9.5px';
+  body.insertAdjacentHTML('beforeend','<div id="govPanel" style="border:1px solid #b99a3a;border-radius:9px;padding:8px;margin-top:10px;background:rgba(28,24,10,.78)">'+
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#ffd34d;font-size:11px">🏛️ GOVERNANCE LEDGER</b><span style="flex:1"></span>'+
+    '<button id="govRefresh" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">↻ Refresh</button>'+
+    '<button id="govDrill" style="background:#8a6d1f;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">🧪 Backup drill</button></div>'+
+    '<div id="govSummary" style="color:#d8c98a;font-size:9.5px;margin-top:7px">Loading governance records…</div>'+
+    '<div id="govDrillResult" style="color:#9fb2d0;font-size:9px;margin-top:5px;line-height:1.5"></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px;margin-top:7px">'+
+      '<div><div style="color:#8fd0e8;font-size:10px;font-weight:700">✅ CEO APPROVALS</div><div id="govApprovals" style="color:#9fb2d0;font-size:9px;margin-top:4px;max-height:130px;overflow:auto"></div></div>'+
+      '<div><div style="color:#8fd0e8;font-size:10px;font-weight:700">📢 MANUAL PUBLISH LEDGER</div><div id="govPublish" style="color:#9fb2d0;font-size:9px;margin-top:4px;max-height:130px;overflow:auto"></div>'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+
+          '<input id="govPubPlatform" placeholder="Platform" style="'+gi+';width:70px">'+
+          '<input id="govPubTitle" placeholder="Title" style="'+gi+';flex:1;min-width:90px">'+
+          '<input id="govPubUrl" placeholder="https://..." style="'+gi+';flex:1;min-width:110px">'+
+          '<input id="govPubNote" placeholder="Note" style="'+gi+';flex:1;min-width:80px">'+
+          '<button id="govPubAdd" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:4px 7px;font-size:9.5px">➕ Record</button></div></div>'+
+      '<div><div style="color:#8fd0e8;font-size:10px;font-weight:700">💰 FINANCE LEDGER</div><div id="govLedger" style="color:#9fb2d0;font-size:9px;margin-top:4px;max-height:130px;overflow:auto"></div>'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+
+          '<input id="govLedgerId" placeholder="Ledger ID" style="'+gi+';flex:1;min-width:110px">'+
+          '<input id="govLedgerReason" placeholder="Reason" style="'+gi+';flex:1;min-width:90px">'+
+          '<button id="govLedgerApprove" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:4px 7px;font-size:9.5px">✅ Approve</button>'+
+          '<button id="govLedgerReverse" style="background:#8f3f57;color:#fff;border:0;border-radius:6px;padding:4px 7px;font-size:9.5px">↩ Reverse</button></div></div>'+
+    '</div>'+
+    '<div style="color:#8494b4;font-size:9px;margin-top:7px;line-height:1.5">🤖 AI recommends · 👑 CEO approves. Walang auto-posting, walang fake engagement, walang private/login crawling. Ang publish at ledger actions ay <b>record lang</b> — walang external post o transfer na isinasagawa.</div>'+
+  '</div>');
+  const govLoad=async()=>{
+    const st=await api('/api/state');
+    const pub=await api('/api/ceo/publish',{method:'POST',body:'{"action":"list"}'});
+    const led=await api('/api/ceo/ledger',{method:'POST',body:'{"action":"list"}'});
+    const approvals=(st&&st.approvalLog)||[];
+    const pubs=(pub&&pub.entries)||[], sum=(led&&led.summary)||{};
+    if($('govApprovals'))$('govApprovals').innerHTML=approvals.slice(0,8).map(x=>
+      '<div style="border-bottom:1px solid #3a3520;padding:3px 0">'+bzEsc(ts(x.at))+' · <b style="color:'+(x.decision==='approved'?'#7ee2a8':'#ff8fa8')+'">'+bzEsc(x.decision||'')+'</b> · '+bzEsc(x.title||x.taskId||'')+' <small style="color:#8494b4">('+bzEsc(x.bot||'')+')</small></div>').join('')||'<div style="color:#8494b4">Wala pang CEO decision.</div>';
+    if($('govPublish'))$('govPublish').innerHTML=pubs.slice(0,8).map(x=>
+      '<div style="border-bottom:1px solid #3a3520;padding:3px 0"><b style="color:#d8c98a">'+bzEsc(x.platform||'')+'</b> · '+bzEsc(x.title||'')+(x.url?' · <a href="'+bzEsc(x.url)+'" target="_blank" rel="noopener noreferrer" style="color:#8fd0e8">link</a>':'')+'<div style="color:#8494b4">'+bzEsc(ts(x.at))+' · manual · CEO</div></div>').join('')||'<div style="color:#8494b4">Wala pang manual publish record.</div>';
+    const L=(led&&led.ledger)||{};
+    if($('govLedger'))$('govLedger').innerHTML=['pending','confirmed','reversed'].map(b=>
+      (L[b]||[]).slice(0,5).map(x=>'<div data-gov-ledger="'+bzEsc(x.id)+'" title="'+bzEsc(x.note||'')+'" style="border-bottom:1px solid #3a3520;padding:3px 0;cursor:pointer"><b style="color:'+(b==='pending'?'#ffd34d':b==='reversed'?'#ff8fa8':'#7ee2a8')+'">'+bzEsc(b)+'</b> · '+bzEsc(x.type||'')+' · ₱'+Number(x.amount||0).toFixed(2)+' <small style="color:#8494b4">'+bzEsc(x.ref||'')+'</small></div>').join('')).join('')||'<div style="color:#8494b4">Wala pang finance ledger entry.</div>';
+    if($('govSummary'))$('govSummary').textContent='Confirmed ₱'+Number(sum.confirmed||0).toFixed(2)+' · Pending ₱'+Number(sum.pending||0).toFixed(2)+' · Reversed ₱'+Number(sum.reversed||0).toFixed(2)+' · Publish entries '+pubs.length;
+  };
+  const govRefresh=$('govRefresh');if(govRefresh)govRefresh.onclick=govLoad;
+  const govLedgerList=$('govLedger');if(govLedgerList)govLedgerList.onclick=e=>{
+    const el=e.target&&e.target.closest?e.target.closest('[data-gov-ledger]'):null;
+    if(el&&$('govLedgerId'))$('govLedgerId').value=el.getAttribute('data-gov-ledger');
+  };
+  const govPubAdd=$('govPubAdd');if(govPubAdd)govPubAdd.onclick=async()=>{
+    const platform=String(($('govPubPlatform')||{}).value||'').trim();
+    const title=String(($('govPubTitle')||{}).value||'').trim();
+    const url=String(($('govPubUrl')||{}).value||'').trim();
+    const note=String(($('govPubNote')||{}).value||'').trim();
+    if(!platform||!title){toast('Platform at title ang kailangan.');return;}
+    govPubAdd.disabled=true;
+    const r=await api('/api/ceo/publish',{method:'POST',body:JSON.stringify({action:'add',platform,title,url,note})});
+    govPubAdd.disabled=false;
+    toast(r&&r.ok?'✅ Na-record. Hindi ito nag-post sa anumang platform.':'⚠ '+((r&&r.error)||'Failed'));
+    if(r&&r.ok){['govPubPlatform','govPubTitle','govPubUrl','govPubNote'].forEach(id=>{const el=$(id);if(el)el.value=''});govLoad();}
+  };
+  const govLedgerAction=async action=>{
+    const id=String(($('govLedgerId')||{}).value||'').trim();
+    const reason=String(($('govLedgerReason')||{}).value||'').trim();
+    if(!id){toast('Piliin muna ang ledger ID.');return;}
+    if(action==='reverse'&&!confirm('I-reverse ang ledger entry '+id+'?'))return;
+    const r=await api('/api/ceo/ledger',{method:'POST',body:JSON.stringify({action,id,reason})});
+    toast(r&&r.ok?(action==='approve-transfer'?'✅ Ledger approved (record only).':'✅ Ledger reversed.'):'⚠ '+((r&&r.error)||'Failed'));
+    if(r&&r.ok)govLoad();
+  };
+  const govLedgerApprove=$('govLedgerApprove');if(govLedgerApprove)govLedgerApprove.onclick=()=>govLedgerAction('approve-transfer');
+  const govLedgerReverse=$('govLedgerReverse');if(govLedgerReverse)govLedgerReverse.onclick=()=>govLedgerAction('reverse');
+  const govDrill=$('govDrill');if(govDrill)govDrill.onclick=async()=>{
+    const name=prompt('Backup name (blank = latest)?');if(name===null)return;
+    govDrill.disabled=true;
+    const r=await api('/api/ceo/backup-drill',{method:'POST',body:JSON.stringify({name:name.trim()})});
+    govDrill.disabled=false;
+    const files=(r&&r.files)||((r&&r.verified&&r.verified.files)||[]);
+    if($('govDrillResult'))$('govDrillResult').innerHTML='<b style="color:'+(r&&r.ok?'#7ee2a8':'#ff8fa8')+'">'+(r&&r.ok?'✅ PASSED':'❌ FAILED')+'</b> · '+bzEsc((r&&r.stage)||'')+' · '+bzEsc((r&&r.note)||((r&&r.error)||''))+
+      (files.length?'<div style="margin-top:4px">'+files.map(f=>'• '+bzEsc(f.file)+': '+(f.ok?'OK':'FAIL '+bzEsc(f.error||''))).join('<br>')+'</div>':'');
+    toast(r&&r.ok?'✅ Backup drill passed (SHA-256 + dry run).':'⚠ Backup drill failed.');
+  };
+  govLoad();
+
   /* ---------- 🔬 RESEARCH RECORDS (Crawl4AI, source-grounded) ---------- */
   body.insertAdjacentHTML('beforeend','<div style="border:1px solid #4f8ac9;border-radius:9px;padding:8px;margin-top:10px;background:rgba(11,23,48,.78)">'+
     '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#8fd0e8;font-size:11px">🔬 RESEARCH RECORDS</b><span style="flex:1"></span>'+
     '<button id="rrRefresh" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">↻ Refresh</button>'+
-    '<button id="rrDigest" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">📊 Build digest</button></div>'+
+    '<button id="rrDigest" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">📊 Build digest</button>'+
+    '<span id="rrSvc" style="color:#9fb2d0;font-size:9px">Service: checking…</span>'+
+    '<button id="rrSvcCheck" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">Status</button>'+
+    '<button id="rrSvcStart" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">▶ Start</button>'+
+    '<button id="rrSvcStop" style="background:#8f3f57;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">■ Stop</button></div>'+
     '<div id="rrStatus" style="color:#9fb2d0;font-size:9.5px;margin-top:7px">Source-grounded records from Crawl4AI. CEO review pa rin bago gamitin.</div>'+
     '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
       '<input id="rrUrl" placeholder="https://permitted-source.example/page" style="flex:2;min-width:180px;background:#0b1730;color:#fff;border:1px solid #2f5fa8;border-radius:6px;padding:5px;font-size:10px">'+
@@ -6848,6 +7003,25 @@ async function openCeoAds(){
     if(rrExtra&&r.digest)rrExtra.innerHTML='<b style="color:#ffd34d">📊 Huling digest:</b> '+bzEsc(r.digest.generatedAt||'')+' · '+Number(r.digest.itemCount||0)+'/'+Number(r.digest.sourceCount||0)+' sources · recommendation only; CEO approval required.';
   };
   const rrRefresh=$('rrRefresh');if(rrRefresh)rrRefresh.onclick=rrLoad;
+  /* P1: research service health + CEO-only start/stop (fixed scripts on server) */
+  const rrSvcRead=async()=>{
+    const el=$('rrSvc');if(!el)return;
+    el.textContent='⏳ Checking service…';
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action:'service-status'})});
+    if(!r||!r.ok){el.textContent='⚠ Service check failed';return;}
+    const s=r.service||{};
+    el.textContent='Research service: '+(s.running?'ON':'OFF')+' ('+(s.mode||'—')+')'+(s.ok?'':' · '+String(s.detail||'').slice(0,40));
+    el.style.color=s.running?'#7ee2a8':'#ffd34d';
+  };
+  const rrSvcCtl=async(action)=>{
+    const r=await api('/api/ceo/research',{method:'POST',body:JSON.stringify({action})});
+    toast(r&&r.ok?(action==='service-start'?'✅ Start requested':'✅ Stop requested'):'⚠ '+((r&&r.error)||'Failed'));
+    setTimeout(rrSvcRead,1200);
+  };
+  const rrSvcCheck=$('rrSvcCheck');if(rrSvcCheck)rrSvcCheck.onclick=rrSvcRead;
+  const rrSvcStart=$('rrSvcStart');if(rrSvcStart)rrSvcStart.onclick=()=>rrSvcCtl('service-start');
+  const rrSvcStop=$('rrSvcStop');if(rrSvcStop)rrSvcStop.onclick=()=>rrSvcCtl('service-stop');
+  rrSvcRead();
   const rrCrawl=$('rrCrawl');if(rrCrawl)rrCrawl.onclick=async()=>{
     const url=String(($('rrUrl')||{}).value||'').trim();if(!url){toast('Ilagay ang URL.');return;}
     rrCrawl.disabled=true;rrCrawl.textContent='⏳ Crawling…';
@@ -7216,5 +7390,76 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=40"></script></body>
+<script src="/office-studio.js?v=40"></script>
+<script src="/hyperframes.js?v=3"></script>
+<script>
+/* 🎬 AI Video Editor Assistant — wired to /api/video/* (Remotion) */
+(function(){
+  var $ = function(id){return document.getElementById(id)};
+  var status = function(m){var e=$('vfStatus');if(e)e.textContent=m};
+  function card(v){
+    var c=v.config||{};
+    return '<div class="card"><video controls preload="metadata" src="'+v.url+'" style="width:100%;border-radius:10px;background:#000"></video>'
+      +'<div class="row"><b>'+esc(String(v.name).slice(0,30))+'</b><span class="status">'+esc(c.mode||'product')+'</span></div>'
+      +'<div class="bar"><button data-approve="'+esc(v.name)+'">✅ Approve / final</button><a href="'+v.url+'" download>⬇ Download</a></div></div>';
+  }
+  async function list(){
+    try{
+      var r=await fetch('/api/video/list',{cache:'no-store'}),j=await r.json();
+      if(!j.ok)throw new Error(j.error||'list failed');
+      var host=$('vfResults');if(!host)return;
+      host.innerHTML=(j.videos||[]).map(card).join('')||'<p class="hint">Wala pang videos. I-render ang una.</p>';
+      host.querySelectorAll('[data-approve]').forEach(function(b){
+        b.onclick=async function(){
+          status('Rendering final, walang watermark…');
+          var j2=await api('/api/video/approve',{method:'POST',body:JSON.stringify({name:b.getAttribute('data-approve')})});
+          status(j2.ok?'✅ Final ready: '+j2.url:'❌ '+(j2.error||'failed'));
+          if(j2.ok)await list();
+        };
+      });
+    }catch(e){status('❌ '+e.message)}
+  }
+  function cfg(){
+    return {title:$('vfTitle').value,tagline:$('vfTagline').value,cta:$('vfCta').value,
+      format:$('vfFormat').value,color1:$('vfColor1').value,color2:$('vfColor2').value,
+      mode:'product',watermark:true};
+  }
+  $('vfBriefBtn').onclick=async function(){
+    var brief=$('vfBrief').value.trim();if(!brief){status('⚠️ Maglagay muna ng brief.');return}
+    status('🤖 AI is writing the video brief…');
+    var j=await api('/api/video/brief',{method:'POST',body:JSON.stringify({brief:brief})});
+    if(!j.ok){status('❌ '+(j.error||'failed'));return}
+    var c=j.config||{};
+    $('vfTitle').value=c.title||'';$('vfTagline').value=c.tagline||'';$('vfCta').value=c.cta||'';
+    $('vfFormat').value=c.format||'vertical';$('vfColor1').value=c.color1||'#77eaff';$('vfColor2').value=c.color2||'#8b5cf6';
+    status('✅ AI config ready — pindutin ang Render preview.');
+  };
+  $('vfRender').onclick=async function(){
+    status('🎬 Rendering preview (may watermark)…');
+    var j=await api('/api/video/render',{method:'POST',body:JSON.stringify(cfg())});
+    status(j.ok?'✅ Preview: '+j.url:'❌ '+(j.error||'failed'));if(j.ok)await list();
+  };
+  $('vfRecap').onclick=async function(){
+    status('📊 Rendering weekly recap…');
+    var j=await api('/api/video/recap',{method:'POST',body:JSON.stringify({format:$('vfFormat').value,watermark:true})});
+    status(j.ok?'✅ Recap: '+j.url:'❌ '+(j.error||'failed'));if(j.ok)await list();
+  };
+  $('vfBatch').onclick=async function(){
+    var st=(typeof S!=='undefined'&&S)?S:{};
+    var products=(st.products||[]).slice(0,10);
+    if(!products.length){status('⚠️ Walang products sa state — mag-add muna ng links sa Product Video Bot.');return}
+    var items=products.map(function(p,i){return {
+      name:'product-'+(p.id||i),title:String(p.name||p.title||('Product '+(i+1))),
+      tagline:String(p.desc||p.description||'AI-generated product spotlight'),
+      cta:'Dream Bigger. Let AI Work Harder!',format:$('vfFormat').value,watermark:true,mode:'product'
+    }});
+    status('⚡ Batch rendering '+items.length+' videos…');
+    var j=await api('/api/video/batch',{method:'POST',body:JSON.stringify({items:items})});
+    status(j.ok?'✅ Batch done: '+j.results.filter(function(x){return x.ok}).length+'/'+items.length:'❌ '+(j.error||'failed'));
+    if(j.ok)await list();
+  };
+  $('vfRefresh').onclick=list;
+  list();
+})();
+</script></body>
 </html>
