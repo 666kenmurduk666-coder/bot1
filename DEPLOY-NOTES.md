@@ -659,5 +659,16 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   Pixel stats: `bgPct=0.2`, `edgePct=5.4`, `meanLum=99.3`, `meshes=3690`,
   `textured=336`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - `strategy-baseline`, smoke, office-layout, server-security: PASS.
+- **Deploy:** commit `40e8124` pushed; Render detected `/office-v9.js?v=24`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live verification:** `bots=6`, Groq bubble visible (`Product`),
+  `talkers=['product']`, `convOk=true`, `status=200`, walang console errors.
+  Effects: `cars=14`, `peds=15`, `signals=4`, `plants=165`, `reflections=39`,
+  `sky=1`, `windows=58`, `screens=25`, `ballers=4`, `ball=1`, `planes=1`.
+  Animation probe: ball, ball shadow, 4 ballers, airplane at beacon — **lahat
+  nagbago**. Lahat ng court/hoop/bleacher/fence, side-world, airplane at entrance
+  projections ay onscreen. `high=478`, `highHidden=0`, `hidden=0`,
+  `meshes=3690`, `textured=336`. Pixel stats: `bgPct=0.2`, `edgePct=5.4`,
+  `meanLum=99.4`; guards `bg=93a1b3`, `amb=0.58`, `exposure=0.85`.
 - **Cache-bust:** `/office-v9.js?v=24`.
 
