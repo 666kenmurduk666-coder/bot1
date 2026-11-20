@@ -1577,6 +1577,13 @@
       leaf.position.set(x + p[0] * k, p[1] * k, z); addO(leaf);
       fx.plants.push({ m: leaf, bz: leaf.rotation.z, bx: leaf.rotation.x, p: i * 1.1 + z });
     });
+    // occasional blossom clusters
+    if ((Math.abs(Math.round(x * 13 + z * 7)) % 4) === 0) {
+      [[.12, 2.02, '#ffd1e3'], [-.2, 1.7, '#ffe8f2'], [.28, 1.85, '#ffd1e3']].forEach(function (b) {
+        var bl = new THREE.Mesh(new THREE.SphereGeometry(.09 * k, 6, 5), solid(b[2], { roughness: .8 }));
+        bl.position.set(x + b[0] * k, b[1] * k, z + .08 * k); addO(bl);
+      });
+    }
   }
   function sofa(x, z, col, rot) {
     shadow(x, z, 1.35, .7, .15);
@@ -2246,10 +2253,22 @@
     cabin.position.set(1.05, 1.12, 0); cabin.userData.v9 = true; g2.add(cabin);
     var stripe = new THREE.Mesh(new THREE.BoxGeometry(2.82, .12, .1), solid('#f4f6f8'));
     stripe.position.set(0, .6, .62); stripe.userData.v9 = true; g2.add(stripe);
+    // lights, door line, plate
+    [-.38, .38].forEach(function (dz) {
+      var head = new THREE.Mesh(new THREE.BoxGeometry(.05, .12, .18), solid('#fff3c8', { emissive: '#ffd98a', emissiveIntensity: .8 }));
+      head.position.set(1.42, .68, dz); head.userData.v9 = true; g2.add(head);
+      var tail = new THREE.Mesh(new THREE.BoxGeometry(.05, .12, .18), solid('#e2694f', { emissive: '#e2523a', emissiveIntensity: .7 }));
+      tail.position.set(-1.42, .68, dz); tail.userData.v9 = true; g2.add(tail);
+    });
+    box(.02, .7, .02, '#4b586b', -.15, .78, .64);
+    box(.08, .03, .03, '#8b97a5', -.22, .82, .64);
+    box(.03, .08, .26, '#f4f6f8', -1.41, .52, 0);
     [-.9, .9].forEach(function (dx) {
       [-.62, .62].forEach(function (dz) {
         var w = new THREE.Mesh(new THREE.CylinderGeometry(.26, .26, .12, 10), solid('#1b2029'));
         w.rotation.x = Math.PI / 2; w.position.set(dx, .28, dz); w.userData.v9 = true; g2.add(w);
+        var hub = new THREE.Mesh(new THREE.CylinderGeometry(.11, .11, .13, 8), solid('#9aa5b3', { metalness: .55 }));
+        hub.rotation.x = Math.PI / 2; hub.position.set(dx, .28, dz); hub.userData.v9 = true; g2.add(hub);
       });
     });
     g2.rotation.y = rot || Math.PI / 2; g2.position.set(x, 0, z); addO(g2);
