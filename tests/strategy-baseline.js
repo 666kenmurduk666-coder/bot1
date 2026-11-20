@@ -47,10 +47,12 @@ const protectedHashes = {
   // renderer (no MSAA / 1x DPR / no shadows) so weak GPUs do not stall.
   // Cache-bust bump v8 -> v9 so returning browsers cannot reuse the old
   // phaseB.js that contained the self-triggering MutationObserver freeze.
-  // 2026-11-20: realistic office-v9 scene + 2-min bot chatter + cache-bust v2.
-  'public/index.html': '3221b9be01feae7a00d94999335b0621257c896820e528b2a48a42c13f3a2008',
-  // 2026-11-20: new realistic single-floor office with 6 small happy bots.
-  'public/office-v9.js': '38a66d122c4f1908eb8d93b1c7873d1b0f7d5e4b4169249422835a11f69246ec',
+  // 2026-11-20: office-v9 + 2-min chatter + cache-bust v3; fixed all dangling
+  // references from the disabled office block (glassMat/doorAt/DY) and skip the
+  // old 2F layout when v9 is active.
+  'public/index.html': '0fd3ea90f82b731afba4e226f9ac648b4e4d9d6419add57d36062889ef473f74',
+  // 2026-11-20: new realistic single-floor office with 6 small happy bots + load-order self-heal.
+  'public/office-v9.js': 'a973cbf8058e4fc83342f634614adb7ad9de0180ebb7d9e9d8ad7ef9d3ca7977',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.

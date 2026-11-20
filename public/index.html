@@ -2125,6 +2125,10 @@ function buildRoom3d(id){
   dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));
   const dustMat=new THREE.PointsMaterial({color:0xffffff,size:.06,transparent:true,opacity:.35,sizeAttenuation:true});
   const dust=new THREE.Points(dustGeo,dustMat);g.level.add(dust);g.dust=dust;room3dId=id;escArr=[];
+  // The detailed-office block below is disabled (if(false)) for the light
+  // single-floor design, but the layout still calls doorAt(). office-v9 draws
+  // its own entrance, so keep this a harmless no-op instead of a ReferenceError.
+  const doorAt=function(){};
   scene3d.background=new THREE.Color('#0e1726');
   scene3d.fog=new THREE.Fog('#0e1726',80,220);
   const W=44,H=14;
@@ -2453,7 +2457,8 @@ function buildRoom3d(id){
   }
   /* Office v9: bright realistic single-floor office with small happy bots.
      Falls back to the old zone map if the new module did not load. */
-  if(typeof buildRealOffice3d!=='function'||!buildRealOffice3d())buildCyborgOffice3d();
+  const v9ok = typeof buildRealOffice3d==='function' && buildRealOffice3d();
+  if(!v9ok)buildCyborgOffice3d();
   // orbit camera — framed for the realistic office (was far top-down r=92)
   cam3d={target:new THREE.Vector3(23,1,16),theta:.52,phi:.42,r:58,lastUser:0};
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
@@ -2643,10 +2648,16 @@ function buildRoom3d(id){
   level3d.traverse(o=>{
     if(o.isPoints) return;
     const wp=new THREE.Vector3();o.updateWorldMatrix(true,false);o.getWorldPosition(wp);
-    if((o.isSprite?wp.y>3.6:wp.y>3.15)||o.material===glassMat) o.visible=false;
+    // glassMat was declared inside the disabled if(false) office block, so the
+    // old `o.material===glassMat` check threw a ReferenceError on every build.
+    if(o.isSprite?wp.y>3.6:wp.y>3.15) o.visible=false;
   });
   // (tinanggal ang exterior shell — open plan, walang walls/base)
   // Ground-floor mall connector TINANGGAL — mall nasa 2F resort na lang
+  // Old multi-floor entrance + 2F kafe deck only apply to the fallback zone
+  // map. office-v9 has its own single-floor entrance/pantry, and the old code
+  // references removed variables (DY) — skip it entirely when v9 built.
+  if(!v9ok){
   // ===== ENTRANCE / EXIT (may pintuan, hindi tumatagos sa pader) =====
   doorAt(10.6,H,false);mkWallSign('ENTRANCE 🚪',10.6,1.95,14.06,'#2bb37a',0,2.3,.52);
   doorAt(10.8,0,false);mkWallSign('EXIT 🚪',10.8,1.95,-.06,'#e8622c',Math.PI,2.3,.52);
@@ -2678,6 +2689,7 @@ function buildRoom3d(id){
   cyl3(.16,.9,'#8b5a2b',23.8,DY+.45,-7.2);cyl3(.16,.9,'#8b5a2b',10.6,DY+.45,-2.6);
   const kp1=new THREE.Mesh(new THREE.ConeGeometry(.6,1.4,8),m3('#3fa34a'));kp1.position.set(23.8,DY+1.25,-7.2);kp1.castShadow=true;g.level.add(kp1);
   const kp2=new THREE.Mesh(new THREE.ConeGeometry(.6,1.4,8),m3('#3fa34a'));kp2.position.set(10.6,DY+1.25,-2.6);kp2.castShadow=true;g.level.add(kp2);
+  } // end old multi-floor layout (fallback only)
   // ===== HOLOGRAM: ipinapakita ang ginagawa nilang trabaho =====
   const hcv=document.createElement('canvas');hcv.width=512;hcv.height=256;
   const htx=new THREE.CanvasTexture(hcv);
@@ -7062,5 +7074,5 @@ async function openCeoWish(){
   window.openMeeting=openMeeting;
 })();
 </script>
-<script src="/office-v9.js?v=2"></script><script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script></body>
+<script src="/office-v9.js?v=3"></script><script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script></body>
 </html>

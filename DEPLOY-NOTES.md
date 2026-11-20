@@ -192,3 +192,22 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   Hindi ito app bug — normal na browser ay umaandar; kaya gamitin ang
   `window.__officeV9.tick()` diagnostic kapag sinusuri dito.
 
+### Follow-up: bakit dark zone map pa rin sa unang live deploy (NAYOS NA)
+- Dalawang magkahiwalay na isyu ang lumabas pagkatapos ng unang deploy:
+  1. **Load-order race:** sa mabagal na network, ang `init3D()` ay tumatakbo bago
+     ma-load ang `office-v9.js`; kaya `buildRealOffice3d` ay `undefined` pa lang
+     at `buildCyborgOffice3d()` (dark map) ang itinayo. Walang bumabalik sa HQ.
+     **Fix:** may 600ms self-heal sa `office-v9.js` — kung nasa HQ, may `level3d`,
+     pero `cuteBots.length===0`, ire-rebuild ang v9 scene.
+  2. **Dangling references sa disabled block:** ang `if(false)` office code ay
+     nagdedeklara ng `glassMat`, `doorAt`, at `DY`, pero ginagamit pa rin ang mga
+     ito sa labas ng block. Kaya nagte-throw ang `buildRoom3d()` pagkatapos magtayo
+     (`officeLoop recovered: ...`) — nakikita lang ito sa **warning** level ng
+     console, hindi error. **Fix:** inalis ang `glassMat` check, nag-no-op stub ang
+     `doorAt`, at buong old entrance + 2F kafe deck ay nilaktaw na lang kapag
+     `v9ok` ( hindi na kailangan ang `DY` sa single-floor office).
+- Resulta pagkatapos ng fix: `bots=6`, walang console warnings/errors, at
+  `holoRedraw`/`approvalRedraw` ay nasa lugar pa rin (hologram panels gumagana).
+- **Lesson:** palaging i-check ang console sa **warning** level, hindi lang error —
+  dito lumalabas ang "officeLoop recovered" na mga nahuling exception.
+

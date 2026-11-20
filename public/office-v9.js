@@ -259,6 +259,19 @@
     } catch (e) {}
   }, 4000);
 
+  // The main app can call buildRoom3d() before this module finishes loading
+  // (slow network / early init3D). In that case it builds the old zone map and
+  // never comes back to HQ. Self-heal: if we are in HQ with a level but no v9
+  // bots, rebuild once the dust has settled.
+  setTimeout(function () {
+    try {
+      if (typeof selRoom !== 'undefined' && selRoom === 'hq' &&
+          typeof level3d !== 'undefined' && level3d && cuteBots.length === 0) {
+        buildRealOffice3d();
+      }
+    } catch (e) {}
+  }, 600);
+
   window.buildRealOffice3d = buildRealOffice3d;
   // Expose tick for diagnostics: some embedded browsers pause requestAnimationFrame.
   window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick };
