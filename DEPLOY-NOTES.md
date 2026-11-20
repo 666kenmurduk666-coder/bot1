@@ -829,3 +829,23 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
 - Pixel stats: `bgPct=0.3`, `edgePct=17.4`, `meanLum=101.3`,
   `highPct=0`, `nearWhitePct=0.1` — walang white-out.
 
+### Deploy + live verification (v27)
+- **Deploy:** commit `54c28df` pushed; Render detected `/office-v9.js?v=27`;
+  `restore-after-deploy.js` OK (`mall=23`, `commercials=12`).
+- **Live:** walang console errors; script
+  `https://cyborgcheebeeoffice.onrender.com/office-v9.js?v=27`; `bots=6`.
+  Rig: `legs=[2,2,2,2,2,2]`, `shadow/refl=true`, `routes=[3,3,3,3,3,3]`.
+- 70 manual ticks (fake clock): `sawWalk=224`; lahat ng 6 na bot nagbago ng
+  `x/z`, `wp`, `job` at emoji. Nakita ang `greet`, `wave`, `type`, `pack`,
+  `plan`, `joke`, `write` states at 9 na magkakaibang emoji (`✅ ✨ 💚 💡 📋
+  😄 😊 😌 🙂`).
+- Active Groq bubble visible (`Joker`). Step/mood particle systems ay buhay at
+  bounded: `steps=26`, `moods=0` (expired/cleaned), `sparkles=30`.
+- Lahat ng 6 na bot ay **onscreen** kahit nasa gitna ng lakad. Ceiling fixed pa
+  rin: `opacity=0.04`, `transparent=true`, `depthWrite=false`. Guards
+  `bg=fog=93a1b3`, `amb=0.58`, `exposure=0.85`, `isNight=0`.
+- Pixel stats live: `bgPct=0.3`, `edgePct=15.1`, `meanLum=101.4`,
+  `highPct=0`, `nearWhitePct=0.1` — walang white-out.
+- `/api/mall` at `/api/bazaar/commercials` return 200; data `mall=23`,
+  `commercials=12`.
+
