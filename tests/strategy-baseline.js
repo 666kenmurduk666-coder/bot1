@@ -107,7 +107,9 @@ const protectedHashes = {
   // office-v9.js v38 -> v39 so the 3 new 3D bots bypass the one-day static cache.
   // 2026-11-21: temporary declutter - hide Ticket/Party/Ulan/Gabi buttons,
   // CEO/Lock FABs, office quest strip, chat/overlay panels, and disable parking 3D.
-  'public/index.html': '5d4482742face2e3c236eca3c537ca47b822fe30a7059beef2cef6bb14dfbeab',
+  // 2026-11-21: perf pass - 20fps render cap, slower polling (ping 15s/refresh 12s),
+  // hidden-tab skip, throttled frame3D fx updates; cache-bust office-v9 v41/v42.
+  'public/index.html': 'cac991087f89f6eb63af0bccbb4b46db0142df1aa0515d22c9fcfb60a0052e26',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -163,7 +165,9 @@ const protectedHashes = {
   // v38: added Fixer 3D bot (route + role label) as office troubleshooter.
   // HYPERFRAMES BATCH: 3 more 3D bots (HF Lead, HF Motion, HF QA) with routes,
   // role labels, edit/render status and moods — visual only.
-  'public/office-v9.js': 'b1442816116479b7a56a70b476a93d3683c499f525776b35bb656fce07a1ac48',
+  // 2026-11-21: perf pass - default detail low (scenery hidden), hide drones/holo/
+  // rooftop/basement by default in buildBatch1World to cut draw calls/CPU.
+  'public/office-v9.js': 'ef4eed8dc3a94a8d07b8dc936bd956e69074d3b780db6a4555b39a51644ec8f5',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
@@ -184,7 +188,7 @@ const protectedHashes = {
   'public/phaseD.js': '770a2e8c53d96cd8fa109482a7a221f1a96c1b0175c4acda23d28978220ab831',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
-  'public/sw.js': '6b269c3d38413fe4ac49bbb87dc6beed247fccb1054e7715a77f530e3bb7f674'
+  'public/sw.js': '654ff5f56e4f9a5110cb8419964a45e674a9536405c987fa5e35ec7321a7406f'
 };
 for (const [file, expected] of Object.entries(protectedHashes)) {
   const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');

@@ -204,7 +204,7 @@ dialog::backdrop{background:#000a}
   </div>
   <div style="height:6px"></div>
   <nav id="menu"></nav>
-  <div class="sidefoot"><b>Cyborg Cheebee Office</b><br>Invent • Automate • Grow</div>
+  <div class="sidefoot"><b>Cyborg Cheebee Office</b><br>Invent • Automate • Grow<br><button id="changePw" style="margin-top:7px;font-size:10.5px;padding:4px 8px">🔑 Change CEO password</button></div>
 </aside>
 
 <main class="main">
@@ -359,10 +359,12 @@ dialog::backdrop{background:#000a}
         <div><label>Format</label><select id="vfFormat"><option value="vertical">9:16 — Reels / Shorts</option><option value="wide">16:9 — Wide / YouTube</option></select></div>
         <div><label>Color 1</label><input id="vfColor1" type="color" value="#77eaff"></div>
         <div><label>Color 2</label><input id="vfColor2" type="color" value="#8b5cf6"></div>
+        <div style="grid-column:1/-1"><label>Product image URL (optional, https)</label><input id="vfImage" placeholder="https://.../product.jpg"></div>
+        <div style="grid-column:1/-1"><label>Voiceover URL (optional, https — mp3/wav)</label><input id="vfVoice" placeholder="https://.../voiceover.mp3"></div>
       </div>
       <label>AI brief — isulat sa Tagalog o English, hal. "Gawan ng reels promo ang bagong robot, hype tone, cyan at purple"</label>
       <textarea id="vfBrief" rows="2" placeholder="I-describe lang ang gustong video…"></textarea>
-      <div class="bar"><button class="gold" id="vfBriefBtn">🤖 AI → auto-config</button><button class="run" id="vfRender">🎬 Render preview</button><button id="vfRecap">📊 Weekly recap</button><button id="vfBatch">⚡ Batch from products</button><button id="vfRefresh">⟳ Refresh</button></div>
+      <div class="bar"><button class="gold" id="vfBriefBtn">🤖 AI → auto-config</button><button class="run" id="vfRender">🎬 Render preview</button><button id="vfRecap">📊 Weekly recap</button><button id="vfCampus">🏙️ 3D campus intro</button><button id="vfBatch">⚡ Batch from products</button><button id="vfRefresh">⟳ Refresh</button></div>
       <p class="hint" id="vfStatus">Ready.</p>
       <div id="vfResults" class="grid" style="margin-top:10px"></div>
     </div>
@@ -580,7 +582,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=39"></script>
+<script src="/office-v9.js?v=41"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -657,7 +659,7 @@ async function api(p,o){o=o||{};
     return await r.json();
   }catch(e){toast('Server error: '+e.message);return{ok:false,error:e.message}}
 }
-async function refresh(){S=await api('/api/state');if(S)renderAll()}
+async function refresh(){if(document.hidden){refresh._pending=true;return;}refresh._pending=false;S=await api('/api/state');if(S)renderAll()}
 const esc=s=>String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const ts=t=>new Date(t).toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',second:'2-digit'});
 const icon=b=>'<span class="face" style="background:'+b.c+'"><i></i><i></i></span>';
@@ -822,13 +824,15 @@ function renderRoutineTasks(){
   }).join('');
 }
 async function pingPC(){
+  if(document.hidden)return;
   const p=$('pcPill');if(!p)return;
   try{const r=await fetch('/api/state',{cache:'no-store'});const ok=r.ok;
     p.classList.toggle('on',ok);p.innerHTML=ok?'💻 My computer: on':'💻 My computer: off';
   }catch(e){p.classList.remove('on');p.innerHTML='💻 My computer: off'}
   if(view==='dashboard')renderRoutineTasks();
 }
-setInterval(pingPC,4000);
+setInterval(pingPC,15000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(typeof refresh==='function'&&refresh._pending)refresh();if(typeof pingPC==='function')pingPC();}});
 async function saveRoutines(){  const arr=JSON.parse(JSON.stringify(S.routines));
   arr.forEach((r,i)=>{const n=document.querySelector('[data-rn="'+i+'"]'),m=document.querySelector('[data-rm="'+i+'"]');if(n)r.name=n.value;if(m)r.minutes=Math.max(1,Number(m.value)||60)});
   await api('/api/routines',{method:'POST',body:JSON.stringify({routines:arr})});toast('Routines saved');await refresh();
@@ -1241,11 +1245,11 @@ function officeLoop(){
   requestAnimationFrame(officeLoop);
   /* Perf guard (2026-11-20): the 3D office used to redraw at full display rate
      (60+ FPS) with 2x pixel ratio and shadows. On weak GPUs / old AMD drivers
-     that saturated the GPU and made the whole browser feel hung. Cap to ~30
+     that saturated the GPU and made the whole browser feel hung. Cap to ~20
      FPS and skip drawing completely while the tab is hidden. */
   if(document.hidden)return;
   const _now=performance.now();
-  if(_now-(officeLoop._lastFrame||0)<33)return;
+  if(_now-(officeLoop._lastFrame||0)<50)return;
   officeLoop._lastFrame=_now;
   try{
     const use3d=selRoom==='hq'&&init3D();
@@ -4062,12 +4066,14 @@ function frame3D(){
   const dt=Math.min(3,Math.max(.25,(t-(frame3D._last||t))/16.667));frame3D._last=t;
   if(typeof updateDelivery3d==='function')updateDelivery3d();
   if(typeof updateXmas3d==='function')updateXmas3d();
-  // 🌬️ LIVING WORLD: hangin sa damo/bulaklak, alikabok, petals, bandila, usok, puno
+  // LIVING WORLD: hangin sa damo/bulaklak, alikabok, petals, bandila, usok, puno
+  frame3D._fxTick=((frame3D._fxTick||0)+1)|0;
+  const _fxFull=frame3D._fxTick%2===0;
   if(g.windMats)g.windMats.forEach(m=>{if(m.userData.windShader)m.userData.windShader.uniforms.uWindT.value=t/1000;});
   const gust=1+Math.sin(t/4200)*.45;
-  if(g.dust){const pa=g.dust.geometry.attributes.position.array;
+  if(_fxFull&&g.dust){const pa=g.dust.geometry.attributes.position.array;
     for(let i=0;i<pa.length;i+=3){
-      pa[i]+=dt*.012*gust;pa[i+1]+=Math.sin(t/1400+i)*dt*.006;
+      pa[i]+=dt*2*.012*gust;pa[i+1]+=Math.sin(t/1400+i)*dt*2*.006;
       if(pa[i]>10)pa[i]=-10;if(pa[i+1]>8.5)pa[i+1]=.5;if(pa[i+1]<.3)pa[i+1]=8;
     }
     g.dust.geometry.attributes.position.needsUpdate=true;
@@ -4077,13 +4083,13 @@ function frame3D(){
     tr.f1.rotation.z=sw;tr.f2.rotation.z=sw*.75;
     tr.f1.rotation.x=sw*.5;tr.f2.rotation.x=-sw*.4;
   });
-  if(g.windParts)g.windParts.forEach(p=>{
-    p.m.position.x+=dt*.025*p.sp*gust;
+  if(_fxFull&&g.windParts)g.windParts.forEach(p=>{
+    p.m.position.x+=dt*2*.025*p.sp*gust;
     if(p.m.position.x>58){p.m.position.x=-48;p.baseY=.4+Math.random()*7;}
     p.m.position.y=p.baseY+Math.sin(t/1100+p.ph)*.5;
     p.m.material.rotation=Math.sin(t/800+p.ph)*1.3;
   });
-  if(g.flags)g.flags.forEach(fl=>{
+  if(_fxFull&&g.flags)g.flags.forEach(fl=>{
     const pa=fl.f.geometry.attributes.position.array,ba=fl.base;
     for(let i=0;i<pa.length;i+=3){
       const px=ba[i],py=ba[i+1];
@@ -4092,12 +4098,13 @@ function frame3D(){
     fl.f.geometry.attributes.position.needsUpdate=true;
     fl.f.geometry.computeVertexNormals();
   });
-  if(g.steam)g.steam.forEach(s=>{
+  if(_fxFull&&g.steam)g.steam.forEach(s=>{
     const u=((t/2600)+s.ph)%1;
     s.m.position.set(s.x+u*1.6*gust,1.4+u*2.4,s.z+Math.sin(u*8+s.ph*6.28)*.18);
     const sc=.2+u*.5;s.m.scale.set(sc,sc,1);
     s.m.material.opacity=.32*(1-u);
   });
+  if(g.stars)g.stars.material.opacity=.75+Math.sin(t/900)*.15;
   if(g.stars)g.stars.material.opacity=.75+Math.sin(t/900)*.15;
   if(cam3d){
     const c=cam3d;
@@ -4782,7 +4789,7 @@ mmoLog('🌐 SYSTEM','Maligayang pagdating! Enter = mag-type, sumasagot ang bots
 const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'})};
 tick();setInterval(tick,30000);
 refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!'),4000)});
-setInterval(refresh,6000);
+setInterval(refresh,12000);
 /* P0: queued tasks are now driven by the SERVER (serverTaskRunner), not by this tab.
    Closing the browser will no longer stop the office queue. */
 /* Quota saver: watercooler chat every 10 minutes instead of 2 (720 -> 144 Groq calls/day). */
@@ -6905,6 +6912,59 @@ async function openCeoAds(){
     '</div>'+
     '<div style="color:#8494b4;font-size:9px;margin-top:7px;line-height:1.5">🤖 AI recommends · 👑 CEO approves. Walang auto-posting, walang fake engagement, walang private/login crawling. Ang publish at ledger actions ay <b>record lang</b> — walang external post o transfer na isinasagawa.</div>'+
   '</div>');
+
+  /* ---------- 🗓️ OFFICE SHIFT QUEUE + HEARTBEAT (AI proposes, CEO approves) ---------- */
+  body.insertAdjacentHTML('beforeend','<div id="officePanel" style="border:1px solid #3f7d5a;border-radius:9px;padding:8px;margin-top:10px;background:rgba(10,30,22,.78)">'+
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="color:#7ee2a8;font-size:11px">🗓️ OFFICE SHIFT QUEUE</b>'+
+    '<span id="officeBeat" style="color:#9fb2d0;font-size:9px">🟢 Live</span><span style="flex:1"></span>'+
+    '<button id="shiftRefresh" style="background:#315d91;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">↻ Refresh</button>'+
+    '<button id="shiftGenerate" style="background:#2b8b68;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">✨ Propose shift</button>'+
+    '<button id="shiftApproveAll" style="background:#8a6d1f;color:#fff;border:0;border-radius:6px;padding:5px 8px;font-size:9.5px">✅ Approve all</button></div>'+
+    '<div id="shiftList" style="color:#9fb2d0;font-size:9px;margin-top:7px;line-height:1.5;max-height:150px;overflow:auto">Loading shift proposals…</div>'+
+    '<div style="color:#8494b4;font-size:9px;margin-top:7px;line-height:1.5">🤖 AI nagmumungkahi ng internal work · 👑 CEO ang nag-a-approve bago mailagay sa queue. Walang auto-post, walang auto-send. Ang heartbeat ay local display lang — walang AI call.</div>'+
+  '</div>');
+  const shiftLoad=async()=>{
+    const r=await api('/api/office/shift',{method:'POST',body:'{"action":"list"}'});
+    const list=(r&&r.proposals)||[];
+    if($('shiftList'))$('shiftList').innerHTML=list.slice(0,6).map(p=>{
+      const pending=p.status==='pending';
+      return '<div style="border-bottom:1px solid #244235;padding:4px 0">'+
+        '<div><b style="color:#d8e8d0">'+bzEsc(p.title||'')+'</b> <small style="color:#8494b4">· '+bzEsc(p.bot||'')+' · '+bzEsc(ts(p.at))+'</small></div>'+
+        '<div style="color:#8494b4">'+bzEsc(p.note||'')+'</div>'+
+        (pending?('<div style="margin-top:4px;display:flex;gap:4px">'+
+          '<button data-shift-approve="'+bzEsc(p.id)+'" style="background:#2b8b68;color:#fff;border:0;border-radius:5px;padding:3px 6px;font-size:9px">✅ Approve</button>'+
+          '<button data-shift-reject="'+bzEsc(p.id)+'" style="background:#8f3f57;color:#fff;border:0;border-radius:5px;padding:3px 6px;font-size:9px">✖ Reject</button></div>')
+          :('<b style="color:'+(p.status==='approved'?'#7ee2a8':'#ff8fa8')+';font-size:9px">'+bzEsc(p.status)+'</b>'))+
+      '</div>';
+    }).join('')||'<div style="color:#8494b4">Wala pang proposal. Hintayin ang susunod na shift, o pindutin ang ✨ Propose shift.</div>';
+  };
+  const shiftAct=async(action,id)=>{
+    const body=JSON.stringify({action,id});
+    const r=await api('/api/office/shift',{method:'POST',body});
+    toast(r&&r.ok?(action==='generate'?'✨ May bagong proposal.':action==='reject'?'✖ Proposal tinanggihan.':'✅ Approved — nasa queue na ang task.'):'⚠ '+((r&&r.error)||'Failed'));
+    if(r&&r.ok)shiftLoad();
+  };
+  const shiftRefreshBtn=$('shiftRefresh');if(shiftRefreshBtn)shiftRefreshBtn.onclick=shiftLoad;
+  const shiftGenerateBtn=$('shiftGenerate');if(shiftGenerateBtn)shiftGenerateBtn.onclick=()=>shiftAct('generate','');
+  const shiftApproveAllBtn=$('shiftApproveAll');if(shiftApproveAllBtn)shiftApproveAllBtn.onclick=()=>shiftAct('approve-all','');
+  const shiftListEl=$('shiftList');if(shiftListEl)shiftListEl.onclick=e=>{
+    const t=e.target;
+    const a=t&&t.getAttribute?t.getAttribute('data-shift-approve'):null;
+    const j=t&&t.getAttribute?t.getAttribute('data-shift-reject'):null;
+    if(a)shiftAct('approve',a);
+    else if(j)shiftAct('reject',j);
+  };
+  shiftLoad();
+  setInterval(shiftLoad,60000);
+  /* Local heartbeat: keeps the office visibly alive without any network or AI call. */
+  let _beatTick=0;
+  setInterval(()=>{
+    _beatTick++;
+    const el=$('officeBeat');if(!el)return;
+    const dot=_beatTick%4===0?'🟢':'🟡';
+    el.textContent=dot+' Live · '+new Date().toLocaleTimeString()+' · tick '+_beatTick;
+  },15000);
+
   const govLoad=async()=>{
     const st=await api('/api/state');
     const pub=await api('/api/ceo/publish',{method:'POST',body:'{"action":"list"}'});
@@ -7390,7 +7450,7 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=40"></script>
+<script src="/office-studio.js?v=42"></script>
 <script src="/hyperframes.js?v=3"></script>
 <script>
 /* 🎬 AI Video Editor Assistant — wired to /api/video/* (Remotion) */
@@ -7422,7 +7482,7 @@ async function openCeoWish(){
   function cfg(){
     return {title:$('vfTitle').value,tagline:$('vfTagline').value,cta:$('vfCta').value,
       format:$('vfFormat').value,color1:$('vfColor1').value,color2:$('vfColor2').value,
-      mode:'product',watermark:true};
+      imageUrl:$('vfImage').value,voiceoverUrl:$('vfVoice').value,mode:'product',watermark:true};
   }
   $('vfBriefBtn').onclick=async function(){
     var brief=$('vfBrief').value.trim();if(!brief){status('⚠️ Maglagay muna ng brief.');return}
@@ -7431,7 +7491,7 @@ async function openCeoWish(){
     if(!j.ok){status('❌ '+(j.error||'failed'));return}
     var c=j.config||{};
     $('vfTitle').value=c.title||'';$('vfTagline').value=c.tagline||'';$('vfCta').value=c.cta||'';
-    $('vfFormat').value=c.format||'vertical';$('vfColor1').value=c.color1||'#77eaff';$('vfColor2').value=c.color2||'#8b5cf6';
+    $('vfFormat').value=c.format||'vertical';$('vfColor1').value=c.color1||'#77eaff';$('vfColor2').value=c.color2||'#8b5cf6';$('vfImage').value=c.imageUrl||'';$('vfVoice').value=c.voiceoverUrl||'';
     status('✅ AI config ready — pindutin ang Render preview.');
   };
   $('vfRender').onclick=async function(){
@@ -7444,6 +7504,15 @@ async function openCeoWish(){
     var j=await api('/api/video/recap',{method:'POST',body:JSON.stringify({format:$('vfFormat').value,watermark:true})});
     status(j.ok?'✅ Recap: '+j.url:'❌ '+(j.error||'failed'));if(j.ok)await list();
   };
+  $('vfCampus').onclick=async function(){
+    status('🏙️ Rendering 3D campus intro…');
+    var c=cfg();
+    var j=await api('/api/video/campus',{method:'POST',body:JSON.stringify({
+      format:c.format,title:c.title==='Cyborg Cheebee'?'Cyborg Cheebee HQ':c.title,
+      tagline:c.tagline,cta:c.cta,watermark:true,voiceoverUrl:c.voiceoverUrl
+    })});
+    status(j.ok?'✅ Campus intro: '+j.url:'❌ '+(j.error||'failed'));if(j.ok)await list();
+  };
   $('vfBatch').onclick=async function(){
     var st=(typeof S!=='undefined'&&S)?S:{};
     var products=(st.products||[]).slice(0,10);
@@ -7451,7 +7520,8 @@ async function openCeoWish(){
     var items=products.map(function(p,i){return {
       name:'product-'+(p.id||i),title:String(p.name||p.title||('Product '+(i+1))),
       tagline:String(p.desc||p.description||'AI-generated product spotlight'),
-      cta:'Dream Bigger. Let AI Work Harder!',format:$('vfFormat').value,watermark:true,mode:'product'
+      cta:'Dream Bigger. Let AI Work Harder!',format:$('vfFormat').value,watermark:true,mode:'product',
+      imageUrl:String(p.image||p.imageUrl||p.img||'')
     }});
     status('⚡ Batch rendering '+items.length+' videos…');
     var j=await api('/api/video/batch',{method:'POST',body:JSON.stringify({items:items})});
@@ -7459,6 +7529,15 @@ async function openCeoWish(){
     if(j.ok)await list();
   };
   $('vfRefresh').onclick=list;
+  var cp=$('changePw');
+  if(cp)cp.onclick=async function(){
+    var next=prompt('Bagong CEO password (minimum 12 characters):');
+    if(!next)return;
+    if(next.length<12){toast('Kailangan ng at least 12 characters.');return}
+    var j=await api('/api/ceo/password',{method:'POST',body:JSON.stringify({newPass:next})});
+    toast(j.ok?'✅ Password changed — mag-login uli.':'❌ '+(j.error||'failed'));
+    if(j.ok)ceoLogout('🔑 Password changed — mag-login uli.');
+  };
   list();
 })();
 </script></body>

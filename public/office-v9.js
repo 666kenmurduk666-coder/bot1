@@ -28,7 +28,10 @@
     { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 36, z: 11,   face: Math.PI / 2 },
     { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 },
     { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI },
-    { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: 16, z: 14.5, face: 0 }
+    { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: 16, z: 14.5, face: 0 },
+    { id: 'hflex',   n: 'HF Lead 📝', c: '#77eaff', x: 24, z: 10.5, face: 0 },
+    { id: 'hfmotion',n: 'HF Motion ✨', c: '#a78bfa', x: 28, z: 10.5, face: 0 },
+    { id: 'hfrender',n: 'HF QA 🧪',   c: '#75f0c0', x: 32, z: 10.5, face: 0 }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   // Each bot gets its own route and work shift, so nobody just stands still.
@@ -73,6 +76,21 @@
       { x: 14.8, z: 15.8, job: 'type', dur: 3200, face: -0.4 },
       { x: 17.2, z: 16.0, job: 'wave', dur: 3000, face: .5 },
       { x: 16, z: 14.5, job: 'greet', dur: 3400, face: 0 }
+    ],
+    hflex: [
+      { x: 24, z: 10.5, job: 'plan', dur: 4600, face: 0 },
+      { x: 26.5, z: 13, job: 'review', dur: 3400, face: -0.6 },
+      { x: 23, z: 8.5, job: 'greet', dur: 3600, face: 2.2 }
+    ],
+    hfmotion: [
+      { x: 28, z: 10.5, job: 'edit', dur: 4800, face: 0 },
+      { x: 30, z: 12.5, job: 'edit', dur: 3200, face: -1 },
+      { x: 26, z: 14, job: 'review', dur: 3800, face: 2.4 }
+    ],
+    hfrender: [
+      { x: 32, z: 10.5, job: 'render', dur: 4400, face: 0 },
+      { x: 34, z: 13, job: 'type', dur: 3400, face: -1.1 },
+      { x: 29, z: 9, job: 'render', dur: 3800, face: 2.1 }
     ]
   };
   var MOODS = {
@@ -80,6 +98,7 @@
     pack: ['📦', '😄', '🙌'], joke: ['😄', '🤪', '✨'], plan: ['📋', '✅', '😌'],
     write: ['✍️', '💡', '😊'], design: ['🎨', '🖌️', '💡'],
     review: ['📐', '🔍', '✨'], showcase: ['🖼️', '🙌', '😍'],
+    edit: ['✂️', '🎬', '💡'], render: ['🧪', '⏱️', '🎞️'],
     walk: ['😊', '✨', '🙂']
   };
   var cuteBots = [], animId = null, animParts = [];
@@ -1163,7 +1182,7 @@
     applyDetailLevel(true);
   }
   function applyDetailLevel(force) {
-    var low = (typeof window !== 'undefined' && window.__officeDetail === 'low');
+    var low = (typeof window !== 'undefined' && window.__officeDetail !== 'high');
     var count = fx.scenery.length;
     if (!force && applyDetailLevel.last === low && applyDetailLevel.count === count) return;
     applyDetailLevel.last = low;
@@ -2803,7 +2822,8 @@
     animId = requestAnimationFrame(tick);
     if (document.hidden) return;
     var now = Date.now();
-    if (now - (tick.last || 0) < 33) return;
+    // Perf preset: 25 FPS cap (was 30) lowers GPU/CPU load on weak machines.
+    if (now - (tick.last || 0) < 40) return;
     var prevTick = tick.last || now;
     tick.last = now;
     var botDt = Math.min(.12, Math.max(0, (now - prevTick) / 1000));
@@ -3385,6 +3405,8 @@
     setWeather(window.__officeWeather || 'clear');
     setSeason(window.__officeSeason || 'default');
     if (fx.night) fx.night.amount = (window.__officeNight === true) ? 1 : (nightValue() ? 1 : 0);
+    // Perf: hide heavy optional features by default; can be toggled on via Studio/API.
+    ['drones', 'holo', 'rooftop', 'basement'].forEach(function (k) { try { setWorldFeature(k, false); } catch (e) {} });
   }
 
   function nightValue() {
@@ -3449,7 +3471,7 @@
   function updateBatch1World(now, dt) {
     if (!fx || !fx.night) return;
     dt = Math.max(0, Math.min(.12, dt || 0));
-    var low = window.__officeDetail === 'low';
+    var low = window.__officeDetail !== 'high';
 
     // 1 — smooth night: only the veil opacity moves, guards stay untouched.
     var nt = nightValue() ? 1 : 0;
@@ -3553,13 +3575,15 @@
   var BATCH2_ROLE = {
     cos: 'HOST · COS', seo: 'ANALYST · SEO', product: 'OPS · PRODUCT',
     joker: 'CULTURE · JOKER', mgr: 'MANAGER · MGR', writer: 'CONTENT · WRITER',
-    aryasky: 'ARTIST · ARYASKY', fixer: 'TECH · FIXER'
+    aryasky: 'ARTIST · ARYASKY', fixer: 'TECH · FIXER',
+    hflex: 'VIDEO · HF LEAD', hfmotion: 'VIDEO · MOTION', hfrender: 'VIDEO · RENDER QA'
   };
   var BATCH2_STATUS = {
     greet: 'Greeting guests…', wave: 'Waving hi! 👋', type: 'Typing reports…',
     pack: 'Packing orders…', joke: 'Cracking jokes…', plan: 'Planning tasks…',
     write: 'Writing copy…', design: 'Designing art…', review: 'Reviewing SEO…',
-    showcase: 'Showcasing work…', walk: 'On the move…'
+    showcase: 'Showcasing work…', edit: 'Editing timeline…', render: 'Rendering MP4…',
+    walk: 'On the move…'
   };
   function paintBatch2Label(q, text, color, bg) {
     q.clearRect(0, 0, 256, 64);
@@ -3804,7 +3828,7 @@
   }
   function updateBatch2World(now, dt) {
     if (!fx) return;
-    var f = fx.botFeatures || {}, low = window.__officeDetail === 'low';
+    var f = fx.botFeatures || {}, low = window.__officeDetail !== 'high';
     dt = Math.max(0, Math.min(.12, dt || 0));
     // 11 — barista pours gently.
     if (fx.barista && fx.barista.c && f.barista !== false && !low) {
