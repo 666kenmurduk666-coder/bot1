@@ -187,14 +187,15 @@ function defaultLayout() {
   ]};
 }
 const DEFAULT_ROUTINES = [
-  {id:'r-cos',agent:'cos',name:'Chief of Staff — plan the day',minutes:30,enabled:true,lastRun:0,runs:0},
+  {id:'r-cos',agent:'cos',name:'Chief of Staff - plan the day',minutes:30,enabled:true,lastRun:0,runs:0},
   {id:'r-mgr',agent:'mgr',name:'Manager status report',minutes:60,enabled:true,lastRun:0,runs:0},
   {id:'r-out',agent:'outreach',name:'Client outreach drafts',minutes:120,enabled:false,lastRun:0,runs:0},
   {id:'r-scr',agent:'scraper',name:'Community resource scan',minutes:180,enabled:false,lastRun:0,runs:0},
   {id:'r-soc',agent:'social',name:'Social media check-in',minutes:240,enabled:false,lastRun:0,runs:0},
   {id:'r-prod',agent:'product',name:'Product video batch',minutes:180,enabled:false,lastRun:0,runs:0},
   {id:'r-joke',agent:'joker',name:'Jester — daily jokes',minutes:360,enabled:false,lastRun:0,runs:0},
-  {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:false,lastRun:0,runs:0}
+  {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:false,lastRun:0,runs:0},
+  {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:false,lastRun:0,runs:0}
 ];
 const savedRoutines = readJSON(ROUTINES_FILE, null);
 state.routines = Array.isArray(savedRoutines) ? savedRoutines.slice() : DEFAULT_ROUTINES.slice();
@@ -552,9 +553,54 @@ function endpointFor(cfg) {
 function isLocalAI(cfg) {
   return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(String(cfg.baseUrl || ''));
 }
+/* ---------- Quota saver ----------
+   Groq is capped per day. When the cap is hit, callProvider throws and the
+   existing failover in callAI()/generateConversation() moves to Ollama/OVH.
+   Automatic routine outputs are cached briefly so repeats do not spend calls. */
+const GROQ_DAILY_CAP = Math.max(1, Number(process.env.MAX_GROQ_CALLS_PER_DAY) || 500);
+const QUOTA_COUNTER_FILE = path.join(DATA, 'quota-counter.json');
+const AGENT_CACHE_FILE = path.join(DATA, 'agent-cache.json');
+const AGENT_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+const PHT_OFFSET_MS = 8 * 60 * 60 * 1000;
+function quotaDate() { return new Date(Date.now() + PHT_OFFSET_MS).toISOString().slice(0, 10); }
+function quotaState() {
+  const q = readJSON(QUOTA_COUNTER_FILE, null);
+  return q && q.date === quotaDate() && Number.isFinite(q.count) ? q : { date: quotaDate(), count: 0 };
+}
+function takeGroqSlot() {
+  const q = quotaState();
+  if (q.count >= GROQ_DAILY_CAP) return false;
+  q.count += 1;
+  writeJSON(QUOTA_COUNTER_FILE, q);
+  return true;
+}
+function agentCacheKey(id) {
+  const c = state.config;
+  return JSON.stringify([id, c.niche, c.style, c.clips, c.slots, c.mission]);
+}
+function agentCacheGet(id) {
+  const all = readJSON(AGENT_CACHE_FILE, {});
+  const hit = all[id];
+  if (hit && hit.key === agentCacheKey(id) && Date.now() - (hit.at || 0) < AGENT_CACHE_TTL_MS) return hit.text;
+  return null;
+}
+function agentCacheSet(id, text) {
+  const all = readJSON(AGENT_CACHE_FILE, {});
+  all[id] = { key: agentCacheKey(id), text: text, at: Date.now() };
+  const ids = Object.keys(all);
+  if (ids.length > 40) {
+    ids.sort((a, b) => (all[a].at || 0) - (all[b].at || 0));
+    for (const old of ids.slice(0, ids.length - 40)) delete all[old];
+  }
+  writeJSON(AGENT_CACHE_FILE, all);
+}
+
 async function callProvider(cfg, system, user, maxTokens) {
   const local = isLocalAI(cfg);
   if (!cfg.apiKey && !local) throw new Error('No key for ' + cfg.provider);
+  if (cfg.provider === 'groq' && !takeGroqSlot()) {
+    throw new Error('Groq daily quota saver reached ' + GROQ_DAILY_CAP + ' calls');
+  }
   const systemText = (state.memory ? 'Company memory (shared context):\n' + state.memory + '\n\n' : '') + system;
   const headers = { 'Content-Type': 'application/json' };
   // Anonymous providers (OVHcloud, Kilo Code, LLM7) reject ANY Authorization header.
@@ -733,6 +779,25 @@ const PROMPTS = {
     user: () => 'Niche: ' + state.config.niche + '\nWrite 3 short jokes (1-2 lines each) about AI agents working in an office. Keep it light and funny. Format one joke per line.',
     max: 600
   },
+  fixer: {
+    sys: 'You are the Office Fixer/Technician of Cyborg Cheebee Office. You diagnose why AI agents or routines are not working and give clear, practical fixes in casual Taglish.',
+    user: (c, o) => {
+      const s = settings();
+      const tasks = state.tasks || [];
+      const routines = state.routines || [];
+      const recent = (state.feed || []).slice(0, 10).map(f => '[' + (f.who || 'sys') + '] ' + (f.msg || '')).join('\n');
+      return 'Office status:\n' +
+        '- stopped: ' + !!state.stopped + ', running: ' + !!state.running + '\n' +
+        '- provider: ' + s.provider + ', model: ' + s.model + ', hasKey: ' + !!s.apiKey + ', failover: ' + (s.failover || []).join(', ') + '\n' +
+        '- tasks: ' + tasks.length + ' (queued ' + tasks.filter(t => t.status === 'queued').length + ', approval ' + tasks.filter(t => t.status === 'approval').length + ', running ' + tasks.filter(t => t.status === 'running').length + ')\n' +
+        '- routines: ' + (routines.map(r => r.name + ' [' + (r.enabled ? 'on' : 'off') + ', every ' + r.minutes + 'm, last ' + (r.lastRun ? new Date(r.lastRun).toISOString() : 'never') + ']').join('; ') || '(none)') + '\n' +
+        '- outputs available: ' + Object.keys(o || {}).join(', ') + '\n' +
+        '- recent logs:\n' + (recent || '(none)') + '\n\n' +
+        'Mission: ' + (c.mission || '(none)') + '\n' +
+        'Ibigay: (1) pinaka-malamang na dahilan, (2) 3-6 quick fixes na pwedeng gawin ngayon sa UI/settings/server, (3) paano i-verify na gumagana na. Maging specific at maikli.';
+    },
+    max: 900
+  },
   product: {
     sys: 'You are a product video director for short-form affiliate videos. Produce a ready-to-shoot package, not prose.',
     user: () => {
@@ -815,6 +880,10 @@ async function fetchProductMeta(url) {
 }
 
 async function generateConversation(ids) {
+  // Reuse the last conversation for 10 minutes. Multiple open tabs or a UI
+  // refresh must not each spend a separate Groq call.
+  const recent = state.conversations[0];
+  if (recent && Date.now() - (recent.t || 0) < 10 * 60 * 1000) return recent;
   const chosen = (ids && ids.length ? ids : ['cos', 'seo', 'product', 'joker']).slice(0, 4);
   const sys = 'You write a short, natural office conversation between AI coworkers in the Philippines. Write in casual but CORRECT TAGLISH (natural Tagalog mixed with English), like real Filipino office workers. Use proper Tagalog spelling and grammar. Each line must start with the agent id exactly as given, followed by a colon. Exactly 4 lines, one speaker per line, natural turn-taking (a reply reacts to the previous line). Keep it light and funny. Output only the lines.';
   const user = 'Agents: ' + chosen.map(id => id + ' (' + (BOT_NAMES[id] || id) + ')').join(', ') +
@@ -870,7 +939,7 @@ async function runProduct(p) {
   return p;
 }
 
-async function runAgent(id) {
+async function runAgent(id, automatic) {
   const c = state.config;
   if (id === 'drop') return c.clips.length + ' clips ready:\n' + c.clips.join(', ');
   if (id === 'post') {
@@ -883,7 +952,12 @@ async function runAgent(id) {
   }
   const p = PROMPTS[id];
   if (!p) return 'No output for this agent.';
+  if (automatic) {
+    const cached = agentCacheGet(id);
+    if (cached) return cached;
+  }
   const text = await callAI(p.sys, p.user(c, state.outputs), p.max);
+  if (automatic) agentCacheSet(id, text);
   if (lastReply && lastReply.id) {
     state.replyIds[id] = lastReply.id;
     state.replyProviders[id] = lastReply.provider;
@@ -897,7 +971,8 @@ const BOT_NAMES = {
   drop: 'Drop videos', edit: 'Video Editor', rvs: 'RVS Revise', seo: 'SEO Caption Bot',
   sched: 'Scheduler Bot', post: 'Posting Bot', mgr: 'Bot Manager',
   cos: 'Chief of Staff', outreach: 'Client Outreach', scraper: 'Community Scraper',
-  social: 'Social Media Manager', product: 'Product Video Bot', joker: 'Office Jester'
+  social: 'Social Media Manager', product: 'Product Video Bot', joker: 'Office Jester',
+  fixer: 'Office Fixer'
 };
 const AGENT_META = [
   {id:'drop',n:'Drop videos',i:'🎬',c:'#3f9d6a',group:'pipeline',room:'hq',desc:'Raw clips land here.'},
@@ -912,7 +987,8 @@ const AGENT_META = [
   {id:'scraper',n:'Community Scraper',i:'🕸',c:'#7ac74f',group:'staff',room:'hq',desc:'Fetches configured URLs and lists useful resources.'},
   {id:'social',n:'Social Media Manager',i:'📱',c:'#d6607a',group:'staff',room:'hq',desc:'Drafts per-platform posts with times.'},
   {id:'product',n:'Product Video Bot',i:'🎬',c:'#4fd1c5',group:'staff',room:'hq',desc:'Turns product links into ready-to-shoot video packages.'},
-  {id:'joker',n:'Office Jester',i:'🤡',c:'#f472b6',group:'staff',room:'fun',desc:'Keeps morale high with clean jokes and memes.'}
+  {id:'joker',n:'Office Jester',i:'🤡',c:'#f472b6',group:'staff',room:'fun',desc:'Keeps morale high with clean jokes and memes.'},
+  {id:'fixer',n:'Office Fixer',i:'🛠️',c:'#22c55e',group:'staff',room:'hq',desc:'Diagnoses why agents are not working and gives quick fixes.'}
 ];
 
 /* 🐾 CARE & RETURN — Tamagotchi bot battery/mood + FarmVille-style visitor garden.
@@ -1036,7 +1112,7 @@ async function runRoutine(id, manual) {
   state.running = true;
   try {
     log('Routine started: ' + r.name, r.agent);
-    state.outputs[r.agent] = await runAgent(r.agent);
+    state.outputs[r.agent] = await runAgent(r.agent, !manual);
     r.lastRun = Date.now();
     r.runs = (r.runs || 0) + 1;
     lastRoutineAt = Date.now();

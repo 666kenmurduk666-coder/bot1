@@ -296,7 +296,7 @@ dialog::backdrop{background:#000a}
           <button id="partyBtn">🎉 Party</button>
           <button id="rainBtn">☔ Ulan</button>
           <button id="nightBtn">🌙 Gabi</button>
-          <button id="auto" class="ceoOnly">▶️ 24/7 Mode</button>
+          <button id="auto" class="ceoOnly">⏸ Pause 24/7 mode</button>
           <button id="xray">👁 Silip</button>
           <button id="sfx">🔊 Sounds</button>
         </div>
@@ -560,7 +560,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=37"></script>
+<script src="/office-v9.js?v=38"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -647,6 +647,7 @@ const PERSONA={
  social:{style:'tri',trait:'Trend obsessed',moods:['✨','✨','✨']},
  product:{style:'square',trait:'Show-off, energetic',moods:['✨','✨','✨']},
  joker:{style:'jester',trait:'Class clown',moods:['✨','✨','✨']}
+ fixer:{style:'square',trait:'Calm troubleshooter',moods:['🛠️','🔧','✅']},
 };
 
 /* ---------- menu ---------- */
@@ -932,7 +933,7 @@ $('provSave').onclick=async()=>{
   const r=await api('/api/providers',{method:'POST',body:JSON.stringify({keys,failover})});
   toast(r.ok?'Providers saved':'Error');await refresh();
 };
-let autoOn=false;
+let autoOn=true; // Quota saver + auto-heal: 24/7 mode starts automatically for the CEO
 $('auto').onclick=()=>{autoOn=!autoOn;$('auto').textContent=autoOn?'⏸ Pause 24/7 mode':'▶ Start 24/7 mode';toast(autoOn?'24/7 mode on':'Paused')};
 const xrayApply=()=>{
   if(!level3d)return;
@@ -4721,8 +4722,8 @@ tick();setInterval(tick,30000);
 refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = harvest!'),4000)});
 setInterval(refresh,6000);
 setInterval(async()=>{if(!autoOn||!S||S.stopped||S.running)return;const t=S.tasks.filter(a=>a.status==='queued');if(t.length)await api('/api/tasks/run',{method:'POST',body:'{}'});await refresh()},5000);
-/* Bots chat every 2 minutes (Groq). Was 10 minutes — felt dead on open. */
-setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;const r=await api('/api/conversation',{method:'POST',body:'{}'});if(r.ok)await refresh()},120000);
+/* Quota saver: watercooler chat every 10 minutes instead of 2 (720 -> 144 Groq calls/day). */
+setInterval(async()=>{if(view!=='office'||!S||!S.setup.hasKey||S.running)return;const r=await api('/api/conversation',{method:'POST',body:'{}'});if(r.ok)await refresh()},600000);
 </script>
 
 <!-- CEO Chat -->
@@ -7215,5 +7216,5 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=39"></script></body>
+<script src="/office-studio.js?v=40"></script></body>
 </html>

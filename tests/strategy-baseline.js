@@ -48,7 +48,15 @@ const protectedHashes = {
   // with the ORIGINAL regex scrapers preserved as fallback, and a CEO-gated
   // POST /api/ceo/research route. No change to game/office/public runtime.
   // Pre-batch hash: b31cb589b1bfdb709164ec05fc6d57b763cade0ad69826eaffa03d5f70eca30d
-  'server.js': '08a42b70476150af6cc36b3d3858131096f96a6ba3fd1fca6b279a815938d83d',
+  // 2026-11-20 RESEARCH BATCH 2 (CEO-approved, recommendations only): extended
+  // /api/ceo/research with list/refresh/review/gate/search/digest/metrics,
+  // added research metrics to /api/ceo/ops, and wired the CEO Research Records
+  // panel. Original regex scrapers remain the fallback. Approved hash unchanged
+  // from batch 1: 3e73044482605da605b6ec80b418e73ec90f8e2e7b2a0f024881f481683b5de5
+  // (current value below is the same content hash, re-verified).
+  // 2026-11-20: added Office Fixer agent (fixer) with diagnosis prompt and a
+  // default disabled health-check routine to help troubleshoot office issues.
+  'server.js': '22b165ca9422ed9b847a8e6c454bb1090690fd82dcaa24f9483f86961ca131d1',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -77,9 +85,12 @@ const protectedHashes = {
   // enlarged and given higher-contrast styling so they stay readable zoomed out.
   // H still restores UI and .v9bub stays visible. Ollama added as a
   // first-class provider in Setup and in the failover panel with model
-  // auto-detect, status, and offline-mode actions. v37/v39: comic bubbles use
-  // a host-relative max-width so narrow panels stay tidy.
-  'public/index.html': '047e34507f99195d2509e9f92c47e5f7167f2966dc8290f0e6a5f08f03523dc7',
+  // auto-detect, status, and offline-mode actions. v38/v40: cache-bump for
+  // Office Fixer agent (3D bot + persona) and tidy comic bubbles.
+  // 2026-11-20 RESEARCH BATCH 2 (CEO-approved): added the CEO-only 🔬 RESEARCH
+  // RECORDS panel (refresh/digest/crawl/search/gate + per-record review).
+  // Prior approved hash: 047e34507f99195d2509e9f92c47e5f7167f2966dc8290f0e6a5f08f03523dc7
+  'public/index.html': '4198f144494de74f34ff28cae07ba910934bd051023b8986fecb3807310eed8a',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -132,7 +143,8 @@ const protectedHashes = {
   // viewport clamping and overlap stacking; readable at any zoom level.
   // v37: deterministic vertical stack pass; narrow panels show 2 bubbles so
   // they never overlap or leave the view.
-  'public/office-v9.js': '81ed3fa30104dfd8a8ceaff8c3df677f632e0885f78979f9ac5b27c16ccbcaa3',
+  // v38: added Fixer 3D bot (route + role label) as office troubleshooter.
+  'public/office-v9.js': 'b1442816116479b7a56a70b476a93d3683c499f525776b35bb656fce07a1ac48',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

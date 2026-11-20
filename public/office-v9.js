@@ -27,7 +27,8 @@
     { id: 'joker',   n: 'Joker 😄',   c: '#8f6fd8', x: 13, z: 23.2, face: Math.PI },
     { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 36, z: 11,   face: Math.PI / 2 },
     { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 },
-    { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI }
+    { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI },
+    { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: 16, z: 14.5, face: 0 }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   // Each bot gets its own route and work shift, so nobody just stands still.
@@ -66,6 +67,12 @@
       { x: 30.1, z: 21.3, job: 'design', dur: 4600, face: Math.PI },
       { x: 32.6, z: 21.8, job: 'review', dur: 3600, face: -0.5 },
       { x: 35.0, z: 20.6, job: 'showcase', dur: 3800, face: -1.1 }
+    ],
+    fixer: [
+      { x: 16, z: 14.5, job: 'look', dur: 3600, face: 0 },
+      { x: 14.8, z: 15.8, job: 'type', dur: 3200, face: -0.4 },
+      { x: 17.2, z: 16.0, job: 'wave', dur: 3000, face: .5 },
+      { x: 16, z: 14.5, job: 'greet', dur: 3400, face: 0 }
     ]
   };
   var MOODS = {
@@ -3546,7 +3553,7 @@
   var BATCH2_ROLE = {
     cos: 'HOST · COS', seo: 'ANALYST · SEO', product: 'OPS · PRODUCT',
     joker: 'CULTURE · JOKER', mgr: 'MANAGER · MGR', writer: 'CONTENT · WRITER',
-    aryasky: 'ARTIST · ARYASKY'
+    aryasky: 'ARTIST · ARYASKY', fixer: 'TECH · FIXER'
   };
   var BATCH2_STATUS = {
     greet: 'Greeting guests…', wave: 'Waving hi! 👋', type: 'Typing reports…',
