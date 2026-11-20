@@ -70,8 +70,9 @@ const protectedHashes = {
   // rotating the camera cannot reveal a dark mirror. v36/v38: comic bubbles
   // enlarged and given higher-contrast styling so they stay readable zoomed out.
   // H still restores UI and .v9bub stays visible. Ollama added as a
-  // first-class provider in Setup and in the failover panel.
-  'public/index.html': '9be450ca4d42cedd689466caf4baf9b6cd513b208023729ffd45faa2e9741b33',
+  // first-class provider in Setup and in the failover panel. v37/v39: comic
+  // bubbles use a host-relative max-width so narrow panels stay tidy.
+  'public/index.html': '9c1c499d288b1948a8afa5a57a0fde32c4b9cb639ce6ffa15eaf53dd90eaa711',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -122,7 +123,9 @@ const protectedHashes = {
   // filter so camera rotation cannot reveal a dark mirror.
   // v36: up to 3 comic lines shown at once, anchored above their bots with
   // viewport clamping and overlap stacking; readable at any zoom level.
-  'public/office-v9.js': 'af9b4fb0efe920525a8d606859cfc05b6f260c30145b18740d37331fc8454373',
+  // v37: deterministic vertical stack pass; narrow panels show 2 bubbles so
+  // they never overlap or leave the view.
+  'public/office-v9.js': '81ed3fa30104dfd8a8ceaff8c3df677f632e0885f78979f9ac5b27c16ccbcaa3',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

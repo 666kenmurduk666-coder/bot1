@@ -82,7 +82,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .bub3d b{display:block;font-size:12px;color:#5a6474;margin-bottom:3px}
 .bub3d:after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-6px;border:6px solid transparent;border-top-color:#182032}
 /* Comic bubbles stay legible at any zoom: DOM overlays, fixed readable size. */
-.v9bub{background:linear-gradient(180deg,#ffffff,#eaf5ff);border:2px solid #2f6f9e;box-shadow:0 10px 28px #06152e88;border-radius:18px;font-size:clamp(16px,1.35vw,20px);font-weight:700;line-height:1.35;max-width:min(360px,48vw);padding:12px 16px;text-align:center}
+.v9bub{background:linear-gradient(180deg,#ffffff,#eaf5ff);border:2px solid #2f6f9e;box-shadow:0 10px 28px #06152e88;border-radius:18px;font-size:clamp(16px,1.35vw,20px);font-weight:700;line-height:1.35;max-width:min(340px,46%);padding:12px 16px;text-align:center}
 .v9bub b{color:#0b6f8f;font-size:.78em;letter-spacing:.5px;margin-bottom:4px}
 .v9bub.talking{border-color:#ffb648;box-shadow:0 0 0 2px #ffd88a77,0 10px 28px #06152e99}
 .v9bub:after{border-top-color:#2f6f9e}
@@ -552,7 +552,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=36"></script>
+<script src="/office-v9.js?v=37"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -7094,5 +7094,5 @@ async function openCeoWish(){
 })();
 </script>
 <script src="/phaseB.js?v=9"></script><script src="/phaseC.js?v=9"></script><script src="/phaseD.js?v=9"></script>
-<script src="/office-studio.js?v=38"></script></body>
+<script src="/office-studio.js?v=39"></script></body>
 </html>

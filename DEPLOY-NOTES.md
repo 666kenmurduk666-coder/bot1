@@ -1223,3 +1223,12 @@ Nasa `.github/workflows/keepalive.yml` na sa repo ang `.github` workflow **"keep
   `/api/chat` returned `provider=ollama` with the mock reply. Ollama is installed
   on this PC but was not running during the check.
 - Baseline hashes updated for `server.js`, `index.html`, `office-v9.js`.
+
+
+### v37/v39 - comic bubble layout tightened after live check
+- Live small panel (673x518) showed overlapping bubbles at some zooms.
+- Bubbles now use a host-relative max-width:min(340px,46%) and a deterministic
+  vertical stacking pass with an 8px gap; overflow slides the whole stack up.
+- Narrow panels (<800px) show 2 lines; wider views show 3. Both verified at
+  r=20, r=36 and r=90: 0 overlaps, all inside view, font unchanged by zoom.
+- Cache keys: /office-v9.js?v=37, /office-studio.js?v=39.

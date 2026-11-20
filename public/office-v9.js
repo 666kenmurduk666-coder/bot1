@@ -2731,8 +2731,9 @@
     return null;
   }
   // Comic conversations: up to three consecutive lines, anchored above their
-  // bots. The bubbles are DOM overlays, so their on-screen size never shrinks
-  // when the camera zooms out. Collisions are resolved by stacking them neatly.
+  // bots. Bubbles are DOM overlays, so their on-screen size never shrinks when
+  // the camera zooms out. A deterministic stack pass keeps them from colliding
+  // even inside a narrow office panel.
   function updateBubbles(now) {
     var conv = currentConv(), lines = null, start = 0;
     if (conv && now - conv.t < 180000 && conv.lines && conv.lines.length) {
@@ -2750,7 +2751,8 @@
       b.talking = false;
     });
     if (!lines || typeof camera3d === 'undefined' || !camera3d) return;
-    var count = Math.min(3, lines.length);
+    // Small panels only fit two bubbles cleanly; wider views show three.
+    var count = Math.min(w < 800 ? 2 : 3, lines.length);
     for (var n = 0; n < count; n++) {
       var line = lines[(start + n) % lines.length];
       var bot = null;
@@ -2767,27 +2769,28 @@
       var bw = el.offsetWidth || 280, bh = el.offsetHeight || 70;
       var x0 = (v.x * .5 + .5) * w - bw / 2;
       var y0 = (-v.y * .5 + .5) * h - bh - 16;
-      x0 = Math.max(8, Math.min(w - bw - 8, x0));
-      y0 = Math.max(8, Math.min(h - bh - 8, y0));
-      for (var pass = 0; pass < 6; pass++) {
-        var hit = false;
-        for (var p = 0; p < placed.length; p++) {
-          var r = placed[p];
-          if (x0 < r.x + r.w + 8 && x0 + bw + 8 > r.x && y0 < r.y + r.h + 8 && y0 + bh + 8 > r.y) {
-            y0 = r.y + r.h + 10;
-            if (y0 + bh > h - 8) y0 = Math.max(8, r.y - bh - 10);
-            hit = true;
-          }
-        }
-        if (!hit) break;
-      }
-      y0 = Math.max(8, Math.min(h - bh - 8, y0));
-      // .bub3d is transformed translate(-50%,-100%), so anchor at bottom-center.
-      el.style.left = (x0 + bw / 2) + 'px';
-      el.style.top = (y0 + bh) + 'px';
-      placed.push({ x: x0, y: y0, w: bw, h: bh });
+      placed.push({
+        el: el, bot: bot, w: bw, h: bh,
+        x: Math.max(8, Math.min(w - bw - 8, x0)),
+        y: Math.max(8, Math.min(h - bh - 8, y0))
+      });
       bot.talking = true;
     }
+    // Sort by desired height, then enforce a gap. If the stack is too tall,
+    // slide the whole group up so every bubble stays fully inside the view.
+    placed.sort(function (a, b) { return a.y - b.y; });
+    for (var p = 1; p < placed.length; p++) {
+      if (placed[p].y < placed[p - 1].y + placed[p - 1].h + 8) {
+        placed[p].y = placed[p - 1].y + placed[p - 1].h + 8;
+      }
+    }
+    var overflow = placed.length ? (placed[placed.length - 1].y + placed[placed.length - 1].h + 8) - h : 0;
+    if (overflow > 0) placed.forEach(function (r) { r.y = Math.max(8, r.y - overflow); });
+    // .bub3d is transformed translate(-50%,-100%), so anchor at bottom-center.
+    placed.forEach(function (r) {
+      r.el.style.left = (r.x + r.w / 2) + 'px';
+      r.el.style.top = (r.y + r.h) + 'px';
+    });
   }
   function tick() {
     animId = requestAnimationFrame(tick);
