@@ -1298,6 +1298,71 @@
       stone.position.set(23, -.13, 36.2 + sp * 1.35); addO(stone);
     }
 
+    // ---- Whole-land enhancement: richer hills, groves, meadows and farm detail ----
+    // Extra rolling hills to fill north/east/west horizons (low-poly, static scenery).
+    [[-86, 76, 22, 7, 16, '#4b7f4c'], [110, 86, 28, 10, 19, '#5a9357'],
+     [-70, -58, 24, 8, 17, '#527f52'], [96, -56, 26, 9, 18, '#4f8851'],
+     [-98, 18, 18, 6, 14, '#5d9660'], [124, -18, 20, 7, 15, '#4c8450'],
+     [48, -72, 30, 10, 20, '#568d56'], [-18, -78, 26, 8, 18, '#4e8451'],
+     [86, 108, 24, 8, 17, '#5a9458'], [-54, 104, 28, 9, 19, '#4f8652']].forEach(function (h) {
+      var hill = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 9), solid(h[5], { roughness: 1 }));
+      hill.scale.set(h[2], h[3], h[4]);
+      hill.position.set(h[0], -h[3] * .5, h[1]);
+      addO(hill);
+    });
+
+    // Tree groves framing the campus and open fields (kept off roads/courts/buildings).
+    [[-28, -6], [-36, -14], [-44, -4], [-52, -16], [58, -26], [66, -22], [74, -30],
+     [82, -10], [90, -24], [-60, 30], [-68, 22], [-54, 42], [92, 46], [100, 38],
+     [108, 52], [-18, 92], [2, 96], [18, 100], [46, 96], [64, 92], [82, 98],
+     [-44, 58], [-52, 68], [62, 60], [70, 68], [38, -44], [12, -50], [-8, -44],
+     [56, 8], [64, 14], [72, 6], [-30, 46], [-38, 54]]
+      .forEach(function (p, i) { tree(p[0], p[1], 1.15 + (i % 4) * .22); });
+
+    // Flower meadows and wildflower clusters across open grass.
+    [[-24, 78, '#ffd27d'], [-6, 72, '#ff9fc4'], [14, 82, '#fff1a8'], [34, 86, '#ff9fc4'],
+     [52, 78, '#ffd27d'], [70, 74, '#f7b3ff'], [-62, 54, '#fff1a8'], [-72, 36, '#ffd27d'],
+     [86, 60, '#ff9fc4'], [96, 72, '#ffd27d'], [-48, -26, '#fff1a8'], [-64, -12, '#ff9fc4'],
+     [86, -34, '#ffd27d'], [104, -6, '#f7b3ff'], [58, -36, '#fff1a8'], [26, -34, '#ff9fc4'],
+     [-14, -56, '#ffd27d'], [8, -62, '#fff1a8'], [64, -58, '#ff9fc4']].forEach(function (m, i) {
+      for (var f = 0; f < 6; f++) {
+        var a = f * 1.047 + i * .4, rr = .35 + (f % 3) * .22;
+        var fl = new THREE.Mesh(new THREE.SphereGeometry(.08 + (f % 2) * .03, 6, 5),
+          solid(f % 3 === 0 ? m[2] : (f % 3 === 1 ? '#ffffff' : '#ffd27d'), { roughness: .75 }));
+        fl.position.set(m[0] + Math.cos(a) * rr, -.12, m[1] + Math.sin(a) * rr);
+        addO(fl);
+      }
+      var leaf = new THREE.Mesh(new THREE.SphereGeometry(.55, 7, 6), solid('#4f9a55', { roughness: 1 }));
+      leaf.position.set(m[0], -.15, m[1]); leaf.scale.y = .25; addO(leaf);
+    });
+
+    // Rock clusters and natural accents for land texture.
+    [[-50, 84, .9], [-76, -30, 1.1], [104, 24, .8], [74, -46, 1.0], [-8, 94, .85],
+     [92, 88, .95], [116, 64, .75], [-88, 60, 1.05], [40, -58, .9], [-32, -66, .8]].forEach(function (r, i) {
+      for (var k = 0; k < 3; k++) {
+        var rock = new THREE.Mesh(new THREE.DodecahedronGeometry(.22 * r[2] + k * .08, 0),
+          solid(k === 1 ? '#9aa3aa' : '#8e989f', { roughness: .98 }));
+        rock.position.set(r[0] + (k - 1) * .32, -.12 + k * .03, r[1] + (k % 2 ? .18 : -.14));
+        rock.rotation.set(i * .4, k * .9, i * .2); addO(rock);
+      }
+    });
+
+    // Extra farm richness: more crop rows, a small irrigation pond, and field edging.
+    for (var fr = -22; fr <= 44; fr += 6) {
+      for (var c = 0; c < 4; c++) {
+        var cp = new THREE.Mesh(new THREE.SphereGeometry(.22, 7, 6), solid(c % 2 ? '#4a8a46' : '#6aa84f', { roughness: .95 }));
+        cp.position.set(-18 + c * 2.6, -.08, fr); addO(cp);
+      }
+    }
+    pond(52, 66, 2.4);
+    cyl(.09, 2.2, '#8b6a46', 46, 1.0, 64); cyl(.09, 2.2, '#8b6a46', 58, 1.0, 64);
+    box(12.2, .08, .08, '#c9b07a', 52, 1.9, 64);
+
+    // Scenic garden nook in open east-north field (near tennis side but clear of court).
+    [[60, -6], [64, -2], [56, -2]].forEach(function (p) { plant(p[0], p[1], 1.05); });
+    parkBench(60, -10);
+    shadow(60, -6, 1.2, .8, .08);
+
     // v30 performance guard: everything above can be hidden in one switch.
     if (structureGroup) {
       for (var si = sceneryStart; si < structureGroup.children.length; si++) {
@@ -2413,6 +2478,16 @@
       box(.08, .16, .9, '#f6e6b0', x + 1.26, .42, 46.2, true);
       box(.08, .16, .9, '#e2694f', x - 1.26, .42, 46.2, true);
     });
+    // Lush entrance landscaping: planters, flowers and edging along the south plaza.
+    [[-6, 37.8], [2, 37.8], [18, 37.8], [28, 37.8], [44, 37.8], [52, 37.8]].forEach(function (p, i) {
+      box(1.4, .18, .5, '#8b97a5', p[0], .09, p[1]);
+      for (var f = 0; f < 4; f++) {
+        var fm = new THREE.Mesh(new THREE.SphereGeometry(.09, 6, 5),
+          solid(['#ffd27d', '#ff9fc4', '#fff1a8', '#f7b3ff'][(i + f) % 4], { roughness: .75 }));
+        fm.position.set(p[0] - .45 + f * .3, .22, p[1]); addO(fm);
+      }
+    });
+    [[-4, 42.5], [12, 42.5], [34, 42.5], [50, 42.5]].forEach(function (p) { plant(p[0], p[1], .85); });
   }
   function parkedTaxi(x, z) {
     shadow(x, z, 1.3, .62, .13);
@@ -2599,6 +2674,17 @@
     pedestrian(31, 44.2, 1, '#3f9d6a');
     pedestrian(8, 54.2, -1, '#e0a83a');
     pedestrian(24, 54.2, 1, '#8f6fd8');
+    // Greenery along the far south sidewalk and approach edges.
+    [[-10, 54.6], [0, 54.6], [10, 54.6], [30, 54.6], [44, 54.6], [56, 54.6]].forEach(function (p, i) {
+      tree(p[0], p[1], .72 + (i % 2) * .12);
+    });
+    [[-4, 53.2], [6, 53.2], [16, 53.2], [30, 53.2], [42, 53.2], [54, 53.2]].forEach(function (p, i) {
+      for (var f = 0; f < 3; f++) {
+        var fb = new THREE.Mesh(new THREE.SphereGeometry(.1, 6, 5),
+          solid(['#ffd27d', '#ff9fc4', '#7fd3a1'][(i + f) % 3], { roughness: .8 }));
+        fb.position.set(p[0] - .25 + f * .25, .06, p[1]); addO(fb);
+      }
+    });
   }
   function pond(cx, cz, r) {
     var rim = new THREE.Mesh(new THREE.RingGeometry(r, r + .26, 28), solid('#b9c1c9', { roughness: .8 }));
@@ -3049,6 +3135,141 @@
     fx.planes.push({ g: g2, x0: 4, x1: 42, y: 11, z: 22, sp: 2.6,
       beacon: beacon, trails: trails, phase: 1.7 });
   }
+  function aiDevStudioAnnex() {
+    // Separate, wide AI Dev Studio Annex - UE5-inspired clean tech aesthetic (feasible/low-poly).
+    var cx = 74, cz = 8;
+    var W = 26, D = 18;
+    // Platform / polished dark floor
+    floor(W + 2, D + 2, solid('#1b222c', { roughness: .55, metalness: .18 }), cx, .01, cz);
+    floor(W - .4, D - .4, solid('#202a36', { roughness: .35, metalness: .22 }), cx, .018, cz);
+    // subtle floor emissive grid lines
+    for (var gx = cx - 11; gx <= cx + 11; gx += 2.2) box(.03, .006, D - 1.2, '#3bd1ff', gx, .022, cz);
+    for (var gz = cz - 7.5; gz <= cz + 7.5; gz += 2.2) box(W - 1.2, .006, .03, '#3bd1ff', cx, .022, gz);
+    // Glass walls + metal frame
+    var glassMat = solid('#9fd7ff', { transparent: true, opacity: .14, roughness: .08, metalness: .1 });
+    var frameMat = solid('#5f7085', { roughness: .35, metalness: .55 });
+    var wallH = 3.6;
+    // back wall (north side of annex)
+    box(W, wallH, .18, frameMat, cx, wallH / 2, cz - D / 2);
+    box(W - .4, 2.8, .08, glassMat, cx, 1.8, cz - D / 2 + .08);
+    // side walls
+    box(.18, wallH, D, frameMat, cx - W / 2, wallH / 2, cz);
+    box(.18, wallH, D, frameMat, cx + W / 2, wallH / 2, cz);
+    box(.08, 2.6, D - .8, glassMat, cx - W / 2 + .08, 1.7, cz);
+    box(.08, 2.6, D - .8, glassMat, cx + W / 2 - .08, 1.7, cz);
+    // front wall with wide entrance gap
+    box(9, wallH, .18, frameMat, cx - 8.5, wallH / 2, cz + D / 2);
+    box(9, wallH, .18, frameMat, cx + 8.5, wallH / 2, cz + D / 2);
+    box(8.6, 2.6, .08, glassMat, cx - 8.5, 1.7, cz + D / 2 - .08);
+    box(8.6, 2.6, .08, glassMat, cx + 8.5, 1.7, cz + D / 2 - .08);
+    // entrance header beam + neon
+    box(8.2, .22, .28, frameMat, cx, 3.3, cz + D / 2);
+    box(7.6, .06, .06, '#63e6ff', cx, 3.16, cz + D / 2 - .18);
+    box(7.6, .06, .06, '#9b7bff', cx, 3.04, cz + D / 2 - .18);
+
+    // Roof frame + soft emissive ceiling panels
+    box(W + .3, .14, D + .3, solid('#394656', { roughness: .45, metalness: .35 }), cx, wallH + .08, cz);
+    for (var px = cx - 8; px <= cx + 8; px += 8) {
+      for (var pz = cz - 4.5; pz <= cz + 4.5; pz += 4.5) {
+        box(4.8, .08, 2.2, solid('#dfefff', { emissive: '#bfe7ff', emissiveIntensity: .9, roughness: .4 }), px, wallH - .08, pz);
+      }
+    }
+    // neon perimeter accents
+    box(W - .6, .05, .05, '#63e6ff', cx, .12, cz - D / 2 + .25);
+    box(W - .6, .05, .05, '#63e6ff', cx, .12, cz + D / 2 - .25);
+    box(.05, .05, D - .6, '#9b7bff', cx - W / 2 + .25, .12, cz);
+    box(.05, .05, D - .6, '#9b7bff', cx + W / 2 - .25, .12, cz);
+
+    // Large display wall (UE5-style command screen)
+    box(14.5, 2.6, .12, solid('#111923', { roughness: .35, metalness: .2 }), cx, 1.95, cz - D / 2 + .32);
+    var screenMat = solid('#1a88b8', { emissive: '#58d8ff', emissiveIntensity: .45, roughness: .2, metalness: .15 });
+    box(13.8, 2.1, .06, screenMat, cx, 1.95, cz - D / 2 + .39);
+    box(13.8, .04, .04, '#9fefff', cx, 2.95, cz - D / 2 + .43);
+    box(13.8, .04, .04, '#9fefff', cx, .95, cz - D / 2 + .43);
+    box(.04, 2.1, .04, '#9fefff', cx - 6.9, 1.95, cz - D / 2 + .43);
+    box(.04, 2.1, .04, '#9fefff', cx + 6.9, 1.95, cz - D / 2 + .43);
+
+    function stationLabel(text, x, y, z, ry, col) {
+      var c = document.createElement('canvas'); c.width = 512; c.height = 128;
+      var q = c.getContext('2d');
+      q.fillStyle = 'rgba(10,18,28,.82)'; q.fillRect(0, 0, 512, 128);
+      q.strokeStyle = col || '#63e6ff'; q.lineWidth = 8; q.strokeRect(6, 6, 500, 116);
+      q.fillStyle = '#eaf7ff'; q.font = 'bold 34px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
+      q.fillText(text, 256, 64);
+      var tex = new THREE.CanvasTexture(c);
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(2.2, .55), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+      m.position.set(x, y, z); m.rotation.y = ry || 0; m.userData.v9 = true; addO(m);
+    }
+
+    function devBot(x, z, color, role, accent) {
+      // simple stylized bot figure (visual, lightweight)
+      shadow(x, z, .55, .45, .12);
+      var g = new THREE.Group();
+      var bodyMat = solid(color, { roughness: .45, metalness: .2 });
+      var dark = solid('#243246', { roughness: .5, metalness: .25 });
+      var base = new THREE.Mesh(new THREE.CylinderGeometry(.28, .34, .2, 12), dark); base.position.y = .1; g.add(base);
+      var torso = new THREE.Mesh(new THREE.BoxGeometry(.5, .55, .34), bodyMat); torso.position.y = .5; g.add(torso);
+      var head = new THREE.Mesh(new THREE.BoxGeometry(.42, .34, .34), solid('#eef4f8', { roughness: .35, metalness: .1 })); head.position.y = .95; g.add(head);
+      var visor = new THREE.Mesh(new THREE.BoxGeometry(.34, .12, .04), solid(accent || '#63e6ff', { emissive: accent || '#63e6ff', emissiveIntensity: .9, roughness: .2 })); visor.position.set(0, .95, .18); g.add(visor);
+      var antenna = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, .18, 6), dark); antenna.position.set(0, 1.2, 0); g.add(antenna);
+      var tip = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 8), solid(accent || '#63e6ff', { emissive: accent || '#63e6ff', emissiveIntensity: 1.2 })); tip.position.set(0, 1.31, 0); g.add(tip);
+      [-.32, .32].forEach(function (sx) {
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(.1, .42, .1), bodyMat); arm.position.set(sx, .52, .05); arm.rotation.x = -.45; g.add(arm);
+      });
+      g.position.set(x, 0, z); g.rotation.y = Math.PI; addO(g);
+      stationLabel(role, x, 1.62, z, 0, accent || '#63e6ff');
+    }
+
+    // Stations layout (wide, separated)
+    var roles = [
+      { role: 'GAME PLANNING', c: '#4a90d9', a: '#63e6ff' },
+      { role: 'SCRIPT GENERATION', c: '#7a6fd6', a: '#b59cff' },
+      { role: 'CODE ORGANIZATION', c: '#3f9d9a', a: '#6ff0df' },
+      { role: '3D ASSET CONCEPTS', c: '#d08a45', a: '#ffc06a' },
+      { role: 'UI DESIGN', c: '#d6607a', a: '#ff9fba' },
+      { role: 'TESTING PLANS', c: '#5cab6e', a: '#8ff0a8' },
+      { role: 'BUG ANALYSIS', c: '#c94f4f', a: '#ff8b8b' }
+    ];
+    var leftX = cx - 7.5, rightX = cx - 2.5, midX = cx + 2.5, farX = cx + 7.5;
+    var rowZ1 = cz - 3.2, rowZ2 = cz + 2.2;
+    var pos = [
+      [leftX, rowZ1], [rightX, rowZ1], [midX, rowZ1], [farX, rowZ1],
+      [leftX, rowZ2], [rightX, rowZ2], [midX, rowZ2]
+    ];
+    pos.forEach(function (p, i) {
+      var r = roles[i];
+      desk(p[0], p[1], Math.PI);
+      officeChair(p[0], p[1] + 1.05, 0, '#3a4658');
+      devBot(p[0], p[1] + .95, r.c, r.role, r.a);
+    });
+
+    // Integration station (right side)
+    var ix = cx + 9.5, iz = cz - 1;
+    desk(ix, iz, Math.PI / 2);
+    officeChair(ix - 1.0, iz, Math.PI / 2, '#3a4658');
+    devBot(ix - .95, iz, '#4f6d8f', 'ROBLOX INTEGRATION', '#63e6ff');
+    box(2.2, 1.2, .08, solid('#121b26', { roughness: .35, metalness: .2 }), ix + .2, 1.8, iz - 1.35);
+    box(2.0, .9, .04, solid('#45c8ff', { emissive: '#45c8ff', emissiveIntensity: .35 }), ix + .2, 1.8, iz - 1.3);
+    stationLabel('AUTOMATED / TOOL EXECUTION', ix + .2, 2.62, iz - 1.25, 0, '#63e6ff');
+
+    // CEO Final Approval area (front center)
+    var ax = cx, az = cz + 5.6;
+    box(3.2, .12, 1.4, solid('#2a3442', { roughness: .4, metalness: .25 }), ax, .78, az);
+    box(3.4, .08, 1.6, solid('#43556d', { roughness: .35, metalness: .35 }), ax, .86, az);
+    officeChair(ax, az + 1.1, 0, '#243247');
+    stationLabel('FINAL APPROVAL: IKAW (CEO)', ax, 1.55, az - .1, 0, '#ffd27d');
+    box(.08, 1.4, .08, '#8fa3b8', ax - 1.5, .7, az - .6);
+    box(.08, 1.4, .08, '#8fa3b8', ax + 1.5, .7, az - .6);
+    box(3.1, .06, .06, '#ffd27d', ax, 1.42, az - .6);
+
+    // Annex sign
+    stationLabel('AI DEV STUDIO ANNEX', cx, 3.35, cz + D / 2 - .25, Math.PI, '#63e6ff');
+    // exterior approach path
+    floor(3.2, 8, solid('#9eaab6', { roughness: .92 }), cx, .012, cz + D / 2 + 4.2);
+    plant(cx - 6, cz + D / 2 + 1.2, .9); plant(cx + 6, cz + D / 2 + 1.2, .9);
+    tree(cx - 10, cz + D / 2 + 2.2, .9); tree(cx + 10, cz + D / 2 + 2.2, .9);
+  }
+
   function sideWorlds() {
     // ---- EAST / screen-left: café court, fountain and service lane ----
     // Kept inside the visible left wedge (x≈18..37, z≈34..46) of the user view.
@@ -3118,9 +3339,33 @@
     [-22, -4, -2].forEach(function (px) { streetLamp(px, 24, 37); });
     pedestrian(-4, 34, 1, '#3f9d6a');
     pedestrian(-20, 34, -1, '#c94f4f');
+    // Extra west-side landscaping: shrubs, flowers and a resting corner.
+    [[-16, 40], [-10, 40], [-6, 38], [-2, 12], [-2, 6]].forEach(function (p) { plant(p[0], p[1], .8); });
+    [[-20, 40], [-12, 42], [-4, 42], [-14, 8], [-8, 8]].forEach(function (p, i) {
+      for (var f = 0; f < 3; f++) {
+        var wf = new THREE.Mesh(new THREE.SphereGeometry(.09, 6, 5),
+          solid(['#ffd27d', '#ff9fc4', '#fff1a8'][(i + f) % 3], { roughness: .78 }));
+        wf.position.set(p[0] - .2 + f * .2, -.12, p[1]); addO(wf);
+      }
+    });
+    parkBench(-8, 40);
 
     // ---- NORTH / open field: tennis court ----
     tennisCourt(48, -14);
+    // Tennis court surroundings: landscaped border, shade trees and seating.
+    [[42, -24], [54, -24], [42, -4], [54, -4]].forEach(function (p) { tree(p[0], p[1], .78); });
+    [[40, -14], [56, -14], [48, -25], [48, -3]].forEach(function (p) { plant(p[0], p[1], .9); });
+    [[41, -20], [41, -8], [55, -20], [55, -8]].forEach(function (p, i) {
+      for (var f = 0; f < 4; f++) {
+        var tf = new THREE.Mesh(new THREE.SphereGeometry(.08, 6, 5),
+          solid(['#ffd27d', '#ffffff', '#ff9fc4', '#fff1a8'][(i + f) % 4], { roughness: .75 }));
+        tf.position.set(p[0] + (f % 2 ? .18 : -.18), -.12, p[1] - .3 + f * .2); addO(tf);
+      }
+    });
+    parkBench(39, -14); parkBench(57, -14);
+
+    // Separate AI Dev Studio Annex (UE5-inspired, feasible/perf-safe)
+    aiDevStudioAnnex();
   }
   function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();
@@ -3329,6 +3574,22 @@
     pedestrian(10, -11.2, -1, '#e0a83a');
     pedestrian(30, -11.2, 1, '#8f6fd8');
     pedestrian(48, -11.2, -1, '#d4724f');
+    // Enhanced north-street landscaping: planters, flower strips and green accents.
+    [[-4, -1.5], [4, -1.5], [18, -1.5], [32, -1.5], [46, -1.5]].forEach(function (p, i) {
+      box(1.2, .16, .45, '#8b97a5', p[0], .08, p[1]);
+      for (var f = 0; f < 3; f++) {
+        var nf = new THREE.Mesh(new THREE.SphereGeometry(.085, 6, 5),
+          solid(['#ffd27d', '#ff9fc4', '#7fd3a1'][(i + f) % 3], { roughness: .78 }));
+        nf.position.set(p[0] - .3 + f * .3, .2, p[1]); addO(nf);
+      }
+    });
+    [[0, -12.2], [16, -12.2], [32, -12.2], [48, -12.2]].forEach(function (p) { plant(p[0], p[1], .75); });
+    [[-2, -12.6], [12, -12.6], [24, -12.6], [36, -12.6], [52, -12.6]].forEach(function (p, i) {
+      var bed = new THREE.Mesh(new THREE.SphereGeometry(.5, 7, 6), solid('#4f9a55', { roughness: 1 }));
+      bed.position.set(p[0], -.14, p[1]); bed.scale.y = .22; addO(bed);
+      var ff = new THREE.Mesh(new THREE.SphereGeometry(.1, 6, 5), solid(i % 2 ? '#fff1a8' : '#ff9fc4', { roughness: .75 }));
+      ff.position.set(p[0] + .12, -.02, p[1]); addO(ff);
+    });
   }
 
   /* The old scene left a 1.6 hemisphere and a purple 26-intensity point light
