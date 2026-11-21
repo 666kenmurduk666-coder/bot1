@@ -70,6 +70,23 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #v16Grade{position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;animation:v16Breath 12s ease-in-out infinite alternate;background:radial-gradient(ellipse 78% 68% at 50% 42%,rgba(255,244,220,.055) 0%,rgba(255,244,220,0) 42%,rgba(11,20,38,.13) 78%,rgba(5,10,22,.34) 100%),linear-gradient(180deg,rgba(130,180,230,.055),rgba(255,205,150,.035) 55%,rgba(20,35,60,.10))}
 #v16Grade:after{content:'';position:absolute;inset:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
 @keyframes v16Breath{from{opacity:.88}to{opacity:1}}
+/* ⏱ 4D time-life — pattern ng oras sa bawat visible element */
+@keyframes mmoIn{from{opacity:0;transform:translateX(-9px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes freshGlow{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 9px #7fc7ffaa}}
+@keyframes uiBreath{from{filter:brightness(.94)}to{filter:brightness(1.07)}}
+@keyframes livePulse{0%,100%{box-shadow:0 0 0 1px #ffd34d55,0 3px 14px #0007}50%{box-shadow:0 0 0 4px #ffd34d22,0 3px 24px #ffb64866}}
+@keyframes glowBreath{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes toastIn{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes feedIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes dockGlow{0%,100%{box-shadow:0 0 0 1px #3a6bb555,0 3px 12px #0009}50%{box-shadow:0 0 0 3px #7fc7ff33,0 3px 18px #7fc7ff44}}
+#mmoChatLog>div{animation:mmoIn .32s cubic-bezier(.2,.9,.3,1) both}
+#mmoChatLog>div.fresh{animation:mmoIn .32s cubic-bezier(.2,.9,.3,1) both,freshGlow 2.6s ease-in-out .32s infinite}
+#mmoChatHead,#gameHud,#officeCamTools{animation:uiBreath 6s ease-in-out infinite alternate}
+#audioDock{animation:dockGlow 4.2s ease-in-out infinite}
+#eventShowCard.live{animation:livePulse 2.2s ease-in-out infinite}
+#eventShowCard.live>div:first-child{animation:glowBreath 1.6s ease-in-out infinite alternate}
+.toast{animation:toastIn .28s cubic-bezier(.2,.9,.3,1) both}
+#convFeed>div,#officeFeed>div{animation:feedIn .3s ease-out both}
 #officeCamTools{position:absolute;z-index:10001;top:10px;right:10px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:min(560px,75%);padding:6px;background:rgba(7,13,29,.82);border:1px solid #45689b;border-radius:12px;backdrop-filter:blur(8px);box-shadow:0 4px 18px #0008}
 #officeCamTools button{min-width:34px;padding:6px 9px;font-size:12px;background:linear-gradient(135deg,#1a3154,#14213a);border-color:#45689b;color:#e8f3ff}
 #officeCamTools button:hover{background:linear-gradient(135deg,#315b8b,#233c62);border-color:#8bdcff}
@@ -588,7 +605,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=59"></script>
+<script src="/office-v9.js?v=60"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -631,7 +648,9 @@ function mmoLog(who,text,color){
   if(key&&mmoLogSeen[key]&&now-mmoLogSeen[key]<60000)return;
   if(key)mmoLogSeen[key]=now;
   const d=document.createElement('div');d.style.cssText='margin:2px 0;word-break:break-word';
+  d.className='fresh'; // ⏱ pinakabagong linya ay may time-based glow
   d.innerHTML='<b style="color:'+(color||'#7fc7ff')+'">'+esc(who)+'</b>: '+esc(text);
+  const prev=log.querySelector('.fresh');if(prev)prev.classList.remove('fresh');
   log.appendChild(d);while(log.children.length>50)log.removeChild(log.firstChild);
   log.scrollTop=log.scrollHeight;
 }
@@ -3092,8 +3111,13 @@ function drawOfficeMiniMap(){
   c.strokeStyle='rgba(120,170,230,.22)';c.lineWidth=1;
   for(let i=0;i<=8;i++){const xx=pad+i*(w-pad*2)/8,yy=pad+i*(h-pad*2)/8;c.beginPath();c.moveTo(xx,pad);c.lineTo(xx,h-pad);c.stroke();c.beginPath();c.moveTo(pad,yy);c.lineTo(w-pad,yy);c.stroke();}
   c.strokeStyle='#75caff';c.lineWidth=3;c.strokeRect(px(-5),py(-16),px(51)-px(-5),py(28)-py(-16));
-  OFFICE_MAP_ZONES.forEach(z=>{c.beginPath();c.fillStyle='#8cecff';c.arc(px(z.x),py(z.z),7,0,Math.PI*2);c.fill();c.fillStyle='#f5f8ff';c.font='15px sans-serif';c.textAlign='center';c.fillText(z.emoji,px(z.x),py(z.z)-12);});
-  if(cam3d){c.strokeStyle='#ffd34d';c.lineWidth=3;c.beginPath();c.arc(px(cam3d.target.x),py(cam3d.target.z),12,0,Math.PI*2);c.stroke();}
+  const mt=Date.now();
+  OFFICE_MAP_ZONES.forEach((z,i)=>{
+    const pulse=1+Math.sin(mt/720+i*.9)*.16; // ⏱ 4D: humihinga ang zone dots
+    c.beginPath();c.fillStyle='#8cecff';c.arc(px(z.x),py(z.z),7*pulse,0,Math.PI*2);c.fill();
+    c.fillStyle='#f5f8ff';c.font='15px sans-serif';c.textAlign='center';c.fillText(z.emoji,px(z.x),py(z.z)-12);
+  });
+  if(cam3d){const cr=12+Math.sin(mt/520)*2;c.strokeStyle='#ffd34d';c.lineWidth=3;c.beginPath();c.arc(px(cam3d.target.x),py(cam3d.target.z),cr,0,Math.PI*2);c.stroke();}
   c.fillStyle='#c9dfff';c.font='bold 15px sans-serif';c.textAlign='left';c.fillText('CYBORG HQ MAP',pad,19);
 }
 function bindOfficeCameraTools(){
@@ -5863,8 +5887,8 @@ function updateEventShow(t,dt){
     }catch(e){}
   }
   const card=$('eventShowCard');if(!card)return;
-  if(!s.enabled||!s.data||document.body.classList.contains('ui-hidden')){card.style.display='none';return;}
-  card.style.display='block';
+  if(!s.enabled||!s.data||document.body.classList.contains('ui-hidden')){card.style.display='none';card.classList.remove('live');return;}
+  card.style.display='block';card.classList.add('live'); // ⏱ LIVE card humihinga
   const sh=s.data,left=Math.max(0,Math.ceil((sh.nextAt-now)/1000));
   const mm=String(Math.floor(left/60)).padStart(2,'0'),ss=String(left%60).padStart(2,'0');
   const p=sh.product;

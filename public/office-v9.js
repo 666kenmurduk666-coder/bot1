@@ -106,7 +106,7 @@
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
     blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
-    scenery: [], crops: [],
+    scenery: [], crops: [], softScenery: [],
     // Batch 1 world layer (all optional, none touch the white-out guards).
     night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
     seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null,
@@ -1275,10 +1275,12 @@
           solid(cols[(i + b) % cols.length], { roughness: .95 }));
         bush.position.set(p[0] + (b - 1) * .45, .22 + b * .04, p[1] + (b % 2 ? .18 : -.12));
         addO(bush);
+        fx.softScenery.push({ m: bush, ph: i * 1.3 + b * .7, baseY: bush.position.y });
       }
       if (i % 2 === 0) {
         var flower = new THREE.Mesh(new THREE.SphereGeometry(.14, 7, 5), solid(i % 4 ? '#ffd27d' : '#ff9fc4', { roughness: .7 }));
         flower.position.set(p[0] + .2, .48, p[1] + .05); addO(flower);
+        fx.softScenery.push({ m: flower, ph: i * 1.9, baseY: flower.position.y, bloom: true });
       }
     });
     for (var sp = 0; sp < 7; sp++) {
@@ -2858,7 +2860,7 @@
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
       auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
       blinds: [], reflections: [], signals: [], peds: [], ballers: [], ball: null, planes: [], ceilings: [], steps: [], moods: [],
-      scenery: [], crops: [],
+      scenery: [], crops: [], softScenery: [],
       night: null, weather: { rain: null, flash: null, puddles: [], rainbow: null },
       seasons: {}, walkways: [], holo: [], wet: [], neon: [], drones: [], rooftop: null, basement: null, elevator: null,
       barista: null, growthPlants: [], fish: null, skylineLights: [], ceilingProj: null,
@@ -3564,6 +3566,18 @@
         if (fx.sun.material) fx.sun.material.opacity = .32 + .08 * (.5 + .5 * Math.sin(now / 2400));
       }
     } catch (e) {}
+    // ⏱ 4D time-life para sa hardin — dahan-dahang hihipa ng oras (crops: nasa tick na).
+    if (now - (tick.softLife || 0) > 90) {
+      tick.softLife = now;
+      try {
+        if (fx.softScenery && fx.softScenery.length) fx.softScenery.forEach(function (s) {
+          var w = Math.sin(now / 1450 + s.ph);
+          s.m.rotation.z = w * .05;
+          s.m.scale.y = 1 + w * .035;
+          if (s.bloom) s.m.position.y = s.baseY + Math.sin(now / 900 + s.ph) * .035;
+        });
+      } catch (e) {}
+    }
     updateBubbles(now);
   }
 
