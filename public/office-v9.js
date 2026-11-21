@@ -889,9 +889,9 @@
     var g2 = new THREE.Group();
     var back = new THREE.Mesh(new THREE.BoxGeometry(w + .1, h + .1, .06), solid('#2c3648'));
     back.userData.v9 = true; g2.add(back);
-    var face = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
-      new THREE.MeshBasicMaterial({ map: artTex(seed), side: THREE.DoubleSide }));
-    face.position.z = .04; face.userData.v9 = true; g2.add(face);
+    var face = new THREE.Mesh(new THREE.BoxGeometry(w, h, .02),
+      new THREE.MeshBasicMaterial({ map: artTex(seed) }));
+    face.position.z = .041; face.userData.v9 = true; g2.add(face);
     // picture light
     var lightBar = new THREE.Mesh(new THREE.BoxGeometry(w * 0.45, .03, .06), solid('#3f4f63', { metalness: .35, roughness: .4 }));
     lightBar.position.set(0, h / 2 + .1, .07); lightBar.userData.v9 = true; g2.add(lightBar);
@@ -1365,9 +1365,9 @@
     });
     box(2.6, .12, 1.5, solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 2, 1) }), 30.1, .78, 20.35);
     box(2.45, .03, 1.35, '#d9e4ef', 30.1, .86, 20.35);
-    var plan = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.2),
-      new THREE.MeshBasicMaterial({ map: blueprintTex(), side: THREE.DoubleSide, toneMapped: false }));
-    plan.rotation.x = -Math.PI / 2; plan.position.set(30.1, .885, 20.35); addO(plan);
+    var plan = new THREE.Mesh(new THREE.BoxGeometry(2.3, .02, 1.2),
+      new THREE.MeshBasicMaterial({ map: blueprintTex(), toneMapped: false }));
+    plan.position.set(30.1, .89, 20.35); addO(plan);
     ['#e3b159', '#6bb3a6', '#ff6647'].forEach(function (c, i) {
       box(.34, .014, .18, c, 29.25 + i * .42, .9, 21.0);
     });
@@ -1667,9 +1667,9 @@
     var standBase = new THREE.Mesh(new THREE.BoxGeometry(.36, .03, .22), solid('#2f394b', { metalness: .4, roughness: .35 }));
     standBase.position.set(0, .815, -.2); g2.add(standBase);
     var di = screenCounter++;
-    var scr = new THREE.Mesh(new THREE.PlaneGeometry(.78, .44),
-      new THREE.MeshBasicMaterial({ map: screenTex(di), side: THREE.DoubleSide, toneMapped: false }));
-    scr.position.set(0, 1.17, -.185); g2.add(scr);
+    var scr = new THREE.Mesh(new THREE.BoxGeometry(.78, .44, .02),
+      new THREE.MeshBasicMaterial({ map: screenTex(di), toneMapped: false }));
+    scr.position.set(0, 1.17, -.18); g2.add(scr);
     var kb = new THREE.Mesh(new THREE.BoxGeometry(.66, .03, .22), solid('#e7e9ec'));
     kb.position.set(0, .83, .23); g2.add(kb);
     var mug = new THREE.Mesh(new THREE.CylinderGeometry(.07, .06, .14, 10), solid('#f0ece2'));
@@ -1813,9 +1813,9 @@
     var frame = new THREE.Mesh(new THREE.BoxGeometry(11.7, 5.3, .24),
       solid('#0b1424', { emissive: '#0a2340', emissiveIntensity: .35 }));
     frame.position.set(0, 5.55, 0); grp.add(frame);
-    var scr = new THREE.Mesh(new THREE.PlaneGeometry(11.2, 4.8),
-      new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true, opacity: .97, toneMapped: false }));
-    scr.position.set(0, 5.55, .14); grp.add(scr);
+    var scr = new THREE.Mesh(new THREE.BoxGeometry(11.2, 4.8, .04),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .97, toneMapped: false }));
+    scr.position.set(0, 5.55, .15); grp.add(scr);
     function edge(w, h, x, y, color) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, .14),
         solid(color, { emissive: color, emissiveIntensity: .6 }));
@@ -3642,9 +3642,9 @@
       q.fillStyle = color; q.fillText(text, S / 2, S / 2, S * .92);
       q.shadowBlur = 0;
     }, 1, 1);
-    var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, .04),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: .82,
-        depthWrite: false, toneMapped: false, side: THREE.DoubleSide,
+        depthWrite: false, toneMapped: false,
         blending: THREE.AdditiveBlending, fog: false }));
     m.position.set(x, y, z); m.rotation.y = ry || 0; m.userData.v9 = true;
     addO(m); fx.neon.push({ m: m, base: .82 }); return m;
@@ -3769,9 +3769,9 @@
     var vault = v9Group(5, 0, 25.4);
     var vdoor = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.5, .18), solid('#2d3b4c', { metalness: .6, roughness: .35 }));
     vdoor.position.set(0, 1.25, -.55); vdoor.userData.v9 = true; vault.add(vdoor);
-    var vglow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .12),
+    var vglow = new THREE.Mesh(new THREE.BoxGeometry(1.5, .12, .02),
       new THREE.MeshBasicMaterial({ color: '#7cf7ff', toneMapped: false, fog: false }));
-    vglow.position.set(0, 1.75, -.45); vglow.userData.v9 = true; vault.add(vglow);
+    vglow.position.set(0, 1.75, -.44); vglow.userData.v9 = true; vault.add(vglow);
     for (i = 0; i < 4; i++) {
       var rack = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.9, .6), solid('#3a4256'));
       rack.position.set(-4.5 + i * 1.6, .95, -.6); rack.userData.v9 = true; vault.add(rack);
@@ -3793,9 +3793,9 @@
     cabin.position.y = 1.15; cabin.userData.v9 = true; elev.add(cabin);
     var cabFloor = new THREE.Mesh(new THREE.BoxGeometry(1.9, .1, 1.9), solid('#b9c8d8'));
     cabFloor.position.y = .12; cabFloor.userData.v9 = true; elev.add(cabFloor);
-    var arrow = new THREE.Mesh(new THREE.PlaneGeometry(.55, .55),
+    var arrow = new THREE.Mesh(new THREE.BoxGeometry(.55, .55, .03),
       new THREE.MeshBasicMaterial({ color: '#ffd34d', toneMapped: false, fog: false }));
-    arrow.position.set(0, 2.85, -1.16); arrow.userData.v9 = true; elev.add(arrow);
+    arrow.position.set(0, 2.85, -1.145); arrow.userData.v9 = true; elev.add(arrow);
     fx.elevator = { g: elev, cabin: cabin, floor: cabFloor };
 
     // ---- 6. moving walkway along MAIN STREET ----
