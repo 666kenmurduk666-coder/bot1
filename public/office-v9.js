@@ -1323,6 +1323,23 @@
         if (fx.weather.puddles) fx.weather.puddles.forEach(function (x) { mark(x && (x.m || x)); });
       }
       if (typeof animParts !== 'undefined') animParts.forEach(function (p) { mark(p && (p.m || p.g || p.o)); });
+      // ⏱ index.html animated groups din — puno, bandila, usok, hayop,
+      // butterfly, ulan, atbp. Baka masama ang maliliit na bahagi nila.
+      // Hiwalay na guard: kung may hindi available na global, hindi
+      // inaalis ang buong batching pass — ang core reduction tuloy pa rin.
+      try {
+        if (typeof g !== 'undefined' && g) {
+          ['trees','flags','steam','clouds','birds','animals','butterflies','puddles','stars',
+           'windParts','turf','grass','flowers','mist','deliveryParcels'].forEach(function (k) {
+            var v = g[k]; if (!v) return;
+            if (Array.isArray(v)) v.forEach(function (x) { mark(x && (x.f1 || x.f2 || x.f || x.m || x.s || x.grp || x.group || x)); });
+            else mark(v);
+          });
+        }
+        if (typeof rainDrops !== 'undefined' && rainDrops) rainDrops.forEach(function (x) { mark(x); });
+        if (typeof chars3d !== 'undefined' && chars3d) chars3d.forEach(function (c) { mark(c && c.group); });
+        if (typeof cityMovers3d !== 'undefined' && cityMovers3d) cityMovers3d.forEach(function (x) { mark(x && (x.g || x.group || x.m)); });
+      } catch (e) {}
       var all = [];
       (scene3d || g.level).traverse(function (o) { all.push(o); });
       all.forEach(function (o) { // mark buong ancestry ng mga gumagalaw
@@ -1369,6 +1386,7 @@
         } catch (e) {}
       });
       batchStaticDetails.stats = { batches: made, savedDraws: saved };
+      try { window.__officeBatchStats = batchStaticDetails.stats; } catch (e) {}
     } catch (e) {}
   }
   function applyDetailLevel(force) {
