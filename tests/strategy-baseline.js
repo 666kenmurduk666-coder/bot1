@@ -117,8 +117,9 @@ const protectedHashes = {
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
   // 2026-11-21 v70: approval queue (shift proposals + publish ledger + FB status)
   // in Content Pipeline; loads the real /hyperframes.js shim instead of a 404.
-  // 2026-11-21 v71: cache-bust office-v9.js to ?v=71 for the road/building art.
-  'public/index.html': 'ed6889c57c650ad42c8b2d8d54397801641db6421fefbbbb2e08efddeb99f1c3',
+  // 2026-11-21 v72: cache-bust office-v9.js to ?v=72 so the combined tennis
+  // court + road/building art loads fresh (parallel v71 may already be cached).
+  'public/index.html': '768cfd708f3211cef7c291e8fcbbcf7bd7e22dea3bd76cf2078314c9be1f31f1',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -180,11 +181,11 @@ const protectedHashes = {
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
   // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
   // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
-  // 2026-11-21 v71 ARYASKY road+building pass: richer asphalt/paver textures,
-  // double-yellow centre lines, cat's-eye studs, stop bars, bike glyphs, refuge
-  // islands, road legends; sideBuilding plinth/pilasters/cornice/parapet/roof
-  // kit/storefront canopy/name signs. All 4D window fx + batching preserved.
-  'public/office-v9.js': 'f0bfe761869ff8d7c87d39f89f36d4e5dcb464bf9c36fc21029b6d6408672564',
+  // 2026-11-21 v72 combined art: parallel tennis court + ARYASKY road/building
+  // pass (richer asphalt/paver, double-yellow centres, cat's-eye studs, stop
+  // bars, bike glyphs, refuge islands, road legends; plinth/pilasters/cornice,
+  // roof kits, storefront canopies, name signs). 4D window fx + batching intact.
+  'public/office-v9.js': 'a205a2cc612fb9040f96ac2d7ca302f625ad8848adbf4a2f3f4f2e05b517fcb1',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
