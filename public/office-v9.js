@@ -101,7 +101,7 @@
     edit: ['✂️', '🎬', '💡'], render: ['🧪', '⏱️', '🎞️'],
     walk: ['😊', '✨', '🙂']
   };
-  var cuteBots = [], animId = null, animParts = [];
+  var cuteBots = [], animId = null, animParts = [], _bubV = null;
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
@@ -1296,6 +1296,80 @@
       }
     }
     applyDetailLevel(true);
+    batchStaticDetails();
+  }
+  // ⏱ Pinagsasama ang maliliit na HINDI gumagalaw na detalye (bolts, trims,
+  // butones) sa iisang InstancedMesh bawat materyal. Bumababa ang draw calls
+  // nang ~30% nang hindi nagbabago ang itsura. HINDI hinihawakan ang anumang
+  // nasa animated fx arrays, bots, o scenery — buong-buo ang lahat ng 4D.
+  // I-off lang kung kailangan: window.__officeNoBatch = true bago mag-build.
+  function batchStaticDetails() {
+    if (typeof window !== 'undefined' && window.__officeNoBatch === true) return;
+    try {
+      if (typeof THREE === 'undefined' || !THREE.InstancedMesh || !(scene3d || g.level)) return;
+      var marked = new Set();
+      function mark(o) { if (o && o.traverse) marked.add(o); }
+      if (typeof cuteBots !== 'undefined') cuteBots.forEach(function (b) { mark(b.group); mark(b.statusSprite); mark(b.roleTag); });
+      ['shafts','screens','bubbles','steam','plants','sparkles','birds','scan','windows',
+       'auras','antennae','glints','bands','cars','blinds','reflections','signals','peds','ballers',
+       'planes','ceilings','steps','moods','walkways','holo','wet','neon','drones','growthPlants',
+       'skylineLights','pets','outfits','softScenery','crops','scenery'].forEach(function (k) {
+        var v = fx[k]; if (!v || !v.length) return;
+        for (var i = 0; i < v.length; i++) { var x = v[i]; mark(x && (x.g || x.m || x.group || x.obj || x)); }
+      });
+      ['dust','sun','sky','sheen','night','ball','barista','fish','ceilingProj','rooftop','basement','elevator'].forEach(function (k) { mark(fx[k]); });
+      if (fx.weather) {
+        ['rain','flash','rainbow'].forEach(function (k) { mark(fx.weather[k]); });
+        if (fx.weather.puddles) fx.weather.puddles.forEach(function (x) { mark(x && (x.m || x)); });
+      }
+      if (typeof animParts !== 'undefined') animParts.forEach(function (p) { mark(p && (p.m || p.g || p.o)); });
+      var all = [];
+      (scene3d || g.level).traverse(function (o) { all.push(o); });
+      all.forEach(function (o) { // mark buong ancestry ng mga gumagalaw
+        var p = o.parent;
+        while (p) { if (marked.has(p)) { marked.add(o); break; } p = p.parent; }
+      });
+      (scene3d || g.level).updateMatrixWorld(true);
+      var buckets = {};
+      all.forEach(function (o) {
+        if (!o.isMesh || marked.has(o) || !o.geometry || !o.material) return;
+        var u = o.userData || {};
+        for (var k in u) if (k !== 'v9' && k !== 'v9BaseHex') return; // may espesyal na papel
+        var m = o.material;
+        if (Array.isArray(m) || m.map || m.alphaMap || m.transparent || m.opacity < 1 ||
+            (m.emissive && m.emissive.getHex() > 0) || m.vertexColors ||
+            (typeof THREE.FrontSide !== 'undefined' && m.side !== THREE.FrontSide) ||
+            (m.userData && m.userData.windShader)) return;
+        var gg = o.geometry;
+        if (!gg.boundingSphere) gg.computeBoundingSphere();
+        var rad = (gg.boundingSphere && gg.boundingSphere.radius) || 0;
+        if (rad >= .12) return; // malalaki o animated-scale props — huwag galawin
+        var sig = gg.type + '|' + JSON.stringify(gg.parameters || {}) + '|' + m.type + '|' +
+                  (m.color ? m.color.getHexString() : '') + '|' + (m.roughness || 0) + '|' + (m.metalness || 0);
+        (buckets[sig] = buckets[sig] || []).push(o);
+      });
+      var made = 0, saved = 0;
+      Object.keys(buckets).forEach(function (sig) {
+        var items = buckets[sig];
+        if (items.length < 4 || !items[0].parent) return;
+        try {
+          var parent = items[0].parent;
+          var inst = new THREE.InstancedMesh(items[0].geometry, items[0].material, items.length);
+          var inv = new THREE.Matrix4().copy(parent.matrixWorld).invert(), mat = new THREE.Matrix4();
+          for (var i = 0; i < items.length; i++) {
+            mat.multiplyMatrices(inv, items[i].matrixWorld);
+            inst.setMatrixAt(i, mat);
+          }
+          inst.instanceMatrix.needsUpdate = true;
+          inst.userData.v9 = true;
+          if (inst.computeBoundingSphere) inst.computeBoundingSphere();
+          parent.add(inst);
+          items.forEach(function (o) { if (o.parent) o.parent.remove(o); });
+          made++; saved += items.length - 1;
+        } catch (e) {}
+      });
+      batchStaticDetails.stats = { batches: made, savedDraws: saved };
+    } catch (e) {}
   }
   function applyDetailLevel(force) {
     var low = (typeof window !== 'undefined' && window.__officeDetail !== 'high');
@@ -2839,8 +2913,14 @@
      glued to scene3d; level3d.clear() could not remove them. Keep ours only. */
   function tameOfficeLights() {
     if (typeof scene3d === 'undefined' || !scene3d) return;
-    scene3d.traverse(function (o) {
-      if (!o.isLight) return;
+    // ⏱ Cache ang list ng ilaw: dati buong scene (libu-libong mesh) ang
+    // tinatrahan 25×/second.once lang maghanap hangga't hindi nagre-rebuild.
+    if (!tameOfficeLights._lights || tameOfficeLights._scene !== scene3d) {
+      var found = [];
+      scene3d.traverse(function (o) { if (o.isLight) found.push(o); });
+      tameOfficeLights._lights = found; tameOfficeLights._scene = scene3d;
+    }
+    tameOfficeLights._lights.forEach(function (o) {
       var mine = o.userData && o.userData.v9Light;
       if (o.isAmbientLight) o.intensity = .58;
       else if (o.isHemisphereLight) o.intensity = .25;
@@ -2855,6 +2935,7 @@
   function buildRealOffice3d() {
     if (typeof THREE === 'undefined' || !g || !g.level) return false;
     ensureGrade();
+    tameOfficeLights._lights = null; // ⏱ i-refresh ang light cache pagkatapos mag-build
     cuteBots.forEach(function (b) { if (b.bubble && b.bubble.parentNode) b.bubble.parentNode.removeChild(b.bubble); });
     cuteBots.length = 0; animParts.length = 0; screenCounter = 0; TEX = {};
     fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
@@ -3169,7 +3250,7 @@
     cuteBots.forEach(function (b) {
       b.wasShown = !!b.shown;
       b.shown = false;
-      b.bubble.style.display = 'none';
+      if (b.bubble.style.display !== 'none') b.bubble.style.display = 'none';
       b.bubble.classList.remove('talking');
       b.talking = false;
     });
@@ -3183,7 +3264,8 @@
         if (cuteBots[i].id === line.id) { bot = cuteBots[i]; break; }
       }
       if (!bot) continue;
-      var v = new THREE.Vector3(bot.group.position.x, bot.group.position.y + 2.15, bot.group.position.z).project(camera3d);
+      var v = _bubV || (_bubV = new THREE.Vector3()); // ⏱ iisa lang, hindi bagong object bawat frame
+      v.set(bot.group.position.x, bot.group.position.y + 2.15, bot.group.position.z).project(camera3d);
       if (v.z >= 1) continue;
       var el = bot.bubble;
       var html = '<b>' + esc(bot.n) + '</b>' + esc(line.text);
@@ -3191,7 +3273,7 @@
       // pop-in clock; the transform below keeps it floating while it talks.
       if (el.innerHTML !== html || !bot.wasShown) { bot.bornAt = now; el.innerHTML = html; bot.bw = 0; }
       bot.shown = true;
-      el.style.display = 'block';
+      if (el.style.display !== 'block') el.style.display = 'block';
       el.classList.add('talking');
       // ⏱ Cache ang laki ng bubble: offsetWidth/Height ay forced layout read.
       // 25×/second itong tinatawag — sukatin lang pag nagbago ang text o pag
@@ -3239,6 +3321,9 @@
   function tick() {
     animId = requestAnimationFrame(tick);
     if (document.hidden) return;
+    // ⏱ Perf: ang 4D world ay tumatakbo lang habang nasa office/boardroom.
+    // Hindi inaalis ang galaw — tinitigil lang kapag hindi nakikita.
+    if (typeof view !== 'undefined' && view !== 'office' && view !== 'boardroom') return;
     var now = Date.now();
     // Perf preset: 25 FPS cap (was 30) lowers GPU/CPU load on weak machines.
     if (now - (tick.last || 0) < 40) return;
@@ -3247,15 +3332,16 @@
     var botDt = Math.min(.12, Math.max(0, (now - prevTick) / 1000));
     try {
       if (scene3d) {
-        if (scene3d.background && scene3d.background.getHexString() !== '93a1b3') scene3d.background.set('#93a1b3');
-        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHexString() !== '93a1b3') scene3d.fog.color.set('#93a1b3');
+        if (scene3d.background && scene3d.background.getHex() !== 0x93a1b3) scene3d.background.set('#93a1b3');
+        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x93a1b3) scene3d.fog.color.set('#93a1b3');
       }
       if (g && g.amb && Math.abs(g.amb.intensity - .58) > .01) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
       tameOfficeLights();
       if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .85;
     } catch (e) {}
     applyCeilingView();
-    applyDetailLevel();
+    // ⏱ Detail check 2s na lang, hindi 25×/second (may change guard na ito).
+    if (now - (applyDetailLevel._at || 0) > 2000) { applyDetailLevel._at = now; applyDetailLevel(); }
     // Batch 1 world layer — smooth night, weather, seasons and ambient life.
     // It never writes bg/fog/ambient/exposure/isNight (the guards above own them).
     updateBatch1World(now, botDt);

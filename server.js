@@ -1254,9 +1254,22 @@ function quotaLow() {
   return false; // fail-open: a missing/stale quota file must never stop the office
 }
 
+// ⏱ Perf: /api/state ay tinatawag paulit-ulit ng office. Ang SHA256 ng buong
+// server.js + stat + route self-test ay mabigat — cache 60s, hindi na binabasa
+// sa disk bawat request. Buhay pa rin ang agent health sa bawat tawag.
+let healthStatic = { at: 0, data: null };
 function systemHealth() {
-  const hash = fileSHA256(SERVER_FILE);
-  const mtime = fileMtime(SETTINGS_FILE);
+  const _hnow = Date.now();
+  if (!healthStatic.data || _hnow - healthStatic.at > 60000) {
+    healthStatic = { at: _hnow, data: {
+      hash: fileSHA256(SERVER_FILE),
+      mtime: fileMtime(SETTINGS_FILE),
+      routes: routeSelfTest(),
+      quotaLow: quotaLow()
+    }};
+  }
+  const hash = healthStatic.data.hash;
+  const mtime = healthStatic.data.mtime;
   // Office liveness: show every agent as idle until it actually runs, so the
   // pipeline never looks empty just because no error has happened yet.
   const agentHealth = {};
@@ -1269,7 +1282,7 @@ function systemHealth() {
     settingsMtime: mtime, loadedAt: STARTED_AT,
     drift: hash !== SERVER_HASH_AT_START,
     settingsChanged: mtime !== SETTINGS_MTIME_AT_START,
-    quotaLow: quotaLow(), routes: routeSelfTest(),
+    quotaLow: healthStatic.data.quotaLow, routes: healthStatic.data.routes,
     agentHealth, version: APP_VERSION
   };
 }

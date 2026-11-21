@@ -608,7 +608,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=63"></script>
+<script src="/office-v9.js?v=64"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -643,7 +643,7 @@ const CHAT_REPLIES={
   fun:['Party mode na! 🎉','Sayaw tayo! 💃','Game time! 🎮','Sige, solo ko ito! 🕺','Discos na sa lounge! ✨','Sino ang ready sa dance-off? 💃','Band na tayo, struggle lang 😆','Sige, i-on ang music! 🎵','Fun mode: ON! 🥳','Joker na naman nag-joke 🤡'],
   default:['Sige, CEO! 👍','Opo, nasa trabaho na kami 🤖','Ping ko ang team 💬','Copy, boss! ✅','Sige, gagawin ko na 🔧','Handa na po! ✨','Ano pang gusto mo, CEO? 😊','Sabihin mo lang, kami bahala 💪','Opo, nandoon na kami 👣','Ayos, proceed tayo! 🚀','Sige, i-check ko agad 🔍','Noted, CEO! 📝']
 };
-const mmoLogSeen={},loggedConvLines={};
+const mmoLogSeen={},loggedConvLines={},loggedConvKeys=[];
 function mmoLog(who,text,color){
   const log=$('mmoChatLog');if(!log)return;
   // Huwag ulitin ang same line (hal. event stage welcome) sa loob ng 1 minuto.
@@ -753,7 +753,9 @@ function setView(v){
   if(typeof syncQuestPanel==='function')syncQuestPanel();
   if(v==='office'||v==='boardroom'){
     if(typeof THREE!=='undefined')init3D();
-    officeOn=true;officeLoop();
+    officeOn=true;
+    // ⏱ Isang rAF chain lang — hindi dumadami sa bawat pagbabalik sa office.
+    if(!officeLoop._running){officeLoop._running=true;officeLoop();}
   }
   else officeOn=false;
 }
@@ -878,6 +880,8 @@ async function pingPC(){
   if(document.hidden)return;
   const p=$('pcPill');if(!p)return;
   try{const r=await fetch('/api/state',{cache:'no-store'});const ok=r.ok;
+    // ⏱ iisang state fetch lang ang sasagut sa dalawang panel (guard + PC pill).
+    try{window.__lastState={j:await r.json(),t:Date.now()}}catch(e){}
     p.classList.toggle('on',ok);p.innerHTML=ok?'💻 My computer: on':'💻 My computer: off';
   }catch(e){p.classList.remove('on');p.innerHTML='💻 My computer: off'}
   if(view==='dashboard')renderRoutineTasks();
@@ -1415,8 +1419,9 @@ function drawOffice(){
   $('officeInfo').textContent=room.name+' · '+(room.items||[]).length+' items';
 }
 let officeOn=false;
+let _f3v=null; // ⏱ scratch vector — hindi gumagawa ng bagong object bawat frame
 function officeLoop(){
-  if(!officeOn)return;
+  if(!officeOn){officeLoop._running=false;return;}
   // Schedule the NEXT frame first: even if drawing throws below, the game
   // keeps animating instead of freezing forever. Count errors for diagnostics.
   requestAnimationFrame(officeLoop);
@@ -4317,10 +4322,9 @@ function frame3D(){
     s.m.material.opacity=.32*(1-u);
   });
   if(g.stars)g.stars.material.opacity=.75+Math.sin(t/900)*.15;
-  if(g.stars)g.stars.material.opacity=.75+Math.sin(t/900)*.15;
   if(cam3d){
     const c=cam3d;
-    if(!playerMode && followBot&&followBot.group)c.target.lerp(new THREE.Vector3(followBot.group.position.x,1.3,followBot.group.position.z),.14);
+    if(!playerMode && followBot&&followBot.group){const _fv=_f3v||(_f3v=new THREE.Vector3());c.target.lerp(_fv.set(followBot.group.position.x,1.3,followBot.group.position.z),.14);}
     // 🎮 Roblox camera — walang auto-cycling; manual lang (right-click drag / wheel / WASD)
     camera3d.position.set(
       c.target.x+c.r*Math.cos(c.phi)*Math.sin(c.theta),
@@ -4765,7 +4769,12 @@ function frame3D(){
   }
   // ✨ NIGHT MODE: dilim sa gabi (auto 18:00-6:00 PH o manual)!
   if(g.amb&&g.sun){
-    let phHour=14;try{phHour=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Manila'})).getHours()}catch(e){}
+    // ⏱ time-zone formatting ay minsan lang, hindi bawat frame (iisa pa ring oras).
+    let phHour=frame3D._phHour;
+    if(phHour===undefined||t-(frame3D._phAt||0)>60000){
+      try{phHour=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Manila'})).getHours()}catch(e){phHour=14}
+      frame3D._phHour=phHour;frame3D._phAt=t;
+    }
     const night=nightManual!==null?nightManual:(phHour>=18||phHour<6);
     const tgt=night?1:0;
     if(scene3d.isNight!==tgt){
@@ -4937,7 +4946,7 @@ function frame3D(){
   const ch=actorRef||chars3d.find(c=>c.agent.id===speaker);
   if(ch&&line){
     if(line.length>64)line=line.slice(0,64).replace(/\s+\S*$/,'')+'…';
-    const v=new THREE.Vector3();
+    const v=_f3v||(_f3v=new THREE.Vector3()); // ⏱ reuse scratch
     // FIX: actorRef can be a real char ({group}) OR a raw THREE.Object3D
     // (player.group / mmoAnchor from mmoSay). Never let bubble math crash
     // the render loop — one throw here freezes the entire 3D game.
@@ -4955,7 +4964,12 @@ function frame3D(){
         // Ang 3D bubble ay umiikot sa iisang 4-line conversation — isang beses lang ilagay sa chat.
         const ck=useConv?((conv&&conv.id||'conv')+'|'+speaker+'|'+line):null;
         if(!ck||!loggedConvLines[ck]){
-          if(ck)loggedConvLines[ck]=1;
+          if(ck){
+            if(!loggedConvLines[ck])loggedConvKeys.push(ck);
+            loggedConvLines[ck]=1;
+            // ⏱ Hindi lumalaki nang walang hanggan — huling 400 linya lang ang memory.
+            if(loggedConvKeys.length>400){const old=loggedConvKeys.shift();delete loggedConvLines[old];}
+          }
           const m=meta(speaker);mmoLog((m.i||'✨')+' '+m.n,line,m.c||'#7fc7ff');
         }
       }
@@ -5589,7 +5603,10 @@ setInterval(()=>{
 let lastSecT=0;
 setInterval(async()=>{
   try{
-    const r=await fetch('/api/state');const j=await r.json();
+    // ⏱ Gamitin ang state na kinuha na ng pingPC (15s) kung bago pa lang —
+    // mababawasan ang sabay-sabay na /api/state calls na mabigat sa server.
+    const cached=window.__lastState;
+    const j=(cached&&Date.now()-cached.t<16000)?cached.j:await (await fetch('/api/state')).json();
     if(typeof S!=='undefined'&&S){S.mall=j.mall;S.orders=j.orders;}
     const secs=(j.activity||[]).filter(a=>a.who==='security'||a.who==='mall');
     const latest=secs[0];
