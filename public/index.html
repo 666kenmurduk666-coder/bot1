@@ -252,6 +252,7 @@ dialog::backdrop{background:#000a}
         <button id="camFit" title="Show the whole campus" aria-label="Fit entire campus">⛶ Fit campus</button>
         <button id="camTycoon" title="Tycoon view - top-down overview para makita ang mga bots" aria-label="Tycoon view">🏗 Tycoon</button>
         <button id="camMegaWorld" title="Cyborg Cheebee Mega World command zone - master prompt at systems roadmap" aria-label="Mega World view">🌐 Mega World</button>
+        <button id="camAllBots" title="Kita lahat ng bots sa isang view" aria-label="All bots view">👥 All Bots</button>
         <button id="camReset" title="Reset camera" aria-label="Reset camera">↺ Reset</button>
         <button id="camSave" title="Save camera position" aria-label="Save camera position">☆ Save view</button>
         <button id="camLoad" title="Restore saved camera position" aria-label="Load saved camera position">★ Load</button>
@@ -1219,20 +1220,39 @@ document.querySelectorAll('.reloadBtn').forEach(b=>{
 });
 const xrayApply=()=>{
   if(!level3d)return;
-  const on=xrayOn||xrayAuto; // manual Silip O auto-Silip (malapit/mababa ang camera)
-  // mga pader: masyadong manipis (.08); mga sahig/bridge: mas makapal (.24) para may tinatayuan ang bots
+  const on=xrayOn||xrayAuto;
   const opmap={cfd6e0:.08,cfd6e2:.24,c2c9d6:.24,b8c0cc:.24};
   level3d.traverse(o=>{
-    if(o.isMesh&&o.material&&o.material.color){
-      const hx=o.material.color.getHexString();
-      if(opmap[hx]){
-        const wp=new THREE.Vector3();o.updateWorldMatrix(true,false);o.getWorldPosition(wp);
-        const isMall=wp.x>23; // 🛍️ CYBORG MALL / LAB — dingding nakikita pa rin
-        const alpha=isMall?0.55:opmap[hx];
-        if(on&&o.material._sh===undefined){o.material._sh=o.castShadow;}
-        o.castShadow=on?false:(o.material._sh===undefined?true:o.material._sh);
-        o.material.transparent=on;o.material.opacity=on?alpha:1;o.material.depthWrite=on?!isMall:true;
-        o.material.needsUpdate=true;
+    if(o.isMesh&&o.material){
+      const wp=new THREE.Vector3();o.updateWorldMatrix(true,false);o.getWorldPosition(wp);
+      if(o.material.color){
+        const hx=o.material.color.getHexString();
+        if(opmap[hx]){
+          const isMall=wp.x>23;
+          const alpha=isMall?0.55:opmap[hx];
+          if(on&&o.material._sh===undefined){o.material._sh=o.castShadow;}
+          o.castShadow=on?false:(o.material._sh===undefined?true:o.material._sh);
+          o.material.transparent=on;o.material.opacity=on?alpha:1;o.material.depthWrite=on?!isMall:true;
+          o.material.needsUpdate=true;
+        }
+      }
+      const isCeil=o.userData&&o.userData.v9Ceiling;
+      let isOverhead=false;
+      if(!isCeil && wp.y>3.0 && !o.isSprite){
+        try{
+          if(!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+          const bb=o.geometry.boundingBox; if(bb){
+            const sx=(bb.max.x-bb.min.x)*(o.scale?o.scale.x:1);
+            const sy=(bb.max.y-bb.min.y)*(o.scale?o.scale.y:1);
+            const sz=(bb.max.z-bb.min.z)*(o.scale?o.scale.z:1);
+            isOverhead = sy < 0.8 && (sx > 0.9 || sz > 0.9);
+          }
+        }catch(e){}
+      }
+      if(isCeil || isOverhead){
+        if(on&&o.material._sh2===undefined){o.material._sh2=o.castShadow;o.material._op2=o.material.opacity;o.material._tw2=o.material.transparent;o.material._dw2=o.material.depthWrite;}
+        if(on){o.castShadow=false;o.material.transparent=true;o.material.opacity=isCeil?0.01:0.06;o.material.depthWrite=false;o.material.needsUpdate=true;}
+        else if(o.material._sh2!==undefined){o.castShadow=o.material._sh2;o.material.opacity=o.material._op2;o.material.transparent=o.material._tw2;o.material.depthWrite=o.material._dw2;o.material.needsUpdate=true;}
       }
     }
   });
@@ -3266,6 +3286,13 @@ function fitOfficeCampus(){setOfficeCamera({x:23,y:1.2,z:17,theta:.38,phi:.54,r:
 function resetOfficeCamera(){setOfficeCamera({x:23,y:1.2,z:17,theta:.32,phi:.47,r:43});}
 function tycoonOfficeView(){setOfficeCamera({x:8,y:1.2,z:7,theta:.35,phi:1.12,r:32});}
 function megaWorldOfficeView(){setOfficeCamera({x:74,y:1.5,z:34,theta:Math.PI,phi:1.08,r:34});}
+function allBotsOfficeView(){
+  var bots=(window.__officeV9&&window.__officeV9.bots)||[];
+  var cx=24,cz=18,n=0;
+  if(bots.length){cx=0;cz=0;bots.forEach(function(b){var p=b.group?b.group.position:null;if(p){cx+=p.x;cz+=p.z;n++;}});if(n){cx/=n;cz/=n;}else{cx=24;cz=18;}}
+  setOfficeCamera({x:cx,y:1.2,z:cz,theta:.35,phi:1.08,r:38});
+  try{if(typeof xrayOn!=='undefined'&&!xrayOn){xrayOn=true;var xb=$('xray');if(xb)xb.textContent='?? Normal view';if(typeof xrayApply==='function')xrayApply();}}catch(e){}
+}
 function saveOfficeCamera(){
   if(!cam3d)return;
   try{localStorage.setItem('ccOfficeCameraV1',JSON.stringify({x:cam3d.target.x,y:cam3d.target.y,z:cam3d.target.z,theta:cam3d.theta,phi:cam3d.phi,r:cam3d.r}));toast('📷 Na-save ang camera position.');}
@@ -3295,7 +3322,7 @@ function drawOfficeMiniMap(){
 function bindOfficeCameraTools(){
   const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.bound){el.addEventListener('click',fn);el.dataset.bound='1';}};
   bind('camZoomIn',()=>officeCameraZoom(1/1.22));bind('camZoomOut',()=>officeCameraZoom(1.22));
-  bind('camFit',()=>{fitOfficeCampus();toast('🏢 Buong campus ang view.');});bind('camTycoon',()=>{tycoonOfficeView();toast('🏗 Tycoon view - kita ang mga bots!');});bind('camMegaWorld',()=>{megaWorldOfficeView();toast('🌐 Mega World command zone');const dlg=$('megaWorldPrompt');if(dlg&&!dlg.open){megaWorldLoadPrompt();dlg.showModal();}});bind('camReset',()=>{resetOfficeCamera();toast('Camera reset.');});
+  bind('camFit',()=>{fitOfficeCampus();toast('🏢 Buong campus ang view.');});bind('camTycoon',()=>{tycoonOfficeView();toast('🏗 Tycoon view - kita ang mga bots!');});bind('camMegaWorld',()=>{megaWorldOfficeView();toast('🌐 Mega World command zone');const dlg=$('megaWorldPrompt');if(dlg&&!dlg.open){megaWorldLoadPrompt();dlg.showModal();}});bind('camAllBots',()=>{allBotsOfficeView();toast('👥 All bots view - kita lahat ng bots');});bind('camReset',()=>{resetOfficeCamera();toast('Camera reset.');});
   bind('camSave',saveOfficeCamera);bind('camLoad',loadOfficeCamera);
   bind('camMiniToggle',()=>{const m=$('officeMiniMap');if(!m)return;m.classList.toggle('visible');drawOfficeMiniMap();});
   const map=$('officeMiniMap');if(map&&!map.dataset.bound){map.addEventListener('click',e=>{const r=map.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height,b=OFFICE_MAP_BOUNDS;const wx=b.minX+u*(b.maxX-b.minX),wz=b.minZ+v*(b.maxZ-b.minZ);setOfficeCamera({x:wx,y:1.2,z:wz,theta:.55,phi:.68,r:Math.min(cam3d?cam3d.r:62,48)});});map.dataset.bound='1';}
