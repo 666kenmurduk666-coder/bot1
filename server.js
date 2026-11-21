@@ -270,7 +270,8 @@ const DEFAULT_ROUTINES = [
   {id:'r-joke',agent:'joker',name:'Jester — daily jokes',minutes:360,enabled:true,lastRun:0,runs:0},
   {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:true,lastRun:0,runs:0},
   {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:true,lastRun:0,runs:0},
-  {id:'r-recap-weekly',agent:'cos',name:'Weekly recap video (Mon 8AM)',minutes:10080,enabled:true,lastRun:0,runs:0,weekday:1,hour:8,tz:'Asia/Manila',fn:'weeklyRecap'}
+  {id:'r-recap-weekly',agent:'cos',name:'Weekly recap video (Mon 8AM)',minutes:10080,enabled:true,lastRun:0,runs:0,weekday:1,hour:8,tz:'Asia/Manila',fn:'weeklyRecap'},
+  {id:'r-video-publish',agent:'video',name:'Video Bot — i-pasa ang office-skills video',minutes:1440,enabled:true,lastRun:0,runs:0,fn:'autoVideoPublish'}
 ];
 const savedRoutines = readJSON(ROUTINES_FILE, null);
 state.routines = Array.isArray(savedRoutines) ? savedRoutines.slice() : DEFAULT_ROUTINES.slice();
@@ -1591,6 +1592,18 @@ async function runRoutine(id, manual) {
   state.running = true;
   try {
     log('Routine started: ' + r.name, r.agent);
+    if (r.fn === 'autoVideoPublish') {
+      const out = await botPublishVideo(false);
+      if (!out.ok && out.reason === 'already-published') return { ok: true, output: 'Video na nai-pasa na' };
+      if (!out.ok) throw new Error(out.reason + (out.detail ? ': ' + out.detail : ''));
+      state.outputs[r.agent] = out.url || out.postId;
+      r.lastRun = Date.now();
+      r.holdUntil = 0;
+      r.runs = (r.runs || 0) + 1;
+      lastRoutineAt = Date.now();
+      saveRoutines();
+      return { ok: true, output: state.outputs[r.agent] };
+    }
     if (r.fn === 'weeklyRecap') {
       const stt = publicState();
       const cfg = videoConfigFrom({
@@ -1650,20 +1663,29 @@ setInterval(async () => {
    gamot, trending topics). Nasa ibabaw lang ito ng umiiral nang callGroq/callAI
    at state — walang bagong interval, walang mabigat na dependency, at ligtas
    sa health claims. */
-const CP_DISCLAIMER = 'For educational purposes only. Not medical advice. Consult a healthcare professional.';
+const CP_DISCLAIMER = 'Para sa edukasyon lamang ito. Hindi ito medikal na payo. Kumonsulta sa propesyonal sa kalusugan.';
+// Mga dahon at halaman muna ang tema — tunay na Tagalog, walang Taglish.
 const CP_TOPIC_POOL = [
-  '3 halamang gamot na madaling itanim sa bahay',
-  'Paano gumawa ng simpleng herbal tea mula sa sariling hardin',
-  '5 kitchen ingredients na may traditional na gamit',
-  'Tutorial: tamang pagpapatuyo at pag-iimbak ng mga halaman',
-  'Trending "what I eat in a day" gamit ang lokal na ingredients',
-  'Paano gumawa ng natural na insect repellent',
-  '3 tutorial sa paggamit ng affiliate product para sa beginners',
-  'Behind the scenes: pag-aalaga ng halamang gamot sa maliit na espasyo',
-  'Trending recipe gamit ang herbs na abot-kamay',
-  'Review: affiliate product na ginamit ko sa loob ng 7 araw',
+  'Bakit mahalaga ang mga dahon sa buhay ng halaman',
+  'Paano alagaan ang mga dahon para hindi agad malanta',
+  '3 halamang madaling itanim sa bahay',
+  'Paano gumawa ng simpleng tsaa mula sa sariling hardin',
+  'Tamang pagpapatuyo at pag-iimbak ng mga dahon',
+  'Paano gumawa ng natural na panlaban sa insekto gamit ang dahon',
+  'Behind the scenes: pag-aalaga ng halaman sa maliit na espasyo',
   'Paano pumili ng tamang halaman para sa panimulang hardin',
-  'Quick tutorial: 3 gamit ng isang karaniwang halaman sa kusina'
+  '3 gamit ng karaniwang dahon sa kusina',
+  'Bakit kailangan ng liwanag ang mga berdeng dahon',
+  'Paano magtanim ng halaman mula sa binhi',
+  'Mga palatandaan na busog na sa tubig ang halaman',
+  'Paano gumawa ng abono mula sa mga dahon',
+  'Pagkakaiba ng dahon ng halamang gulay at dahon ng puno',
+  'Paano panatilihing berde ang mga dahon sa tag-araw',
+  'Bakit natutuyo ang mga dahon sa loob ng bahay',
+  'Simpleng paraan ng pagpaparami ng halaman gamit ang sanga',
+  'Mga dahong karaniwang makikita sa bakuran',
+  'Paano gumawa ng maliit na hardin sa bintana',
+  'Tamang oras ng pagdidilig ng mga halaman'
 ];
 
 function cpCleanJSON(raw) {
@@ -1707,14 +1729,16 @@ async function cpGenerateIdeas(count) {
   let ideas = null;
 
   try {
-    const sys = 'You are a viral short-form content researcher. Return ONLY valid JSON, no markdown, no intro. ' +
-      'Write in natural Taglish. Niche: health education, herbal plants, tutorials, affiliate product demos. ' +
-      'SAFETY: never claim any plant or product cures a disease — use educational/experiential framing only.';
-    const user = 'Niche: ' + niche + '\nPlatform: ' + platform + '\nLanguage: ' + language + '\n' +
-      'Return JSON exactly: {"ideas":[{"topic":"short hook-ready topic","angle":"why it works","hashtags":["#tag"]}]} with exactly ' + n + ' ideas.\n' +
-      (liked.length ? 'Topics the CEO LIKED — make more like these: ' + liked.join(' | ') + '\n' : '') +
-      'DO NOT repeat these recent topics: ' + (recent.join(' | ') || 'none') + '\n' +
-      'Ideas must be trending-style tutorial or "alam ba ninyo" format, safe for Reels/TikTok.';
+    const sys = 'Ikaw ang mananaliksik ng maikling content ng Cyborg Cheebee Office. ' +
+      'Ibalik LAMANG ang valid JSON, walang markdown at walang intro. ' +
+      'Sumulat sa tunay at natural na Tagalog (Pinoy) — HUWAG gumamit ng Taglish o salitang Ingles maliban sa hashtag. ' +
+      'Paksa: mga dahon at halaman, pag-aalaga ng halaman, at edukasyon tungkol sa kalikasan. ' +
+      'SAFETY: huwag kailanman sabihing nakagamot o nakapagpapagaling ang isang halaman — edukasyon at karanasan lamang.';
+    const user = 'Niche: mga dahon at halaman\nPlatform: ' + platform + '\nWika: Tunay na Tagalog\n' +
+      'Ibalik ang JSON nang eksakto: {"ideas":[{"topic":"maikling paksang kawit","angle":"bakit ito mahalaga","hashtags":["#tag"]}]} na may eksaktong ' + n + ' ideya.\n' +
+      (liked.length ? 'Mga paksang gusto ng CEO — gumawa pa ng ganito: ' + liked.join(' | ') + '\n' : '') +
+      'HUWAG ulitin ang mga kamakailang paksa: ' + (recent.join(' | ') || 'wala') + '\n' +
+      'Dapat "alam ba ninyo" o tutorial ang itsura, at tumuon sa dahon o halaman.';
     const parsed = cpCleanJSON(await cpCall(sys, user, 900));
     if (parsed && Array.isArray(parsed.ideas)) {
       ideas = parsed.ideas.filter(x => x && x.topic).slice(0, n).map(x => ({
@@ -1768,24 +1792,27 @@ async function cpWriteScript(id) {
   let sc = null;
 
   try {
-    const sys = 'You are a short-form video scriptwriter. Return ONLY valid JSON, no markdown, no intro. ' +
-      'Write in natural Taglish. SAFETY: never claim a cure; educational framing only; include the exact disclaimer string provided.';
-    const user = 'Topic: ' + item.topic + '\nAngle: ' + item.angle + '\nPlatform: ' + platform + '\nLanguage: ' + language + '\n' +
-      (link ? 'Affiliate link to mention naturally in the CTA: ' + link + '\n' : '') +
-      'Disclaimer (include exactly): ' + CP_DISCLAIMER + '\n' +
-      'Return JSON exactly: {"hook":"first 3 seconds","beats":["b1","b2","b3"],"shotList":["s1","s2","s3"],"caption":"post caption","hashtags":["#tag"],"cta":"call to action","disclaimer":"..."} Keep it under 60 spoken seconds.';
+    const sys = 'Ikaw ang manunulat ng maikling video ng Cyborg Cheebee Office. ' +
+      'Ibalik LAMANG ang valid JSON, walang markdown at walang intro. ' +
+      'Sumulat sa tunay at natural na Tagalog (Pinoy) — HUWAG gumamit ng Taglish o salitang Ingles maliban sa hashtag. ' +
+      'Paksa: mga dahon at halaman. SAFETY: huwag mag-angkin ng gamot o paggaling; edukasyon lamang; ' +
+      'isama nang eksakto ang disclaimer na ibibigay.';
+    const user = 'Paksa: ' + item.topic + '\nAnggulo: ' + item.angle + '\nPlatform: ' + platform + '\nWika: Tunay na Tagalog\n' +
+      (link ? 'Link na banggitin nang natural sa CTA: ' + link + '\n' : '') +
+      'Disclaimer (isama nang eksakto): ' + CP_DISCLAIMER + '\n' +
+      'Ibalik ang JSON nang eksakto: {"hook":"unang 3 segundo","beats":["b1","b2","b3"],"shotList":["s1","s2","s3"],"caption":"teksto ng post","hashtags":["#tag"],"cta":"panawagan","disclaimer":"..."} Huwag lampas 60 segundo kung binibigkas.';
     const parsed = cpCleanJSON(await cpCall(sys, user, 1100));
     if (parsed && parsed.hook) sc = parsed;
   } catch (e) {}
 
   if (!sc) {
     sc = {
-      hook: 'Alam ba ninyo na ' + item.topic + ' ay pwede nang gawin sa bahay?',
-      beats: ['Ito ang basics — simple at hindi nakakalito.', 'Ganito ang tamang paraan, step by step.', 'Ito ang resulta at mga tips para hindi mag-error.'],
-      shotList: ['Close-up ng ingredients / product', 'Demo ng hakbang (top-down shot)', 'Resulta + natural reaction'],
-      caption: item.topic + ' — tutorial na pwede ninyong subukan.',
-      hashtags: (item.hashtags || []).length ? item.hashtags.slice(0, 6) : ['#tutorial', '#herbs', '#fyp', '#affiliate'],
-      cta: link ? 'Check ang link sa bio para sa gamit na ginamit ko!' : 'I-save ang video para hindi mawala!',
+      hook: 'Alam ba ninyo na ' + item.topic + ' ay madaling gawin sa bahay?',
+      beats: ['Ito ang mga pangunahing bagay — simple at hindi nakakalito.', 'Ganito ang tamang paraan, hakbang-hakbang.', 'Ito ang resulta at mga tips para hindi magkamali.'],
+      shotList: ['Malapitang kuha ng mga dahon', 'Demo ng hakbang mula sa itaas', 'Resulta at natural na reaksyon'],
+      caption: item.topic + ' — tutorial na maaari ninyong subukan.',
+      hashtags: (item.hashtags || []).length ? item.hashtags.slice(0, 6) : ['#Dahon', '#Halaman', '#Kalikasan', '#Edukasyon'],
+      cta: link ? 'Tingnan ang link sa bio para sa gamit na ginamit ko.' : 'Itabi ang video para hindi mawala.',
       disclaimer: CP_DISCLAIMER
     };
   }
@@ -1821,7 +1848,7 @@ async function cpWriteBrief(id) {
   const sc = item.script;
   const briefText = 'Title: ' + item.topic + '\nHook: ' + sc.hook + '\nBeats: ' +
     (sc.beats || []).join(' | ') + '\nShots: ' + (sc.shotList || []).join(' | ') +
-    '\nCTA: ' + sc.cta + '\nFormat: vertical short-form\nLanguage: Taglish';
+    '\nCTA: ' + sc.cta + '\nFormat: vertical short-form\nWika: Tunay na Tagalog';
   let cfg = null;
   try {
     const sys = 'You are the AI Video Editor Assistant of Cyborg Cheebee Office. Convert the CEO brief into ONLY a JSON object with keys: title, tagline, cta, format (vertical|wide), mode (product|recap|agent|campus), color1 (#rrggbb), color2 (#rrggbb), imageUrl (string or empty), voiceoverUrl (string or empty), captions (array of short strings). No markdown, no explanation. Match the language of the brief.';
@@ -1840,6 +1867,171 @@ async function cpWriteBrief(id) {
   log('Content pipeline: video brief ready for "' + item.topic + '"', 'system');
   return item;
 }
+
+/* ===== 🤖 BOT AUTO-PUBLISH — 30 contents araw-araw, walang manual na pag-post =====
+   Scout → Writer → Publisher Bot. Pag tapos ang content, agad na ilalabas ng bot
+   sa Facebook Page gamit ang Graph API. Tunay na Tagalog, paksang dahon/halaman. */
+const AUTOPOST_FILE = path.join(DATA, 'auto-post.json');
+const AUTO_POST_DAILY_CAP = Math.max(1, Math.min(200, Number(process.env.AUTO_POST_DAILY_CAP) || 30));
+const AUTO_POST_EVERY_MS = Math.max(10, Math.min(240, Number(process.env.AUTO_POST_EVERY_MIN) || 48)) * 60000;
+const AUTO_POST_VIDEO = String(process.env.AUTO_POST_VIDEO_URL ||
+  'https://cyborgcheebeeworkspace-d7sf.onrender.com/videos/office-skills-tagalog.mp4');
+const autoPostStore = Object.assign(
+  { lastAt: 0, day: '', count: 0, videoDone: false, paused: false },
+  readJSON(AUTOPOST_FILE, {})
+);
+function saveAutoPostStore() { writeJSON(AUTOPOST_FILE, autoPostStore); }
+function autoPostDay() {
+  const d = bazaarDay();
+  if (autoPostStore.day !== d) { autoPostStore.day = d; autoPostStore.count = 0; saveAutoPostStore(); }
+  return d;
+}
+function fbPageToken() {
+  return String(process.env.FB_PAGE_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || '').trim();
+}
+async function botFbPageId(token) {
+  const fromEnv = String(process.env.FB_PAGE_ID || '').trim();
+  if (fromEnv) return fromEnv;
+  const r = await fetch('https://graph.facebook.com/v19.0/me?fields=id&access_token=' + encodeURIComponent(token));
+  const j = await r.json();
+  return j && j.id ? String(j.id) : null;
+}
+/* Iisang Graph publish path para sa text at video. Hindi kailanman ibinabalik
+   ang token sa browser o sa log. */
+async function botFbPublish(message, opts) {
+  const token = fbPageToken();
+  if (!token) return { ok: false, reason: 'no-page-token' };
+  const now = Date.now();
+  fbPostTimes = fbPostTimes.filter(t => now - t < 60 * 60 * 1000);
+  if (fbPostTimes.length >= 5) return { ok: false, reason: 'hourly-limit' };
+  let pageId;
+  try { pageId = await botFbPageId(token); } catch (e) { return { ok: false, reason: 'page-check-failed' }; }
+  if (!pageId) return { ok: false, reason: 'no-page-id' };
+  const isVideo = !!(opts && opts.videoUrl);
+  const url = 'https://graph.facebook.com/v19.0/' + encodeURIComponent(pageId) + '/' + (isVideo ? 'videos' : 'feed');
+  const payload = isVideo
+    ? { access_token: token, file_url: opts.videoUrl, description: String(message || '').slice(0, 63206) }
+    : { access_token: token, message: String(message || '').slice(0, 63206) };
+  if (!isVideo && opts && opts.link) payload.link = String(opts.link).slice(0, 500);
+  try {
+    const r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!j || !j.id) {
+      const fe = (j && j.error) || {};
+      return { ok: false, reason: 'facebook-rejected', detail: String(fe.message || 'unknown').slice(0, 140) };
+    }
+    fbPostTimes.push(now);
+    return { ok: true, postId: String(j.id) };
+  } catch (e) { return { ok: false, reason: 'network', detail: String(e.message || e).slice(0, 140) }; }
+}
+function cpPostMessage(item) {
+  const sc = (item && item.script) || {};
+  const lines = [];
+  const caption = String(sc.caption || (item && item.topic) || '').trim();
+  if (caption) lines.push(caption);
+  if (sc.hook) lines.push(String(sc.hook).trim());
+  (sc.beats || []).slice(0, 3).forEach(b => { if (b) lines.push('• ' + String(b).trim()); });
+  if (sc.cta) lines.push(String(sc.cta).trim());
+  const tags = (sc.hashtags || []).map(t => String(t).trim()).filter(Boolean).slice(0, 8);
+  ['#Dahon', '#Halaman'].forEach(t => { if (!tags.some(x => x.toLowerCase() === t.toLowerCase())) tags.push(t); });
+  if (tags.length) lines.push(tags.join(' '));
+  lines.push(CP_DISCLAIMER);
+  return lines.join('\n\n').slice(0, 63206);
+}
+let autoPublishBusy = false;
+async function cpEnsureReady() {
+  const ready = (state.contentPipeline || []).find(x => x && x.stage === 'script' && x.script && !x.published);
+  if (ready) return ready;
+  if (quotaLow()) return null;
+  let made = null;
+  try {
+    const ideas = await cpGenerateIdeas(2);
+    for (const it of ideas) {
+      try { made = await cpWriteScript(it.id); } catch (e) {}
+      if (made) break;
+    }
+  } catch (e) {}
+  return made;
+}
+function cpLedgerRow(postId, title, note, actor, mode) {
+  const now = Date.now();
+  const row = {
+    id: 'BOT' + now.toString(36), at: now, platform: 'Facebook',
+    title: String(title || '').slice(0, 100),
+    url: 'https://www.facebook.com/' + postId,
+    note: String(note || '').slice(0, 200),
+    actor: actor, mode: mode, approved: true, postId: postId
+  };
+  state.publishLedger.unshift(row);
+  if (state.publishLedger.length > 300) state.publishLedger.length = 300;
+  return row;
+}
+async function botAutoPublish(manual) {
+  if (autoPublishBusy) return { ok: false, reason: 'busy' };
+  autoPublishBusy = true;
+  try {
+    if (autoPostStore.paused && !manual) return { ok: false, reason: 'paused' };
+    if (!fbPageToken()) return { ok: false, reason: 'no-page-token' };
+    autoPostDay();
+    if (!manual && autoPostStore.count >= AUTO_POST_DAILY_CAP)
+      return { ok: false, reason: 'daily-cap', count: autoPostStore.count };
+    if (!manual && Date.now() - (autoPostStore.lastAt || 0) < AUTO_POST_EVERY_MS)
+      return { ok: false, reason: 'too-soon', count: autoPostStore.count };
+    const item = await cpEnsureReady();
+    if (!item) return { ok: false, reason: 'no-ready-content' };
+    const r = await botFbPublish(cpPostMessage(item));
+    if (!r.ok) return r;
+    item.published = true;
+    item.publishedAt = Date.now();
+    item.postId = r.postId;
+    autoPostStore.lastAt = Date.now();
+    autoPostStore.count = (autoPostStore.count || 0) + 1;
+    saveAutoPostStore();
+    cpLedgerRow(r.postId, item.topic, 'Bot auto-publish: ' + item.topic, 'Writer Bot + Publisher Bot', 'auto-bot');
+    saveStateNow();
+    auditEvent('Bot auto-published: ' + item.topic, 'Publisher Bot');
+    log('📤 Publisher Bot nag-post: ' + String(item.topic).slice(0, 70), 'publisher');
+    return { ok: true, postId: r.postId, topic: item.topic, count: autoPostStore.count };
+  } finally { autoPublishBusy = false; }
+}
+const VIDEO_POST_TEXT = [
+  '🎬 MGA KASANTAYAN SA OPISINA',
+  '',
+  'Narito ang maikling paglalakbay sa aming 3D na opisina at sa mga kasanayang natututunan ng aming mga bot araw-araw.',
+  '',
+  '• Tamang pagbati at pagpapakilala',
+  '• Malinaw na pagsusulat ng mensahe',
+  '• Pag-unahin ang mahalagang gawain',
+  '• Iwasan ang pagkaantala',
+  '',
+  'Manood na ngayon! 💚',
+  '',
+  '#CyborgCheebee #Opisina #Kasanayan #Dahon #Halaman'
+].join('\n');
+let videoPublishBusy = false;
+async function botPublishVideo(manual) {
+  if (videoPublishBusy) return { ok: false, reason: 'busy' };
+  if (autoPostStore.videoDone && !manual) return { ok: false, reason: 'already-published' };
+  videoPublishBusy = true;
+  try {
+    const r = await botFbPublish(VIDEO_POST_TEXT, { videoUrl: AUTO_POST_VIDEO });
+    if (!r.ok) return r;
+    autoPostStore.videoDone = true;
+    saveAutoPostStore();
+    cpLedgerRow(r.postId, 'MGA KASANTAYAN SA OPISINA', 'Video na ipinasa ng Video Bot sa Facebook',
+      'Video Bot + Publisher Bot', 'auto-video');
+    saveStateNow();
+    auditEvent('Bot published office-skills video: ' + r.postId, 'Video Bot');
+    log('🎬 Video Bot nag-pasa ng office-skills video: ' + r.postId, 'video');
+    return { ok: true, postId: r.postId, url: 'https://www.facebook.com/' + r.postId };
+  } finally { videoPublishBusy = false; }
+}
+setInterval(() => {
+  if (state.stopped || state.running) return;
+  botAutoPublish(false).catch(e => log('Auto-publish error: ' + e.message, 'publisher'));
+}, 60000);
 
 // 🛍️ Ibalik ang Shopee affiliate links kahit burahin ng redeploy ang data/.
 function ensureShopeeLinks() {
@@ -3225,10 +3417,38 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/fb/config' && req.method === 'GET') {
       const c = fbCfg();
-      const tok = String(process.env.FB_PAGE_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || '').trim();
+      const tok = fbPageToken();
       return sendJSON(res, 200, { configured: !!(c.id && c.secret && c.redirect),
         appId: c.id ? c.id.slice(0, 6) + '…' : '',
-        pageToken: !!tok, publishReady: !!(c.id && c.secret && c.redirect && tok) });
+        pageToken: !!tok, publishReady: !!tok });
+    }
+
+    /* 🤖 BOT AUTOPOST STATUS / CONTROL — walang token na ibinabalik kahit saan. */
+    if (p === '/api/bot/autopost' && req.method === 'GET') {
+      autoPostDay();
+      const nextInMs = Math.max(0, AUTO_POST_EVERY_MS - (Date.now() - (autoPostStore.lastAt || 0)));
+      return sendJSON(res, 200, {
+        ok: true, publishReady: !!fbPageToken(), paused: !!autoPostStore.paused,
+        dailyCap: AUTO_POST_DAILY_CAP, postedToday: autoPostStore.count || 0,
+        everyMinutes: Math.round(AUTO_POST_EVERY_MS / 60000), nextInMs,
+        videoPublished: !!autoPostStore.videoDone,
+        recent: (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video')).slice(0, 12)
+      });
+    }
+    if (p === '/api/bot/autopost' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      const action = String(b.action || 'status');
+      if (action === 'pause') { autoPostStore.paused = true; saveAutoPostStore(); return sendJSON(res, 200, { ok: true, paused: true }); }
+      if (action === 'resume') { autoPostStore.paused = false; saveAutoPostStore(); return sendJSON(res, 200, { ok: true, paused: false }); }
+      if (action === 'now') {
+        const out = await botAutoPublish(true);
+        return sendJSON(res, out.ok ? 200 : 200, out);
+      }
+      return sendJSON(res, 400, { ok: false, error: 'Unknown autopost action.' });
+    }
+    if (p === '/api/bot/video/publish' && req.method === 'POST') {
+      const out = await botPublishVideo(true);
+      return sendJSON(res, out.ok ? 200 : 200, out);
     }
 
     /* 📤 FACEBOOK PUBLISH — CEO-only, explicit confirmation, never auto-posts.

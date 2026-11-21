@@ -65,7 +65,10 @@ const protectedHashes = {
   // Hash below explicitly refreshed for Batch 3.
   // 2026-11-21: CEO-gated /api/fb/post (explicit confirm, 5/hour, token from
   // Render env, never echoed) + safe office routines enabled by default.
-  'server.js': '43c0944fd10cef5e96f67ec75875000091e3c6fbdcede537b6e73367fc2a8b53',
+  // 2026-11-21 BOT AUTOPOST: native-Tagalog dahon/halaman pipeline, bot
+  // Publisher (30/day cap), Video Bot routine, status/control APIs. Token stays
+  // in Render env only; hash refreshed for the new server.js.
+  'server.js': '4f2b35305171860069b1a9225ad134efe9dbd3a424b0d41477b2434a4033bfbf',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -122,7 +125,7 @@ const protectedHashes = {
   // 2026-11-21 v73: cache-bust office-v9.js to ?v=73 for the whole-HQ facade,
   // roofline, entry portal, zone portals, floor medallions and 4D light halos.
   // 2026-11-21 v74: cache-bust to ?v=74 for the colorful whole-map living ground.
-  'public/index.html': '639b6a6d2f7f35707d5ed29d3471db3310c8c5f3046c9e6eb5f2a5ffd3d982ca',
+  'public/index.html': 'ebe3e282d1505d941d889d08c29d4c5899a1d6a382f093d4b8b2e439333df0a2',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -212,7 +215,7 @@ const protectedHashes = {
   'public/phaseB.js': 'b2c1e2d04d593901758ecbb262c074772dd2342c6c67c35e30d4ce348f082c63',
   // 2026-11-21: reconciled stale baseline — phaseC.js has not changed since v8
   // (95674af); the recorded digest was wrong, the file itself is untouched.
-  'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
+  'public/phaseC.js': '63623d428a4d36dec2f3e5c32a5683185185e20b8fdff66c7f7de684864c21cc',
   'public/phaseD.js': '213dd08761415bb09a0ebfe63e9dee19e8828baf8486af76ec60263fdaaf972e',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
