@@ -250,6 +250,7 @@ dialog::backdrop{background:#000a}
         <button id="camZoomOut" title="Zoom out" aria-label="Zoom out">－</button>
         <button id="camZoomIn" title="Zoom in" aria-label="Zoom in">＋</button>
         <button id="camFit" title="Show the whole campus" aria-label="Fit entire campus">⛶ Fit campus</button>
+        <button id="camTycoon" title="Tycoon view - top-down overview para makita ang mga bots" aria-label="Tycoon view">🏗 Tycoon</button>
         <button id="camReset" title="Reset camera" aria-label="Reset camera">↺ Reset</button>
         <button id="camSave" title="Save camera position" aria-label="Save camera position">☆ Save view</button>
         <button id="camLoad" title="Restore saved camera position" aria-label="Load saved camera position">★ Load</button>
@@ -619,7 +620,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=68"></script>
+<script src="/office-v9.js?v=69"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -3201,6 +3202,7 @@ function setOfficeCamera(p){
 function officeCameraZoom(factor){if(!cam3d)return;cam3d.r=Math.max(2.5,Math.min(150,cam3d.r*factor));cam3d.lastUser=Date.now();}
 function fitOfficeCampus(){setOfficeCamera({x:23,y:1.2,z:17,theta:.38,phi:.54,r:50});}
 function resetOfficeCamera(){setOfficeCamera({x:23,y:1.2,z:17,theta:.32,phi:.47,r:43});}
+function tycoonOfficeView(){setOfficeCamera({x:8,y:1.2,z:7,theta:.35,phi:1.12,r:32});}
 function saveOfficeCamera(){
   if(!cam3d)return;
   try{localStorage.setItem('ccOfficeCameraV1',JSON.stringify({x:cam3d.target.x,y:cam3d.target.y,z:cam3d.target.z,theta:cam3d.theta,phi:cam3d.phi,r:cam3d.r}));toast('📷 Na-save ang camera position.');}
@@ -3230,7 +3232,7 @@ function drawOfficeMiniMap(){
 function bindOfficeCameraTools(){
   const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.bound){el.addEventListener('click',fn);el.dataset.bound='1';}};
   bind('camZoomIn',()=>officeCameraZoom(1/1.22));bind('camZoomOut',()=>officeCameraZoom(1.22));
-  bind('camFit',()=>{fitOfficeCampus();toast('🏢 Buong campus ang view.');});bind('camReset',()=>{resetOfficeCamera();toast('Camera reset.');});
+  bind('camFit',()=>{fitOfficeCampus();toast('🏢 Buong campus ang view.');});bind('camTycoon',()=>{tycoonOfficeView();toast('🏗 Tycoon view - kita ang mga bots!');});bind('camReset',()=>{resetOfficeCamera();toast('Camera reset.');});
   bind('camSave',saveOfficeCamera);bind('camLoad',loadOfficeCamera);
   bind('camMiniToggle',()=>{const m=$('officeMiniMap');if(!m)return;m.classList.toggle('visible');drawOfficeMiniMap();});
   const map=$('officeMiniMap');if(map&&!map.dataset.bound){map.addEventListener('click',e=>{const r=map.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height,b=OFFICE_MAP_BOUNDS;const wx=b.minX+u*(b.maxX-b.minX),wz=b.minZ+v*(b.maxZ-b.minZ);setOfficeCamera({x:wx,y:1.2,z:wz,theta:.55,phi:.68,r:Math.min(cam3d?cam3d.r:62,48)});});map.dataset.bound='1';}

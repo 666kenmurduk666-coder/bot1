@@ -2674,10 +2674,10 @@
   }
   function sideWorlds() {
     // ---- EAST / screen-left: café court, fountain and service lane ----
-    // Kept inside the visible left wedge (x≈18..34, z≈35..45) of the user view.
+    // Kept inside the visible left wedge (x≈18..37, z≈34..46) of the user view.
     floor(17, 12, solid('#ffffff', { map: stoneTex(10, 2), roughness: .95 }), 26, .002, 40);
-    floor(4, 13, solid('#ffffff', { map: asphaltTex(8, 4), roughness: .96, metalness: .02 }), 35, .003, 40);
-    for (var ez = 35; ez <= 45; ez += 2) box(.12, .012, 1, '#e8d9a0', 35, .014, ez);
+    floor(4, 11.8, solid('#ffffff', { map: asphaltTex(8, 4), roughness: .96, metalness: .02 }), 35, .005, 40);
+    for (var ez = 35; ez <= 45; ez += 2) box(.12, .012, 1, '#e8d9a0', 35, .015, ez);
     floor(7, 7, solid('#4f9d6a', { roughness: 1 }), 23, .006, 40);
     pond(22, 40, 1.9);
     sideBuilding(18, 43, 3, 6, 3, '#5d6b84');
@@ -2698,8 +2698,8 @@
 
     // ---- WEST / screen-right: basketball court, market, EV bay and playground ----
     floor(21, 36, solid('#ffffff', { map: stoneTex(9, 2), roughness: .95 }), -11.5, .002, 25);
-    floor(5, 40, solid('#ffffff', { map: asphaltTex(9, 4), roughness: .96, metalness: .02 }), -20, .003, 25);
-    for (var wz = 8; wz <= 44; wz += 4) box(.12, .012, 1.6, '#e8d9a0', -20, .014, wz);
+    floor(5, 36.4, solid('#ffffff', { map: asphaltTex(9, 4), roughness: .96, metalness: .02 }), -20, .005, 16.1);
+    for (var wz = -1; wz <= 33; wz += 4) box(.12, .012, 1.6, '#e8d9a0', -20, .015, wz);
     floor(14, 18, solid('#4f9d6a', { roughness: 1 }), -12, .004, 26);
     basketballCourt(-12, 26);
     sideBuilding(-22, 34, 5, 9, 4, '#68778f');
