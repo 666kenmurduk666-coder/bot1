@@ -271,7 +271,14 @@ const DEFAULT_ROUTINES = [
   {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:true,lastRun:0,runs:0},
   {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:true,lastRun:0,runs:0},
   {id:'r-recap-weekly',agent:'cos',name:'Weekly recap video (Mon 8AM)',minutes:10080,enabled:true,lastRun:0,runs:0,weekday:1,hour:8,tz:'Asia/Manila',fn:'weeklyRecap'},
-  {id:'r-video-publish',agent:'video',name:'Video Bot — i-pasa ang office-skills video',minutes:1440,enabled:true,lastRun:0,runs:0,fn:'autoVideoPublish'}
+  {id:'r-video-publish',agent:'video',name:'Video Bot — i-pasa ang office-skills video',minutes:1440,enabled:true,lastRun:0,runs:0,fn:'autoVideoPublish'},
+  {id:'r-tagedit',agent:'tagedit',name:'Tagalog Editor — linisin ang content',minutes:120,enabled:true,lastRun:0,runs:0},
+  {id:'r-bantay',agent:'bantay',name:'Bantay Safety — suriin ang claims',minutes:180,enabled:true,lastRun:0,runs:0},
+  {id:'r-scout',agent:'scout',name:'Dahon Scout — bagong paksa',minutes:90,enabled:true,lastRun:0,runs:0},
+  {id:'r-videoed',agent:'videoed',name:'Video Editor — captions ng 3D office video',minutes:240,enabled:true,lastRun:0,runs:0},
+  {id:'r-publisher',agent:'publisher',name:'Publisher Bot — status ng 30/day',minutes:60,enabled:true,lastRun:0,runs:0},
+  {id:'r-analytics',agent:'analytics',name:'Analytics Bot — ulat ng publish',minutes:720,enabled:true,lastRun:0,runs:0},
+  {id:'r-community',agent:'community',name:'Community Bot — draft ng sagot sa comments',minutes:180,enabled:true,lastRun:0,runs:0}
 ];
 const savedRoutines = readJSON(ROUTINES_FILE, null);
 state.routines = Array.isArray(savedRoutines) ? savedRoutines.slice() : DEFAULT_ROUTINES.slice();
@@ -1051,6 +1058,32 @@ const PROMPTS = {
     user: (c, o) => 'Outputs ready: ' + (Object.keys(o).join(', ') || 'none') +
       '\nGive a 5-line checklist: composition validity, media paths, timeline seekability, audio levels, and the commands "npx hyperframes check", "npx hyperframes preview", "npx hyperframes render". Mention Node 22+ and FFmpeg. No intro.',
     max: 600
+  },
+  tagedit: {
+    sys: 'Ikaw ang Tagalog Editor ng Cyborg Cheebee Office. I-edit mo ang content para maging tunay, natural at katutubong Tagalog. Tanggalin ang Taglish at salitang Ingles. Panatilihin ang paksang dahon/halaman at ang edukasyonal na tono. Ibalik LAMANG ang na-edit na teksto.',
+    user: (c, o) => 'Content na i-edit:\n' + String(o.seo || o.social || o.mgr || c.mission || '').slice(0, 1200),
+    max: 700
+  },
+  bantay: {
+    sys: 'Ikaw ang Bantay Safety ng Cyborg Cheebee Office. Suriin ang content kung may pahayag na gamot, paggaling, o pangakong medikal. Kung mayroon, tanggalin at palitan ng edukasyonal na pahayag. Ibalik LAMANG ang ligtas na bersyon.',
+    user: (c, o) => 'Suriin:\n' + String(o.tagedit || o.seo || o.social || '').slice(0, 1200) +
+      '\nDisclaimer: ' + CP_DISCLAIMER,
+    max: 700
+  },
+  scout: {
+    sys: 'Ikaw ang Dahon Scout ng Cyborg Cheebee Office. Magbigay ng 5 bagong paksa tungkol sa dahon at halaman. Tunay na Tagalog, walang Taglish. Ibalik LAMANG ang JSON: {"topics":["..."]}.',
+    user: () => 'Iwasan ang mga kamakailang paksa: ' + cpRecentTopics(12).join(' | '),
+    max: 500
+  },
+  videoed: {
+    sys: 'Ikaw ang Video Editor Bot ng Cyborg Cheebee Office. Gawing 4 na maikling caption ang script para sa 3D office video. Tunay na Tagalog, walang Taglish. Ibalik LAMANG ang JSON: {"captions":["..."]}.',
+    user: (c, o) => 'Script:\n' + String(o.scout || o.social || '').slice(0, 1000),
+    max: 500
+  },
+  community: {
+    sys: 'Ikaw ang Community Bot ng Cyborg Cheebee Office. Mag-draft ng 5 maikli at magalang na sagot sa comments tungkol sa dahon at halaman. Tunay na Tagalog, edukasyonal, walang medical claims. Ibalik LAMANG ang JSON: {"replies":["..."]}.',
+    user: () => 'Paksa: pag-aalaga ng dahon at halaman sa bahay.',
+    max: 600
   }
 };
 
@@ -1314,6 +1347,22 @@ async function runAgent(id, automatic) {
     state.lastScrape = await scrapeSources();
     log(state.sources.length ? 'Scraped ' + state.sources.length + ' configured sources' : 'No live sources configured — using AI suggestions', 'scraper');
   }
+  if (id === 'publisher') {
+    autoPostDay();
+    const recent = (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video')).length;
+    return 'Publisher Bot — ' + (autoPostStore.count || 0) + '/' + AUTO_POST_DAILY_CAP + ' contents ngayon. ' +
+      'Kabuuang nai-pasa: ' + recent + '. Video: ' + (autoPostStore.videoDone ? 'nai-pasa na' : 'hintay pa ng token/PC bot') +
+      '. Token sa server: ' + (fbPageToken() ? 'handa na' : 'hindi pa na-configure');
+  }
+  if (id === 'analytics') {
+    const rows = (state.publishLedger || []).slice(0, 40);
+    const bots = rows.filter(x => x && String(x.mode || '').indexOf('auto') === 0).length;
+    const hours = {};
+    rows.forEach(x => { const h = new Date(x.at || 0).getHours(); hours[h] = (hours[h] || 0) + 1; });
+    const best = Object.keys(hours).sort((a, b) => hours[b] - hours[a])[0];
+    return 'Analytics Bot — ' + rows.length + ' publish records, ' + bots + ' galing sa bots. ' +
+      (best !== undefined ? 'Pinaka-aktibong oras: ' + best + ':00.' : 'Walang sapat na data pa.');
+  }
   const p = PROMPTS[id];
   if (!p) return 'No output for this agent.';
   if (automatic) {
@@ -1345,7 +1394,10 @@ const BOT_NAMES = {
   social: 'Social Media Manager', product: 'Product Video Bot', joker: 'Office Jester',
   fixer: 'Office Fixer',
   hflex: 'HF Script Planner', hfstory: 'HF Storyboard Bot', hfmotion: 'HF Motion Editor',
-  hfcaption: 'HF Caption & Overlay', hfrender: 'HF Render QA'
+  hfcaption: 'HF Caption & Overlay', hfrender: 'HF Render QA',
+  tagedit: 'Tagalog Editor', bantay: 'Bantay Safety', scout: 'Dahon Scout',
+  videoed: 'Video Editor Bot', publisher: 'Publisher Bot', analytics: 'Analytics Bot',
+  community: 'Community Bot'
 };
 const AGENT_META = [
   {id:'drop',n:'Drop videos',i:'🎬',c:'#3f9d6a',group:'pipeline',room:'hq',desc:'Raw clips land here.'},
@@ -1366,7 +1418,14 @@ const AGENT_META = [
   {id:'hfstory',n:'HF Storyboard Bot',i:'🎞️',c:'#8b5cf6',group:'video editor',room:'hq',desc:'Converts the script into a timed shot list and tracks.'},
   {id:'hfmotion',n:'HF Motion Editor',i:'✨',c:'#a78bfa',group:'video editor',room:'hq',desc:'Plans seekable GSAP/CSS timelines for every shot.'},
   {id:'hfcaption',n:'HF Caption & Overlay',i:'💬',c:'#38bdf8',group:'video editor',room:'hq',desc:'Writes captions, lower thirds, overlays and hashtags.'},
-  {id:'hfrender',n:'HF Render QA',i:'🧪',c:'#75f0c0',group:'video editor',room:'hq',desc:'Preflight checklist and exact HyperFrames CLI render commands.'}
+  {id:'hfrender',n:'HF Render QA',i:'🧪',c:'#75f0c0',group:'video editor',room:'hq',desc:'Preflight checklist and exact HyperFrames CLI render commands.'},
+  {id:'tagedit',n:'Tagalog Editor',i:'🖋️',c:'#38bdf8',group:'content',room:'hq',desc:'Ginagawang tunay na Pinoy ang content, walang Taglish.'},
+  {id:'bantay',n:'Bantay Safety',i:'🛡️',c:'#f59e0b',group:'content',room:'hq',desc:'Humaharang sa gamot/cure claims bago mag-post.'},
+  {id:'scout',n:'Dahon Scout',i:'🌿',c:'#7ac74f',group:'content',room:'hq',desc:'Naghanap ng bagong dahon at halaman topics.'},
+  {id:'videoed',n:'Video Editor Bot',i:'🎞️',c:'#a78bfa',group:'content',room:'hq',desc:'Gumagawa ng captions para sa 3D office video.'},
+  {id:'publisher',n:'Publisher Bot',i:'📤',c:'#f472b6',group:'content',room:'hq',desc:'Nagpapalabas ng hanggang 30 contents araw-araw.'},
+  {id:'analytics',n:'Analytics Bot',i:'📊',c:'#4fd1c5',group:'content',room:'conference',desc:'Nag-uulat ng performance at pinakamagandang oras.'},
+  {id:'community',n:'Community Bot',i:'💬',c:'#77eaff',group:'content',room:'hq',desc:'Naghahanda ng magalang na sagot sa comments.'}
 ];
 
 /* 🐾 CARE & RETURN — Tamagotchi bot battery/mood + FarmVille-style visitor garden.
