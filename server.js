@@ -137,7 +137,8 @@ const state = {
     style: 'short, friendly, hook first',
     clips: ['hook-01', 'review-02', 'unbox-03'],
     slots: ['Mon 12:00 PM', 'Tue 6:00 PM', 'Wed 8:00 PM'],
-    mission: ''
+    mission: '',
+    affiliateLink: '', platform: 'Instagram Reels', language: 'Taglish'
   }, readJSON(CONFIG_FILE, {})),
   outputs: {},
   replyIds: {},
@@ -303,6 +304,8 @@ state.memory = typeof savedState.memory === 'string' ? savedState.memory : '';
 state.chat = Array.isArray(savedState.chat) ? savedState.chat : [];
 state.products = Array.isArray(savedState.products) ? savedState.products : [];
 state.conversations = Array.isArray(savedState.conversations) ? savedState.conversations : [];
+// 🧩 CONTENT PIPELINE: ideas + scripts ng Scout/Writer (bound ang history).
+state.contentPipeline = Array.isArray(savedState.contentPipeline) ? savedState.contentPipeline.slice(0, 30) : [];
 // CYBORG MALL: mga paninda (Shopee affiliate) + orders ng mga bisita
 state.mall = Array.isArray(savedState.mall) ? savedState.mall : [];
 state.orders = Array.isArray(savedState.orders) ? savedState.orders.slice(-200) : [];
@@ -502,6 +505,7 @@ function saveStateNow() {
     tasks: state.tasks, activity: state.activity.slice(0, 200),
     memory: state.memory, chat: state.chat.slice(-100), products: state.products,
     conversations: state.conversations.slice(-20),
+    contentPipeline: state.contentPipeline.slice(0, 30),
     mall: state.mall, orders: state.orders.slice(-200),
     accounts: state.accounts, hires: state.hires,
     visitors: state.visitors, bazaarSecret: state.bazaarSecret,
@@ -1630,6 +1634,168 @@ setInterval(async () => {
   if (due) await runRoutine(due.id, false);
 }, 10000);
 
+/* ===== 🧩 CONTENT PIPELINE — Scout → Writer → Voice → Assembler → Publisher → Analyst =====
+   Isang real AI pipeline para sa affiliate + Reels content (tutorial, halamang
+   gamot, trending topics). Nasa ibabaw lang ito ng umiiral nang callGroq/callAI
+   at state — walang bagong interval, walang mabigat na dependency, at ligtas
+   sa health claims. */
+const CP_DISCLAIMER = 'For educational purposes only. Not medical advice. Consult a healthcare professional.';
+const CP_TOPIC_POOL = [
+  '3 halamang gamot na madaling itanim sa bahay',
+  'Paano gumawa ng simpleng herbal tea mula sa sariling hardin',
+  '5 kitchen ingredients na may traditional na gamit',
+  'Tutorial: tamang pagpapatuyo at pag-iimbak ng mga halaman',
+  'Trending "what I eat in a day" gamit ang lokal na ingredients',
+  'Paano gumawa ng natural na insect repellent',
+  '3 tutorial sa paggamit ng affiliate product para sa beginners',
+  'Behind the scenes: pag-aalaga ng halamang gamot sa maliit na espasyo',
+  'Trending recipe gamit ang herbs na abot-kamay',
+  'Review: affiliate product na ginamit ko sa loob ng 7 araw',
+  'Paano pumili ng tamang halaman para sa panimulang hardin',
+  'Quick tutorial: 3 gamit ng isang karaniwang halaman sa kusina'
+];
+
+function cpCleanJSON(raw) {
+  if (!raw) return null;
+  let s = String(raw).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a >= 0 && b > a) s = s.slice(a, b + 1);
+  try { return JSON.parse(s); } catch (e) { return null; }
+}
+// Shuffle-bag sa server: hindi nauulit ang topic hangga't hindi pa nauubos ang pool.
+function cpBag(key, pool) {
+  if (!cpBag._b) cpBag._b = {};
+  let b = cpBag._b[key];
+  if (!b || !b.length) {
+    b = cpBag._b[key] = pool.slice();
+    for (let i = b.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); const t = b[i]; b[i] = b[j]; b[j] = t;
+    }
+  }
+  return b.pop();
+}
+async function cpCall(sys, user, max) {
+  try { return await callGroq(sys, user, max); } catch (e) {}
+  return await callAI(sys, user, max);
+}
+function cpRecentTopics(n) {
+  return (state.contentPipeline || []).slice(0, n || 14)
+    .map(x => x && x.topic).filter(Boolean);
+}
+
+// 🔍 SCOUT — kumuha ng trending, hindi nauuulit, at ginagabayan ng 👍 ni CEO.
+async function cpGenerateIdeas(count) {
+  const cfg = state.config || {};
+  const niche = cfg.niche || 'herbal plants and tutorials';
+  const platform = cfg.platform || 'Instagram Reels';
+  const language = cfg.language || 'Taglish';
+  const liked = (state.contentPipeline || []).filter(x => x && x.rating === 1)
+    .slice(0, 5).map(x => x.topic).filter(Boolean);
+  const recent = cpRecentTopics(14);
+  const n = Math.max(1, Math.min(8, Number(count) || 6));
+  let ideas = null;
+
+  try {
+    const sys = 'You are a viral short-form content researcher. Return ONLY valid JSON, no markdown, no intro. ' +
+      'Write in natural Taglish. Niche: health education, herbal plants, tutorials, affiliate product demos. ' +
+      'SAFETY: never claim any plant or product cures a disease — use educational/experiential framing only.';
+    const user = 'Niche: ' + niche + '\nPlatform: ' + platform + '\nLanguage: ' + language + '\n' +
+      'Return JSON exactly: {"ideas":[{"topic":"short hook-ready topic","angle":"why it works","hashtags":["#tag"]}]} with exactly ' + n + ' ideas.\n' +
+      (liked.length ? 'Topics the CEO LIKED — make more like these: ' + liked.join(' | ') + '\n' : '') +
+      'DO NOT repeat these recent topics: ' + (recent.join(' | ') || 'none') + '\n' +
+      'Ideas must be trending-style tutorial or "alam ba ninyo" format, safe for Reels/TikTok.';
+    const parsed = cpCleanJSON(await cpCall(sys, user, 900));
+    if (parsed && Array.isArray(parsed.ideas)) {
+      ideas = parsed.ideas.filter(x => x && x.topic).slice(0, n).map(x => ({
+        topic: String(x.topic).slice(0, 180),
+        angle: String(x.angle || '').slice(0, 300),
+        hashtags: Array.isArray(x.hashtags) ? x.hashtags.slice(0, 8).map(String) : []
+      }));
+    }
+  } catch (e) {}
+
+  if (!ideas || !ideas.length) {
+    ideas = [];
+    const used = recent.map(s => String(s).toLowerCase());
+    let guard = 0;
+    while (ideas.length < n && guard++ < 60) {
+      const t = cpBag('topics', CP_TOPIC_POOL);
+      if (used.some(u => u === String(t).toLowerCase())) continue;
+      used.push(String(t).toLowerCase());
+      ideas.push({ topic: t, angle: 'Educational + trending format, safe for Reels.', hashtags: ['#herbs', '#tutorial', '#fyp'] });
+    }
+  }
+
+  const now = Date.now();
+  const made = ideas.map((x, i) => ({
+    id: 'cp' + now + '_' + i, t: now + i, stage: 'idea',
+    topic: String(x.topic || '').slice(0, 180),
+    angle: String(x.angle || '').slice(0, 300),
+    hashtags: Array.isArray(x.hashtags) ? x.hashtags.slice(0, 8).map(String) : [],
+    script: null, rating: 0, niche: niche, platform: platform, language: language
+  }));
+  state.contentPipeline = made.concat(state.contentPipeline || []).slice(0, 30);
+  saveStateNow();
+  log('Content pipeline: Scout found ' + made.length + ' new ideas', 'system');
+  return made;
+}
+
+// ✍️ WRITER — idea → hook/beats/shot-list/caption/CTA + disclaimer.
+async function cpWriteScript(id) {
+  const item = (state.contentPipeline || []).find(x => x && x.id === id);
+  if (!item) throw new Error('Item not found');
+  const cfg = state.config || {};
+  const link = cfg.affiliateLink || '';
+  const platform = item.platform || cfg.platform || 'Instagram Reels';
+  const language = item.language || cfg.language || 'Taglish';
+  let sc = null;
+
+  try {
+    const sys = 'You are a short-form video scriptwriter. Return ONLY valid JSON, no markdown, no intro. ' +
+      'Write in natural Taglish. SAFETY: never claim a cure; educational framing only; include the exact disclaimer string provided.';
+    const user = 'Topic: ' + item.topic + '\nAngle: ' + item.angle + '\nPlatform: ' + platform + '\nLanguage: ' + language + '\n' +
+      (link ? 'Affiliate link to mention naturally in the CTA: ' + link + '\n' : '') +
+      'Disclaimer (include exactly): ' + CP_DISCLAIMER + '\n' +
+      'Return JSON exactly: {"hook":"first 3 seconds","beats":["b1","b2","b3"],"shotList":["s1","s2","s3"],"caption":"post caption","hashtags":["#tag"],"cta":"call to action","disclaimer":"..."} Keep it under 60 spoken seconds.';
+    const parsed = cpCleanJSON(await cpCall(sys, user, 1100));
+    if (parsed && parsed.hook) sc = parsed;
+  } catch (e) {}
+
+  if (!sc) {
+    sc = {
+      hook: 'Alam ba ninyo na ' + item.topic + ' ay pwede nang gawin sa bahay?',
+      beats: ['Ito ang basics — simple at hindi nakakalito.', 'Ganito ang tamang paraan, step by step.', 'Ito ang resulta at mga tips para hindi mag-error.'],
+      shotList: ['Close-up ng ingredients / product', 'Demo ng hakbang (top-down shot)', 'Resulta + natural reaction'],
+      caption: item.topic + ' — tutorial na pwede ninyong subukan.',
+      hashtags: (item.hashtags || []).length ? item.hashtags.slice(0, 6) : ['#tutorial', '#herbs', '#fyp', '#affiliate'],
+      cta: link ? 'Check ang link sa bio para sa gamit na ginamit ko!' : 'I-save ang video para hindi mawala!',
+      disclaimer: CP_DISCLAIMER
+    };
+  }
+  item.script = {
+    hook: String(sc.hook || '').slice(0, 240),
+    beats: (Array.isArray(sc.beats) ? sc.beats : []).slice(0, 5).map(x => String(x).slice(0, 240)),
+    shotList: (Array.isArray(sc.shotList) ? sc.shotList : []).slice(0, 6).map(x => String(x).slice(0, 180)),
+    caption: String(sc.caption || '').slice(0, 1200),
+    hashtags: (Array.isArray(sc.hashtags) ? sc.hashtags : []).slice(0, 10).map(x => String(x).slice(0, 40)),
+    cta: String(sc.cta || '').slice(0, 300),
+    disclaimer: CP_DISCLAIMER
+  };
+  item.stage = 'script';
+  saveStateNow();
+  log('Content pipeline: script written for "' + item.topic + '"', 'system');
+  return item;
+}
+
+// 📊 ANALYST — ang 👍/👎 ay dumidiretso sa susunod na Scout prompt.
+function cpRate(id, rating) {
+  const item = (state.contentPipeline || []).find(x => x && x.id === id);
+  if (!item) return null;
+  item.rating = rating === 1 ? 1 : rating === -1 ? -1 : 0;
+  saveStateNow();
+  return item;
+}
+
 /* 💬 Watercooler chatter now runs on the SERVER, so the bots keep talking even
    when no CEO tab is open / the CEO session expired. generateConversation()
    reuses the last conversation for 3 minutes so the comic bubbles stay alive,
@@ -1971,6 +2137,8 @@ function publicState() {
     sources: state.sources, memory: state.memory, chat: state.chat, products: state.products,
     mall: state.mall,
     conversations: state.conversations,
+    // 🧩 Content pipeline — 12 lang para maliit ang /api/state poll.
+    contentPipeline: (state.contentPipeline || []).slice(0, 12),
     activity: state.activity, stopped: state.stopped, running: state.running,
     // P0/P2: drift/quota/agent errors + governance ledgers — no secrets included.
     health: systemHealth(),
@@ -2622,7 +2790,7 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/config' && req.method === 'POST') {
       const b = await body(req);
-      ['niche', 'style', 'mission'].forEach(k => { if (typeof b[k] === 'string') state.config[k] = b[k]; });
+      ['niche', 'style', 'mission', 'affiliateLink', 'platform', 'language'].forEach(k => { if (typeof b[k] === 'string') state.config[k] = b[k]; });
       ['clips', 'slots'].forEach(k => { if (Array.isArray(b[k])) state.config[k] = b[k].filter(Boolean).slice(0, 10); });
       if (Array.isArray(b.sources)) {
         state.sources = b.sources.map(s => String(s).trim()).filter(Boolean).slice(0, 6);
@@ -2714,6 +2882,30 @@ const server = http.createServer(async (req, res) => {
       const b = await body(req);
       try { return sendJSON(res, 200, { ok: true, conversation: await generateConversation(Array.isArray(b.agents) ? b.agents : null) }); }
       catch (e) { return sendJSON(res, 200, { ok: false, error: e.message }); }
+    }
+
+    // 🧩 CONTENT PIPELINE — iisang endpoint para sa Scout/Writer/Analyst.
+    // CEO-gated na ito automatically (POST /api/*), at walang sariling timer.
+    if (p === '/api/content-pipeline' && req.method === 'POST') {
+      const b = await body(req);
+      const action = String(b.action || 'ideas');
+      try {
+        if (action === 'ideas') {
+          const items = await cpGenerateIdeas(b.count);
+          return sendJSON(res, 200, { ok: true, items: items, config: state.config });
+        }
+        if (action === 'script') {
+          const item = await cpWriteScript(String(b.id || ''));
+          return sendJSON(res, 200, { ok: true, item: item });
+        }
+        if (action === 'rate') {
+          const item = cpRate(String(b.id || ''), Number(b.rating) || 0);
+          return sendJSON(res, 200, { ok: !!item, item: item });
+        }
+        return sendJSON(res, 400, { ok: false, error: 'Unknown action' });
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message });
+      }
     }
 
     if (p === '/api/agent' && req.method === 'POST') {

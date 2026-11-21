@@ -452,6 +452,15 @@ dialog::backdrop{background:#000a}
   <!-- LEADS -->
   <section class="view" id="v-leads"><div class="card"><h2>Leads & outreach</h2><div class="bar"><button class="run" id="outreachRun">Generate outreach drafts</button></div><div class="out" id="leadsOut">No drafts yet.</div></div></section>
 
+  <!-- CONTENT PIPELINE (2D lang — walang WebGL, walang bagong timer) -->
+  <section class="view" id="v-contentpipeline"><div class="card">
+    <h2>🧩 Content Pipeline <span class="hint">Scout → Writer → Voice → Assembler → Publisher → Analyst</span></h2>
+    <div class="hint" id="pipeCfg"></div>
+    <div class="bar"><button class="run" id="cpIdeas">🔍 Scout: hanapin ang trends</button><button id="cpProfile">⚙ Setup: niche / link / platform</button></div>
+    <div class="hint">💡 Pindutin ang 👍/👎 — ito ang Analytics loop para sa susunod na Scout suggestions.</div>
+    <div id="pipeOut"></div>
+  </div></section>
+
   <!-- REPORTS -->
   <section class="view" id="v-reports"><div class="grid">
     <div class="card"><h2>Manager report</h2><div class="out" id="rptMgr">No report yet.</div></div>
@@ -599,6 +608,8 @@ dialog::backdrop{background:#000a}
   <div class="bar"><button class="run" id="saveSetup">Save</button><button onclick="this.closest('dialog').close()">Close</button></div></dialog>
 <dialog id="profile"><h2>Company profile</h2>
   <label>Niche</label><input id="pn"><label>Caption style</label><input id="ps">
+  <label>Affiliate link (ilalagay sa CTA)</label><input id="paf" placeholder="https://…">
+  <label>Platform</label><input id="ppf" placeholder="Instagram Reels"><label>Language</label><input id="plg" placeholder="Taglish">
   <label>Clips (one per line)</label><textarea id="pc" rows="4"></textarea>
   <label>Posting slots (one per line)</label><textarea id="pt" rows="4"></textarea>
   <label>Community / source URLs for the Scraper (one per line)</label><textarea id="pso" rows="3" placeholder="https://…"></textarea>
@@ -608,14 +619,14 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=65"></script>
+<script src="/office-v9.js?v=66"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
 const ITEMS=[['desk','🪑 Desk'],['ceo_desk','💼 CEO desk'],['holo','🔮 Holo core'],['portal','🚪 Portal'],['stage','🎤 Stage'],['neon','✨ Neon strip'],['table','🍽️ Table'],['chair','🪑 Chair'],['coffee','☕ Coffee'],['counter','✨ Counter'],['vending','✨ Vending'],['pool','✨ Pool'],['arcade','✨ Arcade'],['hoop','✨ Hoop'],['court','🏀 Court'],['bench','🛋️ Bench'],['treadmill','🏃 Treadmill'],['weights','🏋️ Weights'],['beanbag','✨ Beanbag'],['plant','✨ Plant'],['server','✨ Server'],['whiteboard','✨ Whiteboard'],['sofa','✨ Sofa'],['bookshelf','✨ Shelf'],['monitor','✨ Monitor']];
 const MENU=[
  {s:'WORK',items:[['office','▣','Office'],['chat','💬','CEO Chat']]},
- {s:'TEAM',items:[['workflows','⚙','My Workflows'],['agents','♙','My AI Agents'],['products','🎬','Product Videos']]},
+ {s:'TEAM',items:[['workflows','⚙','My Workflows'],['agents','♙','My AI Agents'],['products','🎬','Product Videos'],['contentpipeline','🧩','Content Pipeline']]},
  {s:'MANAGE',items:[['approvals','☑','Approvals','appr'],['dashboard','▣','Dashboard']]}
 ];
 let S=null,view='office',selItem=null,selRoom='hq',editRoom='hq',drag=null,selEditItem=null;
@@ -818,6 +829,70 @@ function renderProducts(){
   document.querySelectorAll('[data-prate]').forEach(b=>b.onclick=async()=>{const[id,rt]=b.dataset.prate.split('|');const r=await api('/api/feedback',{method:'POST',body:JSON.stringify({agent:'product',rating:rt})});toast(r.ok?'Rated':'Failed')});
   document.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=async()=>{await api('/api/product/delete',{method:'POST',body:JSON.stringify({id:b.dataset.pdel})});await refresh()});
 }
+/* 🧩 CONTENT PIPELINE — 2D, walang WebGL at walang sariling interval.
+   Bumubasa lang mula sa S (ang iisang /api/state poll na 12s na). */
+function renderContentPipeline(){
+  const cfg=S.config||{},items=S.contentPipeline||[];
+  const links=cfg.affiliateLink?esc(cfg.affiliateLink):'<span style="color:#e2694f">not set — ⚙ Setup</span>';
+  $('pipeCfg').innerHTML='Niche: <b>'+esc(cfg.niche||'—')+'</b> · Platform: <b>'+esc(cfg.platform||'Instagram Reels')+'</b> · Language: <b>'+esc(cfg.language||'Taglish')+'</b> · Affiliate: '+links;
+  const likes=items.filter(x=>x.rating===1).length;
+  const workers=['🔍 Scout','✍️ Writer','🗣️ Voice','🎬 Assembler','📤 Publisher','📊 Analyst · '+likes+' 👍'];
+  $('pipeOut').innerHTML=
+    '<div class="bar" style="flex-wrap:wrap;gap:6px;margin:10px 0">'+workers.map(w=>'<span class="status">'+esc(w)+'</span>').join('')+'</div>'+
+    (items.length?items.map(it=>{
+      const sc=it.script||{};
+      const beats=(sc.beats||[]).map((b,i)=>'<div class="row"><b>'+(i+1)+'.</b> '+esc(b)+'</div>').join('');
+      const shots=(sc.shotList||[]).map(s=>'<div class="row">• '+esc(s)+'</div>').join('');
+      const body=it.script?
+        '<div class="out" style="max-height:340px">'+
+          '<b>🪝 Hook (0–3s):</b> '+esc(sc.hook||'')+'<br>'+
+          '<b>🎙️ Beats:</b><br>'+(beats||'—')+'<br>'+
+          '<b>🎬 Shots:</b><br>'+(shots||'—')+'<br>'+
+          '<b>📣 CTA:</b> '+esc(sc.cta||'')+'<br>'+
+          '<b>⚠️ Disclaimer:</b> '+esc(sc.disclaimer||'')+
+        '</div>'
+        :'<div class="hint">Idea pa lang — pindutin ang ✍️ Writer para gawing script.</div>';
+      return '<div class="card" style="margin:8px 0">'+
+        '<div class="bar"><span class="status '+(it.script?'done':'')+'">'+(it.script?'script ready':'idea')+'</span><b>'+esc(it.topic)+'</b>'+(it.angle?'<span class="hint"> — '+esc(it.angle)+'</span>':'')+'</div>'+
+        body+
+        '<div class="bar" style="flex-wrap:wrap;gap:5px">'+
+          (it.script?'':'<button data-cpw="'+esc(it.id)+'">✍️ Writer</button>')+
+          '<button data-cpv="'+esc(it.id)+'">🗣️ Voice</button>'+
+          '<button data-cpc="'+esc(it.id)+'">📋 Copy post</button>'+
+          '<button data-cpu="'+esc(it.id)+'">'+(it.rating===1?'👍 Liked':'👍 Like')+'</button>'+
+          '<button data-cpd="'+esc(it.id)+'">'+(it.rating===-1?'👎 Skipped':'👎 Skip')+'</button>'+
+        '</div></div>';
+    }).join(''):'<p class="hint">Walang ideas pa. Pindutin ang 🔍 Scout para maghanap ng trending topics.</p>');
+
+  const find=id=>items.find(x=>x.id===id);
+  document.querySelectorAll('[data-cpw]').forEach(b=>b.onclick=async()=>{
+    toast('✍️ Writer is writing…');
+    const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'script',id:b.dataset.cpw})});
+    toast(r.ok?'Script ready!':'Error: '+(r.error||'failed'));
+    await refresh();
+  });
+  document.querySelectorAll('[data-cpv]').forEach(b=>b.onclick=()=>{
+    const it=find(b.dataset.cpv);
+    const sc=it&&it.script;
+    if(!sc)return toast('Wala pang script — Writer muna');
+    if(typeof voiceOn!=='undefined'&&!voiceOn)return toast('I-on muna ang 🔊 Voice sa kanan-baba');
+    const text=[sc.hook].concat(sc.beats||[sc.cta||'']).join(' ');
+    if(typeof speak==='function'){speak(text,'writer',true);toast('🗣️ Playing…')}
+  });
+  document.querySelectorAll('[data-cpc]').forEach(b=>b.onclick=()=>{
+    const it=find(b.dataset.cpc),sc=it&&it.script;
+    if(!sc)return toast('Wala pang script — Writer muna');
+    const post=[sc.hook,...(sc.beats||[]),'',sc.caption||'',(sc.hashtags||[]).join(' '),'',sc.cta||'',cfg.affiliateLink||'','',sc.disclaimer||''].join('\n');
+    navigator.clipboard.writeText(post).then(()=>toast('📋 Post package copied!')).catch(()=>toast('Copy failed'));
+  });
+  const rate=async(id,v)=>{
+    const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'rate',id:id,rating:v})});
+    toast(r.ok?(v===1?'👍 Na-save — Scout will follow this':'👎 Na-save'):'Failed');
+    await refresh();
+  };
+  document.querySelectorAll('[data-cpu]').forEach(b=>b.onclick=()=>rate(b.dataset.cpu,1));
+  document.querySelectorAll('[data-cpd]').forEach(b=>b.onclick=()=>rate(b.dataset.cpd,-1));
+}
 function renderAgents(){
   $('agentSummary').textContent=(S.agents||[]).length+' agents · '+Object.keys(S.outputs||{}).length+' outputs ready · '+(S.running?'working…':'idle');
   $('agentGrid').innerHTML=(S.agents||[]).map(a=>{
@@ -929,6 +1004,7 @@ function renderView(){
   if(view==='workflows')renderRoutines();
   if(view==='agents')renderAgents();
   if(view==='products')renderProducts();
+  if(view==='contentpipeline')renderContentPipeline();
   if(view==='layout')drawEditor();
   wireTasks();
 }
@@ -966,8 +1042,8 @@ function renderAll(){
 if($('search'))$('search').oninput=renderMenu;
 $('setupBtn').onclick=$('setupBtn2').onclick=()=>{$('key').value='';$('model').value=S.setup.model;$('provider').value=S.setup.provider;$('baseurl').value=S.setup.baseUrl||'';$('setup').showModal()};
 $('saveSetup').onclick=async()=>{const b={provider:$('provider').value,model:$('model').value.trim(),baseUrl:$('baseurl').value.trim()};if($('key').value.trim())b.apiKey=$('key').value.trim();const r=await api('/api/settings',{method:'POST',body:JSON.stringify(b)});$('setup').close();toast(r.ok?'Saved':'Error');await refresh()};
-$('profileBtn').onclick=$('profileBtn2').onclick=()=>{$('pn').value=S.config.niche;$('ps').value=S.config.style;$('pc').value=S.config.clips.join('\n');$('pt').value=S.config.slots.join('\n');$('pso').value=(S.sources||[]).join('\n');$('profile').showModal()};
-$('saveProfile').onclick=async()=>{const lines=v=>v.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,10);const r=await api('/api/config',{method:'POST',body:JSON.stringify({niche:$('pn').value.trim(),style:$('ps').value.trim(),clips:lines($('pc').value),slots:lines($('pt').value),sources:lines($('pso').value)})});$('profile').close();toast(r.ok?'Profile saved':'Error');await refresh()};
+$('profileBtn').onclick=$('profileBtn2').onclick=()=>{$('pn').value=S.config.niche;$('ps').value=S.config.style;$('paf').value=S.config.affiliateLink||'';$('ppf').value=S.config.platform||'Instagram Reels';$('plg').value=S.config.language||'Taglish';$('pc').value=S.config.clips.join('\n');$('pt').value=S.config.slots.join('\n');$('pso').value=(S.sources||[]).join('\n');$('profile').showModal()};
+$('saveProfile').onclick=async()=>{const lines=v=>v.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,10);const r=await api('/api/config',{method:'POST',body:JSON.stringify({niche:$('pn').value.trim(),style:$('ps').value.trim(),affiliateLink:$('paf').value.trim(),platform:$('ppf').value.trim(),language:$('plg').value.trim(),clips:lines($('pc').value),slots:lines($('pt').value),sources:lines($('pso').value)})});$('profile').close();toast(r.ok?'Profile saved':'Error');await refresh()};
 $('sendOrder').onclick=async()=>{const o=$('order').value.trim();if(!o)return toast('Type an order first');const r=await api('/api/ceo/order',{method:'POST',body:JSON.stringify({order:o})});if(r.ok){$('order').value='';toast('Planned '+r.tasks.length+' tasks')}else toast('Error: '+r.error);await refresh()};
 $('runTasks').onclick=async()=>{const r=await api('/api/tasks/run',{method:'POST',body:'{}'});if(!r.ok)toast(r.reason||'Busy');await refresh()};
 $('runAll').onclick=async()=>{toast('Running pipeline…');const r=await api('/api/run-all',{method:'POST',body:'{}'});toast(r.ok?'Pipeline finished':(r.reason||'Busy'));await refresh()};
@@ -975,6 +1051,8 @@ $('stopBtn').onclick=async()=>{await api('/api/stop',{method:'POST',body:'{}'});
 $('clearBtn').onclick=async()=>{await api('/api/reset',{method:'POST',body:'{}'});toast('Cleared');await refresh()};
 $('convene').onclick=$('cosRun').onclick=async()=>{const r=await api('/api/agent',{method:'POST',body:JSON.stringify({id:'cos'})});toast(r.ok?'Board convened':'Error: '+r.error);await refresh()};
 $('outreachRun').onclick=async()=>{const r=await api('/api/agent',{method:'POST',body:JSON.stringify({id:'outreach'})});toast(r.ok?'Drafts ready':'Error: '+r.error);await refresh()};
+if($('cpIdeas'))$('cpIdeas').onclick=async()=>{toast('🔍 Scout is scanning trends…');const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'ideas',count:6})});toast(r.ok?('Scout found '+r.items.length+' ideas'):('Error: '+(r.error||'failed')));await refresh()};
+if($('cpProfile'))$('cpProfile').onclick=()=>$('profile').showModal();
 $('radd').onclick=async()=>{const arr=JSON.parse(JSON.stringify(S.routines));arr.push({id:'r-'+Date.now(),name:$('rn').value.trim()||'New routine',agent:$('ra').value,minutes:Math.max(1,Number($('rm').value)||60),enabled:true,lastRun:0,runs:0});$('rn').value='';await api('/api/routines',{method:'POST',body:JSON.stringify({routines:arr})});await refresh()};
 $('rsave').onclick=saveRoutines;
 $('chatSend').onclick=async()=>{const m=$('chatIn').value.trim();if(!m)return;$('chatIn').value='';const r=await api('/api/chat',{method:'POST',body:JSON.stringify({message:m})});if(!r.ok)toast('Error: '+r.error);await refresh()};
@@ -5017,7 +5095,7 @@ $('mmoChatHead').onclick=mmoToggle;
 })();
 mmoLog('🌐 SYSTEM','Maligayang pagdating! Enter = mag-type, sumasagot ang bots.','#e8b04a');
 /* 💬 Ipakita rin ang server-generated watercooler talk sa visible world chat. */
-let shownConvId=null;
+let shownConvId=null,shownPipeId=null;
 setInterval(()=>{
   try{
     const c=S&&S.conversations&&S.conversations[0];
@@ -5031,6 +5109,13 @@ setInterval(()=>{
         speak(l.text,l.id,i===0);
       }catch(e){}
     },i*850));
+    // 🧩 Bagong content idea → isang linya lang sa world chat (ID gate + dedupe).
+    const it=S&&S.contentPipeline&&S.contentPipeline[0];
+    if(it&&it.id&&it.id!==shownPipeId){
+      shownPipeId=it.id;
+      const txt=String(it.topic||'').slice(0,64);
+      if(txt)mmoLog('🔍 Scout','Bagong idea: '+txt,'#8fd8a4');
+    }
   }catch(e){}
 },4000);
 /* ---------- boot ---------- */
