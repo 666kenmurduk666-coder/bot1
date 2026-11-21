@@ -970,7 +970,7 @@
       });
     });
     g2.position.set(x, 0, z); addO(g2);
-    fx.cars.push({ g: g2, dir: dir, speed: .9 + Math.random() * .5 });
+    fx.cars.push({ g: g2, dir: dir, speed: .9 + Math.random() * .5, phase: x * 0.7 + z * 0.31 });
   }
   function bus(x, z, dir) {
     shadow(x, z, 2.7, .8, .13);
@@ -996,7 +996,7 @@
       head.position.set(dir * 2.57, .78, dz); head.userData.v9 = true; g2.add(head);
     });
     g2.position.set(x, 0, z); addO(g2);
-    fx.cars.push({ g: g2, dir: dir, speed: .55 + Math.random() * .2 });
+    fx.cars.push({ g: g2, dir: dir, speed: .55 + Math.random() * .2, phase: x * 0.5 + z * 0.27 });
   }
 
   /* ---------- v16 cinematic detail ---------- */
@@ -2576,7 +2576,7 @@
     g2.scale.setScalar(1.15);
     g2.position.set(4, 11, 22); g2.rotation.y = .18; addO(g2);
     fx.planes.push({ g: g2, x0: 4, x1: 42, y: 11, z: 22, sp: 2.6,
-      beacon: beacon, trails: trails });
+      beacon: beacon, trails: trails, phase: 1.7 });
   }
   function sideWorlds() {
     // ---- EAST / screen-left: café court, fountain and service lane ----
@@ -3399,9 +3399,12 @@
       }
       fx.birds.forEach(function (a) {
         a.g.position.x = -12 + ((now / 1000 * a.sp + a.p * 4) % 64);
-        a.g.position.y = a.base + Math.sin(now / 900 + a.p) * .25;
-        if (a.g.children[0]) a.g.children[0].rotation.z = .3 + Math.sin(now / 160 + a.p) * .25;
-        if (a.g.children[1]) a.g.children[1].rotation.z = -.3 - Math.sin(now / 160 + a.p) * .25;
+        a.g.position.y = a.base + Math.sin(now / 900 + a.p) * .25 + Math.sin(now / 2300 + a.p * 1.3) * .07;
+        a.g.rotation.z = Math.sin(now / 700 + a.p) * .06;
+        a.g.rotation.x = Math.sin(now / 1200 + a.p) * .035;
+        var flap = .3 + Math.sin(now / 160 + a.p) * .25 + Math.sin(now / 430 + a.p) * .05;
+        if (a.g.children[0]) a.g.children[0].rotation.z = flap;
+        if (a.g.children[1]) a.g.children[1].rotation.z = -flap;
       });
       fx.scan.forEach(function (a) {
         a.m.position.y = .32 + ((now / 1800 + a.p * 2) % 1.7);
@@ -3442,6 +3445,10 @@
         a.g.position.x += a.dir * a.speed * dt * 3.5;
         if (a.dir > 0 && a.g.position.x > 58) a.g.position.x = -12;
         if (a.dir < 0 && a.g.position.x < -12) a.g.position.x = 58;
+        var ph = a.phase || 0;
+        a.g.position.y = Math.sin(now / 380 + ph) * 0.01 + Math.sin(now / 110 + ph * 2.3) * 0.002;
+        a.g.rotation.z = Math.sin(now / 520 + ph) * 0.008;
+        a.g.rotation.x = Math.sin(now / 760 + ph * 1.3) * 0.004;
       });
       fx.peds.forEach(function (a) {
         a.g.position.x += a.dir * a.speed * dt * 1.35;
@@ -3452,6 +3459,9 @@
         if (a.legs[1]) a.legs[1].rotation.x = -sw;
         if (a.arms[0]) a.arms[0].rotation.x = -sw * .8;
         if (a.arms[1]) a.arms[1].rotation.x = sw * .8;
+        a.g.position.y = Math.abs(Math.sin(now / 220 + a.phase)) * 0.03;
+        a.g.rotation.z = Math.sin(now / 640 + a.phase) * 0.028;
+        a.g.rotation.x = Math.sin(now / 820 + a.phase) * 0.012;
       });
       // Basketball mini-bots: ellipse cuts, leg/arm swings, dribble and a shot arc.
       if (fx.ballers.length) {
@@ -3463,6 +3473,8 @@
           a.g.position.z = a.baseZ + Math.cos(pt * .83) * a.rz;
           a.g.position.y = .02 + Math.abs(Math.sin(now / 150 + a.phase)) * .08;
           if (vx * vx + vz * vz > .0001) a.g.rotation.y = Math.atan2(vx, vz);
+          a.g.rotation.x = Math.sin(now / 420 + a.phase) * 0.025;
+          a.g.rotation.z = Math.sin(now / 560 + a.phase) * 0.03;
           var sw = Math.sin(now / 140 + a.phase) * .55;
           if (a.legs[0]) a.legs[0].rotation.x = sw;
           if (a.legs[1]) a.legs[1].rotation.x = -sw;
@@ -3513,12 +3525,15 @@
       fx.planes.forEach(function (a) {
         a.g.position.x += a.sp * dt;
         if (a.g.position.x > a.x1) a.g.position.x = a.x0;
-        a.g.position.y = a.y + Math.sin(now / 1300) * .18;
-        a.g.position.z = a.z + Math.sin(now / 2100) * .6;
+        var ph = a.phase || 0;
+        a.g.position.y = a.y + Math.sin(now / 1300) * .18 + Math.sin(now / 3700 + ph) * .05;
+        a.g.position.z = a.z + Math.sin(now / 2100) * .6 + Math.sin(now / 5200 + ph) * .08;
         a.g.rotation.z = -.035 + Math.sin(now / 1800) * .045;
+        a.g.rotation.x = Math.sin(now / 2400 + ph) * .012;
+        a.g.rotation.y = Math.sin(now / 4100 + ph) * .01;
         if (a.beacon) a.beacon.material.opacity = .25 + .7 * (.5 + .5 * Math.sin(now / 230));
         if (a.trails) a.trails.forEach(function (t, i) {
-          t.material.opacity = .12 + .06 * (.5 + .5 * Math.sin(now / 700 + i));
+          t.material.opacity = .12 + .06 * (.5 + .5 * Math.sin(now / 700 + i)) + .03 * (.5 + .5 * Math.sin(now / 1700 + i + ph));
         });
       });
       if (fx.sky && fx.sky.m) fx.sky.m.position.x = 23 + Math.sin(now / 17000) * 1.5;
@@ -3536,9 +3551,17 @@
           });
         });
       }
+      if (fx.crops && fx.crops.length) {
+        fx.crops.forEach(function (a) {
+          var ph = a.idx * 1.7 + a.x * 0.13 + a.z * 0.11;
+          a.m.rotation.z = Math.sin(now / 1400 + ph) * 0.045;
+          a.m.rotation.x = Math.cos(now / 1700 + ph) * 0.03;
+        });
+      }
       if (fx.sun) {
         var sp = 1 + .04 * Math.sin(now / 1900);
         fx.sun.scale.set(11 * sp, 11 * sp, 1);
+        if (fx.sun.material) fx.sun.material.opacity = .32 + .08 * (.5 + .5 * Math.sin(now / 2400));
       }
     } catch (e) {}
     updateBubbles(now);

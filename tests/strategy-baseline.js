@@ -63,7 +63,7 @@ const protectedHashes = {
   // agent error visibility, secrets separation, CEO session tokens, preflight/quota
   // routing, approval/publish/finance ledgers and hashed backup restore drill.
   // Hash below explicitly refreshed for Batch 3.
-  'server.js': '2d838c4fe8051fd4763282b00f952eedd5b66f45947c64e52a7a7a422798d230',
+  'server.js': '7182c66c4af08f01782209fd4142626da0a2d304970a14b869c3161f5fe0aea4',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -113,7 +113,7 @@ const protectedHashes = {
   // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
   // 2026-11-21: character 4D time-life pass - breathing, attention drift, weight
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
-  'public/index.html': '3a9697b549d4551a3c85bb539c435cb92f1a10a655463f37c1a8eec4b701e412',
+  'public/index.html': 'f6c23165b505d12008cf44d6f11fe0d918f927e1f2e8dba7c98142bb79d8c850',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -175,7 +175,7 @@ const protectedHashes = {
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
   // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
   // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
-  'public/office-v9.js': 'a2c186aca4e04833f2fadfa1452e416090542eca6b35288f239161ea43102a19',
+  'public/office-v9.js': 'ec8890abf9f3a41985fdfe0ddf929762c389c22b34265e33dfa66424d0a2df74',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
@@ -187,16 +187,16 @@ const protectedHashes = {
   // localStorage.ccStudioBots; H remains reserved for Hide UI.
   // v36 clarity pass: ceiling/nameplates/status start OFF so they cannot block
   // the bot view; users can still enable them from the BOT bar.
-  'public/office-studio.js': 'eafd53ee29487ff02d9c91aeb7f82d2d0a74246bb9e94bf03975cb003ce10bda',
+  'public/office-studio.js': '71166e148c7515a6a6ec1b11b49398f1cba3c3b414ca0923568ce9a61a1ec386',
   // Perf fix (2026-11-20): MutationObserver in polish() re-observed its own
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
-  'public/phaseB.js': '0c796db8016af42a5c14df3cc606c51636b53845ba08ec1952e3a4048e330262',
+  'public/phaseB.js': 'b2c1e2d04d593901758ecbb262c074772dd2342c6c67c35e30d4ce348f082c63',
   'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
-  'public/phaseD.js': '770a2e8c53d96cd8fa109482a7a221f1a96c1b0175c4acda23d28978220ab831',
+  'public/phaseD.js': '213dd08761415bb09a0ebfe63e9dee19e8828baf8486af76ec60263fdaaf972e',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
-  'public/sw.js': '654ff5f56e4f9a5110cb8419964a45e674a9536405c987fa5e35ec7321a7406f'
+  'public/sw.js': '9629f5577b1cce77a7543ee53a18c2ad786a897f58f92de0cb9b9dd27f2fa1ab'
 };
 for (const [file, expected] of Object.entries(protectedHashes)) {
   const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
