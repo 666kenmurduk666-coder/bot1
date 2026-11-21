@@ -2598,6 +2598,33 @@
     ball.shadow = shadow(cx, cz, .24, .16, .22);
     fx.ball = ball;
   }
+  function tennisCourt(cx, cz) {
+    var lineMat = solid('#f7f4e9', { transparent: true, opacity: .9, roughness: .9 });
+    function stripe(w, d, x, z) { return box(w, .012, d, lineMat, x, .016, z); }
+    // apron + hard court surface
+    floor(11.4, 20.4, solid('#ffffff', { map: asphaltTex(3, 5), roughness: .96 }), cx, .004, cz);
+    floor(10.2, 19.2, solid('#3f8f63', { roughness: .82, metalness: .02 }), cx, .007, cz);
+    // outer doubles lines
+    stripe(10.2, .08, cx, cz - 9.6); stripe(10.2, .08, cx, cz + 9.6);
+    stripe(.08, 19.2, cx - 5.1, cz); stripe(.08, 19.2, cx + 5.1, cz);
+    // singles sidelines
+    stripe(.07, 19.2, cx - 4.1, cz); stripe(.07, 19.2, cx + 4.1, cz);
+    // service lines + center service line
+    stripe(8.2, .07, cx, cz - 4.2); stripe(8.2, .07, cx, cz + 4.2);
+    stripe(.07, 8.4, cx, cz);
+    // center marks
+    stripe(.07, .45, cx, cz - 9.38); stripe(.07, .45, cx, cz + 9.38);
+    // net posts + net
+    [-5.5, 5.5].forEach(function (px) {
+      cyl(.05, 1.05, '#4a5668', cx + px, .525, cz);
+      box(.12, .08, .12, '#7d8b9a', cx + px, 1.03, cz);
+    });
+    var net = new THREE.Mesh(new THREE.BoxGeometry(11.0, .72, .04),
+      solid('#eaf0f4', { transparent: true, opacity: .55, roughness: .95 }));
+    net.position.set(cx, .64, cz); net.userData.v9 = true; addO(net);
+    var tape = box(11.0, .05, .06, '#f4f6f8', cx, 1.0, cz);
+    tape.userData.v9 = true;
+  }
   function airplane() {
     var g2 = new THREE.Group();
     var shell = solid('#f2f5f7', { metalness: .45, roughness: .3 });
@@ -2725,6 +2752,9 @@
     [-22, -4, -2].forEach(function (px) { streetLamp(px, 24, 37); });
     pedestrian(-4, 34, 1, '#3f9d6a');
     pedestrian(-20, 34, -1, '#c94f4f');
+
+    // ---- NORTH / open field: tennis court ----
+    tennisCourt(48, -14);
   }
   function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();

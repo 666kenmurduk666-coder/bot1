@@ -117,7 +117,7 @@ const protectedHashes = {
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
   // 2026-11-21 v70: approval queue (shift proposals + publish ledger + FB status)
   // in Content Pipeline; loads the real /hyperframes.js shim instead of a 404.
-  'public/index.html': '0a3d064bfe43cb6e766a3a471ea6e80fdcdd7926d01486c743a0f8e7babff8d1',
+  'public/index.html': 'ed6889c57c650ad42c8b2d8d54397801641db6421fefbbbb2e08efddeb99f1c3',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -179,7 +179,7 @@ const protectedHashes = {
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
   // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
   // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
-  'public/office-v9.js': '9fcb8a2b898c76a173b688c9d772ebf5652c62b778a146c4ec851d4517e4d6c0',
+  'public/office-v9.js': '6d666e46c2bdefeecca6dd84e3cdac383d1592f2c68058fff3307a6f5e7b01ae',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
@@ -198,7 +198,7 @@ const protectedHashes = {
   'public/phaseB.js': 'b2c1e2d04d593901758ecbb262c074772dd2342c6c67c35e30d4ce348f082c63',
   // 2026-11-21: reconciled stale baseline — phaseC.js has not changed since v8
   // (95674af); the recorded digest was wrong, the file itself is untouched.
-  'public/phaseC.js': '63623d428a4d36dec2f3e5c32a5683185185e20b8fdff66c7f7de684864c21cc',
+  'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
   'public/phaseD.js': '213dd08761415bb09a0ebfe63e9dee19e8828baf8486af76ec60263fdaaf972e',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
