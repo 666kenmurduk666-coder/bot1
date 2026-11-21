@@ -1308,6 +1308,106 @@
     applyDetailLevel(true);
     batchStaticDetails();
   }
+  /* ---------- v74 LIVING GROUND: colorful whole-map ground layer ----------
+     Static color zones sit above the grass plane (-.20) and below the HQ slab
+     (-.03). Tiny plain meshes are merged by batchStaticDetails(). Walang bagong
+     fx array: the few gentle beacons use the existing animParts 'led' channel,
+     kaya lahat ng dating 4D motion ay buong-buo pa rin.
+  -------------------------------------------------------------------------- */
+  function vividGroundTex(kind) {
+    if (kind === 'mosaic') return makeTex('vivid-mosaic-v1', function (q, S) {
+      q.fillStyle = '#2f7d6a'; q.fillRect(0, 0, S, S);
+      var r = rnd(4211), cols = ['#e3b159', '#6bb3a6', '#ff6647', '#7fc4d8', '#b28fd6', '#9ccf6a', '#f6e3b4'];
+      var cell = S / 8;
+      for (var gy = 0; gy < 8; gy++) for (var gx = 0; gx < 8; gx++) {
+        q.fillStyle = cols[Math.floor(r() * cols.length)];
+        q.globalAlpha = .55 + r() * .35;
+        q.fillRect(gx * cell + 2, gy * cell + 2, cell - 4, cell - 4);
+      }
+      q.globalAlpha = 1; q.strokeStyle = 'rgba(255,255,255,.26)'; q.lineWidth = 2;
+      for (var p = 0; p <= S; p += cell) {
+        q.beginPath(); q.moveTo(p, 0); q.lineTo(p, S); q.stroke();
+        q.beginPath(); q.moveTo(0, p); q.lineTo(S, p); q.stroke();
+      }
+    }, 1, 1);
+    if (kind === 'sun') return makeTex('vivid-sun-v1', function (q, S) {
+      var r = rnd(88), cols = ['#e3b159', '#ff6647', '#6bb3a6', '#7fc4d8', '#b28fd6', '#9ccf6a', '#f6e3b4'];
+      q.fillStyle = '#2e6f63'; q.fillRect(0, 0, S, S);
+      var cx = S / 2, cy = S / 2, step = Math.PI / 12;
+      for (var i = 0; i < 24; i++) {
+        q.fillStyle = cols[i % cols.length]; q.globalAlpha = .5 + r() * .2;
+        q.beginPath(); q.moveTo(cx, cy);
+        q.arc(cx, cy, S * .72, i * step, (i + 1) * step); q.closePath(); q.fill();
+      }
+      q.globalAlpha = 1;
+      for (var k = 0; k < 5; k++) {
+        q.strokeStyle = 'rgba(255,255,255,' + (.12 + k * .08) + ')'; q.lineWidth = 3;
+        q.beginPath(); q.arc(cx, cy, 28 + k * 26, 0, 6.3); q.stroke();
+      }
+    }, 1, 1);
+    return makeTex('vivid-petal-v1', function (q, S) {
+      q.fillStyle = '#3f8a58'; q.fillRect(0, 0, S, S);
+      var r = rnd(612), cols = ['#ff6647', '#e3b159', '#b28fd6', '#f6e3b4', '#7fc4d8', '#ff9fc0'];
+      for (var i = 0; i < 110; i++) {
+        var px = r() * S, py = r() * S, rad = 3 + r() * 6;
+        q.globalAlpha = .55 + r() * .4; q.fillStyle = cols[Math.floor(r() * cols.length)];
+        for (var p = 0; p < 5; p++) {
+          var a = p * 1.2566;
+          q.beginPath(); q.arc(px + Math.cos(a) * rad, py + Math.sin(a) * rad, rad * .55, 0, 6.3); q.fill();
+        }
+        q.fillStyle = '#e3b159'; q.beginPath(); q.arc(px, py, rad * .42, 0, 6.3); q.fill();
+      }
+      q.globalAlpha = 1;
+    }, 1, 1);
+  }
+  function livingGround() {
+    var Y = -.194;
+    var cols = ['#e3b159', '#6bb3a6', '#ff6647', '#7fc4d8', '#b28fd6', '#9ccf6a', '#ff9fc0', '#f6e3b4'];
+    var r = rnd(20261121);
+    var mosaic = solid('#ffffff', { map: vividGroundTex('mosaic'), roughness: .96, metalness: 0 });
+    var sun = solid('#ffffff', { map: vividGroundTex('sun'), roughness: .96, metalness: 0 });
+    var petal = solid('#ffffff', { map: vividGroundTex('petal'), roughness: .98, metalness: 0 });
+    var beds = [[55, 30, 15, 11], [-26, 36, 13, 10], [38, -22, 13, 9], [2, -30, 12, 9], [64, 44, 12, 10]];
+
+    // 1. festival sunburst plazas in the open meadows
+    [[60, 17, 22, 22], [-30, 17, 20, 20], [23, -24, 24, 20], [14, 78, 24, 16]].forEach(function (a) {
+      floor(a[2], a[3], sun, a[0], Y, a[1]);
+    });
+    // 2. flower / petal garden beds
+    beds.forEach(function (a) { floor(a[2], a[3], petal, a[0], Y + .001, a[1]); });
+    // 3. mosaic ribbon paths wrapping the HQ (clear of its footprint and the roads)
+    [[15, -18, 100, 5], [-30, 20, 5, 82], [62, 20, 5, 82], [15, 82, 100, 5]].forEach(function (a) {
+      floor(a[2], a[3], mosaic, a[0], Y + .002, a[1]);
+    });
+    // 4. tiny batched confetti, path studs and flower dots (plain materials, no extra userData)
+    for (var s = -32; s <= 62; s += 2.4) {
+      var si = Math.round(s / 2.4);
+      bx(.085, .014, .085, cols[(si % cols.length + cols.length) % cols.length], s, Y + .012, -15.9);
+      bx(.085, .014, .085, cols[(si + 3) % cols.length], s, Y + .012, -20.1);
+      bx(.085, .014, .085, cols[(si + 5) % cols.length], s, Y + .012, 80.9);
+    }
+    for (var z2 = -18; z2 <= 58; z2 += 2.4) {
+      var zi = Math.round(z2 / 2.4);
+      bx(.085, .014, .085, cols[(zi + 1) % cols.length], -28.3, Y + .012, z2);
+      bx(.085, .014, .085, cols[(zi + 4) % cols.length], 63.7, Y + .012, z2);
+    }
+    for (var i = 0; i < 240; i++) {
+      var x = -42 + r() * 118, z = -34 + r() * 126;
+      if (x > -2 && x < 48 && z > -2 && z < 36) continue;
+      bx(.055, .009, .055, cols[Math.floor(r() * cols.length)], x, Y + .008, z);
+    }
+    beds.forEach(function (a) {
+      for (var k = 0; k < 34; k++) {
+        var fx2 = a[0] + (r() - .5) * (a[2] - 1.2), fz2 = a[1] + (r() - .5) * (a[3] - 1.2);
+        cyl(.042, .014, cols[Math.floor(r() * cols.length)], fx2, Y + .014, fz2);
+      }
+    });
+    // 5. gently pulsing color beacons — existing 4D 'led' channel, no new fx array
+    [[60, 17], [-30, 17], [23, -24], [14, 78], [-30, 60], [62, 60]].forEach(function (p, i) {
+      var b = cyl(.1, .06, cols[i % cols.length], p[0], Y + .04, p[1], true);
+      animParts.push({ m: b, k: 'led', p: i * 1.7 });
+    });
+  }
   // ⏱ Pinagsasama ang maliliit na HINDI gumagalaw na detalye (bolts, trims,
   // butones) sa iisang InstancedMesh bawat materyal. Bumababa ang draw calls
   // nang ~30% nang hindi nagbabago ang itsura. HINDI hinihawakan ang anumang
@@ -3471,6 +3571,7 @@
     buildingEnhancements();
     aryaskyArtZone();
     wholeBuildingEnhancements();
+    livingGround();     // v74 colorful whole-map ground; static details get batched by greenSurrounds()
     greenSurrounds();
     buildBatch1World();
     buildBatch2World();

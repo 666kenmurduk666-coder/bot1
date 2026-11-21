@@ -121,7 +121,8 @@ const protectedHashes = {
   // court + road/building art loads fresh (parallel v71 may already be cached).
   // 2026-11-21 v73: cache-bust office-v9.js to ?v=73 for the whole-HQ facade,
   // roofline, entry portal, zone portals, floor medallions and 4D light halos.
-  'public/index.html': 'c3e9995031101ada3dafccb11071c036b3cea48ea7b1b302fe38ed632e86ce70',
+  // 2026-11-21 v74: cache-bust to ?v=74 for the colorful whole-map living ground.
+  'public/index.html': '2cb8292ad25fb80ccd4eff3cdbf5ba99a3b911d161be8fe9444ec3193c56727a',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -190,7 +191,9 @@ const protectedHashes = {
   // 2026-11-21 v73 WHOLE BUILDING: upper facade glazing + roofline/pergola,
   // branded entry portal and plaza bollards, interior color spine, five zone
   // portals/floor medallions and animated ceiling halos. All prior 4D kept.
-  'public/office-v9.js': '028949e7f2c9ef1becf419d7ec08248bc688a04f639fe138fe3a0c340daee828',
+  // 2026-11-21 v74 LIVING GROUND: mosaic ribbons, sunburst plazas, flower beds,
+  // batched confetti/studs/dots and 4D led beacons across the whole map.
+  'public/office-v9.js': '39a3b1d33dc7650fb484dbb9214ee4bc050bc166d93f9b176236a9e92c2da36c',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
