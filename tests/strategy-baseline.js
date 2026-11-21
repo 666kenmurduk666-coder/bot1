@@ -113,7 +113,7 @@ const protectedHashes = {
   // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
   // 2026-11-21: character 4D time-life pass - breathing, attention drift, weight
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
-  'public/index.html': 'f6c23165b505d12008cf44d6f11fe0d918f927e1f2e8dba7c98142bb79d8c850',
+  'public/index.html': '547619c3df765c4d08ecfbcde808da65d7d7461bcf982920ddaf9a2d70de1838',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -175,7 +175,7 @@ const protectedHashes = {
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
   // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
   // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
-  'public/office-v9.js': 'ec8890abf9f3a41985fdfe0ddf929762c389c22b34265e33dfa66424d0a2df74',
+  'public/office-v9.js': '606c30df5767670a8b6b599615ce68b0cf8726fd75eb04d5a5f19c160aa6752b',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

@@ -1090,9 +1090,9 @@
     var g2 = new THREE.Group();
     var back = new THREE.Mesh(new THREE.BoxGeometry(1.02, .36, .05), solid('#163a2e'));
     g2.add(back);
-    var face = new THREE.Mesh(new THREE.PlaneGeometry(.96, .3),
-      new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
-    face.position.z = .03; g2.add(face);
+    var face = new THREE.Mesh(new THREE.BoxGeometry(.96, .3, .02),
+      new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
+    face.position.z = .036; g2.add(face);
     g2.position.set(x, y, z); g2.rotation.y = rot || 0; addO(g2);
   }
   function column(x, z) {
@@ -1407,11 +1407,11 @@
       box(1.7, .12, .9, '#0f1b2e', x, .55, z);
       box(.12, .55, .12, '#5a4632', x, .28, z + .25);
       box(.12, .55, .12, '#5a4632', x, .28, z - .25);
-      var back = new THREE.Mesh(new THREE.PlaneGeometry(1.54, 1.04), solid('#0f1b2e', { side: THREE.DoubleSide }));
+      var back = new THREE.Mesh(new THREE.BoxGeometry(1.54, 1.04, .04), solid('#0f1b2e'));
       back.rotation.x = -Math.PI / 2 - .55; back.position.set(x, 1.02, z); addO(back);
-      var face = new THREE.Mesh(new THREE.PlaneGeometry(1.44, .94),
-        new THREE.MeshBasicMaterial({ map: artTex(seed), side: THREE.DoubleSide, toneMapped: false }));
-      face.rotation.x = -Math.PI / 2 - .55; face.position.set(x, 1.035, z - .012); addO(face);
+      var face = new THREE.Mesh(new THREE.BoxGeometry(1.44, .94, .025),
+        new THREE.MeshBasicMaterial({ map: artTex(seed), toneMapped: false }));
+      face.rotation.x = -Math.PI / 2 - .55; face.position.set(x, 1.04, z - .02); addO(face);
       bx(1.4, .02, .05, col, x, .72, z + .35, true);
     }
     board(32.0, 21.9, 1, '#e3b159');
@@ -1421,9 +1421,9 @@
     var g2 = new THREE.Group();
     var frame = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.42, .09), solid('#1b2537'));
     frame.position.y = 1.76; frame.userData.v9 = true; g2.add(frame);
-    var scr = new THREE.Mesh(new THREE.PlaneGeometry(2.52, 1.24),
-      new THREE.MeshBasicMaterial({ map: screenTex(screenCounter++), side: THREE.DoubleSide, toneMapped: false }));
-    scr.position.set(0, 1.76, .055); scr.userData.v9 = true; g2.add(scr);
+    var scr = new THREE.Mesh(new THREE.BoxGeometry(2.52, 1.24, .03),
+      new THREE.MeshBasicMaterial({ map: screenTex(screenCounter++), toneMapped: false }));
+    scr.position.set(0, 1.76, .06); scr.userData.v9 = true; g2.add(scr);
     var post = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, 1.05, 8), solid('#4b586b'));
     post.position.y = .52; post.userData.v9 = true; g2.add(post);
     var foot = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .5), solid('#3b475b'));
@@ -1443,12 +1443,12 @@
     reflection(x, z, 1.5, .7, '#7fc7ff', rot || 0, .05);
   }
   function deskDetails(g2, di) {
-    var mat = new THREE.Mesh(new THREE.PlaneGeometry(.92, .32), solid('#2f3d52', { roughness: .95 }));
-    mat.rotation.x = -Math.PI / 2; mat.position.set(0, .812, .22); mat.userData.v9 = true; g2.add(mat);
+    var mat = new THREE.Mesh(new THREE.BoxGeometry(.92, .012, .32), solid('#2f3d52', { roughness: .95 }));
+    mat.position.set(0, .816, .22); mat.userData.v9 = true; g2.add(mat);
     var tablet = bx(.36, .22, .025, '#5fd6ff', .56, 1.02, -.04, true);
     tablet.rotation.z = -.12; tablet.rotation.x = -.28; tablet.userData.v9 = true; g2.add(tablet);
-    var pad = new THREE.Mesh(new THREE.PlaneGeometry(.28, .2), solid('#4a5668', { roughness: .95 }));
-    pad.rotation.x = -Math.PI / 2; pad.position.set(-.42, .812, .18); pad.userData.v9 = true; g2.add(pad);
+    var pad = new THREE.Mesh(new THREE.BoxGeometry(.28, .01, .2), solid('#4a5668', { roughness: .95 }));
+    pad.position.set(-.42, .815, .18); pad.userData.v9 = true; g2.add(pad);
     var cup = new THREE.Mesh(new THREE.CylinderGeometry(.065, .055, .13, 8), solid('#3f5a76'));
     cup.position.set(.72, .875, -.2); cup.userData.v9 = true; g2.add(cup);
     [-.03, .02, .06].forEach(function (ox, k) {
@@ -1508,9 +1508,9 @@
       var bolt = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .02, 6), solid('#8b97a5', { metalness: .5, roughness: .35 }));
       bolt.rotation.x = Math.PI / 2; bolt.position.set(p[0], p[1], .04); grp.add(bolt);
     });
-    var face = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
-      new THREE.MeshBasicMaterial({ map: signTexture(txt, sub, accent), side: THREE.DoubleSide }));
-    face.position.z = .045; grp.add(face);
+    var face = new THREE.Mesh(new THREE.BoxGeometry(w, h, .02),
+      new THREE.MeshBasicMaterial({ map: signTexture(txt, sub, accent) }));
+    face.position.z = .046; grp.add(face);
     grp.position.set(x, y, z); grp.rotation.y = rot || 0; addO(grp); return grp;
   }
 
