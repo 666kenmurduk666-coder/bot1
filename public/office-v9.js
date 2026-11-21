@@ -3189,11 +3189,17 @@
       var html = '<b>' + esc(bot.n) + '</b>' + esc(line.text);
       // ⏱ 4D time-life: a new line (or a freshly visible bubble) starts a fresh
       // pop-in clock; the transform below keeps it floating while it talks.
-      if (el.innerHTML !== html || !bot.wasShown) { bot.bornAt = now; el.innerHTML = html; }
+      if (el.innerHTML !== html || !bot.wasShown) { bot.bornAt = now; el.innerHTML = html; bot.bw = 0; }
       bot.shown = true;
       el.style.display = 'block';
       el.classList.add('talking');
-      var bw = el.offsetWidth || 280, bh = el.offsetHeight || 70;
+      // ⏱ Cache ang laki ng bubble: offsetWidth/Height ay forced layout read.
+      // 25×/second itong tinatawag — sukatin lang pag nagbago ang text o pag
+      // nag-resize (5s), otherwise gamitin ang naka-cache. Buhay pa rin ang galaw.
+      if (!bot.bw || !bot.bh || now - (bot.measuredAt || 0) > 5000) {
+        bot.bw = el.offsetWidth || 280; bot.bh = el.offsetHeight || 70; bot.measuredAt = now;
+      }
+      var bw = bot.bw, bh = bot.bh;
       var x0 = (v.x * .5 + .5) * w - bw / 2;
       var y0 = (-v.y * .5 + .5) * h - bh - 16;
       placed.push({

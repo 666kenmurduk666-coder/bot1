@@ -70,20 +70,23 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #v16Grade{position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;animation:v16Breath 12s ease-in-out infinite alternate;background:radial-gradient(ellipse 78% 68% at 50% 42%,rgba(255,244,220,.055) 0%,rgba(255,244,220,0) 42%,rgba(11,20,38,.13) 78%,rgba(5,10,22,.34) 100%),linear-gradient(180deg,rgba(130,180,230,.055),rgba(255,205,150,.035) 55%,rgba(20,35,60,.10))}
 #v16Grade:after{content:'';position:absolute;inset:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
 @keyframes v16Breath{from{opacity:.88}to{opacity:1}}
-/* ⏱ 4D time-life — pattern ng oras sa bawat visible element */
+/* ⏱ 4D time-life — GPU-friendly: transform/opacity lang. Hindi na ginagamit ang
+   filter/box-shadow/text-shadow na paulit-ulit na pipinturahan tuwing frame
+   (yun ang nagsanhi ng "parang bumagal"). Buhay pa rin ang galaw, mas mura lang. */
 @keyframes mmoIn{from{opacity:0;transform:translateX(-9px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes freshGlow{0%,100%{text-shadow:0 0 0 transparent}50%{text-shadow:0 0 9px #7fc7ffaa}}
-@keyframes uiBreath{from{filter:brightness(.94)}to{filter:brightness(1.07)}}
-@keyframes livePulse{0%,100%{box-shadow:0 0 0 1px #ffd34d55,0 3px 14px #0007}50%{box-shadow:0 0 0 4px #ffd34d22,0 3px 24px #ffb64866}}
-@keyframes glowBreath{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes freshGlow{from{text-shadow:0 0 9px #7fc7ffaa}to{text-shadow:0 0 0 transparent}}
+@keyframes uiBreath{from{opacity:.9}to{opacity:1}}
+@keyframes glowBreath{0%,100%{opacity:.45}50%{opacity:1}}
 @keyframes toastIn{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:none}}
 @keyframes feedIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-@keyframes dockGlow{0%,100%{box-shadow:0 0 0 1px #3a6bb555,0 3px 12px #0009}50%{box-shadow:0 0 0 3px #7fc7ff33,0 3px 18px #7fc7ff44}}
 #mmoChatLog>div{animation:mmoIn .32s cubic-bezier(.2,.9,.3,1) both}
-#mmoChatLog>div.fresh{animation:mmoIn .32s cubic-bezier(.2,.9,.3,1) both,freshGlow 2.6s ease-in-out .32s infinite}
-#mmoChatHead,#gameHud,#officeCamTools{animation:uiBreath 6s ease-in-out infinite alternate}
-#audioDock{animation:dockGlow 4.2s ease-in-out infinite}
-#eventShowCard.live{animation:livePulse 2.2s ease-in-out infinite}
+#mmoChatLog>div.fresh{animation:mmoIn .32s cubic-bezier(.2,.9,.3,1) both,freshGlow 1.4s ease-out .32s 1 both}
+#mmoChatHead,#gameHud,#officeCamTools{animation:uiBreath 6s ease-in-out infinite alternate;will-change:opacity}
+/* Glow: iisang static na box-shadow sa pseudo-element; opacity lang ang
+   nag-aanimate → compositor ang gumagawa, hindi buong pahina ang repaint. */
+#audioDock::after,#eventShowCard.live::after{content:'';position:absolute;inset:-3px;border-radius:inherit;pointer-events:none;animation:glowBreath 4.2s ease-in-out infinite;will-change:opacity}
+#audioDock::after{box-shadow:0 0 0 2px #7fc7ff55,0 3px 18px #7fc7ff44}
+#eventShowCard.live::after{box-shadow:0 0 0 3px #ffd34d33,0 3px 24px #ffb64866}
 #eventShowCard.live>div:first-child{animation:glowBreath 1.6s ease-in-out infinite alternate}
 .toast{animation:toastIn .28s cubic-bezier(.2,.9,.3,1) both}
 #convFeed>div,#officeFeed>div{animation:feedIn .3s ease-out both}
@@ -605,7 +608,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=61"></script>
+<script src="/office-v9.js?v=62"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
