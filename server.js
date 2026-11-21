@@ -263,13 +263,13 @@ function defaultLayout() {
 const DEFAULT_ROUTINES = [
   {id:'r-cos',agent:'cos',name:'Chief of Staff - plan the day',minutes:30,enabled:true,lastRun:0,runs:0},
   {id:'r-mgr',agent:'mgr',name:'Manager status report',minutes:60,enabled:true,lastRun:0,runs:0},
-  {id:'r-out',agent:'outreach',name:'Client outreach drafts',minutes:120,enabled:false,lastRun:0,runs:0},
-  {id:'r-scr',agent:'scraper',name:'Community resource scan',minutes:180,enabled:false,lastRun:0,runs:0},
-  {id:'r-soc',agent:'social',name:'Social media check-in',minutes:240,enabled:false,lastRun:0,runs:0},
-  {id:'r-prod',agent:'product',name:'Product video batch',minutes:180,enabled:false,lastRun:0,runs:0},
-  {id:'r-joke',agent:'joker',name:'Jester — daily jokes',minutes:360,enabled:false,lastRun:0,runs:0},
-  {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:false,lastRun:0,runs:0},
-  {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:false,lastRun:0,runs:0},
+  {id:'r-out',agent:'outreach',name:'Client outreach drafts',minutes:120,enabled:true,lastRun:0,runs:0},
+  {id:'r-scr',agent:'scraper',name:'Community resource scan',minutes:180,enabled:true,lastRun:0,runs:0},
+  {id:'r-soc',agent:'social',name:'Social media check-in',minutes:240,enabled:true,lastRun:0,runs:0},
+  {id:'r-prod',agent:'product',name:'Product video batch',minutes:180,enabled:true,lastRun:0,runs:0},
+  {id:'r-joke',agent:'joker',name:'Jester — daily jokes',minutes:360,enabled:true,lastRun:0,runs:0},
+  {id:'r-conv',agent:'cos',name:'Watercooler conversations',minutes:45,enabled:true,lastRun:0,runs:0},
+  {id:'r-fix',agent:'fixer',name:'Office Fixer — health check',minutes:120,enabled:true,lastRun:0,runs:0},
   {id:'r-recap-weekly',agent:'cos',name:'Weekly recap video (Mon 8AM)',minutes:10080,enabled:true,lastRun:0,runs:0,weekday:1,hour:8,tz:'Asia/Manila',fn:'weeklyRecap'}
 ];
 const savedRoutines = readJSON(ROUTINES_FILE, null);
@@ -2241,6 +2241,7 @@ function ceoAuthorized(req, b) {
 const orderRate = new Map(); // ip -> {windowStart, count}
 const oauthStates = new Map(); // FB OAuth state -> issued at (short-lived)
 const fbCodeCache = new Map(); // FB auth code -> {id,name,picture,at} (idempotent callback: browser/Render may hit callback twice)
+let fbPostTimes = []; // 📤 CEO-confirmed Graph publishes in the last hour (max 5)
 const cleanTxt = s => String(s || '').replace(/[<>&"'`]/g, '').trim().slice(0, 80);
 function reqOrigin(req) {
   const host = String((req.headers && req.headers.host) || ('localhost:' + PORT));
@@ -2304,7 +2305,7 @@ const server = http.createServer(async (req, res) => {
     const ghOld = guard.get(ip), nowMs = Date.now();
     if (ghOld && ghOld.bad >= 10 && ghOld.lastBad && nowMs - ghOld.lastBad < 600000) {
       // locked out: bisita mode lang — PERO ang TOTOONG CEO na may tamang password, papasukin!
-      if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
+      if (req.method === 'POST' && p !== '/api/orders' && !p.startsWith('/api/bazaar/') && (!p.startsWith('/api/fb/') || p === '/api/fb/post') && !p.startsWith('/api/care/')) {
         if (p === '/api/unlock') {
           const b = await body(req);
           if (ceoPassword() && String(b.pass || '') === ceoPassword()) {
@@ -2326,7 +2327,7 @@ const server = http.createServer(async (req, res) => {
     }
     // ===== SECURITY: password lock sa lahat ng CEO actions (bisita: tingin lang) =====
     if (req.method === 'POST' && p.startsWith('/api/') && p !== '/api/unlock' && p !== '/api/orders'
-        && !p.startsWith('/api/bazaar/') && !p.startsWith('/api/fb/') && !p.startsWith('/api/care/')) {
+        && !p.startsWith('/api/bazaar/') && (!p.startsWith('/api/fb/') || p === '/api/fb/post') && !p.startsWith('/api/care/')) {
       const b = await body(req);
       if (!ceoAuthorized(req, b)) {
         guardBumpBad(ip);
@@ -3224,7 +3225,83 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/fb/config' && req.method === 'GET') {
       const c = fbCfg();
-      return sendJSON(res, 200, { configured: !!(c.id && c.secret && c.redirect), appId: c.id ? c.id.slice(0, 6) + '…' : '' });
+      const tok = String(process.env.FB_PAGE_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || '').trim();
+      return sendJSON(res, 200, { configured: !!(c.id && c.secret && c.redirect),
+        appId: c.id ? c.id.slice(0, 6) + '…' : '',
+        pageToken: !!tok, publishReady: !!(c.id && c.secret && c.redirect && tok) });
+    }
+
+    /* 📤 FACEBOOK PUBLISH — CEO-only, explicit confirmation, never auto-posts.
+       Page token comes from Render env FB_PAGE_TOKEN (or FB_PAGE_ACCESS_TOKEN).
+       The token is never echoed back to the browser. */
+    if (p === '/api/fb/post' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      if (!ceoAuthorized(req, b)) {
+        guardBumpBad(ip);
+        return sendJSON(res, 403, { ok: false, error: 'Locked! CEO login required.', sessionExpired: true });
+      }
+      const token = String(process.env.FB_PAGE_TOKEN || process.env.FB_PAGE_ACCESS_TOKEN || '').trim();
+      const action = String(b.action || 'status');
+      const pageFromEnv = String(process.env.FB_PAGE_ID || '').trim();
+      async function fbPage() {
+        const r = await fetch('https://graph.facebook.com/v19.0/me?fields=id,name&access_token=' + encodeURIComponent(token));
+        const j = await r.json();
+        return j && j.id ? { id: String(j.id), name: String(j.name || '') } : null;
+      }
+      if (action === 'status') {
+        if (!token) return sendJSON(res, 200, { ok: true, configured: false, canPublish: false,
+          hint: 'I-set ang FB_PAGE_TOKEN (Page access token) sa Render env.' });
+        try {
+          const pg = pageFromEnv ? { id: pageFromEnv, name: '' } : await fbPage();
+          return sendJSON(res, 200, { ok: true, configured: true, canPublish: !!pg,
+            page: pg ? { id: pg.id.slice(0, 6) + '…', name: pg.name } : null });
+        } catch (e) {
+          return sendJSON(res, 200, { ok: true, configured: true, canPublish: false,
+            error: 'Token check failed: ' + String(e.message || e).slice(0, 120) });
+        }
+      }
+      if (action !== 'publish') return sendJSON(res, 400, { ok: false, error: 'Unknown FB action.' });
+      if (!token) return sendJSON(res, 400, { ok: false, error: 'Walang Page access token sa Render env.' });
+      if (b.confirm !== true) return sendJSON(res, 400, { ok: false,
+        error: 'Kailangan ng explicit approval (confirm=true). Walang auto-post.' });
+      const message = String(b.message || '').trim().slice(0, 63206);
+      const link = String(b.link || '').trim().slice(0, 500);
+      if (!message) return sendJSON(res, 400, { ok: false, error: 'Kailangan ng post message.' });
+      if (link && !/^https?:\/\//i.test(link)) return sendJSON(res, 400, { ok: false, error: 'Link must start with http(s).' });
+      const now = Date.now();
+      fbPostTimes = fbPostTimes.filter(t => now - t < 60 * 60 * 1000);
+      if (fbPostTimes.length >= 5) return sendJSON(res, 429, { ok: false, error: 'FB publish limit: 5 posts/oras.' });
+      try {
+        let pageId = pageFromEnv;
+        if (!pageId) {
+          const pg = await fbPage();
+          if (!pg) return sendJSON(res, 400, { ok: false, error: 'Hindi makuha ang Page mula sa token. I-set ang FB_PAGE_ID.' });
+          pageId = pg.id;
+        }
+        const payload = { message, access_token: token };
+        if (link) payload.link = link;
+        const pr = await fetch('https://graph.facebook.com/v19.0/' + encodeURIComponent(pageId) + '/feed', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const pj = await pr.json();
+        if (!pj || !pj.id) {
+          const fe = (pj && pj.error) || {};
+          log('⚠️ FB publish failed: ' + String(fe.message || 'unknown').slice(0, 160), 'CEO');
+          return sendJSON(res, 502, { ok: false, error: 'Facebook rejected the post: ' + String(fe.message || 'unknown').slice(0, 140) });
+        }
+        fbPostTimes.push(now);
+        const row = { id: 'FB' + now.toString(36), at: now, platform: 'Facebook',
+          title: message.slice(0, 100), url: 'https://www.facebook.com/' + pj.id,
+          note: 'Live publish via Graph API', actor: 'CEO', mode: 'facebook', approved: true, postId: pj.id };
+        state.publishLedger.unshift(row);
+        if (state.publishLedger.length > 300) state.publishLedger.length = 300;
+        auditEvent('Facebook publish: ' + pj.id, 'CEO');
+        log('📤 Facebook post published: ' + pj.id, 'CEO');
+        saveStateNow();
+        return sendJSON(res, 201, { ok: true, entry: row, entries: state.publishLedger.slice(0, 100) });
+      } catch (e) {
+        return sendJSON(res, 500, { ok: false, error: e.message });
+      }
     }
     if (p === '/api/fb/login' && req.method === 'GET') {
       const c = fbCfg();

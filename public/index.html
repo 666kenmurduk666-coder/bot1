@@ -460,6 +460,17 @@ dialog::backdrop{background:#000a}
     <div class="bar"><button class="run" id="cpIdeas">🔍 Scout: hanapin ang trends</button><button id="cpProfile">⚙ Setup: niche / link / platform</button></div>
     <div class="hint">💡 Pindutin ang 👍/👎 — ito ang Analytics loop para sa susunod na Scout suggestions.</div>
     <div id="pipeOut"></div>
+    <div class="card" style="margin-top:12px">
+      <h2>🗂️ Approval queue <span class="hint">CEO approval bago ang anumang publish</span></h2>
+      <div class="hint" id="fbPublishStatus">📡 Facebook: checking…</div>
+      <div class="bar" style="flex-wrap:wrap;gap:6px;margin:8px 0">
+        <button id="shiftGen">🗓 Generate shift proposals</button>
+        <button id="shiftApproveAll" class="run">✅ Approve all internal shifts</button>
+        <button id="fbStatusBtn">📡 Facebook status</button>
+      </div>
+      <div id="shiftOut"></div>
+      <div id="publishOut"></div>
+    </div>
   </div></section>
 
   <!-- REPORTS -->
@@ -832,7 +843,7 @@ function renderProducts(){
 }
 /* 🧩 CONTENT PIPELINE — 2D, walang WebGL at walang sariling interval.
    Bumubasa lang mula sa S (ang iisang /api/state poll na 12s na). */
-function cpError(r){return r&&r.error==='locked'?'🔒 Pindutin muna ang 👑 CEO login':('Error: '+((r&&r.error)||'failed'))}
+function cpError(r){return r&&(r.error==='locked'||r.error==='session-expired'||r.sessionExpired)?'🔒 Pindutin muna ang 👑 CEO login':('Error: '+((r&&r.error)||'failed'))}
 function renderContentPipeline(){
   const cfg=S.config||{},items=S.contentPipeline||[];
   const links=cfg.affiliateLink?esc(cfg.affiliateLink):'<span style="color:#e2694f">not set — ⚙ Setup</span>';
@@ -866,6 +877,7 @@ function renderContentPipeline(){
           '<button data-cpv="'+esc(it.id)+'">🗣️ Voice</button>'+
           '<button data-cpc="'+esc(it.id)+'">📋 Copy post</button>'+
           '<button data-cpp="'+esc(it.id)+'">📤 Publish record</button>'+
+          (it.script?'<button data-cpfb="'+esc(it.id)+'">📣 Post to Facebook</button>':'')+
           '<button data-cpu="'+esc(it.id)+'">'+(it.rating===1?'👍 Liked':'👍 Like')+'</button>'+
           '<button data-cpd="'+esc(it.id)+'">'+(it.rating===-1?'👎 Skipped':'👎 Skip')+'</button>'+
         '</div></div>';
@@ -914,6 +926,44 @@ function renderContentPipeline(){
   };
   document.querySelectorAll('[data-cpu]').forEach(b=>b.onclick=()=>rate(b.dataset.cpu,1));
   document.querySelectorAll('[data-cpd]').forEach(b=>b.onclick=()=>rate(b.dataset.cpd,-1));
+
+  // 🗂️ Approval queue: shift proposals + publish ledger + Facebook readiness
+  const shiftBox=$('shiftOut'), pubBox=$('publishOut');
+  if(shiftBox){
+    const sh=S.shiftProposals||[], pend=sh.filter(x=>x.status==='pending');
+    shiftBox.innerHTML='<div class="hint" style="margin:8px 0">🗓 Shift proposals: <b>'+pend.length+' pending</b>'+
+      (pend.length?' · '+pend.map(x=>esc(x.title)+' ('+esc(x.bot)+')').join(' · '):' — walang pending')+'</div>';
+  }
+  if(pubBox){
+    const led=(S.publishLedger||[]).slice(0,8);
+    pubBox.innerHTML=led.length?('<div class="hint" style="margin:6px 0">📜 Publish ledger (latest '+led.length+'):</div>'+led.map(e=>
+      '<div class="row"><span class="status">'+esc(e.mode||'manual')+'</span> '+esc(e.title||'')+' · '+esc(new Date(e.at).toLocaleString())+'</div>').join('')):'<div class="hint">Wala pang publish records.</div>';
+  }
+  const gen=$('shiftGen'), appAll=$('shiftApproveAll'), fbBtn=$('fbStatusBtn');
+  if(gen)gen.onclick=async()=>{
+    const r=await api('/api/office/shift',{method:'POST',body:JSON.stringify({action:'generate'})});
+    toast(r.ok?('🗓 '+r.proposals.length+' proposals generated'):cpError(r));await refresh();
+  };
+  if(appAll)appAll.onclick=async()=>{
+    if(!window.confirm('I-approve ang lahat ng pending internal shift proposals? Draft/internal lang ito — walang external post.'))return;
+    const r=await api('/api/office/shift',{method:'POST',body:JSON.stringify({action:'approve-all'})});
+    toast(r.ok?('✅ '+r.tasks.length+' internal tasks queued'):cpError(r));await refresh();
+  };
+  if(fbBtn)fbBtn.onclick=async()=>{
+    const r=await api('/api/fb/post',{method:'POST',body:JSON.stringify({action:'status'})});
+    const el=$('fbPublishStatus');
+    if(el)el.textContent=r.ok?(r.canPublish?('📡 Facebook ready: '+((r.page&&r.page.name)||'Page')):('📡 Facebook: '+(r.configured?('token issue — '+(r.error||'check FB_PAGE_TOKEN')):'hindi pa configured'))):cpError(r);
+  };
+  // Explicit CEO confirmation bago ang ACTUAL Graph publish. Walang auto-post.
+  document.querySelectorAll('[data-cpfb]').forEach(b=>b.onclick=async()=>{
+    const it=find(b.dataset.cpfb), sc=it&&it.script;
+    if(!sc)return toast('Wala pang script — Writer muna');
+    const msg=[sc.hook].concat(sc.beats||[]).concat(['',sc.cta||'',(sc.hashtags||[]).join(' '),'',cfg.affiliateLink||'','',sc.disclaimer||'']).join('\n').trim();
+    if(!window.confirm('I-POST na ito sa Facebook Page NGAYON?\n\n'+String(it.topic).slice(0,90)+'\n\nSiguraduhin na nasa tamang Page ka at approved ang content.'))return;
+    const r=await api('/api/fb/post',{method:'POST',body:JSON.stringify({action:'publish',confirm:true,message:msg,link:cfg.affiliateLink||'',cpId:it.id})});
+    toast(r.ok?'📤 Nai-post na sa Facebook!':cpError(r));
+    await refresh();
+  });
 }
 function renderAgents(){
   $('agentSummary').textContent=(S.agents||[]).length+' agents · '+Object.keys(S.outputs||{}).length+' outputs ready · '+(S.running?'working…':'idle');

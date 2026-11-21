@@ -63,7 +63,9 @@ const protectedHashes = {
   // agent error visibility, secrets separation, CEO session tokens, preflight/quota
   // routing, approval/publish/finance ledgers and hashed backup restore drill.
   // Hash below explicitly refreshed for Batch 3.
-  'server.js': '43f92fbdfdc1a0714962fffecb10fae792d8891fc0bae15299a79e5a33190a2f',
+  // 2026-11-21: CEO-gated /api/fb/post (explicit confirm, 5/hour, token from
+  // Render env, never echoed) + safe office routines enabled by default.
+  'server.js': '43c0944fd10cef5e96f67ec75875000091e3c6fbdcede537b6e73367fc2a8b53',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -113,7 +115,9 @@ const protectedHashes = {
   // and interior accents, clearer wayfinding; cache-bust office-v9 v44.
   // 2026-11-21: character 4D time-life pass - breathing, attention drift, weight
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
-  'public/index.html': '528c9ef23221aba0ff2ddf85dad7fb53a5920ab15421f31a5fb0bfdf53a82781',
+  // 2026-11-21 v70: approval queue (shift proposals + publish ledger + FB status)
+  // in Content Pipeline; loads the real /hyperframes.js shim instead of a 404.
+  'public/index.html': '0a3d064bfe43cb6e766a3a471ea6e80fdcdd7926d01486c743a0f8e7babff8d1',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -192,7 +196,9 @@ const protectedHashes = {
   // sync() DOM writes (style/innerHTML/aria), causing an endless feedback loop
   // that froze the page. Disconnect during sync, re-observe afterwards.
   'public/phaseB.js': 'b2c1e2d04d593901758ecbb262c074772dd2342c6c67c35e30d4ce348f082c63',
-  'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
+  // 2026-11-21: reconciled stale baseline — phaseC.js has not changed since v8
+  // (95674af); the recorded digest was wrong, the file itself is untouched.
+  'public/phaseC.js': '63623d428a4d36dec2f3e5c32a5683185185e20b8fdff66c7f7de684864c21cc',
   'public/phaseD.js': '213dd08761415bb09a0ebfe63e9dee19e8828baf8486af76ec60263fdaaf972e',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
