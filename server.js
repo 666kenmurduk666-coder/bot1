@@ -276,7 +276,7 @@ const DEFAULT_ROUTINES = [
   {id:'r-bantay',agent:'bantay',name:'Bantay Safety — suriin ang claims',minutes:180,enabled:true,lastRun:0,runs:0},
   {id:'r-scout',agent:'scout',name:'Dahon Scout — bagong paksa',minutes:90,enabled:true,lastRun:0,runs:0},
   {id:'r-videoed',agent:'videoed',name:'Video Editor — captions ng 3D office video',minutes:240,enabled:true,lastRun:0,runs:0},
-  {id:'r-publisher',agent:'publisher',name:'Publisher Bot — status ng 30/day',minutes:60,enabled:true,lastRun:0,runs:0},
+  {id:'r-publisher',agent:'publisher',name:'Publisher Bot — status ng 8/day',minutes:60,enabled:true,lastRun:0,runs:0},
   {id:'r-analytics',agent:'analytics',name:'Analytics Bot — ulat ng publish',minutes:720,enabled:true,lastRun:0,runs:0},
   {id:'r-community',agent:'community',name:'Community Bot — draft ng sagot sa comments',minutes:180,enabled:true,lastRun:0,runs:0}
 ];
@@ -1423,7 +1423,7 @@ const AGENT_META = [
   {id:'bantay',n:'Bantay Safety',i:'🛡️',c:'#f59e0b',group:'content',room:'hq',desc:'Humaharang sa gamot/cure claims bago mag-post.'},
   {id:'scout',n:'Dahon Scout',i:'🌿',c:'#7ac74f',group:'content',room:'hq',desc:'Naghanap ng bagong dahon at halaman topics.'},
   {id:'videoed',n:'Video Editor Bot',i:'🎞️',c:'#a78bfa',group:'content',room:'hq',desc:'Gumagawa ng captions para sa 3D office video.'},
-  {id:'publisher',n:'Publisher Bot',i:'📤',c:'#f472b6',group:'content',room:'hq',desc:'Nagpapalabas ng hanggang 30 contents araw-araw.'},
+  {id:'publisher',n:'Publisher Bot',i:'📤',c:'#f472b6',group:'content',room:'hq',desc:'Nagpapalabas ng hanggang 8 contents araw-araw.'},
   {id:'analytics',n:'Analytics Bot',i:'📊',c:'#4fd1c5',group:'content',room:'conference',desc:'Nag-uulat ng performance at pinakamagandang oras.'},
   {id:'community',n:'Community Bot',i:'💬',c:'#77eaff',group:'content',room:'hq',desc:'Naghahanda ng magalang na sagot sa comments.'}
 ];
@@ -1927,12 +1927,13 @@ async function cpWriteBrief(id) {
   return item;
 }
 
-/* ===== 🤖 BOT AUTO-PUBLISH — 30 contents araw-araw, walang manual na pag-post =====
+/* ===== 🤖 BOT AUTO-PUBLISH — 8 contents araw-araw, walang manual na pag-post =====
    Scout → Writer → Publisher Bot. Pag tapos ang content, agad na ilalabas ng bot
-   sa Facebook Page gamit ang Graph API. Tunay na Tagalog, paksang dahon/halaman. */
+   sa Facebook Page gamit ang Graph API. Tunay na Tagalog, paksang dahon/halaman.
+   Mabagal na cadence (120 minuto) para ligtas sa anti-spam ng Facebook. */
 const AUTOPOST_FILE = path.join(DATA, 'auto-post.json');
-const AUTO_POST_DAILY_CAP = Math.max(1, Math.min(200, Number(process.env.AUTO_POST_DAILY_CAP) || 30));
-const AUTO_POST_EVERY_MS = Math.max(10, Math.min(240, Number(process.env.AUTO_POST_EVERY_MIN) || 48)) * 60000;
+const AUTO_POST_DAILY_CAP = Math.max(1, Math.min(200, Number(process.env.AUTO_POST_DAILY_CAP) || 8));
+const AUTO_POST_EVERY_MS = Math.max(30, Math.min(720, Number(process.env.AUTO_POST_EVERY_MIN) || 120)) * 60000;
 const AUTO_POST_VIDEO = String(process.env.AUTO_POST_VIDEO_URL ||
   'https://cyborgcheebeeworkspace-d7sf.onrender.com/videos/office-skills-tagalog.mp4');
 const autoPostStore = Object.assign(
