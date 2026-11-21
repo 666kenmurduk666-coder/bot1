@@ -3270,6 +3270,143 @@
     tree(cx - 10, cz + D / 2 + 2.2, .9); tree(cx + 10, cz + D / 2 + 2.2, .9);
   }
 
+  function megaWorldCommandZone() {
+    // Separate Cyborg Cheebee Mega World command/planning zone (feasible in-office representation).
+    var cx = 74, cz = 34;
+    var W = 28, D = 20;
+    var wallH = 3.8;
+    var frameMat = solid('#56657a', { roughness: .35, metalness: .55 });
+    var glassMat = solid('#a8dfff', { transparent: true, opacity: .12, roughness: .08, metalness: .12 });
+    var darkMat = solid('#151c27', { roughness: .45, metalness: .18 });
+    var panelMat = solid('#101924', { roughness: .35, metalness: .2 });
+    floor(W + 2.4, D + 2.4, solid('#171f2a', { roughness: .58, metalness: .16 }), cx, .01, cz);
+    floor(W - .2, D - .2, solid('#1d2733', { roughness: .38, metalness: .2 }), cx, .018, cz);
+    for (var gx = cx - 12; gx <= cx + 12; gx += 2.4) box(.03, .006, D - 1.4, '#5de2ff', gx, .022, cz);
+    for (var gz = cz - 8.5; gz <= cz + 8.5; gz += 2.4) box(W - 1.4, .006, .03, '#b07cff', cx, .022, gz);
+    // Frame/glass shell
+    box(W, wallH, .18, frameMat, cx, wallH / 2, cz - D / 2);
+    box(W - .4, 2.9, .08, glassMat, cx, 1.85, cz - D / 2 + .08);
+    box(.18, wallH, D, frameMat, cx - W / 2, wallH / 2, cz);
+    box(.18, wallH, D, frameMat, cx + W / 2, wallH / 2, cz);
+    box(.08, 2.7, D - .8, glassMat, cx - W / 2 + .08, 1.75, cz);
+    box(.08, 2.7, D - .8, glassMat, cx + W / 2 - .08, 1.75, cz);
+    box(10, wallH, .18, frameMat, cx - 9, wallH / 2, cz + D / 2);
+    box(10, wallH, .18, frameMat, cx + 9, wallH / 2, cz + D / 2);
+    box(9.6, 2.7, .08, glassMat, cx - 9, 1.75, cz + D / 2 - .08);
+    box(9.6, 2.7, .08, glassMat, cx + 9, 1.75, cz + D / 2 - .08);
+    box(8.4, .24, .3, frameMat, cx, 3.45, cz + D / 2);
+    box(7.8, .06, .06, '#63e6ff', cx, 3.3, cz + D / 2 - .18);
+    box(7.8, .06, .06, '#ff8df0', cx, 3.18, cz + D / 2 - .18);
+    box(W + .3, .14, D + .3, solid('#394656', { roughness: .45, metalness: .35 }), cx, wallH + .08, cz);
+    for (var px = cx - 9; px <= cx + 9; px += 9) {
+      for (var pz = cz - 5; pz <= cz + 5; pz += 5) {
+        box(5.2, .08, 2.4, solid('#deefff', { emissive: '#bfe7ff', emissiveIntensity: .75, roughness: .4 }), px, wallH - .08, pz);
+      }
+    }
+    box(W - .8, .05, .05, '#63e6ff', cx, .12, cz - D / 2 + .25);
+    box(W - .8, .05, .05, '#63e6ff', cx, .12, cz + D / 2 - .25);
+    box(.05, .05, D - .8, '#ff8df0', cx - W / 2 + .25, .12, cz);
+    box(.05, .05, D - .8, '#ff8df0', cx + W / 2 - .25, .12, cz);
+
+    function megaLabel(text, x, y, z, ry, col, w, h, fs) {
+      var c = document.createElement('canvas'); c.width = 512; c.height = 128;
+      var q = c.getContext('2d');
+      q.fillStyle = 'rgba(8,14,24,.84)'; q.fillRect(0, 0, 512, 128);
+      q.strokeStyle = col || '#63e6ff'; q.lineWidth = 8; q.strokeRect(6, 6, 500, 116);
+      q.fillStyle = '#eaf7ff'; q.font = 'bold ' + (fs || 34) + 'px Arial';
+      q.textAlign = 'center'; q.textBaseline = 'middle';
+      q.fillText(text, 256, 64);
+      var tex = new THREE.CanvasTexture(c);
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w || 2.2, h || .55), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+      m.position.set(x, y, z); m.rotation.y = ry || 0; m.userData.v9 = true; addO(m);
+    }
+    function megaBoard(title, lines, x, y, z, ry, w, h, accent) {
+      var c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+      var q = c.getContext('2d');
+      q.fillStyle = '#0b1420'; q.fillRect(0, 0, 1024, 512);
+      q.strokeStyle = accent || '#63e6ff'; q.lineWidth = 10; q.strokeRect(8, 8, 1008, 496);
+      q.fillStyle = accent || '#63e6ff'; q.fillRect(20, 20, 984, 64);
+      q.fillStyle = '#08111b'; q.font = 'bold 34px Arial'; q.textAlign = 'left'; q.textBaseline = 'middle';
+      q.fillText(title, 36, 52);
+      q.font = '24px Arial'; q.fillStyle = '#e7f5ff';
+      for (var i = 0; i < lines.length; i++) {
+        q.fillStyle = i % 2 ? '#d8ecff' : '#9fdcff';
+        q.fillText(lines[i], 36, 128 + i * 42, 952);
+      }
+      var tex = new THREE.CanvasTexture(c);
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w || 4.6, h || 2.3), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+      m.position.set(x, y, z); m.rotation.y = ry || 0; m.userData.v9 = true; addO(m);
+      var frame = new THREE.Mesh(new THREE.BoxGeometry((w || 4.6) + .12, (h || 2.3) + .12, .08), darkMat);
+      frame.position.set(x, y, z - (ry ? .01 : .04)); frame.rotation.y = ry || 0; frame.userData.v9 = true; addO(frame);
+    }
+
+    // Main master prompt wall
+    box(16.8, 3.0, .14, panelMat, cx, 2.0, cz - D / 2 + .34);
+    megaBoard('CYBORG CHEEBEE MEGA WORLD - OFFICIAL MASTER PROMPT',
+      ['Roblox Studio + Luau | PC | Sci-Fi Cyborg MMORPG | UE5 = benchmark/reference',
+       'Mode: Research -> Audit -> Design -> CEO Approval -> Implementation -> Test -> Validation',
+       'Goal: Complete game experience, original tech design, gameplay depth, immersion, performance, player value',
+       'Not a claim that Roblox became UE5. Honest, documented, CEO-approved development only.'],
+      cx, 2.05, cz - D / 2 + .42, 0, 10.8, 2.25, '#63e6ff');
+
+    // Key systems board
+    megaBoard('MAX FEASIBLE IN-OFFICE SYSTEMS / PILLARS',
+      ['P1 Foundation: audit, architecture, config, security, persistence, logging',
+       'P2 Core: character, combat, inventory, skills, NPCs, quests, world systems',
+       'P3 Visual: lighting, atmosphere, materials, weather, VFX, cinematic, animation',
+       'P4 Advanced: intelligent NPCs, events, physics, factions, guilds, economy, social',
+       'P5 Optimization: presets, profiling, multiplayer/security/regression, release validation',
+       'Feasibility: NATIVE / CUSTOM / APPROXIMATION / LIMITED / UNSUPPORTED'],
+      cx - 6.8, 1.85, cz - 2.2, Math.PI / 2, 6.2, 2.7, '#b07cff');
+
+    // Roadmap / outputs board
+    megaBoard('MASTER PROMPT ROADMAP (PARTS 1-21)',
+      ['P1-4: Role, Vision, Research, 100-point Roblox vs UE5 audit',
+       'P5-7: Graphics engine, 100 immersion reqs, 1,000 advanced suggestions',
+       'P8-14: MMORPG systems, code quality, scripts, architecture, perf/multiplayer',
+       'P15-19: Testing/validation, status system, recovery, priorities, CEO approval',
+       'P20-21: Required outputs, final 3 recommendations, non-negotiable rules',
+       'Full prompt: public/mega-world-master-prompt.md (viewable in office UI)'],
+      cx + 6.8, 1.85, cz - 2.2, -Math.PI / 2, 6.2, 2.7, '#ff9b5f');
+
+    // Center holographic core
+    var coreBase = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.7, .35, 20), solid('#243247', { roughness: .45, metalness: .35 }));
+    coreBase.position.set(cx, .18, cz + 1.2); coreBase.userData.v9 = true; addO(coreBase);
+    var coreRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, .06, 12, 40), solid('#63e6ff', { emissive: '#63e6ff', emissiveIntensity: 1.1, roughness: .2 }));
+    coreRing.position.set(cx, .72, cz + 1.2); coreRing.rotation.x = Math.PI / 2; coreRing.userData.v9 = true; addO(coreRing);
+    var coreRing2 = new THREE.Mesh(new THREE.TorusGeometry(.72, .045, 12, 36), solid('#ff8df0', { emissive: '#ff8df0', emissiveIntensity: 1.0, roughness: .2 }));
+    coreRing2.position.set(cx, 1.02, cz + 1.2); coreRing2.rotation.x = Math.PI / 2; coreRing2.userData.v9 = true; addO(coreRing2);
+    var core = new THREE.Mesh(new THREE.OctahedronGeometry(.42, 0), solid('#8fefff', { emissive: '#63e6ff', emissiveIntensity: 1.2, roughness: .15, metalness: .2, transparent: true, opacity: .92 }));
+    core.position.set(cx, 1.45, cz + 1.2); core.userData.v9 = true; addO(core);
+    animParts.push({ m: core, k: 'spin', s: .7 });
+    animParts.push({ m: coreRing, k: 'spinFlat', s: .35 });
+    animParts.push({ m: coreRing2, k: 'spinFlatR', s: .45 });
+
+    megaLabel('CYBORG CHEEBEE MEGA WORLD', cx, 3.5, cz + D / 2 - .25, Math.PI, '#63e6ff', 5.2, .7, 30);
+    megaLabel('AI RECOMMENDS | CEO APPROVES | DEVELOPER IMPLEMENTS | QA VALIDATES', cx, 1.1, cz + 5.2, 0, '#ffd27d', 8.8, .55, 22);
+    megaLabel('FULL MASTER PROMPT: OPEN "MEGA WORLD" BUTTON', cx, .62, cz + 6.2, 0, '#9fffa8', 6.2, .45, 24);
+
+    // Pillar markers
+    var pillars = [
+      ['GRAPHICS', -10.5, -6.5, '#63e6ff'], ['WORLD', -6.3, -6.5, '#7cf0c8'], ['CHARACTER', -2.1, -6.5, '#ff9fd0'],
+      ['COMBAT', 2.1, -6.5, '#ff9b5f'], ['NPC/AI', 6.3, -6.5, '#b07cff'], ['ECONOMY', 10.5, -6.5, '#ffd27d']
+    ];
+    pillars.forEach(function (p) {
+      var px = cx + p[1], pz = cz + p[2];
+      box(.9, .08, .9, solid('#223044', { roughness: .5, metalness: .25 }), px, .04, pz);
+      var col = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, 1.5, 10), solid(p[3], { emissive: p[3], emissiveIntensity: .35, roughness: .35, metalness: .2 }));
+      col.position.set(px, .75, pz); col.userData.v9 = true; addO(col);
+      var orb = new THREE.Mesh(new THREE.SphereGeometry(.16, 12, 12), solid(p[3], { emissive: p[3], emissiveIntensity: 1.1, roughness: .2 }));
+      orb.position.set(px, 1.62, pz); orb.userData.v9 = true; addO(orb);
+      megaLabel(p[0], px, 2.05, pz, 0, p[3], 1.8, .38, 30);
+    });
+
+    // approach path
+    floor(3.4, 6.2, solid('#9eaab6', { roughness: .92 }), cx, .012, cz + D / 2 + 3.3);
+    plant(cx - 7, cz + D / 2 + 1.4, .9); plant(cx + 7, cz + D / 2 + 1.4, .9);
+    tree(cx - 11, cz + D / 2 + 2.8, .9); tree(cx + 11, cz + D / 2 + 2.8, .9);
+  }
+
   function sideWorlds() {
     // ---- EAST / screen-left: café court, fountain and service lane ----
     // Kept inside the visible left wedge (x≈18..37, z≈34..46) of the user view.
@@ -3366,6 +3503,8 @@
 
     // Separate AI Dev Studio Annex (UE5-inspired, feasible/perf-safe)
     aiDevStudioAnnex();
+    // Cyborg Cheebee Mega World master prompt command zone (max feasible in-office)
+    megaWorldCommandZone();
   }
   function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();
@@ -4116,7 +4255,11 @@
       tick.glow = now;
       animParts.forEach(function (a) {
         var m = a.m;
-        if (!m || !m.material || m.material.emissiveIntensity === undefined) return;
+        if (!m) return;
+        if (a.k === 'spin') { m.rotation.y += (a.s || .5) * 0.016; m.rotation.x += (a.s || .5) * 0.008; return; }
+        if (a.k === 'spinFlat') { m.rotation.z += (a.s || .3) * 0.016; return; }
+        if (a.k === 'spinFlatR') { m.rotation.z -= (a.s || .3) * 0.016; return; }
+        if (!m.material || m.material.emissiveIntensity === undefined) return;
         m.material.emissiveIntensity = a.k === 'led'
           ? .3 + .65 * (.5 + .5 * Math.sin(now / 240 + a.p))
           : .7 + .22 * Math.sin(now / 720 + a.p);

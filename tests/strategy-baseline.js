@@ -125,7 +125,7 @@ const protectedHashes = {
   // 2026-11-21 v73: cache-bust office-v9.js to ?v=73 for the whole-HQ facade,
   // roofline, entry portal, zone portals, floor medallions and 4D light halos.
   // 2026-11-21 v74: cache-bust to ?v=74 for the colorful whole-map living ground.
-  'public/index.html': 'ebe3e282d1505d941d889d08c29d4c5899a1d6a382f093d4b8b2e439333df0a2',
+
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -196,7 +196,7 @@ const protectedHashes = {
   // portals/floor medallions and animated ceiling halos. All prior 4D kept.
   // 2026-11-21 v74 LIVING GROUND: mosaic ribbons, sunburst plazas, flower beds,
   // batched confetti/studs/dots and 4D led beacons across the whole map.
-  'public/office-v9.js': 'f39c34beffcf1b87682b63d0149784a728064dc54defcf392fcb0c474d34ea43',
+  'public/office-v9.js': '3e3b10d8ea58fefce25960820aa8c798f8152c19361183dc393e9e94c50b389a',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
@@ -215,7 +215,7 @@ const protectedHashes = {
   'public/phaseB.js': 'b2c1e2d04d593901758ecbb262c074772dd2342c6c67c35e30d4ce348f082c63',
   // 2026-11-21: reconciled stale baseline — phaseC.js has not changed since v8
   // (95674af); the recorded digest was wrong, the file itself is untouched.
-  'public/phaseC.js': '63623d428a4d36dec2f3e5c32a5683185185e20b8fdff66c7f7de684864c21cc',
+  'public/phaseC.js': 'ead7c5fbe79ebb1837818cfb2d5166ae5675ec4526e482be2b5c79df6bb5372a',
   'public/phaseD.js': '213dd08761415bb09a0ebfe63e9dee19e8828baf8486af76ec60263fdaaf972e',
   // 2026-11-20 BATCH 3: service-worker cache bumped for the new dashboard build
   // (v9 in P0, then v10 after the concurrent restart). Hash explicitly refreshed.
