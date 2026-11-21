@@ -119,7 +119,9 @@ const protectedHashes = {
   // in Content Pipeline; loads the real /hyperframes.js shim instead of a 404.
   // 2026-11-21 v72: cache-bust office-v9.js to ?v=72 so the combined tennis
   // court + road/building art loads fresh (parallel v71 may already be cached).
-  'public/index.html': '768cfd708f3211cef7c291e8fcbbcf7bd7e22dea3bd76cf2078314c9be1f31f1',
+  // 2026-11-21 v73: cache-bust office-v9.js to ?v=73 for the whole-HQ facade,
+  // roofline, entry portal, zone portals, floor medallions and 4D light halos.
+  'public/index.html': 'c3e9995031101ada3dafccb11071c036b3cea48ea7b1b302fe38ed632e86ce70',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -185,7 +187,10 @@ const protectedHashes = {
   // pass (richer asphalt/paver, double-yellow centres, cat's-eye studs, stop
   // bars, bike glyphs, refuge islands, road legends; plinth/pilasters/cornice,
   // roof kits, storefront canopies, name signs). 4D window fx + batching intact.
-  'public/office-v9.js': 'a205a2cc612fb9040f96ac2d7ca302f625ad8848adbf4a2f3f4f2e05b517fcb1',
+  // 2026-11-21 v73 WHOLE BUILDING: upper facade glazing + roofline/pergola,
+  // branded entry portal and plaza bollards, interior color spine, five zone
+  // portals/floor medallions and animated ceiling halos. All prior 4D kept.
+  'public/office-v9.js': '028949e7f2c9ef1becf419d7ec08248bc688a04f639fe138fe3a0c340daee828',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

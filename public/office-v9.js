@@ -1519,6 +1519,146 @@
     board(32.0, 21.9, 1, '#e3b159');
     board(34.2, 21.9, 2, '#6bb3a6');
   }
+  // v73 WHOLE-BUILDING PASS — the main HQ gets a complete architectural skin,
+  // a real roofline, a branded entry portal, interior zone portals and gentle
+  // 4D light halos. Nothing existing is removed or converted to flat 3D.
+  function wholeBuildingEnhancements() {
+    var gold = '#e3b159', teal = '#6bb3a6', coral = '#ff6647';
+    var metal = solid('#aeb8c4', { map: metalTex(), metalness: .55, roughness: .35 });
+    var stone = solid('#e8e4dc', { map: concreteTex(), roughness: .88 });
+    var dark = solid('#2f3d52', { metalness: .35, roughness: .42 });
+
+    function led(w, h, d, c, x, y, z, phase) {
+      var m = bx(w, h, d, c, x, y, z, true);
+      animParts.push({ m: m, k: 'led', p: phase == null ? x + y + z : phase });
+      return m;
+    }
+    function glowCyl(r, h, c, x, y, z, phase) {
+      var m = cyl(r, h, c, x, y, z, true);
+      animParts.push({ m: m, k: 'led', p: phase == null ? x + z : phase });
+      return m;
+    }
+    function halo(x, z, r, c, y, phase) {
+      var m = new THREE.Mesh(new THREE.TorusGeometry(r, .026, 6, 40),
+        solid(c, { emissive: c, emissiveIntensity: .5 }));
+      m.rotation.x = Math.PI / 2; m.position.set(x, y, z); addO(m);
+      animParts.push({ m: m, k: 'led', p: phase == null ? x + z : phase });
+      return m;
+    }
+    function medallion(x, z, r, c1, c2) {
+      [[r - .07, r, c1], [r * .55, r * .55 + .035, c2]].forEach(function (a) {
+        var m = new THREE.Mesh(new THREE.RingGeometry(a[0], a[1], 40, 1),
+          new THREE.MeshBasicMaterial({ color: a[2], transparent: true, opacity: .72,
+            side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+        m.rotation.x = -Math.PI / 2; m.position.set(x, .019, z); addO(m);
+      });
+    }
+    function portal(x, z, along, w, title, sub, accent) {
+      if (along === 'x') {
+        [-w / 2, w / 2].forEach(function (dx) {
+          box(.16, 2.6, .18, metal, x + dx, 1.3, z);
+          led(.035, 2.4, .04, accent, x + dx, 1.3, z + .11, x + dx);
+        });
+        box(w + .34, .16, .2, metal, x, 2.62, z);
+        led(w - .12, .035, .05, accent, x, 2.52, z + .12, x);
+        wallSign(title, sub, x, 2.96, z + .14, Math.min(w * .62, 3.2), .52, 0, accent);
+      } else {
+        [-w / 2, w / 2].forEach(function (dz) {
+          box(.18, 2.6, .16, metal, x, 1.3, z + dz);
+          led(.04, 2.4, .035, accent, x + .11, 1.3, z + dz, z + dz);
+        });
+        box(.2, .16, w + .34, metal, x, 2.62, z);
+        led(.05, .035, w - .12, accent, x + .12, 2.52, z, z);
+        wallSign(title, sub, x + .14, 2.96, z, Math.min(w * .62, 3.2), .52, -Math.PI / 2, accent);
+      }
+    }
+    function totem(x, z, title, sub, accent) {
+      box(.5, 1.7, .32, dark, x, .85, z);
+      box(.58, .08, .4, metal, x, 1.74, z);
+      wallSign(title, sub, x, 1.3, z + .2, .92, .5, 0, accent);
+      led(.42, .03, .04, accent, x, .18, z + .21, x);
+    }
+    function roofPlanter(x, z, s) {
+      box(1.25 * s, .34 * s, .7 * s, solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 1, 1) }), x, 6.3, z);
+      [[-.35, .58], [0, .66], [.35, .58]].forEach(function (p, i) {
+        var leaf = new THREE.Mesh(new THREE.SphereGeometry(.24 * s, 8, 6),
+          solid(['#2f8c56', '#3da167', '#287a4c'][i], { roughness: .88 }));
+        leaf.position.set(x + p[0] * s, 6.65 + p[1] * s * .2, z); addO(leaf);
+      });
+    }
+
+    // ---- 1. upper facade band + roofline (transparent so the open HQ stays readable) ----
+    glass(46.4, 2.35, .14, 23, 4.45, 34.2, .24, '#bcd9ec');
+    glass(.14, 2.35, 34.2, -.14, 4.45, 17, .2, '#bcd9ec');
+    glass(.14, 2.35, 34.2, 46.14, 4.45, 17, .2, '#bcd9ec');
+    glass(46.4, 2.35, .14, 23, 4.45, -.14, .18, '#bcd9ec');
+    for (var ux = 1; ux <= 45; ux += 3.1) box(.06, 2.3, .08, '#2e3a4d', ux, 4.45, 34.29);
+    for (var uz = 1; uz <= 33; uz += 3.1) {
+      box(.08, 2.3, .06, '#2e3a4d', -.22, 4.45, uz);
+      box(.08, 2.3, .06, '#2e3a4d', 46.22, 4.45, uz);
+    }
+    box(47.2, .18, .34, metal, 23, 5.75, 34.22);
+    box(47.2, .3, .28, stone, 23, 5.98, 34.22);
+    box(.3, .3, 34.6, stone, -.22, 5.98, 17);
+    box(.3, .3, 34.6, stone, 46.22, 5.98, 17);
+    box(47.2, .18, .3, metal, 23, 6.15, 34.22);
+    box(47.2, .18, .3, metal, 23, 6.15, -.22);
+    box(.18, .18, 34.6, metal, -.22, 6.15, 17);
+    box(.18, .18, 34.6, metal, 46.22, 6.15, 17);
+    [6, 15, 24, 33, 42].forEach(function (x, i) {
+      led(.09, 2.45, .1, [gold, teal, gold, coral, teal][i], x, 4.45, 34.36, i * 1.3);
+    });
+    led(46.6, .04, .05, teal, 23, 3.14, 34.17, 4.1);
+    wallSign('CYBORG CHEEBEE HQ', 'AI AGENTS · OPEN 24/7', 23, 4.55, 34.44, 7.4, 1.05, 0, gold);
+    [6, 14, 22, 30, 38, 44].forEach(function (x) { roofPlanter(x, 34.72, .86); });
+    [10, 18, 27].forEach(function (x) {
+      var panel = box(2.6, .08, 1.45, solid('#1d2b42', { metalness: .55, roughness: .3 }), x, 6.34, 33.7);
+      panel.rotation.x = -.32;
+      led(2.4, .025, .05, teal, x, 6.29, 34.4, x);
+    });
+    cyl(.035, 1.1, '#8b97a5', 43.6, 6.72, 33.9);
+    glowCyl(.09, .09, coral, 43.6, 7.32, 33.9, 2.7);
+
+    // ---- 2. branded entry portal + plaza details ----
+    [19.2, 26.8].forEach(function (x) {
+      box(.42, 3.55, .42, stone, x, 1.78, 34.42);
+      box(.5, .12, .5, metal, x, 3.62, 34.42);
+      led(.04, 2.85, .05, teal, x + (x < 23 ? .24 : -.24), 1.75, 34.66, x);
+    });
+    box(8.1, .34, .48, stone, 23, 3.64, 34.42);
+    led(7.7, .04, .06, gold, 23, 3.44, 34.7, 5.5);
+    totem(15.4, 36.5, 'WELCOME', 'RECEPTION →', teal);
+    totem(30.6, 36.5, 'TOURS', 'MAIN STREET →', gold);
+    plant(17.1, 37.3, .82); plant(28.9, 37.3, .82);
+    for (var bx2 = 8; bx2 <= 38; bx2 += 5) {
+      cyl(.1, .62, '#2f3d52', bx2, .31, 40.6);
+      glowCyl(.075, .035, bx2 % 10 ? gold : teal, bx2, .65, 40.6, bx2);
+    }
+
+    // ---- 3. interior circulation: color spine, medallions, zone portals ----
+    bx(38, .014, .045, teal, 23, .021, 22.86, true);
+    bx(38, .014, .045, gold, 23, .021, 23.54, true);
+    for (var sx = 5; sx <= 41; sx += 4) bx(1.1, .016, .04, gold, sx, .024, 23.2, true);
+    medallion(23, 30.4, 1.45, teal, gold);
+    medallion(14, 11, 1.2, gold, teal);
+    medallion(37, 10, 1.2, '#5f7fa8', teal);
+    medallion(37, 29, 1.2, coral, gold);
+    medallion(32.5, 20.5, 1.1, teal, coral);
+    portal(23, 26.6, 'x', 5.2, 'RECEPTION', 'LOBBY · FRONT DESK', teal);
+    portal(23, 19.4, 'x', 5.2, 'FOCUS', 'OPEN WORK · QUIET', gold);
+    portal(29, 23.2, 'z', 4.2, 'MEET', 'STUDIO · HUDDLE', '#5f7fa8');
+    portal(37, 23.2, 'z', 4.2, 'GATHER', 'PANTRY · COFFEE', coral);
+    portal(32.5, 17.2, 'x', 4.6, 'ART ZONE', 'ARYASKY SAMPLES', teal);
+    halo(23, 30.4, 1.15, teal, 3.42, 1.1);
+    halo(14, 11, 1.05, gold, 3.42, 2.2);
+    halo(37, 10, 1.05, '#5f7fa8', 3.42, 3.3);
+    halo(37, 29, 1.05, coral, 3.42, 4.4);
+    halo(32.5, 20.5, .95, teal, 3.42, 5.5);
+    [6, 15, 24, 33, 42].forEach(function (x, i) {
+      led(.04, .03, 34.2, [gold, teal, gold, coral, teal][i], x, 3.27, 17, i * 1.7);
+    });
+    plant(10.5, 22.2, .7); plant(35.5, 22.2, .7);
+  }
   function presentationScreen(x, z, rot) {
     var g2 = new THREE.Group();
     var frame = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.42, .09), solid('#1b2537'));
@@ -3330,6 +3470,7 @@
     airplane();
     buildingEnhancements();
     aryaskyArtZone();
+    wholeBuildingEnhancements();
     greenSurrounds();
     buildBatch1World();
     buildBatch2World();
