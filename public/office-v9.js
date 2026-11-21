@@ -258,7 +258,7 @@
     }, rx, ry);
   }
   function stoneTex(rx, ry) {
-    return makeTex('stone', function (q, S) {
+    return makeTex('stone-v2', function (q, S) {
       q.fillStyle = '#b9b2a5'; q.fillRect(0, 0, S, S);
       var r = rnd(43);
       for (var i = 0; i < 1800; i++) {
@@ -270,25 +270,35 @@
         q.beginPath(); q.moveTo(p, 0); q.lineTo(p, S); q.stroke();
         q.beginPath(); q.moveTo(0, p); q.lineTo(S, p); q.stroke();
       }
+      // ARYASKY: offset paver highlight gives the sidewalk real depth from above.
+      q.strokeStyle = 'rgba(255,255,255,.16)'; q.lineWidth = 1;
+      for (var p2 = 2; p2 <= S; p2 += 64) {
+        q.beginPath(); q.moveTo(p2, 0); q.lineTo(p2, S); q.stroke();
+        q.beginPath(); q.moveTo(0, p2); q.lineTo(S, p2); q.stroke();
+      }
     }, rx, ry);
   }
   function asphaltTex(rx, ry) {
-    return makeTex('asphalt', function (q, S) {
-      q.fillStyle = '#3b4048'; q.fillRect(0, 0, S, S);
+    return makeTex('asphalt-v2', function (q, S) {
+      q.fillStyle = '#33383f'; q.fillRect(0, 0, S, S);
       var r = rnd(77);
-      for (var i = 0; i < 4200; i++) {
+      for (var i = 0; i < 5200; i++) {
         var v = r();
-        q.fillStyle = v > .6 ? 'rgba(255,255,255,.055)' : 'rgba(0,0,0,.10)';
-        q.fillRect(r() * S, r() * S, 1 + r() * 2.6, 1 + r() * 2.6);
+        q.fillStyle = v > .72 ? 'rgba(212,222,232,.075)' : v > .4 ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.11)';
+        var s = 1 + r() * 2.8;
+        q.fillRect(r() * S, r() * S, s, s);
       }
-      // wear bands + patchwork
-      q.fillStyle = 'rgba(255,255,255,.025)';
-      for (var k = 0; k < 4; k++) q.fillRect(0, 30 + k * 58, S, 16);
-      q.fillStyle = 'rgba(18,22,28,.28)'; q.fillRect(S * .18, S * .3, S * .26, S * .14);
-      q.fillRect(S * .62, S * .66, S * .3, S * .1);
-      q.strokeStyle = 'rgba(10,12,16,.5)'; q.lineWidth = 2;
-      q.beginPath(); q.moveTo(0, S * .54); q.lineTo(S * .3, S * .5);
-      q.lineTo(S * .55, S * .58); q.lineTo(S, S * .52); q.stroke();
+      // ARYASKY: longitudinal tire wear, patched repairs and a fine hairline crack.
+      q.fillStyle = 'rgba(212,220,228,.035)';
+      for (var k = 0; k < 5; k++) q.fillRect(0, 24 + k * 52, S, 12);
+      q.fillStyle = 'rgba(14,17,22,.30)';
+      q.fillRect(S * .12, S * .26, S * .28, S * .13);
+      q.fillRect(S * .60, S * .64, S * .32, S * .11);
+      q.strokeStyle = 'rgba(10,12,16,.55)'; q.lineWidth = 2;
+      q.beginPath(); q.moveTo(0, S * .56); q.lineTo(S * .28, S * .51);
+      q.lineTo(S * .56, S * .59); q.lineTo(S, S * .53); q.stroke();
+      q.strokeStyle = 'rgba(255,255,255,.055)'; q.lineWidth = 1;
+      q.beginPath(); q.moveTo(S * .20, S * .82); q.lineTo(S * .44, S * .79); q.stroke();
     }, rx, ry);
   }
   function fabricTex(base, rx, ry) {
@@ -2210,6 +2220,57 @@
       new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, toneMapped: false }));
     m.position.set(23, 7.4, 54.48); m.rotation.y = Math.PI; m.userData.v9 = true; addO(m);
   }
+  /* ---------- ARYASKY road detailing helpers (static + batch-friendly) ---------- */
+  function roadStuds(x0, x1, z, step, color) {
+    // Reflective cat's-eye studs. Tiny boxes so batchStaticDetails() merges them.
+    step = step || 4;
+    for (var x = x0; x <= x1; x += step) {
+      box(.14, .025, .1, '#dfe7ec', x, .028, z);
+      box(.07, .01, .045, color || '#f6d98a', x, .046, z);
+    }
+  }
+  function centerLine(x0, x1, z, dashed) {
+    // Double solid-yellow centre line; the inner dashes guide traffic.
+    [-.12, .12].forEach(function (dz) { box(x1 - x0, .014, .06, '#e8d9a0', (x0 + x1) / 2, .021, z + dz, true); });
+    if (dashed) for (var x = x0; x <= x1; x += 4) box(2.1, .014, .05, '#f2e4bd', x, .023, z, true);
+  }
+  function stopBar(x, z, w) {
+    // Thick white stop bar spanning the lanes, painted before a zebra crossing.
+    box(.24, .016, w || 2.8, '#eef2f4', x, .021, z);
+  }
+  function bikeGlyph(x, z) {
+    // Bicycle symbol painted on the green lane — clear from the Tycoon view.
+    [-.24, .24].forEach(function (dx) {
+      var wh = new THREE.Mesh(new THREE.TorusGeometry(.13, .02, 6, 12), solid('#eef2f4', { roughness: .9 }));
+      wh.rotation.x = Math.PI / 2; wh.position.set(x + dx, .026, z); wh.userData.v9 = true; addO(wh);
+    });
+    [.42, -.42].forEach(function (a) {
+      var fr = new THREE.Mesh(new THREE.BoxGeometry(.5, .016, .035), solid('#eef2f4', { roughness: .9 }));
+      fr.position.set(x, .026, z); fr.rotation.y = a; fr.userData.v9 = true; addO(fr);
+    });
+  }
+  function refugeIsland(x, z, w) {
+    // Raised pedestrian refuge: striped amber curbs + a lit bollard.
+    var ww = w || 1.2;
+    floor(ww, 1.7, solid('#ffffff', { map: stoneTex(2, 1), roughness: .95 }), x, .022, z);
+    box(ww + .14, .1, 1.84, '#c9cfd6', x, .06, z);
+    for (var i = -2; i <= 2; i++) box(.1, .012, .62, '#e0b34a', x + i * (ww / 5), .117, z);
+    cyl(.07, .66, '#8b97a5', x, .43, z);
+    cyl(.09, .08, '#3f9d9a', x, .8, z, true);
+  }
+  function roadText(x, z, text, w, d, rot) {
+    // Flat painted road legend — no occlusion, reads beautifully top-down.
+    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+    var q = cv.getContext('2d');
+    q.clearRect(0, 0, 512, 128);
+    q.fillStyle = 'rgba(238,242,244,.88)'; q.font = 'bold 76px sans-serif';
+    q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(text, 256, 68);
+    var t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(w || 5, d || 1.25),
+      new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2; m.rotation.z = rot || 0;
+    m.position.set(x, .026, z); m.userData.v9 = true; addO(m);
+  }
   function entranceRoad() {
     // Super-detailed street directly outside the south entrance (z ~ 46..52).
     floor(70, 11.6, solid('#ffffff', { map: stoneTex(14, 1), roughness: .95 }), 23, .004, 40.2);
@@ -2222,11 +2283,20 @@
     for (var bxd = -8; bxd <= 58; bxd += 3) box(1.3, .012, .07, '#eef2f4', bxd, .014, 46.9);
     box(70, .012, .09, '#d4dbe0', 23, .014, 47.1);
     box(70, .012, .09, '#d4dbe0', 23, .014, 51.9);
-    for (var x = -8; x <= 58; x += 4) box(2.1, .014, .11, '#e8d9a0', x, .016, 49.3, true);
+    centerLine(-8, 58, 49.3, true); // ARYASKY: double-yellow with dashed guide
+    roadStuds(-8, 58, 47.4, 4, '#f6d98a'); // amber near lane
+    roadStuds(-8, 58, 51.2, 4, '#e8624f'); // red far lane
     // Zebra crossings right in front of the entrance and the side gate.
     [8, 23].forEach(function (cx) {
       for (var z = 46.1; z <= 51.9; z += .72) box(2.4, .015, .34, '#eef2f4', cx, .017, z);
+      stopBar(cx - 1.9, 48.1, 2.8); // stop line for the near (+x) lane
+      stopBar(cx + 1.9, 50.7, 2.8); // stop line for the far (-x) lane
     });
+    // ARYASKY: bicycle symbols on the green lane + centre refuges + road legend.
+    [0, 12, 26, 40, 52].forEach(function (bx2) { bikeGlyph(bx2, 46.6); });
+    refugeIsland(15.5, 49.3, 1.2);
+    refugeIsland(30.5, 49.3, 1.2);
+    roadText(41, 49.3, 'CYBORG AVE →', 7, 1.5);
     [2, 17, 32].forEach(function (ax) { roadArrow(ax, 48.3, 1); });
     // Taxi / drop-off hatching along the entrance curb.
     for (var hx = -2; hx <= 34; hx += 2.2) {
@@ -2382,19 +2452,59 @@
     });
     g2.rotation.y = rot || Math.PI / 2; g2.position.set(x, 0, z); addO(g2);
   }
-  function sideBuilding(x, z, w, h, d, color) {
+  function sideBuilding(x, z, w, h, d, color, name) {
+    // ARYASKY: cohesive city block — plinth, pilasters, cornice, roof parapet,
+    // framed windows, glowing storefront canopy, roof kit and a name sign.
+    // The original 4D window lit-flicker registration (fx.windows) is preserved.
     box(w, h, d, solid(color, { roughness: .9 }), x, h / 2, z);
+    // foundation plinth + corner pilasters give the mass real structure
+    box(w + .16, .34, d + .16, '#4d5a71', x, .17, z);
+    [-1, 1].forEach(function (s) {
+      box(.22, h - .34, .22, '#5b6980', x + s * (w / 2 - .1), (h + .34) / 2, z + d / 2 - .1);
+    });
+    // cornice band + roof parapet with caps
+    box(w + .28, .18, d + .28, '#8592a6', x, h - .22, z);
     box(w + .2, .16, d + .2, '#9aa6b8', x, h + .08, z);
+    [-1, 1].forEach(function (s) {
+      box(w + .2, .34, .14, '#77849a', x, h + .28, z + s * (d / 2));
+      box(.14, .34, d + .2, '#77849a', x + s * (w / 2), h + .28, z);
+    });
     box(.12, h - .2, d + .04, '#4d5a71', x - w / 2 - .06, h / 2, z);
-    // roof AC unit and small door
-    box(.7, .35, .5, '#8b97a5', x + w * 0.18, h + .34, z - d * 0.1);
-    cyl(.12, .02, '#6e7c8f', x + w * 0.18, h + .53, z - d * 0.1);
+    // rooftop kit: original AC + vent pipes + water tank + beacon antenna
+    box(.7, .35, .5, '#8b97a5', x + w * .18, h + .34, z - d * .1);
+    cyl(.12, .02, '#6e7c8f', x + w * .18, h + .53, z - d * .1);
+    [[-.3, -.28], [.32, .3]].forEach(function (p) {
+      cyl(.1, .5, '#6e7c8f', x + w * p[0], h + .3, z + d * p[1]);
+      cyl(.14, .05, '#8b97a5', x + w * p[0], h + .57, z + d * p[1]);
+    });
+    cyl(.34, .62, '#7b8798', x - w * .26, h + .46, z - d * .2);
+    cyl(.38, .07, '#9aa6b8', x - w * .26, h + .8, z - d * .2);
+    cyl(.02, .9, '#9aa6b8', x + w * .34, h + .6, z - d * .32);
+    cyl(.07, .06, '#e8624f', x + w * .34, h + 1.05, z - d * .32, true);
+    // ground-floor storefront: steps, original door, glowing canopy, sign
+    box(w * .7, .08, .5, '#9aa6b8', x - w * .12, .04, z + d / 2 + .2);
     box(.8, 1.35, .06, '#4b586b', x - w * 0.22, .68, z + d / 2 + .04);
     box(.06, .02, .02, '#d8c39a', x - w * 0.12, .72, z + d / 2 + .08);
+    box(w * .82, .09, .85, '#2e3a4d', x - w * .05, 2.12, z + d / 2 + .42);
+    bx(w * .82, .03, .05, '#5fd6ff', x - w * .05, 2.04, z + d / 2 + .84, true);
+    [-1, 1].forEach(function (s) {
+      cyl(.045, 2.1, '#8b97a5', x - w * .05 + s * w * .38, 1.05, z + d / 2 + .8);
+    });
+    if (name) wallSign(name, 'CYBORG CITY', x - w * .05, 2.55, z + d / 2 + .47,
+      Math.min(w * .7, 2.6), .5, 0, '#3f9d9a');
+    // planters flanking the entrance (use existing 4D plant sway)
+    [-1, 1].forEach(function (s) {
+      var px = x + s * (w / 2 - .45);
+      box(.5, .32, .5, '#8b5e34', px, .16, z + d / 2 + .45);
+      plant(px, z + d / 2 + .45, .42);
+    });
+    // framed windows — static frame/sill + original animated lit pane
     for (var wy = 1.8; wy < h - 1; wy += 1.9) {
       for (var wx = -w / 2 + 1; wx <= w / 2 - 1; wx += 1.4) {
         var lit = (Math.round(wy * 10) + Math.round(wx * 10) + Math.round(x)) % 4 !== 0;
-        var win = bx(.45, .34, .03, lit ? '#ffd89a' : '#cfe0ee', x + wx, wy, z + d / 2 + .02, true);
+        box(.55, .44, .02, '#3d495c', x + wx, wy, z + d / 2 + .015);
+        box(.58, .04, .08, '#9aa6b8', x + wx, wy - .24, z + d / 2 + .05);
+        var win = bx(.45, .34, .03, lit ? '#ffd89a' : '#cfe0ee', x + wx, wy, z + d / 2 + .04, true);
         if ((Math.round(wy) + Math.round(wx) + Math.round(x)) % 5 === 0) fx.windows.push({ m: win, p: x + wx + wy });
       }
     }
@@ -2678,10 +2788,18 @@
     floor(17, 12, solid('#ffffff', { map: stoneTex(10, 2), roughness: .95 }), 26, .002, 40);
     floor(4, 11.8, solid('#ffffff', { map: asphaltTex(8, 4), roughness: .96, metalness: .02 }), 35, .005, 40);
     for (var ez = 35; ez <= 45; ez += 2) box(.12, .012, 1, '#e8d9a0', 35, .015, ez);
+    // ARYASKY: café service lane — reflective studs + painted legend.
+    for (var ez2 = 35; ez2 <= 45; ez2 += 3) {
+      box(.1, .025, .14, '#dfe7ec', 34.2, .028, ez2);
+      box(.045, .01, .07, '#f6d98a', 34.2, .046, ez2);
+      box(.1, .025, .14, '#dfe7ec', 35.8, .028, ez2);
+      box(.045, .01, .07, '#e8624f', 35.8, .046, ez2);
+    }
+    roadText(35, 40, 'SERVICE', 3.2, .9, Math.PI / 2);
     floor(7, 7, solid('#4f9d6a', { roughness: 1 }), 23, .006, 40);
     pond(22, 40, 1.9);
-    sideBuilding(18, 43, 3, 6, 3, '#5d6b84');
-    sideBuilding(34, 43, 3, 7, 3, '#68778f');
+    sideBuilding(18, 43, 3, 6, 3, '#5d6b84', 'CAFÉ');
+    sideBuilding(34, 43, 3, 7, 3, '#68778f', 'SERVICE');
     umbrella(21, 42, '#c94f5f'); umbrella(25, 42, '#3f9d6a');
     umbrella(21, 38, '#4a7fb0'); umbrella(25, 38, '#e0a83a');
     parkBench(23, 43); parkBench(28, 43);
@@ -2700,10 +2818,18 @@
     floor(21, 36, solid('#ffffff', { map: stoneTex(9, 2), roughness: .95 }), -11.5, .002, 25);
     floor(5, 36.4, solid('#ffffff', { map: asphaltTex(9, 4), roughness: .96, metalness: .02 }), -20, .005, 16.1);
     for (var wz = -1; wz <= 33; wz += 4) box(.12, .012, 1.6, '#e8d9a0', -20, .015, wz);
+    // ARYASKY: market service lane — reflective studs + painted legend.
+    for (var wz2 = -1; wz2 <= 33; wz2 += 3) {
+      box(.1, .025, .14, '#dfe7ec', -20.8, .028, wz2);
+      box(.045, .01, .07, '#f6d98a', -20.8, .046, wz2);
+      box(.1, .025, .14, '#dfe7ec', -19.2, .028, wz2);
+      box(.045, .01, .07, '#e8624f', -19.2, .046, wz2);
+    }
+    roadText(-20, 16, 'MARKET', 3.2, .9, Math.PI / 2);
     floor(14, 18, solid('#4f9d6a', { roughness: 1 }), -12, .004, 26);
     basketballCourt(-12, 26);
-    sideBuilding(-22, 34, 5, 9, 4, '#68778f');
-    sideBuilding(-20, 15, 5, 7, 4, '#5d6b84');
+    sideBuilding(-22, 34, 5, 9, 4, '#68778f', 'ARENA');
+    sideBuilding(-20, 15, 5, 7, 4, '#5d6b84', 'MARKET');
     marketStall(-4, 36, '#8f6fd8'); marketStall(-4, 28, '#3f9d9a');
     umbrella(-4, 20, '#e0a83a'); umbrella(-3, 24, '#c94f5f');
     parkBench(-4, 24); parkBench(-4, 32);
@@ -2881,12 +3007,20 @@
     for (var bxd = -8; bxd <= 54; bxd += 3) box(1.4, .012, .07, '#eef2f4', bxd, .013, -5.3);
     box(70, .14, .18, '#b9c1c9', 23, .07, -4.12);
     box(70, .14, .18, '#b9c1c9', 23, .07, -10.28);
-    for (var x = -8; x <= 54; x += 4) box(2.1, .014, .11, '#e8d9a0', x, .012, -7.2, true);
+    centerLine(-8, 54, -7.2, true); // ARYASKY: double-yellow with dashed guide
+    roadStuds(-8, 54, -5.7, 4, '#f6d98a'); // amber near lane
+    roadStuds(-8, 54, -8.7, 4, '#e8624f'); // red far lane
     box(70, .012, .09, '#d4dbe0', 23, .012, -4.6);
     box(70, .012, .09, '#d4dbe0', 23, .012, -9.8);
     [12, 34].forEach(function (cx) {
       for (var z = -4.5; z >= -9.9; z -= .72) box(2.8, .014, .34, '#eef2f4', cx, .013, z);
+      stopBar(cx - 1.9, -6.2, 2.8); // near (+x) lane stop line
+      stopBar(cx + 1.9, -8.4, 2.8); // far (-x) lane stop line
     });
+    // ARYASKY: green-lane bicycle symbols + centre refuges + city road legend.
+    [-4, 8, 22, 38, 50].forEach(function (bx2) { bikeGlyph(bx2, -4.85); });
+    refugeIsland(23, -7.2, 1.2);
+    roadText(44, -7.2, 'CITY ←', 6.5, 1.4);
     [8, 26, 44].forEach(function (ax) { roadArrow(ax, -6.2, 1); });
     [14, 38].forEach(function (mx) {
       cyl(.28, .03, '#59616c', mx, .014, -7.2);

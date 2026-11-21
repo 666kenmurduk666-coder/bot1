@@ -117,7 +117,8 @@ const protectedHashes = {
   // shift, talking liveliness and expressive idle beats; cache-bust office-v9 v56.
   // 2026-11-21 v70: approval queue (shift proposals + publish ledger + FB status)
   // in Content Pipeline; loads the real /hyperframes.js shim instead of a 404.
-  'public/index.html': '0a3d064bfe43cb6e766a3a471ea6e80fdcdd7926d01486c743a0f8e7babff8d1',
+  // 2026-11-21 v71: cache-bust office-v9.js to ?v=71 for the road/building art.
+  'public/index.html': 'ed6889c57c650ad42c8b2d8d54397801641db6421fefbbbb2e08efddeb99f1c3',
   // 2026-11-20: Google-reference single-floor plan — WELCOME/reception +
   // lounge, MAIN STREET spine, FOCUS bench clusters + quiet booths, MEET glass
   // boardroom/huddle, GATHER pantry, executive + server/IT. 7 small happy bots.
@@ -179,7 +180,11 @@ const protectedHashes = {
   // (grass/trees/hills/farm, front garden path, entrance, reception/pantry/meeting accents).
   // 2026-11-21: character 4D time-life - bot breathing, head attention drift,
   // micro-lean/weight shift, talking bounce/nod, antenna bob, expressive idle poses.
-  'public/office-v9.js': '9fcb8a2b898c76a173b688c9d772ebf5652c62b778a146c4ec851d4517e4d6c0',
+  // 2026-11-21 v71 ARYASKY road+building pass: richer asphalt/paver textures,
+  // double-yellow centre lines, cat's-eye studs, stop bars, bike glyphs, refuge
+  // islands, road legends; sideBuilding plinth/pilasters/cornice/parapet/roof
+  // kit/storefront canopy/name signs. All 4D window fx + batching preserved.
+  'public/office-v9.js': 'f0bfe761869ff8d7c87d39f89f36d4e5dcb464bf9c36fc21029b6d6408672564',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
