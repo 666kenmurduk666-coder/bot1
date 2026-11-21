@@ -619,7 +619,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=66"></script>
+<script src="/office-v9.js?v=67"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -831,6 +831,7 @@ function renderProducts(){
 }
 /* 🧩 CONTENT PIPELINE — 2D, walang WebGL at walang sariling interval.
    Bumubasa lang mula sa S (ang iisang /api/state poll na 12s na). */
+function cpError(r){return r&&r.error==='locked'?'🔒 Pindutin muna ang 👑 CEO login':('Error: '+((r&&r.error)||'failed'))}
 function renderContentPipeline(){
   const cfg=S.config||{},items=S.contentPipeline||[];
   const links=cfg.affiliateLink?esc(cfg.affiliateLink):'<span style="color:#e2694f">not set — ⚙ Setup</span>';
@@ -868,7 +869,7 @@ function renderContentPipeline(){
   document.querySelectorAll('[data-cpw]').forEach(b=>b.onclick=async()=>{
     toast('✍️ Writer is writing…');
     const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'script',id:b.dataset.cpw})});
-    toast(r.ok?'Script ready!':'Error: '+(r.error||'failed'));
+    toast(r.ok?'Script ready!':cpError(r));
     await refresh();
   });
   document.querySelectorAll('[data-cpv]').forEach(b=>b.onclick=()=>{
@@ -887,7 +888,7 @@ function renderContentPipeline(){
   });
   const rate=async(id,v)=>{
     const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'rate',id:id,rating:v})});
-    toast(r.ok?(v===1?'👍 Na-save — Scout will follow this':'👎 Na-save'):'Failed');
+    toast(r.ok?(v===1?'👍 Na-save — Scout will follow this':'👎 Na-save'):cpError(r));
     await refresh();
   };
   document.querySelectorAll('[data-cpu]').forEach(b=>b.onclick=()=>rate(b.dataset.cpu,1));
@@ -1051,7 +1052,7 @@ $('stopBtn').onclick=async()=>{await api('/api/stop',{method:'POST',body:'{}'});
 $('clearBtn').onclick=async()=>{await api('/api/reset',{method:'POST',body:'{}'});toast('Cleared');await refresh()};
 $('convene').onclick=$('cosRun').onclick=async()=>{const r=await api('/api/agent',{method:'POST',body:JSON.stringify({id:'cos'})});toast(r.ok?'Board convened':'Error: '+r.error);await refresh()};
 $('outreachRun').onclick=async()=>{const r=await api('/api/agent',{method:'POST',body:JSON.stringify({id:'outreach'})});toast(r.ok?'Drafts ready':'Error: '+r.error);await refresh()};
-if($('cpIdeas'))$('cpIdeas').onclick=async()=>{toast('🔍 Scout is scanning trends…');const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'ideas',count:6})});toast(r.ok?('Scout found '+r.items.length+' ideas'):('Error: '+(r.error||'failed')));await refresh()};
+if($('cpIdeas'))$('cpIdeas').onclick=async()=>{toast('🔍 Scout is scanning trends…');const r=await api('/api/content-pipeline',{method:'POST',body:JSON.stringify({action:'ideas',count:6})});toast(r.ok?('Scout found '+r.items.length+' ideas'):cpError(r));await refresh()};
 if($('cpProfile'))$('cpProfile').onclick=()=>$('profile').showModal();
 $('radd').onclick=async()=>{const arr=JSON.parse(JSON.stringify(S.routines));arr.push({id:'r-'+Date.now(),name:$('rn').value.trim()||'New routine',agent:$('ra').value,minutes:Math.max(1,Number($('rm').value)||60),enabled:true,lastRun:0,runs:0});$('rn').value='';await api('/api/routines',{method:'POST',body:JSON.stringify({routines:arr})});await refresh()};
 $('rsave').onclick=saveRoutines;
