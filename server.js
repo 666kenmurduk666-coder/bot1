@@ -138,7 +138,18 @@ const state = {
     clips: ['hook-01', 'review-02', 'unbox-03'],
     slots: ['Mon 12:00 PM', 'Tue 6:00 PM', 'Wed 8:00 PM'],
     mission: '',
-    affiliateLink: '', platform: 'Instagram Reels', language: 'Taglish'
+    // 🛍️ Shopee affiliate links — pampublikong links, ligtas na nasa defaults
+    // (napipisan kahit burahin ng Render ang data/ sa bawat redeploy).
+    affiliateLink: 'https://s.shopee.ph/4qHInvI4s9',
+    shopeeLinks: [
+      'https://s.shopee.ph/4qHInvI4s9', 'https://s.shopee.ph/4B1c0iOKua',
+      'https://s.shopee.ph/5Au9CZTt5Q', 'https://s.shopee.ph/9pfylBkeIk',
+      'https://s.shopee.ph/AKcFM7dwSQ', 'https://s.shopee.ph/40iBoVic9m',
+      'https://s.shopee.ph/1BO0RJcMPp', 'https://s.shopee.ph/5Au9CgNLbK',
+      'https://s.shopee.ph/AAIp9tY9om', 'https://s.shopee.ph/1BO0RN5fhB',
+      'https://s.shopee.ph/4VeSPVSSFA', 'https://s.shopee.ph/5fqPngwTJC'
+    ],
+    platform: 'Instagram Reels', language: 'Taglish'
   }, readJSON(CONFIG_FILE, {})),
   outputs: {},
   replyIds: {},
@@ -1718,10 +1729,16 @@ async function cpGenerateIdeas(count) {
     ideas = [];
     const used = recent.map(s => String(s).toLowerCase());
     let guard = 0;
-    while (ideas.length < n && guard++ < 60) {
-      const t = cpBag('topics', CP_TOPIC_POOL);
-      if (used.some(u => u === String(t).toLowerCase())) continue;
-      used.push(String(t).toLowerCase());
+    while (ideas.length < n && guard++ < 120) {
+      let t = cpBag('topics', CP_TOPIC_POOL);
+      const key = String(t).toLowerCase();
+      // Una: iwasan ang mga recent topics. Kapag naubos na ang pool, bagong
+      // anggle na lang — hindi na uuulitin ang eksaktong pamagat.
+      if (used.some(u => u === key)) {
+        if (guard <= CP_TOPIC_POOL.length) continue;
+        t = 'Bagong anggle: ' + String(t);
+      }
+      used.push(key);
       ideas.push({ topic: t, angle: 'Educational + trending format, safe for Reels.', hashtags: ['#herbs', '#tutorial', '#fyp'] });
     }
   }
@@ -1794,6 +1811,54 @@ function cpRate(id, rating) {
   item.rating = rating === 1 ? 1 : rating === -1 ? -1 : 0;
   saveStateNow();
   return item;
+}
+
+// 🎬 ASSEMBLER — script → video editor brief (gumagamit ng existing AI video editor).
+async function cpWriteBrief(id) {
+  const item = (state.contentPipeline || []).find(x => x && x.id === id);
+  if (!item) throw new Error('Item not found');
+  if (!item.script) throw new Error('Kailangan muna ang script ng Writer');
+  const sc = item.script;
+  const briefText = 'Title: ' + item.topic + '\nHook: ' + sc.hook + '\nBeats: ' +
+    (sc.beats || []).join(' | ') + '\nShots: ' + (sc.shotList || []).join(' | ') +
+    '\nCTA: ' + sc.cta + '\nFormat: vertical short-form\nLanguage: Taglish';
+  let cfg = null;
+  try {
+    const sys = 'You are the AI Video Editor Assistant of Cyborg Cheebee Office. Convert the CEO brief into ONLY a JSON object with keys: title, tagline, cta, format (vertical|wide), mode (product|recap|agent|campus), color1 (#rrggbb), color2 (#rrggbb), imageUrl (string or empty), voiceoverUrl (string or empty), captions (array of short strings). No markdown, no explanation. Match the language of the brief.';
+    const raw = await cpCall(sys, 'Brief: ' + briefText, 500);
+    const m = String(raw).match(/\{[\s\S]*\}/);
+    if (m) cfg = videoConfigFrom(JSON.parse(m[0]));
+  } catch (e) {}
+  if (!cfg) cfg = videoConfigFrom({
+    title: String(item.topic).slice(0, 80), tagline: sc.hook, cta: sc.cta,
+    format: 'vertical', mode: 'product', color1: '#7fc7ff', color2: '#e8b04a',
+    captions: (sc.beats || []).slice(0, 6)
+  });
+  item.brief = cfg;
+  item.stage = 'brief';
+  saveStateNow();
+  log('Content pipeline: video brief ready for "' + item.topic + '"', 'system');
+  return item;
+}
+
+// 🛍️ Ibalik ang Shopee affiliate links kahit burahin ng redeploy ang data/.
+function ensureShopeeLinks() {
+  try {
+    const links = Array.isArray(state.config.shopeeLinks) ? state.config.shopeeLinks : [];
+    if (!links.length || (state.products && state.products.length)) return;
+    const now = Date.now();
+    links.slice(0, 12).forEach((u, i) => {
+      if (state.products.some(p => p.url === u)) return;
+      state.products.push({ id: 'p' + now + '-' + i, url: u, title: 'Shopee Affiliate Find',
+        description: 'Tingnan ang presyo at detalye bago bumili.', price: 0, status: 'queued',
+        output: '', replyId: '', provider: '', createdAt: now });
+      if (!state.mall.some(m => m.url === u)) state.mall.push({ id: 'm' + now + '-' + i,
+        name: 'Shopee Affiliate Find', price: 0, emoji: '🛍️', url: u, cat: 'shopee',
+        caption: 'Tingnan ang presyo at detalye bago bumili.', createdAt: now });
+    });
+    scheduleSave();
+    log('Shopee affiliate links ready: ' + links.length, 'system');
+  } catch (e) {}
 }
 
 /* 💬 Watercooler chatter now runs on the SERVER, so the bots keep talking even
@@ -2792,6 +2857,7 @@ const server = http.createServer(async (req, res) => {
       const b = await body(req);
       ['niche', 'style', 'mission', 'affiliateLink', 'platform', 'language'].forEach(k => { if (typeof b[k] === 'string') state.config[k] = b[k]; });
       ['clips', 'slots'].forEach(k => { if (Array.isArray(b[k])) state.config[k] = b[k].filter(Boolean).slice(0, 10); });
+      if (Array.isArray(b.shopeeLinks)) state.config.shopeeLinks = b.shopeeLinks.map(String).filter(u => /^https?:\/\//i.test(u)).slice(0, 12);
       if (Array.isArray(b.sources)) {
         state.sources = b.sources.map(s => String(s).trim()).filter(Boolean).slice(0, 6);
         state.config.sources = state.sources;
@@ -2901,6 +2967,10 @@ const server = http.createServer(async (req, res) => {
         if (action === 'rate') {
           const item = cpRate(String(b.id || ''), Number(b.rating) || 0);
           return sendJSON(res, 200, { ok: !!item, item: item });
+        }
+        if (action === 'brief') {
+          const item = await cpWriteBrief(String(b.id || ''));
+          return sendJSON(res, 200, { ok: true, item: item });
         }
         return sendJSON(res, 400, { ok: false, error: 'Unknown action' });
       } catch (e) {
@@ -4055,6 +4125,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+ensureShopeeLinks();
 server.listen(PORT, () => {
   console.log('AI Agents Office running at http://localhost:' + PORT);
   console.log('API key configured:', !!settings().apiKey);
