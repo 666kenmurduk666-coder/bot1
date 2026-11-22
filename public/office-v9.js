@@ -24,14 +24,21 @@
     { id: 'cos',     n: 'Cos 💬',     c: '#f472b6', x: 23, z: 27.5, face: Math.PI },
     { id: 'seo',     n: 'Seo 🔍',     c: '#4a9fd6', x: 10, z: 10.5, face: 0 },
     { id: 'product', n: 'Product 📦', c: '#f0b429', x: 18, z: 10.5, face: 0 },
-    { id: 'joker',   n: 'Joker 😄',   c: '#8f6fd8', x: 13, z: 23.2, face: Math.PI },
     { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 36, z: 11,   face: Math.PI / 2 },
     { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 },
     { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI },
     { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: 16, z: 14.5, face: 0 },
     { id: 'hflex',   n: 'HF Lead 📝', c: '#77eaff', x: 24, z: 10.5, face: 0 },
     { id: 'hfmotion',n: 'HF Motion ✨', c: '#a78bfa', x: 28, z: 10.5, face: 0 },
-    { id: 'hfrender',n: 'HF QA 🧪',   c: '#75f0c0', x: 32, z: 10.5, face: 0 }
+    { id: 'hfrender',n: 'HF QA 🧪',   c: '#75f0c0', x: 32, z: 10.5, face: 0 },
+    // Useful production bots (already wired to server routines)
+    { id: 'tagedit',  n: 'Tagalog Editor', c: '#ff9b5f', x: 42, z: 12, face: Math.PI },
+    { id: 'bantay',   n: 'Bantay Safety',  c: '#ff5c7a', x: 46, z: 12, face: Math.PI },
+    { id: 'scout',    n: 'Dahon Scout',    c: '#7cf0c8', x: 50, z: 12, face: Math.PI },
+    { id: 'videoed',  n: 'Video Editor',   c: '#a78bfa', x: 42, z: 20, face: 0 },
+    { id: 'publisher',n: 'Publisher',      c: '#ffd34d', x: 46, z: 20, face: 0 },
+    { id: 'analytics',n: 'Analytics',      c: '#63e6ff', x: 50, z: 20, face: 0 },
+    { id: 'community',n: 'Community',      c: '#b07cff', x: 54, z: 16, face: -Math.PI / 2 }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   // Each bot gets its own route and work shift, so nobody just stands still.

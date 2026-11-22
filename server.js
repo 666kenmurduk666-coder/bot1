@@ -2556,6 +2556,76 @@ async function renderOfficeVideo(cfg, baseName) {
   }
 }
 
+
+// ===== YouTube upload (CEO-approved, server-side credentials only) =====
+function youtubeCfg() {
+  const cfg = readSettingsMerged();
+  const env = process.env;
+  const pick = (...vals) => vals.map(v => String(v || '').trim()).find(Boolean) || '';
+  return {
+    clientId: pick(cfg.youtubeClientId, env.YOUTUBE_CLIENT_ID),
+    clientSecret: pick(cfg.youtubeClientSecret, env.YOUTUBE_CLIENT_SECRET),
+    refreshToken: pick(cfg.youtubeRefreshToken, env.YOUTUBE_REFRESH_TOKEN),
+  };
+}
+async function youtubeAccessToken() {
+  const { clientId, clientSecret, refreshToken } = youtubeCfg();
+  if (!clientId || !clientSecret || !refreshToken) throw new Error('YouTube credentials missing. Set YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN in env/config (server-side).');
+  const body = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refreshToken, grant_type: 'refresh_token' });
+  // Fix: URLSearchParams key should be refresh_token
+  const params = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' });
+  const r = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.access_token) throw new Error('YouTube OAuth failed: ' + (j.error_description || j.error || r.status));
+  return j.access_token;
+}
+async function youtubeUploadVideo({ filePath, title, description, tags, privacyStatus }) {
+  const abs = path.resolve(filePath);
+  if (!fs.existsSync(abs)) throw new Error('Video file not found: ' + abs);
+  const stat = fs.statSync(abs);
+  const accessToken = await youtubeAccessToken();
+  const metadata = {
+    snippet: {
+      title: String(title || 'Cyborg Cheebee Short').slice(0, 100),
+      description: String(description || '').slice(0, 5000),
+      tags: Array.isArray(tags) ? tags.slice(0, 30).map(t => String(t).slice(0, 500)) : [],
+      categoryId: '22',
+    },
+    status: { privacyStatus: ['private', 'public', 'unlisted'].includes(privacyStatus) ? privacyStatus : 'private', selfDeclaredMadeForKids: false },
+  };
+  // Initiate resumable upload
+  const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Length': String(stat.size),
+      'X-Upload-Content-Type': 'video/mp4',
+    },
+    body: JSON.stringify(metadata),
+  });
+  if (!init.ok) {
+    const t = await init.text().catch(() => '');
+    throw new Error('YouTube upload init failed: ' + init.status + ' ' + t.slice(0, 300));
+  }
+  const uploadUrl = init.headers.get('location');
+  if (!uploadUrl) throw new Error('YouTube upload init missing location header');
+  const stream = fs.createReadStream(abs);
+  const up = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(stat.size) },
+    body: stream,
+    duplex: 'half',
+  });
+  const uj = await up.json().catch(() => ({}));
+  if (!up.ok || !uj.id) throw new Error('YouTube upload failed: ' + up.status + ' ' + (uj.error && uj.error.message ? uj.error.message : JSON.stringify(uj).slice(0, 300)));
+  return { id: uj.id, url: 'https://www.youtube.com/watch?v=' + uj.id, shortUrl: 'https://youtube.com/shorts/' + uj.id, title: uj.snippet && uj.snippet.title, privacyStatus: uj.status && uj.status.privacyStatus };
+}
+
 const server = http.createServer(async (req, res) => {
   res.req = req;
   const u = new URL(req.url, 'http://localhost:' + PORT);
@@ -4461,6 +4531,45 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, Object.assign({ok: true}, r));
       } catch (e) { return sendJSON(res, 500, {ok: false, error: e.message}); }
     }
+
+    if (p === '/api/youtube/upload' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const cfg0 = readSettingsMerged();
+        const hasCreds = !!(youtubeCfg().clientId && youtubeCfg().clientSecret && youtubeCfg().refreshToken);
+        if (!hasCreds) return sendJSON(res, 400, { ok: false, error: 'YouTube credentials missing. Set YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN in env/config.' });
+        let filePath = String(b.filePath || '').trim();
+        const name = String(b.name || '').trim();
+        if (!filePath && name) {
+          const safe = safeVideoName(name);
+          const mp4 = path.join(VIDEO_DIR, safe.endsWith('.mp4') ? safe : safe + '.mp4');
+          if (fs.existsSync(mp4)) filePath = mp4;
+        }
+        if (!filePath && b.url) {
+          const m = String(b.url).match(/\/videos\/([^\/?#]+\.mp4)/i);
+          if (m) filePath = path.join(VIDEO_DIR, path.basename(m[1]));
+        }
+        if (!filePath) return sendJSON(res, 400, { ok: false, error: 'filePath, name, or url required.' });
+        // Only allow files under VIDEO_DIR for safety
+        const abs = path.resolve(filePath);
+        const vdir = path.resolve(VIDEO_DIR) + path.sep;
+        if (!abs.toLowerCase().startsWith(vdir.toLowerCase())) return sendJSON(res, 400, { ok: false, error: 'For safety, only files inside public/videos can be uploaded.' });
+        const result = await youtubeUploadVideo({
+          filePath: abs,
+          title: b.title || 'Cyborg Cheebee Short',
+          description: b.description || '',
+          tags: Array.isArray(b.tags) ? b.tags : String(b.tags || '').split(/[,#]/).map(x=>x.trim()).filter(Boolean),
+          privacyStatus: b.privacyStatus || 'private',
+        });
+        try {
+          state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
+          state.tasks.push({ bot: 'post', title: '📤 YouTube Upload: ' + (result.title || b.title || name), approval: true, status: 'done', note: 'YOUTUBE:' + JSON.stringify({ url: result.url, shortUrl: result.shortUrl, id: result.id, privacyStatus: result.privacyStatus, file: path.basename(abs), at: Date.now() }), reviewedBy: 'CEO', reviewedAt: Date.now(), approved: true, lastError: '' });
+          saveStateNow();
+        } catch (_) {}
+        return sendJSON(res, 200, { ok: true, ...result });
+      } catch (e) { return sendJSON(res, 500, { ok: false, error: e.message }); }
+    }
+
     if (p === '/api/video/brief' && req.method === 'POST') {
       const b = req._body || await body(req);
       const brief = String(b.brief || '').trim().slice(0, 1500);
