@@ -1076,7 +1076,7 @@ const PROMPTS = {
     max: 500
   },
   videoed: {
-    sys: 'Ikaw ang Video Editor Bot ng Cyborg Cheebee Office. Gawing 4 na maikling caption ang script para sa 3D office video. Tunay na Tagalog, walang Taglish. Ibalik LAMANG ang JSON: {"captions":["..."]}.',
+    sys: 'Ikaw ang Video Editor Bot ng Cyborg Cheebee Office. Gumawa ng CONTENT NA MAY TAO, hindi lang salita: isang 30-45 segundo na script na may boron sa isang on-screen presenter, kasama ang 5-7 caption. Tunay na Tagalog, walang Taglish, walang medical claims. Ibalik LAMANG ang JSON: {"captions":["..."], "script":"...", "presenter":"TAGALOG EDITOR"}.',
     user: (c, o) => 'Script:\n' + String(o.scout || o.social || '').slice(0, 1000),
     max: 500
   },
@@ -4570,6 +4570,46 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { return sendJSON(res, 500, { ok: false, error: e.message }); }
     }
 
+    // Talking-head content: editor text -> MP4 with an on-screen presenter speaking it.
+    if (p === '/api/video/talking' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      try {
+        const text = String(b.script || b.text || '').trim().slice(0, 4000);
+        const lines = Array.isArray(b.captions) ? b.captions.slice(0, 12).map(x => String(x).slice(0, 160)) : [];
+        const scriptText = text || lines.join('. ');
+        if (!scriptText) return sendJSON(res, 400, { ok:false, error:'script/text or captions required.' });
+        const nm = safeVideoName(b.name || 'editor-talking');
+        const audioDir = path.join(VIDEO_DIR, 'voice');
+        fs.mkdirSync(audioDir, {recursive:true});
+        const mp3 = path.join(audioDir, nm + '-' + Date.now() + '.mp3');
+        const { MsEdgeTTS, OUTPUT_FORMAT } = require(path.join(ROOT, 'video', 'node_modules', 'msedge-tts'));
+        const tts = new MsEdgeTTS();
+        await tts.setMetadata(String(b.voice || 'fil-PH-ANGELONEURAL') === 'female' ? 'fil-PH-BlessicaNeural' : 'fil-PH-AngeloNeural', OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+        const r0 = await tts.toFile(audioDir, scriptText);
+        fs.copyFileSync(r0.audioFilePath, mp3);
+        const audioUrl = path.relative(path.join(ROOT, 'video', 'public'), mp3).replace(/\\/g, '/');
+        const cfg = {
+          mode:'talking', title: String(b.title || 'FROM THE EDITORS').slice(0,120),
+          subtitle: String(b.subtitle || '').slice(0,220),
+          captions: lines, script: scriptText, audioUrl: audioUrl,
+          name: String(b.presenter || 'TAGALOG EDITOR').slice(0,60),
+          brand: String(b.brand || 'CYBORG CHEEBEE OFFICE').slice(0,120),
+          color1: /^#[0-9a-fA-F]{6}$/.test(b.color1||'') ? b.color1 : '#f5c451',
+          color2: /^#[0-9a-fA-F]{6}$/.test(b.color2||'') ? b.color2 : '#7c4dff',
+          format:'vertical', watermark:false,
+        };
+        const est = Math.max(12, Math.min(900, Math.round(scriptText.length / 7.5) + 4));
+        cfg.seconds = est;
+        const out = await renderOfficeVideo(cfg, safeVideoName(b.name || 'editor-talking'));
+        try {
+          state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
+          state.tasks.push({ bot:'videoed', title:'🎙️ Talking-head video: ' + cfg.title, approval:true, status:'approval',
+            note:'VIDEO:' + JSON.stringify({name:out.name, url:out.url, config:cfg}) });
+          saveStateNow();
+        } catch (_) {}
+        return sendJSON(res, 200, Object.assign({ ok:true }, out));
+      } catch (e) { return sendJSON(res, 500, { ok:false, error:e.message }); }
+    }
     if (p === '/api/video/brief' && req.method === 'POST') {
       const b = req._body || await body(req);
       const brief = String(b.brief || '').trim().slice(0, 1500);
