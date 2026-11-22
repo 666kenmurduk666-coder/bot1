@@ -1685,8 +1685,17 @@ async function runRoutine(id, manual) {
     log('Routine finished: ' + r.name, r.agent);
     return { ok: true, output: state.outputs[r.agent] };
   } catch (e) {
-    log('Routine failed: ' + r.name + ' — ' + e.message, r.agent);
-    return { ok: false, error: e.message };
+    const msg = String((e && e.message) || e || 'Unknown error');
+    log('Routine failed: ' + r.name + ' — ' + msg, r.agent);
+    // HINDI na paulit-ulit tuwing tick. Kapag walang token, hintay muna ng 6 oras;
+    // sa ibang error, 15 minuto. Ini-update din lastRoutineAt para hindi ma-burst.
+    if (!manual) {
+      const backoff = /no-page-token/.test(msg) ? 6 * 60 * 60 * 1000 : 15 * 60 * 1000;
+      r.holdUntil = Date.now() + backoff;
+      lastRoutineAt = Date.now();
+      saveRoutines();
+    }
+    return { ok: false, error: msg };
   } finally {
     state.running = false;
   }

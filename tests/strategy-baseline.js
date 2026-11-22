@@ -68,7 +68,9 @@ const protectedHashes = {
   // 2026-11-21 BOT AUTOPOST: native-Tagalog dahon/halaman pipeline, bot
   // Publisher (8/day cap, 120-min cadence for account safety), Video Bot routine,
   // status/control APIs. Token stays in Render env only; hash refreshed.
-  'server.js': 'b702f7fc102a57bd5887cd16b4ffa0aa8d9797b69bcaf6e01f260d116531dd4e',
+  // 2026-11-22: failed routines now back off (6h for no-page-token, 15m otherwise)
+  // so the Video Bot cannot retry every tick and spam the activity log.
+  'server.js': 'cc72daf33d86a4a7a6f20e6c121a8220ca2442aba7506a71c78aabcdaa9c8245',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
