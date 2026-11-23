@@ -648,7 +648,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=79"></script>
+<script src="/office-v9.js?v=80"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -5239,7 +5239,7 @@ setInterval(()=>{
 /* ---------- boot ---------- */
 const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'})};
 tick();setInterval(tick,30000);
-refresh().then(()=>{setView('office');setTimeout(()=>toast('🎮 Roblox Mode ON! 🔊 Sounds + 🗣️ Voice = sa kanan-baba, i-click ang Voice para magsalita sila!'),4000)});
+refresh().then(()=>{setView('office');setTimeout(()=>{if(typeof islandsOfficeView==='function')islandsOfficeView();},900);setTimeout(()=>toast('🎮 Roblox Mode ON! 🔊 Sounds + 🗣️ Voice = sa kanan-baba, i-click ang Voice para magsalita sila!'),4000)});
 setInterval(refresh,12000);
 /* P0: queued tasks are now driven by the SERVER (serverTaskRunner), not by this tab.
    Closing the browser will no longer stop the office queue. */
