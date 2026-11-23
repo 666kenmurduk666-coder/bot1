@@ -652,7 +652,7 @@ body:has(#v-office.on) #v-office>.grid{display:none!important}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=87"></script>
+<script src="/office-v9.js?v=88"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -2977,7 +2977,7 @@ function buildRoom3d(id){
   const v9ok = typeof buildRealOffice3d==='function' && buildRealOffice3d();
   if(!v9ok)buildCyborgOffice3d();
   // orbit camera — lower, closer "hero" angle so furniture, signage and bots read clearly.
-  cam3d={target:new THREE.Vector3(0,1,-70),theta:.35,phi:1.05,r:58,lastUser:0};
+  cam3d={target:new THREE.Vector3(0,1,-70),theta:.35,phi:.98,r:42,lastUser:0};
   camera3d.fov=50;camera3d.updateProjectionMatrix();
    // ✨ LIVE CAM: i-pause kapag gumalaw ang user; ✨ right-click drag = pan (move target)
    const host3=document.getElementById('oc3d')||document.body;
@@ -3294,7 +3294,7 @@ function fitOfficeCampus(){setOfficeCamera({x:23,y:1.2,z:17,theta:.38,phi:.54,r:
 function resetOfficeCamera(){setOfficeCamera({x:23,y:1.2,z:17,theta:.32,phi:.47,r:43});}
 function tycoonOfficeView(){setOfficeCamera({x:8,y:1.2,z:7,theta:.35,phi:1.12,r:32});}
 function megaWorldOfficeView(){setOfficeCamera({x:74,y:1.5,z:34,theta:Math.PI,phi:1.08,r:34});}
-function islandsOfficeView(){setOfficeCamera({x:0,y:1,z:-70,theta:.35,phi:1.05,r:58});}
+function islandsOfficeView(){setOfficeCamera({x:0,y:1,z:-70,theta:.35,phi:.98,r:42});}
 function allBotsOfficeView(){
   var bots=(window.__officeV9&&window.__officeV9.bots)||[];
   var cx=24,cz=18,n=0;
@@ -8039,7 +8039,7 @@ async function openCeoWish(){
     }
     // Known auto-fix: islandsOfficeView syntax issues -> direct camera fallback.
     if(typeof init3D!=='function' && typeof setOfficeCamera==='function'){
-      try{ setOfficeCamera({x:0,y:1,z:-70,theta:.35,phi:1.05,r:58}); say('restored islands view'); }catch(_){}
+      try{ setOfficeCamera({x:0,y:1,z:-70,theta:.35,phi:.98,r:42}); say('restored islands view'); }catch(_){}
     }
   },true);
   setInterval(function(){

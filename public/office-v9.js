@@ -3550,7 +3550,7 @@
       {x:0,z:19,label:'PEOPLE & CUSTOMERS',col:palette.people,bots:[['#ff8fb1','Hafiz'],['#f472b6','Lara'],['#b07cff','Sophia']]}
     ];
     deps.forEach(function(d){
-      island(ICX+d.x,ICZ+d.z,6.4,d.col,d.label,d.bots);
+      island(ICX+d.x,ICZ+d.z,7.2,d.col,d.label,d.bots);
       bridge(ICX,ICZ,ICX+d.x,ICZ+d.z,d.col);
     });
   }
