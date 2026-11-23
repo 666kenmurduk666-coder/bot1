@@ -3432,7 +3432,7 @@
       var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
       sp.scale.set(5.2,1.3,1); sp.position.set(x,y,z); sp.userData.v9=true; addO(sp);
     }
-    function islBot(x, z, col) {
+    function islBot(x, z, col, nm) {
       var base = new THREE.Mesh(new THREE.CylinderGeometry(.30,.34,.10,10), solid('#1a2334',{roughness:.8,metalness:.2}));
       base.position.set(x,.05,z); base.userData.v9=true; addO(base);
       var body = new THREE.Mesh(new THREE.SphereGeometry(.30,10,8), solid(col,{roughness:.45,metalness:.12}));
@@ -3443,6 +3443,16 @@
         var eye = new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), solid('#101820',{roughness:.3}));
         eye.position.set(x+s*.08,.86,z+.19); eye.userData.v9=true; addO(eye);
       });
+      if (nm) {
+        var c = document.createElement('canvas'); c.width=256; c.height=64;
+        var q = c.getContext('2d');
+        q.fillStyle='rgba(8,14,28,.84)'; q.fillRect(0,0,256,64);
+        q.fillStyle=col; q.fillRect(0,0,6,64);
+        q.fillStyle='#eaf7ff'; q.font='bold 30px Arial'; q.textAlign='center'; q.textBaseline='middle';
+        q.fillText(nm,132,33);
+        var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));
+        sp.scale.set(2.3,.58,1); sp.position.set(x,1.35,z); sp.userData.v9=true; addO(sp);
+      }
       animParts.push({m:body, k:'led', p:x*.7+z});
     }
     function island(cx, cz, radius, color, label, bots) {
@@ -3453,7 +3463,9 @@
       var top = new THREE.Mesh(new THREE.CylinderGeometry(radius*.95,radius*.95,.05,4), solid('#1d2431',{roughness:.88}));
       top.rotation.y=Math.PI/4; top.position.set(cx,.04,cz); top.userData.v9=true; addO(top);
       var n = bots.length;
-      bots.forEach(function(col,i){
+      bots.forEach(function(bot,i){
+        var col = Array.isArray(bot) ? bot[0] : bot;
+        var nm = Array.isArray(bot) ? bot[1] : '';
         var ox = (i-(n-1)/2)*1.7, oz = 1.1;
         var desk = new THREE.Mesh(new THREE.BoxGeometry(1.35,.14,.8), solid('#4a5568',{roughness:.6,metalness:.2}));
         desk.position.set(cx+ox,.30,cz+oz); desk.userData.v9=true; addO(desk);
@@ -3471,7 +3483,7 @@
         var seat = new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.10,10), solid('#3c4658',{roughness:.8}));
         seat.position.set(cx+ox,.30,cz+oz+.95); seat.userData.v9=true; addO(seat);
         box(.5,.55,.08,'#3c4658',cx+ox,.58,cz+oz+1.18);
-        islBot(cx+ox,cz+oz+1.55,col);
+        islBot(cx+ox,cz+oz+1.55,col,nm);
       });
       // standing whiteboard / department screen
       var postX = cx + radius*.55, postZ = cz - radius*.35;
@@ -3521,15 +3533,18 @@
       ring.position.set(ICX,.35+i*.35,ICZ); ring.rotation.x=Math.PI/2; ring.userData.v9=true; addO(ring);
       animParts.push({m:ring,k:i?'spinFlatR':'spinFlat',s:.35});
     });
-    islBot(ICX,ICZ+1.4,'#f472b6');
+    // decision paper on the operator's desk
+    box(.9,.03,.6,'#f5f1e6',ICX-.9,.46,ICZ+1.1);
+    box(.7,.02,.04,'#c9d2e0',ICX-.9,.49,ICZ+1.03);
+    islBot(ICX,ICZ+1.4,'#f472b6','Nazira');
     labelSprite('COMMAND',palette.command,ICX,2.1,ICZ-2.6);
     // departments
     var deps = [
-      {x:-22,z:-18,label:'MARKETING',col:palette.marketing,bots:['#f0b429','#ff9b5f','#8f6fd8']},
-      {x:22,z:-18,label:'DATA & INSIGHTS',col:palette.data,bots:['#7cf0c8','#63e6ff']},
-      {x:-28,z:7,label:'SYSTEMS',col:palette.systems,bots:['#8fa9ff','#22c55e']},
-      {x:28,z:7,label:'FINANCE',col:palette.finance,bots:['#c9a227','#e8d9a0']},
-      {x:0,z:25,label:'PEOPLE & CUSTOMERS',col:palette.people,bots:['#ff8fb1','#f472b6','#b07cff']}
+      {x:-22,z:-18,label:'MARKETING',col:palette.marketing,bots:[['#f0b429','Milia'],['#ff9b5f','Zara'],['#8f6fd8','Marco']]},
+      {x:22,z:-18,label:'DATA & INSIGHTS',col:palette.data,bots:[['#7cf0c8','Rena'],['#63e6ff','Aria']]},
+      {x:-28,z:7,label:'SYSTEMS',col:palette.systems,bots:[['#8fa9ff','Kai'],['#22c55e','Dan']]},
+      {x:28,z:7,label:'FINANCE',col:palette.finance,bots:[['#c9a227','Faris'],['#e8d9a0','Hanna']]},
+      {x:0,z:25,label:'PEOPLE & CUSTOMERS',col:palette.people,bots:[['#ff8fb1','Hafiz'],['#f472b6','Lara'],['#b07cff','Sophia']]}
     ];
     deps.forEach(function(d){
       island(ICX+d.x,ICZ+d.z,6.4,d.col,d.label,d.bots);
