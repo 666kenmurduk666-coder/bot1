@@ -3414,6 +3414,129 @@
     tree(cx - 11, cz + D / 2 + 2.8, .9); tree(cx + 11, cz + D / 2 + 2.8, .9);
   }
 
+  function floatingIslands() {
+    // Floating-island department layout (low-poly, perf-safe, separate from main HQ).
+    var ICX = 0, ICZ = -70;
+    var palette = {
+      command: '#63e6ff', marketing: '#ffb648', data: '#7cf0c8',
+      systems: '#8fa9ff', finance: '#c9a227', people: '#ff8fb1'
+    };
+    function labelSprite(text, color, x, y, z) {
+      var c = document.createElement('canvas'); c.width = 512; c.height = 128;
+      var q = c.getContext('2d');
+      q.fillStyle = 'rgba(8,14,28,.88)'; q.fillRect(0,0,512,128);
+      q.strokeStyle = color; q.lineWidth = 7; q.strokeRect(6,6,500,116);
+      q.fillStyle = '#eaf7ff'; q.font = 'bold 40px Arial'; q.textAlign='center'; q.textBaseline='middle';
+      q.fillText(text,256,64);
+      var tex = new THREE.CanvasTexture(c);
+      var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+      sp.scale.set(5.2,1.3,1); sp.position.set(x,y,z); sp.userData.v9=true; addO(sp);
+    }
+    function islBot(x, z, col) {
+      var base = new THREE.Mesh(new THREE.CylinderGeometry(.30,.34,.10,10), solid('#1a2334',{roughness:.8,metalness:.2}));
+      base.position.set(x,.05,z); base.userData.v9=true; addO(base);
+      var body = new THREE.Mesh(new THREE.SphereGeometry(.30,10,8), solid(col,{roughness:.45,metalness:.12}));
+      body.position.set(x,.42,z); body.scale.y=1.15; body.userData.v9=true; addO(body);
+      var head = new THREE.Mesh(new THREE.SphereGeometry(.22,10,8), solid(col,{roughness:.4,metalness:.1}));
+      head.position.set(x,.82,z); head.userData.v9=true; addO(head);
+      [-1,1].forEach(function(s){
+        var eye = new THREE.Mesh(new THREE.SphereGeometry(.045,6,6), solid('#101820',{roughness:.3}));
+        eye.position.set(x+s*.08,.86,z+.19); eye.userData.v9=true; addO(eye);
+      });
+      animParts.push({m:body, k:'led', p:x*.7+z});
+    }
+    function island(cx, cz, radius, color, label, bots) {
+      var slab = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius*.84,.75,4), solid('#2b3140',{roughness:.92,metalness:.08}));
+      slab.rotation.y=Math.PI/4; slab.position.set(cx,-.40,cz); slab.userData.v9=true; addO(slab);
+      var rim = new THREE.Mesh(new THREE.CylinderGeometry(radius*1.015,radius*1.015,.07,4), solid(color,{emissive:color,emissiveIntensity:.55,roughness:.35}));
+      rim.rotation.y=Math.PI/4; rim.position.set(cx,-.01,cz); rim.userData.v9=true; addO(rim);
+      var top = new THREE.Mesh(new THREE.CylinderGeometry(radius*.95,radius*.95,.05,4), solid('#1d2431',{roughness:.88}));
+      top.rotation.y=Math.PI/4; top.position.set(cx,.04,cz); top.userData.v9=true; addO(top);
+      var n = bots.length;
+      bots.forEach(function(col,i){
+        var ox = (i-(n-1)/2)*1.7, oz = 1.1;
+        var desk = new THREE.Mesh(new THREE.BoxGeometry(1.35,.14,.8), solid('#4a5568',{roughness:.6,metalness:.2}));
+        desk.position.set(cx+ox,.30,cz+oz); desk.userData.v9=true; addO(desk);
+        // monitor + stand
+        box(.06,.30,.06,'#2a3446',cx+ox,.49,cz+oz-.20);
+        var screen = new THREE.Mesh(new THREE.PlaneGeometry(.92,.52), solid(color,{emissive:color,emissiveIntensity:.55,side:THREE.DoubleSide}));
+        screen.position.set(cx+ox,.70,cz+oz-.22); screen.userData.v9=true; addO(screen);
+        // keyboard + mouse
+        box(.62,.03,.20,'#cfd8e6',cx+ox,.39,cz+oz+.12);
+        box(.12,.03,.18,'#cfd8e6',cx+ox+.42,.39,cz+oz+.12);
+        // mug
+        var mug = new THREE.Mesh(new THREE.CylinderGeometry(.09,.08,.16,8), solid('#f2eee4',{roughness:.5}));
+        mug.position.set(cx+ox-.48,.45,cz+oz+.16); mug.userData.v9=true; addO(mug);
+        // chair
+        var seat = new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.10,10), solid('#3c4658',{roughness:.8}));
+        seat.position.set(cx+ox,.30,cz+oz+.95); seat.userData.v9=true; addO(seat);
+        box(.5,.55,.08,'#3c4658',cx+ox,.58,cz+oz+1.18);
+        islBot(cx+ox,cz+oz+1.55,col);
+      });
+      // standing whiteboard / department screen
+      var postX = cx + radius*.55, postZ = cz - radius*.35;
+      box(.08,1.5,.08,'#8792a6',postX,.75,postZ);
+      box(.08,1.5,.08,'#8792a6',postX+1.7,.75,postZ);
+      var board = new THREE.Mesh(new THREE.PlaneGeometry(1.8,.9), solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
+      board.position.set(postX+.85,1.15,postZ); board.userData.v9=true; addO(board);
+      // floor lamp glow
+      var lamp = new THREE.Mesh(new THREE.SphereGeometry(.14,8,8), solid(color,{emissive:color,emissiveIntensity:1.1,roughness:.2}));
+      lamp.position.set(cx-radius*.6,1.05,cz-radius*.3); lamp.userData.v9=true; addO(lamp);
+      box(.05,1,.05,'#6b7688',cx-radius*.6,.5,cz-radius*.3);
+      plant(cx-radius*.55,cz+radius*.35,.8); plant(cx+radius*.55,cz+radius*.35,.8);
+      labelSprite(label,color,cx,2.35,cz-radius*.45);
+    }
+    function bridge(x1,z1,x2,z2,color) {
+      var dx=x2-x1, dz=z2-z1, len=Math.sqrt(dx*dx+dz*dz);
+      var b = new THREE.Mesh(new THREE.BoxGeometry(len,.10,1.35), solid('#39445c',{roughness:.7,metalness:.25}));
+      b.position.set((x1+x2)/2,-.05,(z1+z2)/2); b.rotation.y=-Math.atan2(dz,dx); b.userData.v9=true; addO(b);
+      var glow = new THREE.Mesh(new THREE.BoxGeometry(len,.03,.10), solid(color,{emissive:color,emissiveIntensity:.8}));
+      glow.position.set((x1+x2)/2,.02,(z1+z2)/2); glow.rotation.y=-Math.atan2(dz,dx); glow.userData.v9=true; addO(glow);
+      for (var t=.18;t<.9;t+=.22){
+        var dot = new THREE.Mesh(new THREE.SphereGeometry(.07,6,6), solid(color,{emissive:color,emissiveIntensity:1}));
+        dot.position.set(x1+dx*t,.10,z1+dz*t); dot.userData.v9=true; addO(dot);
+      }
+    }
+    // starfield
+    try {
+      var pts=[], N=260;
+      for(var i=0;i<N;i++){
+        var a=Math.random()*Math.PI*2, r=25+Math.random()*75;
+        pts.push(ICX+Math.cos(a)*r, -3+Math.random()*22, ICZ+Math.sin(a)*r);
+      }
+      var g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      var stars=new THREE.Points(g,new THREE.PointsMaterial({color:'#9fc7ff',size:.14,transparent:true,opacity:.75}));
+      stars.userData.v9=true; addO(stars);
+    } catch(e){}
+    // central command platform
+    var core = new THREE.Mesh(new THREE.CylinderGeometry(5.4,5.4,.8,8), solid('#242b3a',{roughness:.9,metalness:.15}));
+    core.position.set(ICX,-.40,ICZ); core.userData.v9=true; addO(core);
+    var coreRim = new THREE.Mesh(new THREE.CylinderGeometry(5.5,5.5,.09,8), solid(palette.command,{emissive:palette.command,emissiveIntensity:.65}));
+    coreRim.position.set(ICX,0,ICZ); coreRim.userData.v9=true; addO(coreRim);
+    var beam = new THREE.Mesh(new THREE.CylinderGeometry(.30,.45,8,12,1,true), solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:1.1,transparent:true,opacity:.5,side:THREE.DoubleSide}));
+    beam.position.set(ICX,4,ICZ); beam.userData.v9=true; addO(beam);
+    animParts.push({m:beam,k:'led',p:.3});
+    [1.2,1.9].forEach(function(rr,i){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(rr,.05,8,32), solid(i?'#ff8df0':'#63e6ff',{emissive:i?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
+      ring.position.set(ICX,.35+i*.35,ICZ); ring.rotation.x=Math.PI/2; ring.userData.v9=true; addO(ring);
+      animParts.push({m:ring,k:i?'spinFlatR':'spinFlat',s:.35});
+    });
+    islBot(ICX,ICZ+1.4,'#f472b6');
+    labelSprite('COMMAND',palette.command,ICX,2.1,ICZ-2.6);
+    // departments
+    var deps = [
+      {x:-22,z:-18,label:'MARKETING',col:palette.marketing,bots:['#f0b429','#ff9b5f','#8f6fd8']},
+      {x:22,z:-18,label:'DATA & INSIGHTS',col:palette.data,bots:['#7cf0c8','#63e6ff']},
+      {x:-28,z:7,label:'SYSTEMS',col:palette.systems,bots:['#8fa9ff','#22c55e']},
+      {x:28,z:7,label:'FINANCE',col:palette.finance,bots:['#c9a227','#e8d9a0']},
+      {x:0,z:25,label:'PEOPLE & CUSTOMERS',col:palette.people,bots:['#ff8fb1','#f472b6','#b07cff']}
+    ];
+    deps.forEach(function(d){
+      island(ICX+d.x,ICZ+d.z,6.4,d.col,d.label,d.bots);
+      bridge(ICX,ICZ,ICX+d.x,ICZ+d.z,d.col);
+    });
+  }
+
   function sideWorlds() {
     // ---- EAST / screen-left: café court, fountain and service lane ----
     // Kept inside the visible left wedge (x≈18..37, z≈34..46) of the user view.
@@ -3512,6 +3635,8 @@
     aiDevStudioAnnex();
     // Cyborg Cheebee Mega World master prompt command zone (max feasible in-office)
     megaWorldCommandZone();
+    // Floating-island department layout with matching equipment and robots.
+    floatingIslands();
   }
   function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();
