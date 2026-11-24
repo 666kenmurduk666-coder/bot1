@@ -3509,9 +3509,7 @@
     parkBench(39, -14); parkBench(57, -14);
 
     // Separate AI Dev Studio Annex (UE5-inspired, feasible/perf-safe)
-    aiDevStudioAnnex();
     // Cyborg Cheebee Mega World master prompt command zone (max feasible in-office)
-    megaWorldCommandZone();
   }
   function streetLamp(x, z, rz) {
     var g2 = new THREE.Group();
@@ -3874,9 +3872,7 @@
       blindShadow(bx2, 5.4, 4.0, 3.4, .08);
     });
     roomTrim();
-    skyBackdrop();
     sunGlow();
-    skyline();
     birds();
 
     // ---- open ceiling: beams, fixture grid, pendants ----
@@ -4010,16 +4006,6 @@
     box(.5, .04, .34, '#b08a3d', 6.9, .85, 28.0);
     cyl(.04, .08, '#2f3d52', 6.82, .9, 28.0);
 
-    exterior();
-    northStreet();
-    entranceRoad();
-    sideWorlds();
-    airplane();
-    buildingEnhancements();
-    aryaskyArtZone();
-    wholeBuildingEnhancements();
-    livingGround();     // v74 colorful whole-map ground; static details get batched by greenSurrounds()
-    greenSurrounds();
     buildBatch1World();
     buildBatch2World();
 
