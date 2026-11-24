@@ -3918,6 +3918,23 @@
       var shin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.34,8),solid('#2f3a4e',{roughness:.5})); shin.position.y=-.17; shin.userData.v9=true; l.add(shin);
       var foot=new THREE.Mesh(new THREE.BoxGeometry(.22,.09,.32),solid('#202b3e',{roughness:.6})); foot.position.set(0,-.36,.06); foot.userData.v9=true; l.add(foot);
     });
+    // ---- enhanced character details ----
+    // visor band across the eyes
+    var visor=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.10),solid('#0b1220',{roughness:.25,metalness:.6,emissive:color,emissiveIntensity:.14}));
+    visor.position.set(0,.05,.30); visor.userData.v9=true; head.add(visor);
+    // glowing cheek dots
+    [-1,1].forEach(function(sx){var ch=new THREE.Mesh(new THREE.SphereGeometry(.04,6,6),solid(color,{emissive:color,emissiveIntensity:1.1}));ch.position.set(sx*.22,-.08,.29);ch.userData.v9=true;head.add(ch);});
+    // chest screen with colored bars
+    var chest=new THREE.Mesh(new THREE.PlaneGeometry(.24,.18),solid('#0a1628',{emissive:color,emissiveIntensity:.45,side:THREE.DoubleSide}));
+    chest.position.set(0,.70,.40); chest.userData.v9=true; body.add(chest);
+    for(var cb=0;cb<3;cb++){var bar=new THREE.Mesh(new THREE.PlaneGeometry(.16,.025),solid(color,{emissive:color,emissiveIntensity:.9,side:THREE.DoubleSide}));bar.position.set(0,.74-cb*.045,.405);bar.userData.v9=true;body.add(bar);}
+    // backpack core
+    var pack=new THREE.Mesh(new THREE.BoxGeometry(.38,.34,.20),solid('#2a3550',{roughness:.5,metalness:.4}));
+    pack.position.set(0,.70,-.40); pack.userData.v9=true; body.add(pack);
+    var packGlow=new THREE.Mesh(new THREE.CircleGeometry(.09,10),solid(color,{emissive:color,emissiveIntensity:1.2,side:THREE.DoubleSide}));
+    packGlow.position.set(0,.70,-.51); packGlow.userData.v9=true; body.add(packGlow);
+    // glowing joint rings on arms + legs
+    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.08,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.28;j.add(ring);});
     // name label + chat bubble
     if (name) refLabel(name, color, x, 2.15, z, 3.2, .72);
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
@@ -4098,6 +4115,123 @@
     q.fillText(text||'',128,128);
     return new THREE.CanvasTexture(c);
   }
+
+  // ===== MAX ENHANCEMENT LAYER =====
+  var maxfx = { drones:[], scanners:[], billboards:[], rings:[] };
+  function dataPanelTexture(color, title, rows){
+    var c=document.createElement('canvas'); c.width=256; c.height=192;
+    var q=c.getContext('2d');
+    q.fillStyle='rgba(6,12,26,.9)'; q.fillRect(0,0,256,192);
+    q.strokeStyle=color; q.lineWidth=4; q.strokeRect(4,4,248,184);
+    q.fillStyle=color; q.fillRect(8,8,240,30);
+    q.fillStyle='#06101f'; q.font='bold 20px Arial'; q.textAlign='left'; q.fillText(title||'DATA',16,29);
+    q.fillStyle='#d8ecff'; q.font='14px Consolas,monospace';
+    (rows||['SYS OK','LIVE','SYNC']).forEach(function(r,i){ q.fillText(r,16,60+i*30); });
+    q.fillStyle=color; q.font='12px Arial'; q.textAlign='right'; q.fillText('● LIVE',240,180);
+    return new THREE.CanvasTexture(c);
+  }
+  function maxEnhance(){
+    if(!structureGroup||!level3d) return;
+    maxfx.drones.length=0; maxfx.scanners.length=0; maxfx.billboards.length=0; maxfx.rings.length=0;
+    var DS=[[-21,-15,'#f0a040','MARKETING'],[21,-15,'#4fd6b0','DATA & INSIGHTS'],[-26,4,'#5fa8ff','SYSTEMS'],[26,4,'#d8c860','FINANCE'],[0,23,'#ff7fb0','PEOPLE & CUSTOMERS']];
+    DS.forEach(function(d,di){
+      var x=d[0],z=d[1],col=d[2],nm=d[3],R=10;
+      // --- 2 futuristic department towers at back edge (away from walking center) ---
+      [ -1, 1 ].forEach(function(side,k){
+        var tx=x+side*R*.62, tz=z-R*.55;
+        var h=3.2+k*1.1;
+        var tower=new THREE.Mesh(new THREE.BoxGeometry(2.0,h,1.6),solid('#2b3548',{roughness:.5,metalness:.35}));
+        tower.position.set(tx,h/2,tz); tower.userData.v9=true; addO(tower);
+        // glowing window strips
+        for(var w=1;w<=3;w++){
+          var wy=.6+w*.65;
+          var win=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.22),solid(col,{emissive:col,emissiveIntensity:.9,side:THREE.DoubleSide}));
+          win.position.set(tx,wy,tz+.82); win.userData.v9=true; addO(win);
+        }
+        var roof=new THREE.Mesh(new THREE.BoxGeometry(2.2,.12,1.8),solid(col,{emissive:col,emissiveIntensity:.7,roughness:.3}));
+        roof.position.set(tx,h+.06,tz); roof.userData.v9=true; addO(roof);
+        // antenna
+        var ant=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.7,6),solid('#8894a8',{metalness:.6}));
+        ant.position.set(tx,h+.38,tz); ant.userData.v9=true; addO(ant);
+        var tip=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),solid(col,{emissive:col,emissiveIntensity:1.2}));
+        tip.position.set(tx,h+.76,tz); tip.userData.v9=true; addO(tip);
+        animParts.push({m:tip,k:'led',p:di+k});
+      });
+      // --- energy rings around island (counter-rotating) ---
+      [0,1].forEach(function(i){
+        var ring=new THREE.Mesh(new THREE.TorusGeometry(R*(.72+i*.12),.035,8,48),solid(col,{emissive:col,emissiveIntensity:i?.5:.8,transparent:true,opacity:.55}));
+        ring.rotation.x=Math.PI/2; ring.position.set(x,.3+i*.25,z); ring.userData.v9=true; addO(ring);
+        maxfx.rings.push(ring);
+        animParts.push({m:ring,k:i?'spinFlatR':'spinFlat',s:.2+i*.1});
+      });
+      // --- holographic data billboard floating above island ---
+      var rows=di===0?['REACH  +12%','POSTS  3/3','LEADS  24']:di===1?['TREND  LIVE','SIGNAL OK','REPORT  READY']:di===2?['AGENTS  13/13','UPTIME  99%','SECURE  YES']:di===3?['BANK  MATCHED','PAYROLL READY','FLAGS  0']:['MSGS   18','HAPPY  92%','TEAM   OK'];
+      var panel=new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.55),
+        new THREE.MeshBasicMaterial({map:dataPanelTexture(col,nm,rows),transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      panel.position.set(x,5.2,z); panel.userData.v9=true; addO(panel);
+      maxfx.billboards.push(panel);
+      // --- scanner beam sweeping above island ---
+      var beam=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,12,1,true),
+        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.10,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      beam.position.set(x,2.0,z); beam.rotation.z=Math.PI; beam.userData.v9=true; addO(beam);
+      maxfx.scanners.push({m:beam,x:x,z:z,p:di*1.3});
+    });
+    // --- patrol drones orbiting the whole campus ---
+    for(var i=0;i<8;i++){
+      var drone=new THREE.Group();
+      var body=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),solid('#8fd8ff',{roughness:.3,metalness:.5,emissive:'#3aa0ff',emissiveIntensity:.4}));
+      body.userData.v9=true; drone.add(body);
+      [-1,1].forEach(function(sx){
+        var rotor=new THREE.Mesh(new THREE.TorusGeometry(.16,.025,6,12),solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:.9}));
+        rotor.rotation.x=Math.PI/2; rotor.position.set(sx*.28,.02,0); rotor.userData.v9=true; drone.add(rotor);
+      });
+      var light=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),solid('#ff8df0',{emissive:'#ff8df0',emissiveIntensity:1.2}));
+      light.position.y=-.2; light.userData.v9=true; drone.add(light);
+      drone.userData.v9=true; structureGroup.add(drone);
+      maxfx.drones.push({g:drone,r:30+i*1.5,a:Math.random()*Math.PI*2,sp:.12+Math.random()*.06,y:7+i*.6});
+    }
+    // --- enhanced command: layered floating platform + tall energy column + halo ---
+    for(var L=0;L<3;L++){
+      var pl=new THREE.Mesh(new THREE.CylinderGeometry(4.6-L*.9,4.6-L*.9,.10,8),solid('#3b3560',{roughness:.5,metalness:.4,emissive:'#6a5bd0',emissiveIntensity:.25}));
+      pl.rotation.y=Math.PI/8; pl.position.set(0,1.6+L*.8,0); pl.userData.v9=true; addO(pl);
+    }
+    var col=new THREE.Mesh(new THREE.CylinderGeometry(.55,.8,16,20,1,true),
+      new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    col.position.set(0,8,0); col.userData.v9=true; addO(col);
+    animParts.push({m:col,k:'led',p:.9});
+    var halo=new THREE.Mesh(new THREE.TorusGeometry(3.2,.06,10,64),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:1.0,roughness:.2}));
+    halo.rotation.x=Math.PI/2; halo.position.set(0,4.2,0); halo.userData.v9=true; addO(halo);
+    animParts.push({m:halo,k:'spinFlat',s:.3});
+    // --- far shooting stars ---
+    try{
+      var sp=[];
+      for(var q=0;q<4;q++){var st=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),new THREE.MeshBasicMaterial({color:'#ffffff',fog:false}));st.userData.v9=true;addO(st);sp.push(st);}
+      maxfx.shooting=sp;
+    }catch(e){}
+  }
+  function tickMax(now,dt){
+    try{
+      for(var i=0;i<maxfx.drones.length;i++){
+        var d=maxfx.drones[i]; d.a+=d.sp*dt;
+        d.g.position.set(Math.cos(d.a)*d.r,d.y+Math.sin(now/700+i)*.25,Math.sin(d.a)*d.r);
+        d.g.rotation.y=-d.a;
+      }
+      for(var j=0;j<maxfx.scanners.length;j++){
+        var sc=maxfx.scanners[j];
+        sc.m.rotation.z=Math.PI+Math.sin(now/1600+sc.p)*.28;
+        sc.m.material.opacity=.06+.06*(.5+.5*Math.sin(now/900+sc.p));
+      }
+      for(var k=0;k<maxfx.billboards.length;k++){
+        maxfx.billboards[k].lookAt(camera3d?camera3d.position:new THREE.Vector3(0,20,40));
+      }
+      if(maxfx.shooting) for(var q=0;q<maxfx.shooting.length;q++){
+        var t=(now/3000+q*.27)%1, st=maxfx.shooting[q];
+        st.position.set(-80+t*160, 22+Math.sin(q)*6, -90+t*20);
+        st.visible=t>.05&&t<.5;
+      }
+    }catch(e){}
+  }
+
   function enhance3D(){
     if(!structureGroup||!level3d) return;
     fx3d.pulses.length=0; fx3d.holo.length=0; fx3d.cores.length=0;
@@ -4197,7 +4331,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4256,6 +4390,7 @@
     // command bot belongs to hub zone 0
     walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
     enhance3D();
+    maxEnhance();
     startWalkLoop();
     return true;
   }
