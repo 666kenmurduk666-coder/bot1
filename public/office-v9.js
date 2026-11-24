@@ -3877,20 +3877,170 @@
     sp.scale.set(w || 6, h || 1.3, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
     return sp;
   }
+  // ===== LIVING ROBOT EMPLOYEES — articulated walkers with autonomous AI =====
+  var walkers = [];      // all living robots
+  var navZones = [];     // walkable island zones {x,z,r}
+  var navBridges = [];   // {x1,z1,x2,z2}
+  var WALK_PHRASES = ['Kumusta!','Sige, boss!','Copy that!','Ano’ng balita?','Nice!','Mag-andar tayo!','Got it!','Hi! 👋'];
+
   function refBot(x, z, color, name) {
     var g = new THREE.Group(); g.position.set(x, 0, z); g.userData.v9 = true; structureGroup.add(g);
-    var base = new THREE.Mesh(new THREE.CylinderGeometry(.30,.34,.10,10), solid('#1b2233',{roughness:.8,metalness:.2}));
-    base.position.set(0,.06,0); base.scale.set(1.25,1,1.25); base.userData.v9=true; g.add(base);
-    var body = new THREE.Mesh(new THREE.SphereGeometry(.50,12,10), solid(color,{roughness:.45,metalness:.1}));
-    body.position.y=.46; body.scale.y=1.12; body.userData.v9=true; g.add(body);
-    var head = new THREE.Mesh(new THREE.SphereGeometry(.36,12,10), solid(color,{roughness:.4,metalness:.1}));
-    head.position.y=1.18; head.userData.v9=true; g.add(head);
-    var eyes=[]; [-1,1].forEach(function(s){ var e=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6), solid('#0b1020')); e.position.set(s*.10,1.20,.26); e.userData.v9=true; g.add(e); eyes.push(e); });
-    if (name) refLabel(name, color, x, 1.75, z, 3.2, .72);
-    animParts.push({m:body,k:'led',p:x*.7+z});
-    animParts.push({m:g,k:'bob',p:x*.7+z,s:.5});
+    var body = new THREE.Group(); g.add(body);
+    var torso = new THREE.Mesh(new THREE.SphereGeometry(.42,12,10), solid(color,{roughness:.45,metalness:.1}));
+    torso.position.y=.66; torso.scale.y=1.15; torso.userData.v9=true; body.add(torso);
+    var belly = new THREE.Mesh(new THREE.CircleGeometry(.22,12), solid('#1a2740',{emissive:color,emissiveIntensity:.35}));
+    belly.position.set(0,.66,.40); belly.userData.v9=true; body.add(belly);
+    var head = new THREE.Group(); head.position.y=1.16; body.add(head);
+    var skull = new THREE.Mesh(new THREE.SphereGeometry(.35,12,10), solid(color,{roughness:.4,metalness:.1}));
+    skull.userData.v9=true; head.add(skull);
+    [-1,1].forEach(function(s){
+      var e=new THREE.Mesh(new THREE.SphereGeometry(.065,8,6), solid('#0b1020'));
+      e.position.set(s*.11,.05,.31); e.userData.v9=true; head.add(e);
+      var glint=new THREE.Mesh(new THREE.SphereGeometry(.022,6,6), solid('#ffffff'));
+      glint.position.set(s*.11-.012,.075,.36); glint.userData.v9=true; head.add(glint);
+    });
+    var smile=new THREE.Mesh(new THREE.TorusGeometry(.10,.02,6,12,Math.PI), solid('#101826'));
+    smile.rotation.z=Math.PI; smile.position.set(0,-.08,.33); smile.userData.v9=true; head.add(smile);
+    // antenna
+    var ant=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.18,6),solid('#2a3446')); ant.position.set(0,.40,0); ant.userData.v9=true; head.add(ant);
+    var tip=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9})); tip.position.set(0,.50,0); tip.userData.v9=true; head.add(tip);
+    // arms (pivot groups swing)
+    var armL=new THREE.Group(); armL.position.set(-.44,.82,0); body.add(armL);
+    var armR=new THREE.Group(); armR.position.set(.44,.82,0); body.add(armR);
+    [armL,armR].forEach(function(a){
+      var upper=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.34,8),solid(color,{roughness:.5})); upper.position.y=-.17; upper.userData.v9=true; a.add(upper);
+      var hand=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.36; hand.userData.v9=true; a.add(hand);
+    });
+    // legs (pivot groups step)
+    var legL=new THREE.Group(); legL.position.set(-.18,.46,0); g.add(legL);
+    var legR=new THREE.Group(); legR.position.set(.18,.46,0); g.add(legR);
+    [legL,legR].forEach(function(l){
+      var shin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.34,8),solid('#2f3a4e',{roughness:.5})); shin.position.y=-.17; shin.userData.v9=true; l.add(shin);
+      var foot=new THREE.Mesh(new THREE.BoxGeometry(.22,.09,.32),solid('#202b3e',{roughness:.6})); foot.position.set(0,-.36,.06); foot.userData.v9=true; l.add(foot);
+    });
+    // name label + chat bubble
+    if (name) refLabel(name, color, x, 2.15, z, 3.2, .72);
+    var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
+    bub.scale.set(2.4,.7,1); bub.position.set(0,2.4,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
+    animParts.push({m:belly,k:'led',p:x*.7+z});
+    var seed = walkers.length;
+    var r = {
+      g:g, body:body, head:head, armL:armL, armR:armR, legL:legL, legR:legR, belly:belly, tip:tip, bub:bub,
+      x:x, z:z, homeX:x, homeZ:z, color:color, name:name||'Bot',
+      phase:seed*1.7, speed:.9+(seed%4)*.18, personality:seed%5,
+      state:'work', timer:Date.now()+1200+seed*530, wp:null, path:[], zone:null, partner:null, talkFor:0,
+      blink:0, look:0, lastBubble:0, decisionAt:Date.now()+seed*430
+    };
+    walkers.push(r);
     return g;
   }
+
+  function now0(){ return (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(); }
+  function makeBubbleTex(txt){
+    var c=document.createElement('canvas'); c.width=256; c.height=80;
+    var q=c.getContext('2d');
+    q.fillStyle='rgba(255,255,255,.96)';
+    if(q.roundRect){q.beginPath();q.roundRect(6,6,244,60,22);q.fill();}
+    else q.fillRect(6,6,244,60);
+    q.beginPath();q.moveTo(96,64);q.lineTo(118,64);q.lineTo(104,78);q.closePath();q.fill();
+    q.fillStyle='#14203a';q.font='bold 30px Arial';q.textAlign='center';q.textBaseline='middle';
+    q.fillText(String(txt).slice(0,18),128,36);
+    return new THREE.CanvasTexture(c);
+  }
+  function navAddZone(x,z,r){ navZones.push({x:x,z:z,r:r}); return navZones.length-1; }
+  function navAddBridge(x1,z1,x2,z2){ navBridges.push({x1:x1,z1:z1,x2:x2,z2:z2}); }
+  function pointInZone(x,z,i,margin){ var z0=navZones[i]; margin=margin||0; return Math.hypot(x-z0.x,z-z0.z) <= z0.r-margin; }
+  function onBridge(x,z){
+    for(var i=0;i<navBridges.length;i++){
+      var b=navBridges[i],dx=b.x2-b.x1,dz=b.z2-b.z1,L=dx*dx+dz*dz; if(!L)continue;
+      var t=Math.max(0,Math.min(1,((x-b.x1)*dx+(z-b.z1)*dz)/L));
+      var px=b.x1+dx*t,pz=b.z1+dz*t;
+      if(Math.hypot(x-px,z-pz)<1.4)return true;
+    }
+    return false;
+  }
+  function walkable(x,z){
+    for(var i=0;i<navZones.length;i++) if(pointInZone(x,z,i,0.5)) return true;
+    return onBridge(x,z);
+  }
+  function randomPointInZone(i,margin){
+    var z0=navZones[i], rad=(z0.r-(margin||1.6))*Math.sqrt(Math.random()), a=Math.random()*Math.PI*2;
+    return {x:z0.x+Math.cos(a)*rad, z:z0.z+Math.sin(a)*rad};
+  }
+  function bridgePath(fromZone,toZone){
+    var pts=[];
+    if(fromZone===toZone) return [randomPointInZone(toZone)];
+    var f=navZones[fromZone], t=navZones[toZone], hub=navZones[0];
+    pts.push({x:f.x,z:f.z});
+    pts.push({x:hub.x,z:hub.z});
+    pts.push({x:t.x,z:t.z});
+    pts.push(randomPointInZone(toZone));
+    return pts;
+  }
+  function setWalk(r, path){ r.path=path.slice(); r.wp=r.path.shift()||null; r.state='walk'; }
+
+  function walkerTick(now, dt){
+    if(!walkers.length) return;
+    for(var i=0;i<walkers.length;i++){
+      var r=walkers[i];
+      if(now>=r.decisionAt){ decideWalker(r,now); r.decisionAt=now+1500+(r.personality%5)*480+Math.random()*900; }
+      var moving=(r.state==='walk'||r.state==='travel') && r.wp;
+      if(moving){
+        var dx=r.wp.x-r.x, dz=r.wp.z-r.z, d=Math.hypot(dx,dz);
+        if(d<0.35){
+          if(r.path.length) r.wp=r.path.shift();
+          else { r.wp=null; r.state=r.zone&&r.zone!==0?'work':'idle'; r.timer=now+2000+Math.random()*3400; }
+        } else {
+          var want=Math.atan2(dx,dz), cur=r.g.rotation.y;
+          var diff=Math.atan2(Math.sin(want-cur),Math.cos(want-cur));
+          r.g.rotation.y = cur + Math.max(-.1,Math.min(.1,diff*.2));
+          var step=Math.min(r.speed*dt,d), nx=r.x+(dx/d)*step, nz=r.z+(dz/d)*step;
+          if(walkable(nx,nz)){ r.x=nx; r.z=nz; r.phase+=step*7; }
+          else { r.wp=null; r.state='idle'; r.timer=now+900; }
+        }
+      }
+      var walkAmp=moving?0.62:0, sw=Math.sin(r.phase)*walkAmp;
+      r.legL.rotation.x=sw; r.legR.rotation.x=-sw;
+      r.armL.rotation.x=-sw*.7; r.armR.rotation.x=sw*.7;
+      r.body.position.y=Math.abs(Math.sin(r.phase))*.045*walkAmp + (moving?0:Math.sin(now/500+r.personality)*.02);
+      if(r.state==='talk'&&r.partner) r.head.rotation.y=Math.atan2(r.partner.x-r.x,r.partner.z-r.z)-r.g.rotation.y;
+      else if(!moving) r.head.rotation.y=Math.sin(now/900+r.personality)*.35;
+      else r.head.rotation.y*=.9;
+      r.blink=(now%4300)<130?.15:1; r.head.scale.y=r.blink;
+      if(r.belly.material) r.belly.material.emissiveIntensity=.3+.35*(.5+.5*Math.sin(now/300+r.personality));
+      if(r.bub&&r.bub.visible&&now-r.lastBubble>3800) r.bub.visible=false;
+      r.g.position.set(r.x,0,r.z);
+    }
+    for(var a=0;a<walkers.length;a++) for(var b=a+1;b<walkers.length;b++){
+      var A=walkers[a],B=walkers[b];
+      if(A.state==='talk'||B.state==='talk'||A.state==='walk'||B.state==='walk')continue;
+      if(Math.random()<.008 && Math.hypot(A.x-B.x,A.z-B.z)<1.8){
+        A.state=B.state='talk';A.partner=B;B.partner=A;
+        A.talkFor=B.talkFor=now+2600+Math.random()*2000;
+        var ph=WALK_PHRASES[(Math.random()*WALK_PHRASES.length)|0];
+        try{A.bub.material.map.dispose();A.bub.material.map=makeBubbleTex(ph);A.bub.visible=true;A.lastBubble=now;
+            B.bub.material.map.dispose();B.bub.material.map=makeBubbleTex('OK!');B.bub.visible=true;B.lastBubble=now;}catch(e){}
+      }
+    }
+  }
+  function decideWalker(r,now){
+    if(r.state==='talk'){ if(now>r.talkFor){r.state='idle';r.partner=null;r.timer=now+1200;} return; }
+    if(r.state==='walk'&&r.wp) return;
+    if((r.state==='work'||r.state==='idle')&&now<r.timer) return;
+    var p=Math.random();
+    if(p<.42){ setWalk(r,[randomPointInZone(r.zone!=null?r.zone:0,1.8)]); }
+    else if(p<.60){
+      var cand=walkers.filter(function(o){return o!==r&&o.zone===r.zone;});
+      if(cand.length){var c=cand[(Math.random()*cand.length)|0];setWalk(r,[{x:c.x+1.1,z:c.z+0.7}]);}
+      else setWalk(r,[randomPointInZone(r.zone!=null?r.zone:0)]);
+    } else if(p<.76){
+      var from=(r.zone!=null?r.zone:0), to=(Math.random()*navZones.length)|0;
+      if(to===from)to=(to+1)%navZones.length;
+      setWalk(r,bridgePath(from,to)); r.zone=to; r.state='travel';
+    } else if(p<.90){ setWalk(r,[{x:r.homeX,z:r.homeZ}]); }
+    else { r.state='idle'; r.timer=now+1600+Math.random()*2600; }
+  }
+
   function refDesk(x,z,color) {
     box(1.6,.13,.85,solid('#4b5a70',{roughness:.6,metalness:.2}),x,.30,z);
     box(.06,.36,.06,'#2a3446',x,.55,z-.22);
@@ -3935,7 +4085,9 @@
   }
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
+    walkers.length = 0; navZones.length = 0; navBridges.length = 0;
     var CX=0, CZ=0;
+    navAddZone(0,0,6.2);   // Command hub = zone 0 (bridge crossroads)
     // dark outer-space floor so nothing falls
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#060a14',{roughness:1,metalness:0}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
@@ -3977,7 +4129,12 @@
     deps.forEach(function(d){
       refIsland(d.x,d.z,10,d.c,d.t,d.a);
       refBridge(CX,CZ,d.x,d.z,d.c);
+      var zi=navAddZone(d.x,d.z,9.0);
+      // tag this island's robots with their zone
+      for(var w=0;w<walkers.length;w++){ if(walkers[w].zone==null && Math.hypot(walkers[w].x-d.x,walkers[w].z-d.z)<11) walkers[w].zone=zi; }
     });
+    // command bot belongs to hub zone 0
+    walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
     return true;
   }
 
@@ -4239,6 +4396,7 @@
       updateBotBatch2(b, now, i);
     });
     updateBotParticles(now);
+    try { walkerTick(now, Math.min(.05,(now-(tick.walkLast||now))/1000)); } catch(e) {} tick.walkLast=now;
     if (now - (tick.glow || 0) > 140) {
       tick.glow = now;
       animParts.forEach(function (a) {
@@ -5314,7 +5472,7 @@
   }
 
   window.buildRealOffice3d = buildRealOffice3d;
-  window.__officeV9 = { bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
+  window.__officeV9 = { walkers:walkers, bots: cuteBots, rebuild: buildRealOffice3d, tick: tick,
     get fx() { return fx; },
     get crops() { return fx.crops; },
     setDetail: function (v) { window.__officeDetail = v === 'low' ? 'low' : 'high'; applyDetailLevel(true); },
