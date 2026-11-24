@@ -3762,6 +3762,17 @@
 
   // Futuristic skin: neon floor grid + holographic ceiling panels + cool rim lights.
   function futuristicSkin() {
+
+    // Futuristic central walkway (clean road inside the HQ, no city outside).
+    floor(3.0, 30, solid('#2a3446', { map: asphaltTex(6, 2), roughness: .8, metalness: .12 }), 23, .02, 17);
+    for (var rz = 3; rz <= 31; rz += 2.4) {
+      box(.10, .012, 1.0, solid('#8fdcff', { emissive: '#8fdcff', emissiveIntensity: .7 }), 23, .035, rz);
+    }
+    box(.04, .014, 30, solid('#b07cff', { emissive: '#b07cff', emissiveIntensity: .6 }), 21.6, .035, 17);
+    box(.04, .014, 30, solid('#b07cff', { emissive: '#b07cff', emissiveIntensity: .6 }), 24.4, .035, 17);
+    // crossing at the entrance
+    for (var cx = 19; cx <= 27; cx += 1.6) box(.8, .012, .18, '#dfe8f5', cx, .036, 3.4);
+
     if (!level3d || !structureGroup) return;
     var neon = ['#63e6ff', '#b07cff', '#ff8df0', '#7cf0c8'];
     // Glowing floor grid over the main HQ floor (x 0..46, z 0..34)
@@ -3860,7 +3871,7 @@
     box(46.8, 3.05, .2, solid('#e8e4dc', { map: wallTex(), roughness: .9 }), 23, 1.52, 0);
     // bright sky + city behind the north glazing
     var sky = new THREE.Mesh(new THREE.PlaneGeometry(46, 2.5),
-      new THREE.MeshBasicMaterial({ map: skyTex(), side: THREE.DoubleSide, toneMapped: false }));
+      new THREE.MeshBasicMaterial({ color: '#101d33', side: THREE.DoubleSide, toneMapped: false }));
     sky.position.set(23, 1.95, .09); addO(sky);
     glass(46, 2.5, .09, 23, 1.95, .14, .22);
     for (var wx = 1; wx <= 45; wx += 4) mullion(wx, .16, 'x', 2.55);
@@ -3908,11 +3919,7 @@
     wallFrame(45.86, 1.95, 26.8, 1.4, .9, -Math.PI / 2, 3);
     reflection(23, 30.3, 4.4, 1.3, '#ffd9a6', 0, .05);
 
-    // ---- MAIN STREET ----
-    floor(42, 2.8, solid('#ffffff', { map: stoneTex(12, 1), roughness: .85 }), 23, .009, 23.2);
-    for (var s = 4; s <= 42; s += 4) bx(1.8, .02, .08, '#c8a86a', s, .022, 23.2, true);
     floorSheen();
-    wallSign('MAIN STREET', 'RECEPTION  ←  WORK  →  PANTRY', 41, 2.35, 23.2, 3.4, .9, -Math.PI / 2, '#b08a3d');
     [12, 23, 34].forEach(function (x) { pendant(x, 23.2, '#3f6fa8'); });
     plant(5.4, 23.2, .85); plant(29.6, 23.2, .85);
 
@@ -4006,8 +4013,6 @@
     box(.5, .04, .34, '#b08a3d', 6.9, .85, 28.0);
     cyl(.04, .08, '#2f3d52', 6.82, .9, 28.0);
 
-    buildBatch1World();
-    buildBatch2World();
 
     // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;
@@ -4066,7 +4071,6 @@
       botSparkles(c.group, idx);
     });
     futuristicSkin();
-    attachBatch2Bots();
 
     // The main app's simple-mode cull hides any unflagged object above y=3.15.
     // Everything now in level3d belongs to this v9 office, so flag it all —
