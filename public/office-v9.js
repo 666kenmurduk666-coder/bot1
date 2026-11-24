@@ -3881,13 +3881,14 @@
     var g = new THREE.Group(); g.position.set(x, 0, z); g.userData.v9 = true; structureGroup.add(g);
     var base = new THREE.Mesh(new THREE.CylinderGeometry(.30,.34,.10,10), solid('#1b2233',{roughness:.8,metalness:.2}));
     base.position.set(0,.06,0); base.scale.set(1.25,1,1.25); base.userData.v9=true; g.add(base);
-    var body = new THREE.Mesh(new THREE.SphereGeometry(.40,12,10), solid(color,{roughness:.45,metalness:.1}));
+    var body = new THREE.Mesh(new THREE.SphereGeometry(.50,12,10), solid(color,{roughness:.45,metalness:.1}));
     body.position.y=.46; body.scale.y=1.12; body.userData.v9=true; g.add(body);
-    var head = new THREE.Mesh(new THREE.SphereGeometry(.30,12,10), solid(color,{roughness:.4,metalness:.1}));
-    head.position.y=1.02; head.userData.v9=true; g.add(head);
-    [-1,1].forEach(function(s){ var e=new THREE.Mesh(new THREE.SphereGeometry(.045,8,6), solid('#0b1020')); e.position.set(s*.08,.9,.19); e.userData.v9=true; g.add(e); });
+    var head = new THREE.Mesh(new THREE.SphereGeometry(.36,12,10), solid(color,{roughness:.4,metalness:.1}));
+    head.position.y=1.18; head.userData.v9=true; g.add(head);
+    var eyes=[]; [-1,1].forEach(function(s){ var e=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6), solid('#0b1020')); e.position.set(s*.10,1.20,.26); e.userData.v9=true; g.add(e); eyes.push(e); });
     if (name) refLabel(name, color, x, 1.75, z, 3.2, .72);
     animParts.push({m:body,k:'led',p:x*.7+z});
+    animParts.push({m:g,k:'bob',p:x*.7+z,s:.5});
     return g;
   }
   function refDesk(x,z,color) {
@@ -3900,9 +3901,9 @@
     var mug=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.14,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.46,.44,z+.14); mug.userData.v9=true; addO(mug);
   }
   function refIsland(cx,cz,R,color,title,agents) {
-    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,4), solid('#3b4457',{roughness:.78,metalness:.12}));
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,4), solid('#424d63',{roughness:.76,metalness:.14}));
     slab.rotation.y=Math.PI/4; slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
-    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,4), solid('#465168',{roughness:.72,metalness:.18,side:THREE.DoubleSide}));
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,4), solid('#52607a',{roughness:.7,metalness:.2,side:THREE.DoubleSide}));
     top.rotation.x=-Math.PI/2; top.rotation.z=Math.PI/4; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,4), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
     rim.rotation.x=Math.PI/2; rim.rotation.z=Math.PI/4; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
@@ -3911,9 +3912,9 @@
     sh.rotation.x=-Math.PI/2; sh.position.set(cx,-2.4,cz); sh.userData.v9=true; addO(sh);
     var n=agents.length;
     agents.forEach(function(a,i){
-      var ox=(i-(n-1)/2)*2.2;
+      var ox=(i-(n-1)/2)*2.8;
       refDesk(cx+ox,cz+1.1,color);
-      refBot(cx+ox,cz+2.1,a[1],a[0]);
+      refBot(cx+ox,cz+2.4,a[1],a[0]);
     });
     // plant + whiteboard
     var p=new THREE.Mesh(new THREE.CylinderGeometry(.2,.17,.28,8),solid('#8b5e34',{roughness:.7})); p.position.set(cx-R*.5,.16,cz+R*.33); p.userData.v9=true; addO(p);
@@ -3947,9 +3948,9 @@
       stars.userData.v9=true; addO(stars);
     }catch(e){}
     // Command hub (octagon)
-    var hub=new THREE.Mesh(new THREE.CylinderGeometry(5.6,5.0,.7,8),solid('#2c2740',{roughness:.68,metalness:.16}));
+    var hub=new THREE.Mesh(new THREE.CylinderGeometry(6.2,5.6,.7,8),solid('#2c2740',{roughness:.68,metalness:.16}));
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; addO(hub);
-    var hr=new THREE.Mesh(new THREE.TorusGeometry(5.65,.07,8,8),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
+    var hr=new THREE.Mesh(new THREE.TorusGeometry(6.25,.07,8,8),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
@@ -3967,14 +3968,14 @@
     refLabel('Command','#a99cff',CX,3.7,CZ-1.6,4.6,1.1);
     // 5 departments (roles from the reference video)
     var deps=[
-      {x:-25,z:-17,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},
-      {x: 25,z:-17,c:'#4fd6b0',t:'Data & Insights',a:[['Rena','#4fd6b0'],['Aria','#63e6ff']]},
-      {x:-31,z:  5,c:'#5fa8ff',t:'Systems',a:[['Kai','#5fa8ff'],['Dan','#4fd6b0']]},
-      {x: 31,z:  5,c:'#d8c860',t:'Finance',a:[['Faris','#d8c860'],['Hanna','#e8d98f']]},
-      {x:  0,z: 27,c:'#ff7fb0',t:'People & Customers',a:[['Hafiz','#ff7fb0'],['Lara','#ff9ec4'],['Sophia','#c08cff']]}
+      {x:-21,z:-15,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},
+      {x: 21,z:-15,c:'#4fd6b0',t:'Data & Insights',a:[['Rena','#4fd6b0'],['Aria','#63e6ff']]},
+      {x:-26,z:  4,c:'#5fa8ff',t:'Systems',a:[['Kai','#5fa8ff'],['Dan','#4fd6b0']]},
+      {x: 26,z:  4,c:'#d8c860',t:'Finance',a:[['Faris','#d8c860'],['Hanna','#e8d98f']]},
+      {x:  0,z: 23,c:'#ff7fb0',t:'People & Customers',a:[['Hafiz','#ff7fb0'],['Lara','#ff9ec4'],['Sophia','#c08cff']]}
     ];
     deps.forEach(function(d){
-      refIsland(d.x,d.z,8,d.c,d.t,d.a);
+      refIsland(d.x,d.z,10,d.c,d.t,d.a);
       refBridge(CX,CZ,d.x,d.z,d.c);
     });
     return true;
@@ -4246,6 +4247,7 @@
         if (a.k === 'spin') { m.rotation.y += (a.s || .5) * 0.016; m.rotation.x += (a.s || .5) * 0.008; return; }
         if (a.k === 'spinFlat') { m.rotation.z += (a.s || .3) * 0.016; return; }
         if (a.k === 'spinFlatR') { m.rotation.z -= (a.s || .3) * 0.016; return; }
+        if (a.k === 'bob') { m.position.y = Math.sin(now/600 + a.p) * 0.06; return; }
         if (!m.material || m.material.emissiveIntensity === undefined) return;
         m.material.emissiveIntensity = a.k === 'led'
           ? .3 + .65 * (.5 + .5 * Math.sin(now / 240 + a.p))
