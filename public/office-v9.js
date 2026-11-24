@@ -3824,15 +3824,6 @@
     approachRoad(53,17,66,17,'#b07cff');     // east (short)
     agentOffice(66,17,'#b07cff',[['Faris','#c9a227'],['Hanna','#e8d9a0']]);
 
-    // Futuristic central walkway (clean road inside the HQ, no city outside).
-    floor(3.0, 30, solid('#2a3446', { map: asphaltTex(6, 2), roughness: .8, metalness: .12 }), 23, .02, 17);
-    for (var rz = 3; rz <= 31; rz += 2.4) {
-      box(.10, .012, 1.0, solid('#8fdcff', { emissive: '#8fdcff', emissiveIntensity: .7 }), 23, .035, rz);
-    }
-    box(.04, .014, 30, solid('#b07cff', { emissive: '#b07cff', emissiveIntensity: .6 }), 21.6, .035, 17);
-    box(.04, .014, 30, solid('#b07cff', { emissive: '#b07cff', emissiveIntensity: .6 }), 24.4, .035, 17);
-    // crossing at the entrance
-    for (var cx = 19; cx <= 27; cx += 1.6) box(.8, .012, .18, '#dfe8f5', cx, .036, 3.4);
 
     if (!level3d || !structureGroup) return;
     var neon = ['#63e6ff', '#b07cff', '#ff8df0', '#7cf0c8'];
@@ -3917,20 +3908,16 @@
     // The round disc IS the office floor.
     var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .34, 64), solid('#5c6b82', { map: terrazzoTex(), roughness: .85, metalness: .08 }));
     disc.position.set(OCX, -.17, OCZ); disc.userData.v9 = true; addO(disc);
-    // Futuristic floor: dark hex-grid with glowing cyan lines + radial rings.
-    var floorTex = makeTex('futuristic-floor', function (q, S) {
-      q.fillStyle = '#101a2e'; q.fillRect(0, 0, S, S);
-      q.strokeStyle = '#2bd6ff'; q.lineWidth = 2;
-      var step = S / 12;
-      for (var x = 0; x <= S; x += step) { q.beginPath(); q.moveTo(x, 0); q.lineTo(x, S); q.stroke(); }
-      for (var y = 0; y <= S; y += step) { q.beginPath(); q.moveTo(0, y); q.lineTo(S, y); q.stroke(); }
-      q.fillStyle = '#1a3a5c';
-      for (var gx = step/2; gx < S; gx += step) for (var gy = step/2; gy < S; gy += step) { q.fillRect(gx - 1, gy - 1, 3, 3); }
-      q.strokeStyle = '#b07cff'; q.lineWidth = 3;
-      for (var r = S*0.12; r < S*0.5; r += S*0.12) { q.beginPath(); q.arc(S/2, S/2, r, 0, Math.PI*2); q.stroke(); }
+    // Calm futuristic floor: smooth deep-blue surface with a soft center glow.
+    var floorTex = makeTex('calm-floor', function (q, S) {
+      var g = q.createRadialGradient(S/2, S/2, 10, S/2, S/2, S/2);
+      g.addColorStop(0, '#1b2b45'); g.addColorStop(.65, '#142238'); g.addColorStop(1, '#0e192c');
+      q.fillStyle = g; q.fillRect(0, 0, S, S);
+      q.strokeStyle = 'rgba(120,190,255,.08)'; q.lineWidth = 1;
+      for (var i = 1; i < 8; i++) { q.beginPath(); q.moveTo(i*S/8, 0); q.lineTo(i*S/8, S); q.stroke(); q.beginPath(); q.moveTo(0, i*S/8); q.lineTo(S, i*S/8); q.stroke(); }
     });
     var discTop = new THREE.Mesh(new THREE.CircleGeometry(OR - .2, 64),
-      solid('#ffffff', { map: floorTex, roughness: .55, metalness: .25, side: THREE.DoubleSide, emissive: '#0d2a44', emissiveIntensity: .4 }));
+      solid('#ffffff', { map: floorTex, roughness: .7, metalness: .12, side: THREE.DoubleSide }));
     discTop.rotation.x = -Math.PI / 2; discTop.position.set(OCX, .008, OCZ); discTop.userData.v9 = true; addO(discTop);
     var wall = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, 3.05, 64, 1, true),
       solid('#7fb8d8', { transparent: true, opacity: .12, roughness: .1, metalness: .2, side: THREE.DoubleSide }));
