@@ -3763,6 +3763,31 @@
   // Futuristic skin: neon floor grid + holographic ceiling panels + cool rim lights.
   function futuristicSkin() {
 
+
+    // Four futuristic approach roads leading out of the HQ (N/S/E/W).
+    function approachRoad(x1,z1,x2,z2,accent) {
+      var dx=x2-x1, dz=z2-z1, len=Math.sqrt(dx*dx+dz*dz);
+      var ang=-Math.atan2(dz,dx);
+      var base=new THREE.Mesh(new THREE.BoxGeometry(len,.06,3.2),solid('#2a3446',{roughness:.7,metalness:.18}));
+      base.position.set((x1+x2)/2,.02,(z1+z2)/2); base.rotation.y=ang; base.userData.v9=true; addO(base);
+      // glowing edge lines
+      var off=1.5;
+      [-off,off].forEach(function(o){
+        var edge=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.08),solid(accent,{emissive:accent,emissiveIntensity:.8}));
+        edge.position.set((x1+x2)/2+Math.cos(ang+Math.PI/2)*o,.06,(z1+z2)/2-Math.sin(ang+Math.PI/2)*o);
+        edge.rotation.y=ang; edge.userData.v9=true; addO(edge);
+      });
+      // dashed center line
+      for(var t=.05;t<.98;t+=.09){
+        var dash=new THREE.Mesh(new THREE.BoxGeometry(len*.045,.02,.12),solid('#9fe8ff',{emissive:'#9fe8ff',emissiveIntensity:.6}));
+        dash.position.set(x1+dx*t,.06,z1+dz*t); dash.rotation.y=ang; dash.userData.v9=true; addO(dash);
+      }
+    }
+    approachRoad(23,0,23,-38,'#63e6ff');   // north
+    approachRoad(23,34,23,72,'#ff8df0');   // south
+    approachRoad(0,17,-38,17,'#7cf0c8');   // west
+    approachRoad(46,17,84,17,'#b07cff');   // east
+
     // Futuristic central walkway (clean road inside the HQ, no city outside).
     floor(3.0, 30, solid('#2a3446', { map: asphaltTex(6, 2), roughness: .8, metalness: .12 }), 23, .02, 17);
     for (var rz = 3; rz <= 31; rz += 2.4) {
