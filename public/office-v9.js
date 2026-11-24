@@ -3783,10 +3783,46 @@
         dash.position.set(x1+dx*t,.06,z1+dz*t); dash.rotation.y=ang; dash.userData.v9=true; addO(dash);
       }
     }
-    approachRoad(23,0,23,-38,'#63e6ff');   // north
-    approachRoad(23,34,23,72,'#ff8df0');   // south
-    approachRoad(0,17,-38,17,'#7cf0c8');   // west
-    approachRoad(46,17,84,17,'#b07cff');   // east
+    // Short roads from the round HQ edge to small agent offices.
+    function agentOffice(x, z, col, agents) {
+      var base = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, .3, 32), solid('#2a3446', { roughness: .7, metalness: .18 }));
+      base.position.set(x, .02, z); base.userData.v9 = true; addO(base);
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(4.2, .06, 8, 32), solid(col, { emissive: col, emissiveIntensity: .8 }));
+      rim.rotation.x = Math.PI / 2; rim.position.set(x, .18, z); rim.userData.v9 = true; addO(rim);
+      // small desk + monitor
+      box(2.2, .16, 1.0, '#4a5568', x, .32, z);
+      box(.06, .4, .06, '#2a3446', x, .6, z-.2);
+      var scr = new THREE.Mesh(new THREE.PlaneGeometry(1.3, .7), solid(col, { emissive: col, emissiveIntensity: .6, side: THREE.DoubleSide }));
+      scr.position.set(x, .9, z-.22); scr.userData.v9 = true; addO(scr);
+      // agents
+      var n = agents.length;
+      agents.forEach(function (a, i) {
+        var ax = x + (i - (n-1)/2) * 1.15, az = z + 1.2;
+        var b = new THREE.Mesh(new THREE.SphereGeometry(.28, 10, 8), solid(a[1], { roughness: .45 }));
+        b.position.set(ax, .5, az); b.userData.v9 = true; addO(b);
+        var hd = new THREE.Mesh(new THREE.SphereGeometry(.2, 10, 8), solid(a[1], { roughness: .4 }));
+        hd.position.set(ax, .88, az); hd.userData.v9 = true; addO(hd);
+        var c = document.createElement('canvas'); c.width = 200; c.height = 56;
+        var q = c.getContext('2d'); q.fillStyle = 'rgba(8,14,28,.85)'; q.fillRect(0,0,200,56);
+        q.fillStyle = '#eaf7ff'; q.font = 'bold 26px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(a[0], 100, 28);
+        var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+        sp.scale.set(1.7, .48, 1); sp.position.set(ax, 1.35, az); sp.userData.v9 = true; addO(sp);
+      });
+      var lab = document.createElement('canvas'); lab.width = 384; lab.height = 80;
+      var lq = lab.getContext('2d'); lq.fillStyle = 'rgba(8,14,28,.85)'; lq.fillRect(0,0,384,80);
+      lq.strokeStyle = col; lq.lineWidth = 5; lq.strokeRect(4,4,376,72);
+      lq.fillStyle = '#fff'; lq.font = 'bold 32px Arial'; lq.textAlign = 'center'; lq.textBaseline = 'middle'; lq.fillText('AGENT OFFICE', 192, 40);
+      var lsp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lab), transparent: true }));
+      lsp.scale.set(5, 1.05, 1); lsp.position.set(x, 2.0, z); lsp.userData.v9 = true; addO(lsp);
+    }
+    approachRoad(23,-13,23,-26,'#63e6ff');   // north (short)
+    agentOffice(23,-26,'#63e6ff',[['Nazira','#f472b6'],['Milia','#f0b429']]);
+    approachRoad(23,47,23,60,'#ff8df0');     // south (short)
+    agentOffice(23,60,'#ff8df0',[['Rena','#7cf0c8'],['Aria','#63e6ff']]);
+    approachRoad(-7,17,-20,17,'#7cf0c8');    // west (short)
+    agentOffice(-20,17,'#7cf0c8',[['Kai','#8fa9ff'],['Dan','#22c55e']]);
+    approachRoad(53,17,66,17,'#b07cff');     // east (short)
+    agentOffice(66,17,'#b07cff',[['Faris','#c9a227'],['Hanna','#e8d9a0']]);
 
     // Futuristic central walkway (clean road inside the HQ, no city outside).
     floor(3.0, 30, solid('#2a3446', { map: asphaltTex(6, 2), roughness: .8, metalness: .12 }), 23, .02, 17);
@@ -3882,26 +3918,21 @@
     floor(16, 9, solid('#ffffff', { map: plankTex(6, 3), roughness: .75 }), 37, .005, 28.5);
     floor(11, 7, '#7d8b9d', 5.5, .005, 28);
 
-    // ---- envelope: north window wall, side walls, glass south facade ----
-    box(46.8, .55, .2, solid('#e8e4dc', { map: wallTex(), roughness: .9 }), 23, .28, 34);
-    glass(17.4, 2.4, .12, 8.7, 1.75, 34, .34);
-    glass(8.6, 2.4, .12, 41.7, 1.75, 34, .34);
-    glassGlint(10.5, 1.75, 33.88, 5.2, 2.0, 0);
-    glassGlint(41.5, 1.75, 33.88, 4.6, 2.0, 0);
-    [0, 17.4, 37.2, 46].forEach(function (x) { box(.16, 2.95, .2, '#d9d5cd', x, 1.48, 34); });
-    box(46.8, .18, .26, '#b9c0ca', 23, 3.02, 34);
-
-    box(.2, 3.05, 34.8, solid('#e8e4dc', { map: wallTex(), roughness: .9 }), 0, 1.52, 17);
-    box(.2, 3.05, 34.8, solid('#e8e4dc', { map: wallTex(), roughness: .9 }), 46, 1.52, 17);
-    box(46.8, 3.05, .2, solid('#e8e4dc', { map: wallTex(), roughness: .9 }), 23, 1.52, 0);
-    // bright sky + city behind the north glazing
-    var sky = new THREE.Mesh(new THREE.PlaneGeometry(46, 2.5),
-      new THREE.MeshBasicMaterial({ color: '#101d33', side: THREE.DoubleSide, toneMapped: false }));
-    sky.position.set(23, 1.95, .09); addO(sky);
-    glass(46, 2.5, .09, 23, 1.95, .14, .22);
-    for (var wx = 1; wx <= 45; wx += 4) mullion(wx, .16, 'x', 2.55);
-    box(46, .09, .16, '#d8dee6', 23, 1.02, .17);
-    box(46, .09, .16, '#d8dee6', 23, 2.93, .17);
+    // ---- CEO: circular futuristic office shell (replaces rectangular walls) ----
+    var OCX = 23, OCZ = 17, OR = 30;
+    var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .18, 64), solid('#2a3446', { roughness: .72, metalness: .18 }));
+    disc.position.set(OCX, -.13, OCZ); disc.userData.v9 = true; addO(disc);
+    var wall = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, 3.05, 64, 1, true),
+      solid('#7fb8d8', { transparent: true, opacity: .12, roughness: .1, metalness: .2, side: THREE.DoubleSide }));
+    wall.position.set(OCX, 1.52, OCZ); wall.userData.v9 = true; addO(wall);
+    [0.15, 3.0].forEach(function (yy) {
+      var rim = new THREE.Mesh(new THREE.TorusGeometry(OR, .07, 8, 64), solid('#63e6ff', { emissive: '#63e6ff', emissiveIntensity: .8 }));
+      rim.rotation.x = Math.PI / 2; rim.position.set(OCX, yy, OCZ); rim.userData.v9 = true; addO(rim);
+    });
+    for (var wa = 0; wa < Math.PI * 2; wa += Math.PI / 12) {
+      var post = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 3.05, 6), solid('#8fa9c4', { roughness: .5 }));
+      post.position.set(OCX + Math.cos(wa) * OR, 1.52, OCZ + Math.sin(wa) * OR); post.userData.v9 = true; addO(post);
+    }
     windowReflection();
     [5, 13, 21, 29, 37].forEach(function (bx2) {
       windowBand(bx2, 3.4, 4.2, 5.5, .08);
