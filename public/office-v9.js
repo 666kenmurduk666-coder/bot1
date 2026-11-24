@@ -3909,15 +3909,9 @@
     var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .34, 64), solid('#5c6b82', { map: terrazzoTex(), roughness: .85, metalness: .08 }));
     disc.position.set(OCX, -.17, OCZ); disc.userData.v9 = true; addO(disc);
     // Calm futuristic floor: smooth deep-blue surface with a soft center glow.
-    var floorTex = makeTex('calm-floor', function (q, S) {
-      var g = q.createRadialGradient(S/2, S/2, 10, S/2, S/2, S/2);
-      g.addColorStop(0, '#1b2b45'); g.addColorStop(.65, '#142238'); g.addColorStop(1, '#0e192c');
-      q.fillStyle = g; q.fillRect(0, 0, S, S);
-      q.strokeStyle = 'rgba(120,190,255,.08)'; q.lineWidth = 1;
-      for (var i = 1; i < 8; i++) { q.beginPath(); q.moveTo(i*S/8, 0); q.lineTo(i*S/8, S); q.stroke(); q.beginPath(); q.moveTo(0, i*S/8); q.lineTo(S, i*S/8); q.stroke(); }
-    });
+    // Plain futuristic gray floor — no lines, smooth solid surface with a soft glow.
     var discTop = new THREE.Mesh(new THREE.CircleGeometry(OR - .2, 64),
-      solid('#ffffff', { map: floorTex, roughness: .7, metalness: .12, side: THREE.DoubleSide }));
+      solid('#8892a0', { roughness: .6, metalness: .22, emissive: '#3a4658', emissiveIntensity: .18, side: THREE.DoubleSide }));
     discTop.rotation.x = -Math.PI / 2; discTop.position.set(OCX, .008, OCZ); discTop.userData.v9 = true; addO(discTop);
     var wall = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, 3.05, 64, 1, true),
       solid('#7fb8d8', { transparent: true, opacity: .12, roughness: .1, metalness: .2, side: THREE.DoubleSide }));
