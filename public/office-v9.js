@@ -3910,18 +3910,16 @@
     dustField();
 
     // ---- ground, slab, zone floors ----
-    floor(220, 220, '#485567', 23, -.22, 17);
-    floor(46.8, 34.8, solid('#b9c3cc', { map: terrazzoTex(), roughness: .95, metalness: 0 }), 23, -.03, 17);
-    floor(27, 19, solid('#ffffff', { map: carpetTex('#718f8b', '#3f6662', 7, 5), roughness: .95, metalness: 0 }), 15, .005, 11);
-    floor(16, 15, solid('#ffffff', { map: tileTex(5, 5), roughness: .8 }), 37, .005, 10);
-    floor(19, 10, solid('#ffffff', { map: plankTex(7, 4), roughness: .75 }), 23, .005, 29);
-    floor(16, 9, solid('#ffffff', { map: plankTex(6, 3), roughness: .75 }), 37, .005, 28.5);
-    floor(11, 7, '#7d8b9d', 5.5, .005, 28);
+    // Rectangular floors removed; the round disc below is the only floor.
 
     // ---- CEO: circular futuristic office shell (replaces rectangular walls) ----
     var OCX = 23, OCZ = 17, OR = 30;
-    var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .18, 64), solid('#2a3446', { roughness: .72, metalness: .18 }));
-    disc.position.set(OCX, -.13, OCZ); disc.userData.v9 = true; addO(disc);
+    // The round disc IS the office floor.
+    var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .34, 64), solid('#5c6b82', { map: terrazzoTex(), roughness: .85, metalness: .08 }));
+    disc.position.set(OCX, -.17, OCZ); disc.userData.v9 = true; addO(disc);
+    var discTop = new THREE.Mesh(new THREE.CircleGeometry(OR - .2, 64),
+      solid('#b9c3cc', { map: terrazzoTex(), roughness: .95, metalness: 0, side: THREE.DoubleSide }));
+    discTop.rotation.x = -Math.PI / 2; discTop.position.set(OCX, .008, OCZ); discTop.userData.v9 = true; addO(discTop);
     var wall = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, 3.05, 64, 1, true),
       solid('#7fb8d8', { transparent: true, opacity: .12, roughness: .1, metalness: .2, side: THREE.DoubleSide }));
     wall.position.set(OCX, 1.52, OCZ); wall.userData.v9 = true; addO(wall);
