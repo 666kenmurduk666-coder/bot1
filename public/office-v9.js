@@ -3862,6 +3862,124 @@
     } catch (e) {}
   }
 
+
+  // ---------- REFERENCE AI OFFICE SYSTEM (YouTube-style) ----------
+  function refLabel(text, color, x, y, z, w, h) {
+    var c = document.createElement('canvas'); c.width = 512; c.height = 112;
+    var q = c.getContext('2d');
+    if (q.roundRect) { q.beginPath(); q.roundRect(4, 4, 504, 104, 26); q.fillStyle = 'rgba(8,12,26,.9)'; q.fill(); }
+    else { q.fillStyle = 'rgba(8,12,26,.9)'; q.fillRect(4,4,504,104); }
+    q.strokeStyle = color || '#63e6ff'; q.lineWidth = 5;
+    if (q.roundRect) { q.beginPath(); q.roundRect(4,4,504,104,26); q.stroke(); } else q.strokeRect(4,4,504,104);
+    q.fillStyle = '#eaf7ff'; q.font = 'bold 42px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
+    q.fillText(text, 256, 58);
+    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false }));
+    sp.scale.set(w || 6, h || 1.3, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
+    return sp;
+  }
+  function refBot(x, z, color, name) {
+    var g = new THREE.Group(); g.position.set(x, 0, z); g.userData.v9 = true; structureGroup.add(g);
+    var base = new THREE.Mesh(new THREE.CylinderGeometry(.30,.34,.10,10), solid('#1b2233',{roughness:.8,metalness:.2}));
+    base.position.set(0,.06,0); base.scale.set(1.25,1,1.25); base.userData.v9=true; g.add(base);
+    var body = new THREE.Mesh(new THREE.SphereGeometry(.40,12,10), solid(color,{roughness:.45,metalness:.1}));
+    body.position.y=.46; body.scale.y=1.12; body.userData.v9=true; g.add(body);
+    var head = new THREE.Mesh(new THREE.SphereGeometry(.30,12,10), solid(color,{roughness:.4,metalness:.1}));
+    head.position.y=1.02; head.userData.v9=true; g.add(head);
+    [-1,1].forEach(function(s){ var e=new THREE.Mesh(new THREE.SphereGeometry(.045,8,6), solid('#0b1020')); e.position.set(s*.08,.9,.19); e.userData.v9=true; g.add(e); });
+    if (name) refLabel(name, color, x, 1.75, z, 3.2, .72);
+    animParts.push({m:body,k:'led',p:x*.7+z});
+    return g;
+  }
+  function refDesk(x,z,color) {
+    box(1.6,.13,.85,solid('#4b5a70',{roughness:.6,metalness:.2}),x,.30,z);
+    box(.06,.36,.06,'#2a3446',x,.55,z-.22);
+    var scr=new THREE.Mesh(new THREE.PlaneGeometry(1.0,.58), solid(color,{emissive:color,emissiveIntensity:.6,side:THREE.DoubleSide}));
+    scr.position.set(x,.80,z-.24); scr.userData.v9=true; addO(scr);
+    box(.6,.025,.2,solid('#cfd8e6',{roughness:.5}),x,.40,z+.12);
+    box(.12,.025,.18,solid('#cfd8e6',{roughness:.5}),x+.42,.40,z+.12);
+    var mug=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.14,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.46,.44,z+.14); mug.userData.v9=true; addO(mug);
+  }
+  function refIsland(cx,cz,R,color,title,agents) {
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,4), solid('#3b4457',{roughness:.78,metalness:.12}));
+    slab.rotation.y=Math.PI/4; slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,4), solid('#465168',{roughness:.72,metalness:.18,side:THREE.DoubleSide}));
+    top.rotation.x=-Math.PI/2; top.rotation.z=Math.PI/4; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,4), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
+    rim.rotation.x=Math.PI/2; rim.rotation.z=Math.PI/4; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
+    // soft shadow beneath (floating look)
+    var sh=new THREE.Mesh(new THREE.CircleGeometry(R*.8,32), new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.28,depthWrite:false}));
+    sh.rotation.x=-Math.PI/2; sh.position.set(cx,-2.4,cz); sh.userData.v9=true; addO(sh);
+    var n=agents.length;
+    agents.forEach(function(a,i){
+      var ox=(i-(n-1)/2)*2.2;
+      refDesk(cx+ox,cz+1.1,color);
+      refBot(cx+ox,cz+2.1,a[1],a[0]);
+    });
+    // plant + whiteboard
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.2,.17,.28,8),solid('#8b5e34',{roughness:.7})); p.position.set(cx-R*.5,.16,cz+R*.33); p.userData.v9=true; addO(p);
+    var l=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),solid('#4f9e5c',{roughness:.8})); l.scale.y=.72; l.position.set(cx-R*.5,.5,cz+R*.33); l.userData.v9=true; addO(l);
+    var bx=cx+R*.5, bz=cz-R*.3;
+    box(.06,1.2,.06,'#8792a6',bx,.6,bz); box(.06,1.2,.06,'#8792a6',bx+1.5,.6,bz);
+    var bd=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.8),solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
+    bd.position.set(bx+.75,1.0,bz); bd.userData.v9=true; addO(bd);
+    refLabel(title,color,cx,2.6,cz-R*.52,6.4,1.4);
+  }
+  function refBridge(x1,z1,x2,z2,color) {
+    var dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz),ang=-Math.atan2(dz,dx);
+    var b=new THREE.Mesh(new THREE.BoxGeometry(len,.08,1.0),solid('#3a445c',{roughness:.7,metalness:.2}));
+    b.position.set((x1+x2)/2,-.04,(z1+z2)/2); b.rotation.y=ang; b.userData.v9=true; addO(b);
+    var g=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.09),solid(color,{emissive:color,emissiveIntensity:.85}));
+    g.position.copy(b.position); g.position.y=.02; g.rotation.y=ang; g.userData.v9=true; addO(g);
+    for(var t=.22;t<.82;t+=.13){var d=new THREE.Mesh(new THREE.SphereGeometry(.065,6,6),solid(color,{emissive:color,emissiveIntensity:1}));d.position.set(x1+dx*t,.09,z1+dz*t);d.userData.v9=true;addO(d);}
+  }
+  function buildReferenceSystem() {
+    if (!level3d || !structureGroup) return false;
+    var CX=0, CZ=0;
+    // dark outer-space floor so nothing falls
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#060a14',{roughness:1,metalness:0}));
+    ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
+    // stars
+    try{
+      var pts=[];
+      for(var i=0;i<340;i++){var a=Math.random()*Math.PI*2,r=40+Math.random()*100;pts.push(Math.cos(a)*r,-6+Math.random()*50,Math.sin(a)*r);}
+      var geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      var stars=new THREE.Points(geo,new THREE.PointsMaterial({color:'#9fc7ff',size:.18,transparent:true,opacity:.85,fog:false}));
+      stars.userData.v9=true; addO(stars);
+    }catch(e){}
+    // Command hub (octagon)
+    var hub=new THREE.Mesh(new THREE.CylinderGeometry(5.6,5.0,.7,8),solid('#2c2740',{roughness:.68,metalness:.16}));
+    hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; addO(hub);
+    var hr=new THREE.Mesh(new THREE.TorusGeometry(5.65,.07,8,8),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
+    hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
+    var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
+    animParts.push({m:beam,k:'led',p:.4});
+    [1.0,1.7,2.5].forEach(function(r,i){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.05,8,32),solid(i===1?'#ff8df0':'#63e6ff',{emissive:i===1?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
+      ring.rotation.x=Math.PI/2; ring.position.set(CX,.3+i*.35,CZ); ring.userData.v9=true; addO(ring);
+      animParts.push({m:ring,k:i===1?'spinFlatR':'spinFlat',s:.45});
+    });
+    // CEO decision paper + operator
+    box(1.0,.03,.65,solid('#f5f1e6',{roughness:.7}),CX-.9,.46,CZ+1.0);
+    box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
+    refDesk(CX,CZ+1.5,'#a98cff');
+    refBot(CX,CZ+2.4,'#c08cff','Nazira');
+    refLabel('Command','#a99cff',CX,3.7,CZ-1.6,4.6,1.1);
+    // 5 departments (roles from the reference video)
+    var deps=[
+      {x:-25,z:-17,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},
+      {x: 25,z:-17,c:'#4fd6b0',t:'Data & Insights',a:[['Rena','#4fd6b0'],['Aria','#63e6ff']]},
+      {x:-31,z:  5,c:'#5fa8ff',t:'Systems',a:[['Kai','#5fa8ff'],['Dan','#4fd6b0']]},
+      {x: 31,z:  5,c:'#d8c860',t:'Finance',a:[['Faris','#d8c860'],['Hanna','#e8d98f']]},
+      {x:  0,z: 27,c:'#ff7fb0',t:'People & Customers',a:[['Hafiz','#ff7fb0'],['Lara','#ff9ec4'],['Sophia','#c08cff']]}
+    ];
+    deps.forEach(function(d){
+      refIsland(d.x,d.z,8,d.c,d.t,d.a);
+      refBridge(CX,CZ,d.x,d.z,d.c);
+    });
+    return true;
+  }
+
   function buildRealOffice3d() {
     if (typeof THREE === 'undefined' || !g || !g.level) return false;
     ensureGrade();
@@ -3887,8 +4005,8 @@
 
     // White-out fixes retained exactly: muted background, dark surround,
     // exposure .85, ambient .58, day/night switch pre-resolved.
-    scene3d.background = new THREE.Color('#93a1b3');
-    scene3d.fog = new THREE.Fog('#93a1b3', 70, 165);
+    scene3d.background = new THREE.Color('#070c18');
+    scene3d.fog = new THREE.Fog('#070c18', 120, 240);
     scene3d.isNight = 0;
     try { renderer3d.toneMappingExposure = .85; } catch (e) {}
     if (g.amb) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
@@ -3898,9 +4016,10 @@
       l.position.set(p[0], p[1], p[2]); l.userData.v9Light = true; addO(l);
     });
     tameOfficeLights();
+    dustField();
 
-    // CEO: all 3D structure removed — blank scene. App/guards intact.
-    cuteBots.length = 0;
+    // FULL REFERENCE SYSTEM: command hub + 5 department islands
+    buildReferenceSystem();
 
     // The main app's simple-mode cull hides any unflagged object above y=3.15.
     // Everything now in level3d belongs to this v9 office, so flag it all —
@@ -4024,8 +4143,8 @@
     var botDt = Math.min(.12, Math.max(0, (now - prevTick) / 1000));
     try {
       if (scene3d) {
-        if (scene3d.background && scene3d.background.getHex() !== 0x93a1b3) scene3d.background.set('#93a1b3');
-        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x93a1b3) scene3d.fog.color.set('#93a1b3');
+        if (scene3d.background && scene3d.background.getHex() !== 0x070c18) scene3d.background.set('#070c18');
+        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x070c18) scene3d.fog.color.set('#070c18');
       }
       if (g && g.amb && Math.abs(g.amb.intensity - .58) > .01) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
       tameOfficeLights();
