@@ -21,24 +21,24 @@
   'use strict';
 
   var BOTS = [
-    { id: 'cos',     n: 'Cos 💬',     c: '#f472b6', x: 23, z: 27.5, face: Math.PI },
-    { id: 'seo',     n: 'Seo 🔍',     c: '#4a9fd6', x: 10, z: 10.5, face: 0 },
-    { id: 'product', n: 'Product 📦', c: '#f0b429', x: 18, z: 10.5, face: 0 },
-    { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 36, z: 11,   face: Math.PI / 2 },
-    { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 36, z: 28,   face: -Math.PI / 2 },
-    { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 30.1, z: 21.3, face: Math.PI },
-    { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: 16, z: 14.5, face: 0 },
-    { id: 'hflex',   n: 'HF Lead 📝', c: '#77eaff', x: 24, z: 10.5, face: 0 },
-    { id: 'hfmotion',n: 'HF Motion ✨', c: '#a78bfa', x: 28, z: 10.5, face: 0 },
-    { id: 'hfrender',n: 'HF QA 🧪',   c: '#75f0c0', x: 32, z: 10.5, face: 0 },
+    { id: 'cos',     n: 'Cos 💬',     c: '#f472b6', x: 23, z: -26, face: Math.PI },
+    { id: 'seo',     n: 'Seo 🔍',     c: '#4a9fd6', x: 23, z: -26, face: 0 },
+    { id: 'product', n: 'Product 📦', c: '#f0b429', x: 23, z: -26, face: 0 },
+    { id: 'mgr',     n: 'Mgr 📋',     c: '#3f9d6a', x: 23, z: 60,   face: Math.PI / 2 },
+    { id: 'writer',  n: 'Writer ✍️', c: '#e8622c', x: 23, z: 60,   face: -Math.PI / 2 },
+    { id: 'aryasky', n: 'ARYASKY 🎨', c: '#6bb3a6', x: 23, z: -26, face: Math.PI },
+    { id: 'fixer',   n: 'Fixer 🛠️',  c: '#22c55e', x: -20, z: 17, face: 0 },
+    { id: 'hflex',   n: 'HF Lead 📝', c: '#77eaff', x: -20, z: 17, face: 0 },
+    { id: 'hfmotion',n: 'HF Motion ✨', c: '#a78bfa', x: 66, z: 17, face: 0 },
+    { id: 'hfrender',n: 'HF QA 🧪',   c: '#75f0c0', x: 66, z: 17, face: 0 },
     // Useful production bots (already wired to server routines)
-    { id: 'tagedit',  n: 'Tagalog Editor', c: '#ff9b5f', x: 42, z: 12, face: Math.PI },
-    { id: 'bantay',   n: 'Bantay Safety',  c: '#ff5c7a', x: 46, z: 12, face: Math.PI },
-    { id: 'scout',    n: 'Dahon Scout',    c: '#7cf0c8', x: 50, z: 12, face: Math.PI },
-    { id: 'videoed',  n: 'Video Editor',   c: '#a78bfa', x: 42, z: 20, face: 0 },
-    { id: 'publisher',n: 'Publisher',      c: '#ffd34d', x: 46, z: 20, face: 0 },
-    { id: 'analytics',n: 'Analytics',      c: '#63e6ff', x: 50, z: 20, face: 0 },
-    { id: 'community',n: 'Community',      c: '#b07cff', x: 54, z: 16, face: -Math.PI / 2 }
+    { id: 'tagedit',  n: 'Tagalog Editor', c: '#ff9b5f', x: 23, z: -26, face: Math.PI },
+    { id: 'bantay',   n: 'Bantay Safety',  c: '#ff5c7a', x: 23, z: 60, face: Math.PI },
+    { id: 'scout',    n: 'Dahon Scout',    c: '#7cf0c8', x: 23, z: 60, face: Math.PI },
+    { id: 'videoed',  n: 'Video Editor',   c: '#a78bfa', x: -20, z: 17, face: 0 },
+    { id: 'publisher',n: 'Publisher',      c: '#ffd34d', x: 66, z: 17, face: 0 },
+    { id: 'analytics',n: 'Analytics',      c: '#63e6ff', x: 66, z: 17, face: 0 },
+    { id: 'community',n: 'Community',      c: '#b07cff', x: 23, z: -26, face: -Math.PI / 2 }
   ];
   var EMOS = ['😊', '😄', '🤩', '✨', '💚', '🙌'];
   // Each bot gets its own route and work shift, so nobody just stands still.
@@ -3917,8 +3917,20 @@
     // The round disc IS the office floor.
     var disc = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, .34, 64), solid('#5c6b82', { map: terrazzoTex(), roughness: .85, metalness: .08 }));
     disc.position.set(OCX, -.17, OCZ); disc.userData.v9 = true; addO(disc);
+    // Futuristic floor: dark hex-grid with glowing cyan lines + radial rings.
+    var floorTex = makeTex('futuristic-floor', function (q, S) {
+      q.fillStyle = '#101a2e'; q.fillRect(0, 0, S, S);
+      q.strokeStyle = '#2bd6ff'; q.lineWidth = 2;
+      var step = S / 12;
+      for (var x = 0; x <= S; x += step) { q.beginPath(); q.moveTo(x, 0); q.lineTo(x, S); q.stroke(); }
+      for (var y = 0; y <= S; y += step) { q.beginPath(); q.moveTo(0, y); q.lineTo(S, y); q.stroke(); }
+      q.fillStyle = '#1a3a5c';
+      for (var gx = step/2; gx < S; gx += step) for (var gy = step/2; gy < S; gy += step) { q.fillRect(gx - 1, gy - 1, 3, 3); }
+      q.strokeStyle = '#b07cff'; q.lineWidth = 3;
+      for (var r = S*0.12; r < S*0.5; r += S*0.12) { q.beginPath(); q.arc(S/2, S/2, r, 0, Math.PI*2); q.stroke(); }
+    });
     var discTop = new THREE.Mesh(new THREE.CircleGeometry(OR - .2, 64),
-      solid('#b9c3cc', { map: terrazzoTex(), roughness: .95, metalness: 0, side: THREE.DoubleSide }));
+      solid('#ffffff', { map: floorTex, roughness: .55, metalness: .25, side: THREE.DoubleSide, emissive: '#0d2a44', emissiveIntensity: .4 }));
     discTop.rotation.x = -Math.PI / 2; discTop.position.set(OCX, .008, OCZ); discTop.userData.v9 = true; addO(discTop);
     var wall = new THREE.Mesh(new THREE.CylinderGeometry(OR, OR, 3.05, 64, 1, true),
       solid('#7fb8d8', { transparent: true, opacity: .12, roughness: .1, metalness: .2, side: THREE.DoubleSide }));
@@ -3940,133 +3952,7 @@
     sunGlow();
     birds();
 
-    // ---- open ceiling: beams, fixture grid, pendants ----
-    for (var lx = 6; lx <= 42; lx += 6) for (var lz = 5; lz <= 31; lz += 6) {
-      box(2.8, .06, .52, solid('#fff4dc', { emissive: '#ffe0a0', emissiveIntensity: .45 }), lx, 3.16, lz);
-      box(2.95, .06, .62, '#6f7d8e', lx, 3.22, lz);
-    }
-    for (var beam = 6; beam <= 42; beam += 9) box(.18, .18, 34.4, '#9da8b6', beam, 3.38, 17);
-
-    // ---- WELCOME: reception + lounge ----
-    planeAt(14, 7.5, solid('#ffffff', { map: rugTex('#3f7d78', '#c9a86a', 2, 1), roughness: .95 }), 23, .012, 30.4);
-    box(6, 1.05, 1.3, solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 3, 1) }), 23, .52, 30.2);
-    box(6.2, .1, 1.46, '#d8c6a4', 23, 1.09, 30.2);
-    box(1.0, .55, .07, '#1d2b42', 23, 1.45, 29.86);
-    bx(.86, .42, .02, '#6cc2f0', 23, 1.45, 29.81, true);
-    bx(5.6, .035, .05, '#5fd6ff', 23, .055, 29.46, true);
-    bx(3.2, .035, .05, '#ffd27d', 23, .055, 30.94, true);
-    wallSign('CYBORG CHEEBEE', 'AI AGENTS HEADQUARTERS', 23, 2.52, 33.86, 6.4, 1.35, 0, '#3f9d9a');
-    botOutputBoard();
-    sofa(13.5, 30.4, '#3f7d78', Math.PI / 2);
-    sofa(32.5, 30.4, '#4a6a9a', -Math.PI / 2);
-    box(1.8, .08, .85, '#a9793f', 23, .4, 31.8);
-    cyl(.24, .3, '#d9c39a', 23, .59, 31.8);
-    plant(7.5, 31.4, 1.15); plant(38.5, 31.4, 1.15);
-    pendant(23, 29.6, '#b07b3d'); pendant(16.5, 30.4, '#3f7d78'); pendant(29.5, 30.4, '#3f7d78');
-    tree(17.4, 31.3, .95); tree(28.6, 31.3, .95);
-    wallBoard(16.2, 1.95, 33.82, 'TEAM');
-    clock(31.4, 2.1, 33.82);
-    coatRack(19.8, 33.1);
-    wallFrame(4.6, 2.0, 33.86, 1.6, 1.0, 0, 1);
-    wallFrame(.14, 1.95, 18.5, 1.5, 1.0, Math.PI / 2, 0);
-    wallFrame(45.86, 1.95, 18.5, 1.5, 1.0, -Math.PI / 2, 2);
-    wallFrame(45.86, 1.95, 26.8, 1.4, .9, -Math.PI / 2, 3);
-    reflection(23, 30.3, 4.4, 1.3, '#ffd9a6', 0, .05);
-
-    floorSheen();
-    [12, 23, 34].forEach(function (x) { pendant(x, 23.2, '#3f6fa8'); });
-    plant(5.4, 23.2, .85); plant(29.6, 23.2, .85);
-
-    // ---- FOCUS ----
-    bench(8, 7.5); bench(20, 7.5); bench(8, 16); bench(20, 16);
-    bookshelf(3.2, 4.9, 0);
-    wallSign('FOCUS', 'OPEN WORKSTATIONS · QUIET ZONES', 14, 2.6, .32, 4.8, 1.05, 0, '#3f9d9a');
-    glass(.1, 2.45, 5.6, 27, 1.22, 10, .3);
-    for (var mz = 7.4; mz <= 12.6; mz += 1.3) mullion(27, mz, 'z', 2.45);
-    doorway(27, 10, 'z');
-    for (var q = 0; q < 2; q++) {
-      var qx = 24.4 + q * 2.1;
-      shadow(qx, 17.8, 1.1, 1.05, .14);
-      box(1.8, 2.2, 2, solid('#5c6f86', { map: fabricTex('#5c6f86', 1, 1), roughness: .9 }), qx, 1.1, 17.8);
-      glass(1.5, 1.55, .08, qx, 1.3, 16.78, .4);
-      box(1.3, .07, .55, '#a9793f', qx, .8, 17.8);
-      box(1.05, .06, .42, '#7a8fa6', qx, .85, 17.85);
-      mullion(qx - .8, 16.78, 'z', 2.2); mullion(qx + .8, 16.78, 'z', 2.2);
-    }
-    wallSign('QUIET BOOTHS', 'CALL · FOCUS · RESET', 25.5, 2.4, 19.3, 3.2, .8, 0, '#5f7fa8');
-    roundTable(22.6, 13.6);
-    printer(28.6, 5.2); cabinet(30.2, 5.2, '#6e7c8f');
-    lightPool(14, 7.5, 5, '#ffe0ad'); lightPool(14, 16, 5, '#ffe0ad');
-
-    // ---- MEET ----
-    glass(.1, 2.5, 14, 29, 1.25, 9.5, .28);
-    glass(16, 2.5, .1, 37, 1.25, 16.5, .28);
-    glass(.1, 2.5, 7, 45, 1.25, 12.5, .28);
-    glassGlint(29, 1.25, 7.2, 4.2, 2.0, Math.PI / 2);
-    glassGlint(37, 1.25, 16.35, 4.6, 2.0, 0);
-    presentationScreen(37, 4.5, 0);
-    meetingTable(37, 7.5, 5.4);
-    wallBoard(37, 1.75, .34, 'STUDIO');
-    wallSign('THE STUDIO', 'BOARDROOM · 8 SEATS', 37, 2.62, 16.42, 4.6, 1.05, 0, '#3f6fa8');
-    meetingTable(37, 12.8, 2.8);
-    wallSign('HUDDLE', 'QUICK SYNC', 43.2, 2.25, 12.8, 2.2, .7, -Math.PI / 2, '#5f7fa8');
-    plant(31, 14.6, .9);
-    for (var mz2 = 3.2; mz2 <= 16; mz2 += 2) mullion(29, mz2, 'z', 2.5);
-    doorway(29, 9.5, 'z');
-    for (var mx2 = 30; mx2 <= 44; mx2 += 2) mullion(mx2, 16.5, 'x', 2.5);
-    doorway(37, 16.5, 'x');
-    for (var mz3 = 9.8; mz3 <= 15.5; mz3 += 2) mullion(45, mz3, 'z', 2.5);
-    pendant(37, 7.5, '#3f6fa8'); pendant(37, 12.8, '#5f7fa8');
-    clock(40.5, 2.1, .34);
-    cabinet(44, 5.4, '#6e7c8f');
-
-    // ---- GATHER ----
-    box(7.4, .95, .9, solid('#8b5e34', { map: woodTex('#8b5e34', '#634122', 4, 1) }), 37, .48, 32.4);
-    box(7.6, .1, 1.0, '#d8c6a4', 37, 1.01, 32.4);
-    box(.9, 1.4, .72, '#2f3d52', 39.8, 1.72, 32.4);
-    bx(.62, .62, .04, '#6cc2f0', 39.8, 1.9, 32.78, true);
-    box(1.1, 1.7, .72, '#c3ccd6', 34.5, .85, 32.4);
-    box(.04, 1.1, .03, '#8a96a5', 34.95, .95, 32.78);
-    // coffee jars on counter
-    [[36.1, 32.55, '#8b5e34'], [36.45, 32.55, '#5f7fa8'], [36.78, 32.55, '#b08a3d']].forEach(function (j) {
-      cyl(.07, .16, j[2], j[0], 1.14, j[1]);
-      cyl(.08, .02, '#d9c39a', j[0], 1.23, j[1]);
-    });
-    box(4.4, .14, 1.5, solid('#a9793f', { map: woodTex('#a9793f', '#77522e', 3, 1) }), 37, .87, 29.2);
-    [35.6, 37, 38.4].forEach(function (px) {
-      cyl(.29, .14, '#d9c9a8', px, .74, 28.1);
-      cyl(.05, .6, '#5a4632', px, .34, 28.1);
-      coffeeSteam(px, 28.1);
-    });
-    waterCooler(31.4, 30.2);
-    fruitBowl(37, 29.2);
-    wallSign('THE COMMONS', 'PANTRY · COFFEE · TEAM SNACKS', 37, 2.5, 33.86, 5.2, 1.15, 0, '#b07b3d');
-    pendant(37, 29.2, '#b07b3d'); pendant(40.5, 30, '#3f7d78');
-    cabinet(41.2, 32.3, '#8b5e34'); cabinet(33.4, 32.3, '#8b5e34');
-    bookshelf(44.6, 29.4, -Math.PI / 2);
-    lightPool(37, 29.2, 4.6, '#ffd9a6');
-    reflection(37, 32.5, 5.4, 1.2, '#ffd9a6', 0, .05);
-
-    // ---- SUPPORT: executive + server / IT ----
-    glass(.1, 2.45, 6.4, 11, 1.22, 27.5, .3);
-    box(2.8, .13, 1.4, solid('#7d5634', { map: woodTex('#7d5634', '#553a22', 2, 1) }), 5.5, .78, 28.4);
-    box(.9, .55, .06, '#1d2b42', 5.5, 1.24, 28.05);
-    bx(.78, .44, .02, '#6cc2f0', 5.5, 1.24, 28.01, true);
-    officeChair(5.5, 29.6, Math.PI, '#3f5a76');
-    box(.95, 2.2, .44, '#8b5e34', 1.6, 1.1, 30.8);
-    for (var bk = 0; bk < 4; bk++) box(.82, .05, .36, ['#b05555', '#4a7fb0', '#3f8c66', '#c9a227'][bk], 1.6, .5 + bk * .42, 30.8);
-    wallSign('EXECUTIVE', 'CEO · FOCUS ROOM', 5.5, 2.4, 24.28, 3.0, .85, 0, '#b08a3d');
-    [2.8, 5, 7.2].forEach(function (px) { serverRack(px, 25.5); });
-    wallSign('SERVER / IT', 'SYSTEMS · NETWORK', 5, 2.3, 23.18, 3.0, .8, 0, '#5f7fa8');
-    plant(10.5, 32, .95); plant(23, 20.8, .9);
-    plant(3.4, 30.2, .85);
-    for (var mz4 = 24.4; mz4 <= 30.6; mz4 += 1.6) mullion(11, mz4, 'z', 2.45);
-    doorway(11, 27.5, 'z');
-    pendant(5.5, 28.4, '#b08a3d');
-    cabinet(9.4, 31.6, '#6e7c8f'); printer(8.6, 26.1);
-    box(.5, .04, .34, '#b08a3d', 6.9, .85, 28.0);
-    cyl(.04, .08, '#2f3d52', 6.82, .9, 28.0);
-
+    // Other equipment removed by CEO: only floor, wall, roads and agent offices remain.
 
     // ---- 7 small, cute, happy bots (ARYASKY is our artist) ----
     var host = document.getElementById('oc3d') || document.body;
