@@ -3928,8 +3928,8 @@
       g:g, body:body, head:head, armL:armL, armR:armR, legL:legL, legR:legR, belly:belly, tip:tip, bub:bub,
       x:x, z:z, homeX:x, homeZ:z, color:color, name:name||'Bot',
       phase:seed*1.7, speed:.9+(seed%4)*.18, personality:seed%5,
-      state:'work', timer:Date.now()+1200+seed*530, wp:null, path:[], zone:null, partner:null, talkFor:0,
-      blink:0, look:0, lastBubble:0, decisionAt:Date.now()+seed*430
+      state:'work', timer:Date.now()-1000+seed*40, wp:null, path:[], zone:null, partner:null, talkFor:0,
+      blink:0, look:0, lastBubble:0, decisionAt:Date.now()-500+seed*30
     };
     walkers.push(r);
     return g;
@@ -4083,6 +4083,126 @@
     g.position.copy(b.position); g.position.y=.02; g.rotation.y=ang; g.userData.v9=true; addO(g);
     for(var t=.22;t<.82;t+=.13){var d=new THREE.Mesh(new THREE.SphereGeometry(.065,6,6),solid(color,{emissive:color,emissiveIntensity:1}));d.position.set(x1+dx*t,.09,z1+dz*t);d.userData.v9=true;addO(d);}
   }
+
+  // ===== 3D DEPTH ENHANCEMENT (low-poly, perf-safe, no shadows) =====
+  var fx3d = { pulses: [], dust: null, holo: [], cores: [] };
+  function holoTexture(color, text){
+    var c=document.createElement('canvas'); c.width=256; c.height=256;
+    var q=c.getContext('2d');
+    q.clearRect(0,0,256,256);
+    q.strokeStyle=color; q.lineWidth=3; q.globalAlpha=.75;
+    q.beginPath(); q.arc(128,128,110,0,Math.PI*2); q.stroke();
+    q.beginPath(); q.arc(128,128,80,0,Math.PI*2); q.stroke();
+    for(var i=0;i<12;i++){var a=i/12*Math.PI*2;q.beginPath();q.moveTo(128+Math.cos(a)*84,128+Math.sin(a)*84);q.lineTo(128+Math.cos(a)*106,128+Math.sin(a)*106);q.stroke();}
+    q.fillStyle=color; q.font='bold 30px Arial'; q.textAlign='center'; q.textBaseline='middle';
+    q.fillText(text||'',128,128);
+    return new THREE.CanvasTexture(c);
+  }
+  function enhance3D(){
+    if(!structureGroup||!level3d) return;
+    fx3d.pulses.length=0; fx3d.holo.length=0; fx3d.cores.length=0;
+    // --- planet arc in the far background (like the reference) ---
+    try{
+      var planet=new THREE.Mesh(new THREE.SphereGeometry(95,32,24),
+        new THREE.MeshBasicMaterial({color:'#14294a',transparent:true,opacity:.85,fog:false}));
+      planet.position.set(-120,-92,-160); planet.userData.v9=true; addO(planet);
+      var atm=new THREE.Mesh(new THREE.SphereGeometry(98,32,24),
+        new THREE.MeshBasicMaterial({color:'#4aa8ff',transparent:true,opacity:.10,side:THREE.BackSide,fog:false}));
+      atm.position.copy(planet.position); atm.userData.v9=true; addO(atm);
+    }catch(e){}
+    // --- nebula sprites ---
+    try{
+      var nc=document.createElement('canvas'); nc.width=256; nc.height=256;
+      var nq=nc.getContext('2d');
+      var grd=nq.createRadialGradient(128,128,8,128,128,128);
+      grd.addColorStop(0,'rgba(90,120,255,.22)'); grd.addColorStop(.5,'rgba(140,70,220,.10)'); grd.addColorStop(1,'rgba(0,0,0,0)');
+      nq.fillStyle=grd; nq.fillRect(0,0,256,256);
+      var nt=new THREE.CanvasTexture(nc);
+      [[-70,-30,-120,1.6],[80,40,-140,1.9],[10,-50,-170,2.2]].forEach(function(p,i){
+        var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:nt,transparent:true,depthWrite:false,fog:false,opacity:.9}));
+        sp.scale.set(120*p[3],120*p[3],1); sp.position.set(p[0],p[1],p[2]); sp.userData.v9=true; addO(sp);
+      });
+    }catch(e){}
+    // --- under-island glowing cores + vertical corner pylons + floating holograms ---
+    function decorateIsland(x,z,R,color,name){
+      var cone=new THREE.Mesh(new THREE.ConeGeometry(R*.62,3.4,4), solid('#22304a',{roughness:.7,metalness:.25,emissive:color,emissiveIntensity:.12}));
+      cone.rotation.y=Math.PI/4; cone.rotation.z=Math.PI; cone.position.set(x,-2.2,z); cone.userData.v9=true; addO(cone);
+      var core=new THREE.Mesh(new THREE.OctahedronGeometry(.55,0), solid(color,{emissive:color,emissiveIntensity:.9,roughness:.2,transparent:true,opacity:.9}));
+      core.position.set(x,-1.4,z); core.userData.v9=true; addO(core);
+      fx3d.cores.push(core);
+      // 4 corner pylons (outside walkable center radius)
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(q,i){
+        var px=x+q[0]*R*.66, pz=z+q[1]*R*.66;
+        var pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,1.5,6),solid('#5a6b86',{roughness:.5,metalness:.4}));
+        pole.position.set(px,.75,pz); pole.userData.v9=true; addO(pole);
+        var lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),solid(color,{emissive:color,emissiveIntensity:1.1,roughness:.2}));
+        lamp.position.set(px,1.55,pz); lamp.userData.v9=true; addO(lamp);
+        animParts.push({m:lamp,k:'led',p:i+q[0]+x*.1});
+      });
+      // floating holographic emblem above island
+      var holo=new THREE.Mesh(new THREE.PlaneGeometry(4,4),
+        new THREE.MeshBasicMaterial({map:holoTexture(color,name.slice(0,3)),transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+      holo.position.set(x,3.6,z); holo.userData.v9=true; addO(holo);
+      fx3d.holo.push(holo);
+      animParts.push({m:holo,k:'spinY',s:.25});
+    }
+    var DS=[[-21,-15,'#f0a040','Marketing'],[21,-15,'#4fd6b0','Data'],[-26,4,'#5fa8ff','Systems'],[26,4,'#d8c860','Finance'],[0,23,'#ff7fb0','People']];
+    DS.forEach(function(d){ decorateIsland(d[0],d[1],10,d[2],d[3]); });
+    // --- Command: floating core + extra height rings ---
+    var cc=new THREE.Mesh(new THREE.OctahedronGeometry(.6,0),solid('#8fefff',{emissive:'#63e6ff',emissiveIntensity:1.3,roughness:.15,transparent:true,opacity:.92}));
+    cc.position.set(0,3.2,0); cc.userData.v9=true; addO(cc);
+    fx3d.cores.push(cc);
+    animParts.push({m:cc,k:'spin',s:.7});
+    [3.6,4.4].forEach(function(y,i){
+      var r=new THREE.Mesh(new THREE.TorusGeometry(1.4+i*.5,.04,8,40),solid(i?'#ff8df0':'#63e6ff',{emissive:i?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
+      r.rotation.x=Math.PI/2; r.position.set(0,y,0); r.userData.v9=true; addO(r);
+      animParts.push({m:r,k:i?'spinFlatR':'spinFlat',s:.5});
+    });
+    // --- bridge data pulses (animated dots flowing hub<->islands) ---
+    navBridges.forEach(function(b){
+      for(var k=0;k<4;k++){
+        var dot=new THREE.Mesh(new THREE.SphereGeometry(.09,6,6),solid('#9fe8ff',{emissive:'#9fe8ff',emissiveIntensity:1.2,roughness:.2}));
+        dot.userData.v9=true; addO(dot);
+        fx3d.pulses.push({m:dot,x1:b.x1,z1:b.z1,x2:b.x2,z2:b.z2,t:Math.random(),sp:.12+Math.random()*.08,dir:Math.random()<.5?1:-1});
+      }
+    });
+    // --- drifting light motes around the whole campus ---
+    try{
+      var pts=[],N=140;
+      for(var i=0;i<N;i++){var a=Math.random()*Math.PI*2,r=8+Math.random()*46;pts.push(Math.cos(a)*r,1+Math.random()*14,Math.sin(a)*r);}
+      var g2=new THREE.BufferGeometry(); g2.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      var dust=new THREE.Points(g2,new THREE.PointsMaterial({color:'#8fd8ff',size:.13,transparent:true,opacity:.55,depthWrite:false,fog:false}));
+      dust.userData.v9=true; addO(dust); fx3d.dust=dust;
+    }catch(e){}
+  }
+  function tick3d(now, dt){
+    try{
+      for(var i=0;i<fx3d.pulses.length;i++){
+        var p=fx3d.pulses[i];
+        p.t+=p.sp*dt*p.dir;
+        if(p.t>1){p.t=1;p.dir=-1;} if(p.t<0){p.t=0;p.dir=1;}
+        p.m.position.set(p.x1+(p.x2-p.x1)*p.t,.22,p.z1+(p.z2-p.z1)*p.t);
+      }
+      for(var j=0;j<fx3d.cores.length;j++) fx3d.cores[j].rotation.y+=.01;
+      if(fx3d.dust) fx3d.dust.rotation.y+=.00006;
+    }catch(e){}
+  }
+
+
+  var _walkLoopStarted = false;
+  function startWalkLoop(){
+    if(_walkLoopStarted) return; _walkLoopStarted=true;
+    var last=Date.now();
+    setInterval(function(){
+      try{
+        if(typeof view==='undefined'||view==='office'||view==='boardroom'){
+          var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
+          walkerTick(n,dt); tick3d(n,dt);
+        }
+      }catch(e){}
+    }, 50);
+  }
+
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
@@ -4135,6 +4255,8 @@
     });
     // command bot belongs to hub zone 0
     walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
+    enhance3D();
+    startWalkLoop();
     return true;
   }
 
@@ -4396,7 +4518,6 @@
       updateBotBatch2(b, now, i);
     });
     updateBotParticles(now);
-    try { walkerTick(now, Math.min(.05,(now-(tick.walkLast||now))/1000)); } catch(e) {} tick.walkLast=now;
     if (now - (tick.glow || 0) > 140) {
       tick.glow = now;
       animParts.forEach(function (a) {
@@ -4405,6 +4526,7 @@
         if (a.k === 'spin') { m.rotation.y += (a.s || .5) * 0.016; m.rotation.x += (a.s || .5) * 0.008; return; }
         if (a.k === 'spinFlat') { m.rotation.z += (a.s || .3) * 0.016; return; }
         if (a.k === 'spinFlatR') { m.rotation.z -= (a.s || .3) * 0.016; return; }
+        if (a.k === 'spinY') { m.rotation.y += (a.s || .3) * 0.016; return; }
         if (a.k === 'bob') { m.position.y = Math.sin(now/600 + a.p) * 0.06; return; }
         if (!m.material || m.material.emissiveIntensity === undefined) return;
         m.material.emissiveIntensity = a.k === 'led'
