@@ -3972,12 +3972,12 @@
       var b=navBridges[i],dx=b.x2-b.x1,dz=b.z2-b.z1,L=dx*dx+dz*dz; if(!L)continue;
       var t=Math.max(0,Math.min(1,((x-b.x1)*dx+(z-b.z1)*dz)/L));
       var px=b.x1+dx*t,pz=b.z1+dz*t;
-      if(Math.hypot(x-px,z-pz)<1.4)return true;
+      if(Math.hypot(x-px,z-pz)<1.0)return true;
     }
     return false;
   }
   function walkable(x,z){
-    for(var i=0;i<navZones.length;i++) if(pointInZone(x,z,i,0.5)) return true;
+    for(var i=0;i<navZones.length;i++) if(pointInZone(x,z,i,0.9)) return true;
     return onBridge(x,z);
   }
   function randomPointInZone(i,margin){
@@ -4068,12 +4068,12 @@
     var mug=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.14,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.46,.44,z+.14); mug.userData.v9=true; addO(mug);
   }
   function refIsland(cx,cz,R,color,title,agents) {
-    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,4), solid('#424d63',{roughness:.76,metalness:.14}));
-    slab.rotation.y=Math.PI/4; slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
-    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,4), solid('#52607a',{roughness:.7,metalness:.2,side:THREE.DoubleSide}));
-    top.rotation.x=-Math.PI/2; top.rotation.z=Math.PI/4; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
-    var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,4), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
-    rim.rotation.x=Math.PI/2; rim.rotation.z=Math.PI/4; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,32), solid('#424d63',{roughness:.76,metalness:.14}));
+    slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,32), solid('#52607a',{roughness:.7,metalness:.2,side:THREE.DoubleSide}));
+    top.rotation.x=-Math.PI/2; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
+    rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
     // soft shadow beneath (floating look)
     var sh=new THREE.Mesh(new THREE.CircleGeometry(R*.8,32), new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.28,depthWrite:false}));
     sh.rotation.x=-Math.PI/2; sh.position.set(cx,-2.4,cz); sh.userData.v9=true; addO(sh);
@@ -4092,13 +4092,55 @@
     bd.position.set(bx+.75,1.0,bz); bd.userData.v9=true; addO(bd);
     refLabel(title,color,cx,2.6,cz-R*.52,6.4,1.4);
   }
+  var escalators = [];
   function refBridge(x1,z1,x2,z2,color) {
     var dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz),ang=-Math.atan2(dz,dx);
-    var b=new THREE.Mesh(new THREE.BoxGeometry(len,.08,1.0),solid('#3a445c',{roughness:.7,metalness:.2}));
-    b.position.set((x1+x2)/2,-.04,(z1+z2)/2); b.rotation.y=ang; b.userData.v9=true; addO(b);
-    var g=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.09),solid(color,{emissive:color,emissiveIntensity:.85}));
-    g.position.copy(b.position); g.position.y=.02; g.rotation.y=ang; g.userData.v9=true; addO(g);
-    for(var t=.22;t<.82;t+=.13){var d=new THREE.Mesh(new THREE.SphereGeometry(.065,6,6),solid(color,{emissive:color,emissiveIntensity:1}));d.position.set(x1+dx*t,.09,z1+dz*t);d.userData.v9=true;addO(d);}
+    var mx=(x1+x2)/2, mz=(z1+z2)/2;
+    // solid walkway base + surface
+    var base=new THREE.Mesh(new THREE.BoxGeometry(len,.16,2.8),solid('#2f3a4e',{roughness:.68,metalness:.2}));
+    base.position.set(mx,-.1,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
+    var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.02,2.5),solid('#46536c',{roughness:.62,metalness:.25}));
+    surf.position.set(mx,.005,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
+    // moving escalator steps (animated chevrons)
+    var steps=[];
+    var count=Math.max(6,Math.floor(len/1.1));
+    for(var i=0;i<count;i++){
+      var st=new THREE.Mesh(new THREE.BoxGeometry(.55,.03,2.1),solid('#5a6a86',{roughness:.6,metalness:.3}));
+      st.rotation.y=ang; st.userData.v9=true; addO(st);
+      // glowing leading edge
+      var edge=new THREE.Mesh(new THREE.BoxGeometry(.08,.035,2.1),solid(color,{emissive:color,emissiveIntensity:.9}));
+      edge.rotation.y=ang; edge.userData.v9=true; st.add(edge);
+      edge.position.set(-.27,.01,0);
+      steps.push({m:st, t:i/count});
+    }
+    escalators.push({x1:x1,z1:z1,dx:dx,dz:dz,len:len,steps:steps,sp:.06});
+    // side handrails (two glowing rails on posts) — futuristic escalator look
+    [-1,1].forEach(function(side){
+      var off=1.45, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
+      var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.07,.09),solid('#8fa9c4',{roughness:.3,metalness:.6,emissive:color,emissiveIntensity:.35}));
+      rail.position.set(mx+rx,.55,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
+      var glow=new THREE.Mesh(new THREE.BoxGeometry(len,.025,.05),solid(color,{emissive:color,emissiveIntensity:1.0}));
+      glow.position.set(mx+rx,.60,mz+rz); glow.rotation.y=ang; glow.userData.v9=true; addO(glow);
+      for(var t=.04;t<=.97;t+=.1){
+        var post=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.55,6),solid('#7c8aa4',{metalness:.5}));
+        post.position.set(x1+dx*t+rx,.28,z1+dz*t+rz); post.userData.v9=true; addO(post);
+      }
+    });
+    // directional chevrons at entry
+    for(var c=0;c<3;c++){
+      var ch=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),solid(color,{emissive:color,emissiveIntensity:.8,side:THREE.DoubleSide}));
+      ch.rotation.x=-Math.PI/2; ch.rotation.z=ang; ch.position.set(x1+dx*.05,.04,z1+dz*.05+(c-1)*.8); ch.userData.v9=true; addO(ch);
+    }
+  }
+  function tickEscalators(now,dt){
+    for(var i=0;i<escalators.length;i++){
+      var e=escalators[i];
+      for(var j=0;j<e.steps.length;j++){
+        var st=e.steps[j];
+        st.t+=e.sp*dt; if(st.t>1)st.t-=1;
+        st.m.position.set(e.x1+e.dx*st.t,.02,e.z1+e.dz*st.t);
+      }
+    }
   }
 
   // ===== 3D DEPTH ENHANCEMENT (low-poly, perf-safe, no shadows) =====
@@ -4259,8 +4301,8 @@
     }catch(e){}
     // --- under-island glowing cores + vertical corner pylons + floating holograms ---
     function decorateIsland(x,z,R,color,name){
-      var cone=new THREE.Mesh(new THREE.ConeGeometry(R*.62,3.4,4), solid('#22304a',{roughness:.7,metalness:.25,emissive:color,emissiveIntensity:.12}));
-      cone.rotation.y=Math.PI/4; cone.rotation.z=Math.PI; cone.position.set(x,-2.2,z); cone.userData.v9=true; addO(cone);
+      var cone=new THREE.Mesh(new THREE.ConeGeometry(R*.62,3.4,16), solid('#22304a',{roughness:.7,metalness:.25,emissive:color,emissiveIntensity:.12}));
+      cone.rotation.z=Math.PI; cone.position.set(x,-2.2,z); cone.userData.v9=true; addO(cone);
       var core=new THREE.Mesh(new THREE.OctahedronGeometry(.55,0), solid(color,{emissive:color,emissiveIntensity:.9,roughness:.2,transparent:true,opacity:.9}));
       core.position.set(x,-1.4,z); core.userData.v9=true; addO(core);
       fx3d.cores.push(core);
@@ -4331,7 +4373,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4339,7 +4381,7 @@
 
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
-    walkers.length = 0; navZones.length = 0; navBridges.length = 0;
+    walkers.length = 0; navZones.length = 0; navBridges.length = 0; escalators.length = 0;
     var CX=0, CZ=0;
     navAddZone(0,0,6.2);   // Command hub = zone 0 (bridge crossroads)
     // dark outer-space floor so nothing falls
@@ -4383,7 +4425,7 @@
     deps.forEach(function(d){
       refIsland(d.x,d.z,10,d.c,d.t,d.a);
       refBridge(CX,CZ,d.x,d.z,d.c);
-      var zi=navAddZone(d.x,d.z,9.0);
+      var zi=navAddZone(d.x,d.z,8.2);
       // tag this island's robots with their zone
       for(var w=0;w<walkers.length;w++){ if(walkers[w].zone==null && Math.hypot(walkers[w].x-d.x,walkers[w].z-d.z)<11) walkers[w].zone=zi; }
     });
