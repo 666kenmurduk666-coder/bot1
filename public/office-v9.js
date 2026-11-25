@@ -3871,10 +3871,10 @@
     else { q.fillStyle = 'rgba(8,12,26,.9)'; q.fillRect(4,4,504,104); }
     q.strokeStyle = color || '#63e6ff'; q.lineWidth = 5;
     if (q.roundRect) { q.beginPath(); q.roundRect(4,4,504,104,26); q.stroke(); } else q.strokeRect(4,4,504,104);
-    q.fillStyle = '#eaf7ff'; q.font = 'bold 54px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
+    q.fillStyle = '#eaf7ff'; q.font = 'bold 44px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
     q.fillText(text, 256, 58);
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false }));
-    sp.scale.set((w || 6) * 1.4, (h || 1.3) * 1.4, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
+    sp.scale.set(w || 6, h || 1.3, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
     return sp;
   }
   // ===== LIVING ROBOT EMPLOYEES — articulated walkers with autonomous AI =====
@@ -3944,7 +3944,7 @@
     // glowing joint rings on arms + legs
     [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.08,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.28;j.add(ring);});
     // name label + chat bubble
-    if (name) refLabel(name, color, x, 2.35, z, 4.4, 1.0);
+    if (name) refLabel(name, color, x, 2.0, z, 3.0, .7);
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
     bub.scale.set(2.4,.7,1); bub.position.set(0,2.4,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
     animParts.push({m:belly,k:'led',p:x*.7+z});
@@ -4121,9 +4121,9 @@
     var l=new THREE.Mesh(new THREE.SphereGeometry(.28,8,6),solid('#4f9e5c',{roughness:.8})); l.scale.y=.72; l.position.set(cx-R*.5,.5,cz+R*.33); l.userData.v9=true; addO(l);
     var bx=cx+R*.5, bz=cz-R*.3;
     box(.06,1.2,.06,'#8792a6',bx,.6,bz); box(.06,1.2,.06,'#8792a6',bx+1.5,.6,bz);
-    var bd=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.8),solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
-    bd.position.set(bx+.75,1.0,bz); bd.userData.v9=true; addO(bd);
-    refLabel(title,color,cx,3.0,cz-R*.52,9.0,2.0);
+    var bd=new THREE.Mesh(new THREE.PlaneGeometry(3.0,1.5),solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
+    bd.position.set(bx+.75,1.3,bz); bd.userData.v9=true; addO(bd);
+    refLabel(title,color,cx,2.6,cz-R*.52,5.6,1.3);
   }
   // High-tech walkway: clean lanes, no conflicting direction.
   function refBridge(x1,z1,x2,z2,color) {
@@ -4174,9 +4174,9 @@
     q.fillStyle='#050a12'; q.fillRect(0,0,256,192);
     q.strokeStyle=color; q.lineWidth=3; q.strokeRect(4,4,248,184);
     q.fillStyle='#132238'; q.fillRect(8,8,240,20);
-    q.fillStyle=color; q.font='bold 13px Consolas,monospace'; q.textAlign='left';
+    q.fillStyle=color; q.font='bold 18px Consolas,monospace'; q.textAlign='left';
     q.fillText('TERMINAL // '+title.slice(0,10),14,22);
-    q.fillStyle='#3dff9e'; q.font='12px Consolas,monospace';
+    q.fillStyle='#3dff9e'; q.font='16px Consolas,monospace';
     ['> system online','> agents linked','> sync active','> pipeline ok','> ready_'].forEach(function(r,i){ q.fillText(r,16,50+i*24); });
     q.fillStyle=color; q.fillRect(16,160,8,8); q.fillText('_',30,168);
     return new THREE.CanvasTexture(c);
@@ -4217,9 +4217,9 @@
       });
       // --- holographic data billboard floating above island ---
       var rows=di===0?['REACH  +12%','POSTS  3/3','LEADS  24']:di===1?['TREND  LIVE','SIGNAL OK','REPORT  READY']:di===2?['AGENTS  13/13','UPTIME  99%','SECURE  YES']:di===3?['BANK  MATCHED','PAYROLL READY','FLAGS  0']:['MSGS   18','HAPPY  92%','TEAM   OK'];
-      var panel=new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.55),
+      var panel=new THREE.Mesh(new THREE.PlaneGeometry(6.2,4.65),
         new THREE.MeshBasicMaterial({map:dataPanelTexture(col,nm,rows),transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      panel.position.set(x,5.2,z); panel.userData.v9=true; addO(panel);
+      panel.position.set(x,6.2,z); panel.userData.v9=true; addO(panel);
       maxfx.billboards.push(panel);
       // --- scanner beam sweeping above island ---
       var beam=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,12,1,true),
@@ -4947,7 +4947,7 @@
     box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
     refDesk(CX,CZ+1.5,'#a98cff');
     refBot(CX,CZ+2.4,'#c08cff','Nazira');
-    refLabel('Command','#a99cff',CX,4.4,CZ-1.6,7.0,1.7);
+    refLabel('Command','#a99cff',CX,3.7,CZ-1.6,4.8,1.2);
     // 5 departments (roles from the reference video)
     var deps=[
       {x:-17.6,z:-24.3,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},

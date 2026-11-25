@@ -198,7 +198,7 @@ const protectedHashes = {
   // portals/floor medallions and animated ceiling halos. All prior 4D kept.
   // 2026-11-21 v74 LIVING GROUND: mosaic ribbons, sunburst plazas, flower beds,
   // batched confetti/studs/dots and 4D led beacons across the whole map.
-  'public/office-v9.js': 'd2dbd6d6ed44cc9874d44430940b73a4502a1ce6b995bbce45a0a955554eff3b',
+  'public/office-v9.js': '24d4899c7db87ceec754c755180c3e3b6cbb1d9b1c957dd8780dbfcb5ed1e936',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.
