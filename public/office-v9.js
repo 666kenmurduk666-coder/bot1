@@ -4022,7 +4022,7 @@
               if(typeof portalPulse==='function') portalPulse(r.x,r.z,r.color);
               if(typeof teleportProject==='function') teleportProject(r.x,r.z,r.color);
               if(r.bub){ try{r.bub.material.map.dispose();r.bub.material.map=makeBubbleTex('Submitted!');r.bub.visible=true;r.lastBubble=now;}catch(e){} }
-            } else { r.state=r.zone&&r.zone!==0?'work':'idle'; r.timer=now+2000+Math.random()*3400; }
+            } else { r.state=r.zone&&r.zone!==0?'work':'idle'; r.timer=now+9000+Math.random()*14000; }
           }
         } else {
           var want=Math.atan2(dx,dz), cur=r.g.rotation.y;
@@ -4051,6 +4051,19 @@
       r.blink=(now%4300)<130?.15:1; r.head.scale.y=r.blink;
       if(r.belly.material) r.belly.material.emissiveIntensity=.3+.35*(.5+.5*Math.sin(now/300+r.personality));
       if(r.project){ r.project.visible=(r.state==='submit'); if(r.project.visible){ r.project.rotation.y+=dt*2; r.project.position.y=1.05+Math.sin(now/200)*.05; } }
+      // WORK POSE at computer: face the monitor, sit lower, typing arms
+      if(r.state==='work' && r.zone && r.zone!==0){
+        var wx=r.homeX, wz=r.homeZ;
+        r.x += (wx-r.x)*Math.min(1,dt*2.5); r.z += (wz-r.z)*Math.min(1,dt*2.5);
+        r.g.rotation.y += (Math.PI - r.g.rotation.y)*Math.min(1,dt*2.5); // face -Z toward monitor
+        r.body.position.y=-.10;
+        r.armL.rotation.x=-.9+Math.sin(now/90)*.18;
+        r.armR.rotation.x=-.9+Math.sin(now/90+1)*.18;
+        r.head.rotation.x=.12;
+      } else {
+        r.body.position.y = (moving?0:Math.sin(now/500+r.personality)*.02);
+        r.head.rotation.x*=.9;
+      }
       if(r.bub&&r.bub.visible&&now-r.lastBubble>3800) r.bub.visible=false;
       r.g.position.set(r.x,0,r.z);
     }
@@ -4125,7 +4138,7 @@
     agents.forEach(function(a,i){
       var ox=(i-(n-1)/2)*2.8;
       refDesk(cx+ox,cz+1.1,color);
-      refBot(cx+ox,cz+2.4,a[1],a[0]);
+      refBot(cx+ox,cz+2.0,a[1],a[0]);
     });
     // plant + whiteboard
     var p=new THREE.Mesh(new THREE.CylinderGeometry(.2,.17,.28,8),solid('#8b5e34',{roughness:.7})); p.position.set(cx-R*.5,.16,cz+R*.33); p.userData.v9=true; addO(p);
