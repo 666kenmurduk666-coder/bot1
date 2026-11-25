@@ -4400,7 +4400,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickJuice(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4464,6 +4464,139 @@
     q.fillStyle=g; q.fillRect(0,0,32,32);
     return new THREE.CanvasTexture(c);
   }
+
+  // ===== ALIVE LAYER — fountains, flowing energy, breathing lights, day/night color, fireflies =====
+  var alivefx = { jets:[], rivers:[], lights:[], trees:[], fireflies:[] };
+
+  // ===== REALISTIC SPACE BACKDROP =====
+  function spaceRealism(){
+    if(!structureGroup||!level3d) return;
+    // Big planet with atmosphere rim (realistic curved horizon like the reference)
+    try{
+      var pg=new THREE.Group(); pg.position.set(-150,-70,-230); pg.userData.v9=true; structureGroup.add(pg);
+      var planet=new THREE.Mesh(new THREE.SphereGeometry(90,48,32),
+        new THREE.MeshStandardMaterial({color:'#123a5e',roughness:.95,metalness:.05,emissive:'#0a2240',emissiveIntensity:.25}));
+      planet.userData.v9=true; pg.add(planet);
+      // atmospheric glow shell
+      var atm=new THREE.Mesh(new THREE.SphereGeometry(93,48,32),
+        new THREE.MeshBasicMaterial({color:'#4aa8ff',transparent:true,opacity:.14,side:THREE.BackSide,depthWrite:false,fog:false}));
+      atm.userData.v9=true; pg.add(atm);
+      // surface bands (gas-giant style)
+      for(var i=0;i<6;i++){
+        var band=new THREE.Mesh(new THREE.TorusGeometry(90.5,1.2+i*.3,6,64),
+          new THREE.MeshBasicMaterial({color:i%2?'#2a6a9a':'#1a4a78',transparent:true,opacity:.3,fog:false}));
+        band.rotation.x=Math.PI/2; band.rotation.y=i*.2; band.userData.v9=true; pg.add(band);
+      }
+      pg.userData.spin=true;
+      alivefx.planet=pg;
+    }catch(e){}
+    // Dense realistic starfield (multiple colors, varied brightness)
+    try{
+      var pts=[],cols=[];
+      for(var i=0;i<700;i++){
+        var a=Math.random()*Math.PI*2, r=90+Math.random()*220;
+        pts.push(Math.cos(a)*r,-30+Math.random()*120,Math.sin(a)*r);
+        var c=new THREE.Color().setHSL(.55+Math.random()*.12,.2+Math.random()*.5,.6+Math.random()*.4);
+        cols.push(c.r,c.g,c.b);
+      }
+      var geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+      var stars=new THREE.Points(geo,new THREE.PointsMaterial({size:.35,vertexColors:true,transparent:true,opacity:.9,depthWrite:false,fog:false}));
+      stars.userData.v9=true; addO(stars);
+    }catch(e){}
+    // Distant sun with glow
+    try{
+      var sun=new THREE.Mesh(new THREE.SphereGeometry(8,16,12),new THREE.MeshBasicMaterial({color:'#fff3c0',fog:false}));
+      sun.position.set(120,70,-180); sun.userData.v9=true; addO(sun);
+      var glow=new THREE.Sprite(new THREE.SpriteMaterial({map:(function(){var c=document.createElement('canvas');c.width=128;c.height=128;var q=c.getContext('2d');var g=q.createRadialGradient(64,64,3,64,64,64);g.addColorStop(0,'rgba(255,240,190,.9)');g.addColorStop(.3,'rgba(255,200,120,.35)');g.addColorStop(1,'rgba(255,200,120,0)');q.fillStyle=g;q.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})(),transparent:true,depthWrite:false,fog:false}));
+      glow.scale.set(60,60,1); glow.position.copy(sun.position); glow.userData.v9=true; addO(glow);
+    }catch(e){}
+    // Dramatic key light from the sun direction (no shadows)
+    var key=new THREE.DirectionalLight(0xfff0d0,.7); key.position.set(40,60,-30); key.userData.v9Light=true; addO(key);
+  }
+
+  function buildAlive(){
+    if(!structureGroup||!level3d) return;
+    alivefx.jets.length=0; alivefx.rivers.length=0; alivefx.lights.length=0; alivefx.trees.length=0; alivefx.fireflies.length=0;
+    var DS=[[-17.6,-24.3,'#f0a040'],[17.6,-24.3,'#4fd6b0'],[-28.5,9.3,'#5fa8ff'],[28.5,9.3,'#d8c860'],[0,30,'#ff7fb0']];
+    DS.forEach(function(d,di){
+      var x=d[0],z=d[1],col=d[2],R=10;
+      // --- glowing fountain at island center (water-like energy jet) ---
+      var base=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.2,.18,16),solid('#3a4a66',{roughness:.4,metalness:.5}));
+      base.position.set(x,.12,z); base.userData.v9=true; addO(base);
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(1.1,.06,8,32),solid(col,{emissive:col,emissiveIntensity:1.0}));
+      ring.rotation.x=Math.PI/2; ring.position.set(x,.24,z); ring.userData.v9=true; addO(ring);
+      for(var j=0;j<8;j++){
+        var drop=new THREE.Mesh(new THREE.SphereGeometry(.10,6,6),solid(col,{emissive:col,emissiveIntensity:1.2,transparent:true,opacity:.8}));
+        drop.userData.v9=true; addO(drop);
+        alivefx.jets.push({m:drop,x:x,z:z,p:di+j*.7,a:j/8*Math.PI*2});
+      }
+      // --- flowing energy river around island rim ---
+      for(var e=0;e<10;e++){
+        var orb=new THREE.Mesh(new THREE.SphereGeometry(.09,6,6),solid(col,{emissive:col,emissiveIntensity:1.1}));
+        orb.userData.v9=true; addO(orb);
+        alivefx.rivers.push({m:orb,x:x,z:z,r:R*.82,a:e/10*Math.PI*2,sp:.4+Math.random()*.2});
+      }
+      // --- breathing holographic trees (wave + scale) ---
+      for(var k=0;k<3;k++){
+        var a=k/3*Math.PI*2+di;
+        var tx=x+Math.cos(a)*R*.62, tz=z+Math.sin(a)*R*.62;
+        var tree=new THREE.Group(); tree.position.set(tx,0,tz); tree.userData.v9=true; structureGroup.add(tree);
+        var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,1.0,6),solid('#5a6a86',{roughness:.6}));
+        trunk.position.y=.5; trunk.userData.v9=true; tree.add(trunk);
+        var crown=new THREE.Mesh(new THREE.ConeGeometry(.55,1.3,7),solid(col,{emissive:col,emissiveIntensity:.5,roughness:.5,transparent:true,opacity:.75}));
+        crown.position.y=1.5; crown.userData.v9=true; tree.add(crown);
+        alivefx.trees.push({g:tree,c:crown,p:di+k});
+      }
+      // --- breathing point light per island ---
+      var L=new THREE.PointLight(col,.9,26); L.position.set(x,2.5,z); L.userData.v9Light=true; addO(L);
+      alivefx.lights.push({l:L,p:di});
+    });
+    // --- fireflies drifting around Command ---
+    for(var i=0;i<26;i++){
+      var f=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),solid(i%2?'#ff8df0':'#8fd8ff',{emissive:i%2?'#ff8df0':'#8fd8ff',emissiveIntensity:1.4}));
+      f.userData.v9=true; addO(f);
+      alivefx.fireflies.push({m:f,r:6+Math.random()*22,a:Math.random()*Math.PI*2,y:1+Math.random()*9,sp:.3+Math.random()*.4});
+    }
+    // --- day/night color cycle on ambient + fog (subtle, keeps guards) ---
+    alivefx.ambBase=.58;
+  }
+  function tickAlive(now,dt){
+    try{
+      for(var i=0;i<alivefx.jets.length;i++){
+        var j=alivefx.jets[i];
+        var t=(now/700+j.p)%1;
+        var h=t*2.2;
+        j.m.position.set(j.x+Math.cos(j.a)*t*.7, .3+h, j.z+Math.sin(j.a)*t*.7);
+        j.m.material.opacity=.9*(1-t);
+        j.m.scale.setScalar(1-t*.5);
+      }
+      for(var r=0;r<alivefx.rivers.length;r++){
+        var o=alivefx.rivers[r]; o.a+=o.sp*dt;
+        o.m.position.set(o.x+Math.cos(o.a)*o.r,.25+Math.sin(now/600+r)*.12,o.z+Math.sin(o.a)*o.r);
+      }
+      for(var t2=0;t2<alivefx.trees.length;t2++){
+        var tr=alivefx.trees[t2];
+        tr.g.rotation.z=Math.sin(now/900+tr.p)*.08;
+        tr.c.scale.set(1+Math.sin(now/700+tr.p)*.08,1+Math.sin(now/700+tr.p)*.12,1+Math.sin(now/700+tr.p)*.08);
+      }
+      for(var l=0;l<alivefx.lights.length;l++){
+        alivefx.lights[l].l.intensity=.7+.4*(.5+.5*Math.sin(now/800+alivefx.lights[l].p));
+      }
+      for(var f=0;f<alivefx.fireflies.length;f++){
+        var ff=alivefx.fireflies[f]; ff.a+=ff.sp*dt;
+        ff.m.position.set(Math.cos(ff.a)*ff.r,ff.y+Math.sin(now/500+f)*.6,Math.sin(ff.a)*ff.r);
+        ff.m.material.emissiveIntensity=1+Math.sin(now/300+f)*.4;
+      }
+      if(alivefx.planet&&alivefx.planet.userData.spin) alivefx.planet.rotation.y+=.0004;
+      // subtle global color breathing (no guard values changed permanently)
+      if(g&&g.amb&&typeof alivefx.ambBase==='number'){
+        g.amb.intensity=alivefx.ambBase+.04*Math.sin(now/5000);
+      }
+    }catch(e){}
+  }
+
   function buildJuice(){
     if(!structureGroup||!level3d) return;
     ju.coins.length=0; ju.sparkles.length=0; ju.trails.length=0; ju.parallax.length=0;
@@ -4755,6 +4888,8 @@
     buildCivilization();
     buildAtmosphere();
     buildJuice();
+    buildAlive();
+    spaceRealism();
     vibrantLayer();
     startWalkLoop();
     return true;
