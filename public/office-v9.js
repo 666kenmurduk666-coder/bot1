@@ -4092,13 +4092,24 @@
   }
 
   function refDesk(x,z,color) {
-    box(1.6,.13,.85,solid('#4b5a70',{roughness:.6,metalness:.2}),x,.30,z);
-    box(.06,.36,.06,'#2a3446',x,.55,z-.22);
-    var scr=new THREE.Mesh(new THREE.PlaneGeometry(1.0,.58), solid(color,{emissive:color,emissiveIntensity:.6,side:THREE.DoubleSide}));
-    scr.position.set(x,.80,z-.24); scr.userData.v9=true; addO(scr);
-    box(.6,.025,.2,solid('#cfd8e6',{roughness:.5}),x,.40,z+.12);
-    box(.12,.025,.18,solid('#cfd8e6',{roughness:.5}),x+.42,.40,z+.12);
-    var mug=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.14,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.46,.44,z+.14); mug.userData.v9=true; addO(mug);
+    box(1.8,.14,.9,solid('#4b5a70',{roughness:.6,metalness:.2}),x,.30,z);
+    box(.08,.42,.08,'#2a3446',x,.60,z-.22);
+    var scr=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.9), solid(color,{emissive:color,emissiveIntensity:.95,side:THREE.DoubleSide}));
+    scr.position.set(x,.92,z-.24); scr.userData.v9=true; addO(scr);
+    // keyboard + mouse
+    box(.65,.03,.22,solid('#cfd8e6',{roughness:.5}),x,.40,z+.14);
+    box(.13,.03,.19,solid('#cfd8e6',{roughness:.5}),x+.45,.40,z+.14);
+    var mug=new THREE.Mesh(new THREE.CylinderGeometry(.09,.08,.16,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.5,.46,z+.16); mug.userData.v9=true; addO(mug);
+    // ACTUAL COMPUTER (CPU tower) beside the desk
+    var pc=new THREE.Group(); pc.position.set(x+.95,.58,z-.05); pc.userData.v9=true; structureGroup.add(pc);
+    var cse=new THREE.Mesh(new THREE.BoxGeometry(.52,.9,.78),solid('#1e2839',{roughness:.4,metalness:.55}));
+    cse.userData.v9=true; pc.add(cse);
+    var side=new THREE.Mesh(new THREE.PlaneGeometry(.44,.74),solid(color,{emissive:color,emissiveIntensity:.55,transparent:true,opacity:.6,side:THREE.DoubleSide}));
+    side.rotation.y=Math.PI/2; side.position.x=.27; side.userData.v9=true; pc.add(side);
+    var led=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),solid('#3dff9e',{emissive:'#3dff9e',emissiveIntensity:1.5}));
+    led.position.set(-.27,.28,.28); led.userData.v9=true; pc.add(led);
+    animParts.push({m:led,k:'led',p:x*.5+z});
+    for(var v=0;v<4;v++){ var vent=new THREE.Mesh(new THREE.BoxGeometry(.32,.02,.02),solid('#3a4a63')); vent.position.set(-.27,-.1-v*.1,.1); vent.userData.v9=true; pc.add(vent); }
   }
   function refIsland(cx,cz,R,color,title,agents) {
     var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,32), solid('#0d0d14',{roughness:.6,metalness:.25}));
