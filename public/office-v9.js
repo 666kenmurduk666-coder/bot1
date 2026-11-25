@@ -4400,7 +4400,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickJuice(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4443,6 +4443,108 @@
     q.globalAlpha=1;
     return new THREE.CanvasTexture(c);
   }
+
+  // ===== "SUBWAY SURFERS" JUICE LAYER — coins, sparkles, parallax, trails, bounce =====
+  var ju = { coins:[], sparkles:[], trails:[], parallax:[] };
+  function coinTexture(){
+    var c=document.createElement('canvas'); c.width=64; c.height=64;
+    var q=c.getContext('2d');
+    var g=q.createRadialGradient(26,26,3,32,32,32);
+    g.addColorStop(0,'#fff6b0'); g.addColorStop(.5,'#ffd34d'); g.addColorStop(1,'#c98a1a');
+    q.fillStyle=g; q.beginPath(); q.arc(32,32,26,0,Math.PI*2); q.fill();
+    q.strokeStyle='#a86a10'; q.lineWidth=3; q.beginPath(); q.arc(32,32,26,0,Math.PI*2); q.stroke();
+    q.fillStyle='#b8801a'; q.font='bold 34px Arial'; q.textAlign='center'; q.textBaseline='middle'; q.fillText('C',32,34);
+    return new THREE.CanvasTexture(c);
+  }
+  function sparkleTexture(){
+    var c=document.createElement('canvas'); c.width=32; c.height=32;
+    var q=c.getContext('2d');
+    var g=q.createRadialGradient(16,16,1,16,16,16);
+    g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.3,'rgba(180,230,255,.7)'); g.addColorStop(1,'rgba(180,230,255,0)');
+    q.fillStyle=g; q.fillRect(0,0,32,32);
+    return new THREE.CanvasTexture(c);
+  }
+  function buildJuice(){
+    if(!structureGroup||!level3d) return;
+    ju.coins.length=0; ju.sparkles.length=0; ju.trails.length=0; ju.parallax.length=0;
+    var ctex=coinTexture();
+    // --- coin lines floating above bridges + arcs over islands (SS-style collectibles) ---
+    navBridges.forEach(function(b,bi){
+      for(var i=1;i<=7;i++){
+        var t=i/8;
+        var coin=new THREE.Mesh(new THREE.PlaneGeometry(.55,.55),new THREE.MeshBasicMaterial({map:ctex,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+        coin.position.set(b.x1+(b.x2-b.x1)*t, 1.6+Math.sin(t*Math.PI)*1.2, b.z1+(b.z2-b.z1)*t);
+        coin.userData.v9=true; addO(coin);
+        ju.coins.push({m:coin,p:bi+i*.4});
+      }
+    });
+    // coin arcs over each island
+    var DS=[[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30]];
+    DS.forEach(function(d,di){
+      for(var i=0;i<5;i++){
+        var a=i/5*Math.PI*2;
+        var coin=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),new THREE.MeshBasicMaterial({map:ctex,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+        coin.position.set(d[0]+Math.cos(a)*5, 2.2+Math.sin(a*2)*.5, d[1]+Math.sin(a)*5);
+        coin.userData.v9=true; addO(coin);
+        ju.coins.push({m:coin,p:di*2+i});
+      }
+    });
+    // --- sparkles around each robot + portal (reuse one texture) ---
+    var stex=sparkleTexture();
+    for(var i=0;i<40;i++){
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:.7,depthWrite:false,fog:false}));
+      sp.scale.set(.4,.4,1); sp.userData.v9=true; addO(sp);
+      ju.sparkles.push({m:sp,r:20+Math.random()*35,a:Math.random()*Math.PI*2,y:1+Math.random()*8,sp:.2+Math.random()*.3});
+    }
+    // --- parallax star layers (3 depths, different drift speeds) ---
+    [[60,.10,120],[100,.06,200],[160,.035,300]].forEach(function(L,li){
+      var pts=[];
+      for(var i=0;i<70;i++){var a=Math.random()*Math.PI*2,r=L[0]*.4+Math.random()*L[0];pts.push(Math.cos(a)*r,Math.random()*60-10,Math.sin(a)*r);}
+      var g2=new THREE.BufferGeometry(); g2.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      var stars=new THREE.Points(g2,new THREE.PointsMaterial({color:li===0?'#ffffff':'#8fc7ff',size:.18+li*.06,transparent:true,opacity:.8,depthWrite:false,fog:false}));
+      stars.userData.v9=true; addO(stars);
+      ju.parallax.push({m:stars,sp:L[1]});
+    });
+    // --- speed trails on flying vehicles (glowing ribbons) ---
+    if(typeof civfx!=='undefined' && civfx.ships) civfx.ships.forEach(function(sh){
+      var trail=new THREE.Mesh(new THREE.PlaneGeometry(.6,3),
+        new THREE.MeshBasicMaterial({color:'#8fd8ff',transparent:true,opacity:.22,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      trail.rotation.x=Math.PI/2; trail.userData.v9=true; addO(trail);
+      ju.trails.push({m:trail,ship:sh.g});
+    });
+  }
+  function tickJuice(now,dt){
+    try{
+      for(var i=0;i<ju.coins.length;i++){
+        var c=ju.coins[i];
+        c.m.rotation.y+=dt*2.4;
+        c.m.position.y+=Math.sin(now/400+c.p)*.004;
+        c.m.material.opacity=.75+.25*Math.sin(now/300+c.p);
+      }
+      for(var j=0;j<ju.sparkles.length;j++){
+        var sp=ju.sparkles[j]; sp.a+=sp.sp*dt;
+        sp.m.position.set(Math.cos(sp.a)*sp.r,sp.y+Math.sin(now/700+j)*.5,Math.sin(sp.a)*sp.r);
+        sp.m.material.opacity=.35+.35*(.5+.5*Math.sin(now/500+j));
+      }
+      for(var k=0;k<ju.parallax.length;k++) ju.parallax[k].m.rotation.y+=ju.parallax[k].sp*dt;
+      for(var q=0;q<ju.trails.length;q++){
+        var tr=ju.trails[q];
+        tr.m.position.copy(tr.ship.position);
+        tr.m.position.y-=.15;
+        tr.m.rotation.z=tr.ship.rotation.y;
+        tr.m.material.opacity=.15+.1*Math.sin(now/200+q);
+      }
+      // squash & stretch bounce on walking robots (SS-style juice)
+      if(typeof walkers!=='undefined') for(var w=0;w<walkers.length;w++){
+        var r=walkers[w];
+        if(r.state==='walk'||r.state==='submit'||r.state==='travel'){
+          var b=Math.sin(r.phase)*.06;
+          r.body.scale.set(1-b,1+b*1.4,1-b);
+        } else if(r.body.scale.y!==1){ r.body.scale.lerp&&r.body.scale.set(1,1,1); r.body.scale.set(1,1,1); }
+      }
+    }catch(e){}
+  }
+
   function buildAtmosphere(){
     if(!structureGroup||!level3d) return;
     atmfx.haze.length=0; atmfx.glow.length=0;
@@ -4602,6 +4704,7 @@
     maxEnhance();
     buildCivilization();
     buildAtmosphere();
+    buildJuice();
     startWalkLoop();
     return true;
   }

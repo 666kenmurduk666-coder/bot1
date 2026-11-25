@@ -649,7 +649,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=134"></script>
+<script src="/office-v9.js?v=135"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -5754,6 +5754,15 @@ function groundYAt(x,z,y){
 function spawnPlayer(){
   // CEO requested: no player character. Keep camera centered on the office system.
   if(typeof islandsOfficeView==='function') setTimeout(()=>{if(typeof islandsOfficeView==='function')islandsOfficeView();},50);
+  // gentle living-camera bob (SS-style), skipped while user is interacting
+  setInterval(function(){
+    try{
+      if(!cam3d || typeof islandsOfficeView==='undefined') return;
+      if(Date.now()-(cam3d.lastUser||0) > 5000 && typeof view!=='undefined' && view==='office'){
+        cam3d.phi = .98 + Math.sin(Date.now()/4000)*.02;
+      }
+    }catch(e){}
+  }, 120);
   return;
   if(player) return;
   const grp=new THREE.Group();
