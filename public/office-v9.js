@@ -4507,7 +4507,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4937,6 +4937,58 @@
     }catch(e){}
   }
 
+
+  // ===== JANITOR BOT — roaming cleaner with broom + sparkle trail =====
+  var janfx = { bot:null, cart:null, sparkles:[], pos:{x:0,z:0} };
+  function buildJanitor(){
+    if(!structureGroup||!level3d) return;
+    var g=new THREE.Group(); g.position.set(0,0,6); g.userData.v9=true; structureGroup.add(g);
+    // body (cleaner uniform - teal)
+    var body=new THREE.Mesh(new THREE.SphereGeometry(.42,12,10),solid('#3ec9a8',{roughness:.5,metalness:.15}));
+    body.position.y=.62; body.scale.y=1.1; body.userData.v9=true; g.add(body);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(.34,12,10),solid('#3ec9a8',{roughness:.45}));
+    head.position.y=1.12; head.userData.v9=true; g.add(head);
+    [-1,1].forEach(function(sx){
+      var e=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#0b1020')); e.position.set(sx*.1,1.15,.3); e.userData.v9=true; g.add(e);
+    });
+    // cap
+    var cap=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.16,12),solid('#1f7a63',{roughness:.5})); cap.position.y=1.42; cap.userData.v9=true; g.add(cap);
+    var brim=new THREE.Mesh(new THREE.CylinderGeometry(.46,.46,.04,12),solid('#1f7a63')); brim.position.y=1.36; brim.userData.v9=true; g.add(brim);
+    // broom (angled, sweeping)
+    var broom=new THREE.Group(); broom.position.set(.5,.5,.15); broom.rotation.z=-.4; g.add(broom);
+    var handle=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1.3,8),solid('#b98a4d',{roughness:.6})); handle.position.y=-.3; handle.userData.v9=true; broom.add(handle);
+    var brush=new THREE.Mesh(new THREE.BoxGeometry(.5,.14,.3),solid('#e8c86a',{roughness:.85})); brush.position.y=-.95; brush.userData.v9=true; broom.add(brush);
+    // cleaning cart
+    var cart=new THREE.Group(); cart.position.set(-.7,0,.1); cart.userData.v9=true; g.add(cart);
+    var bin=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.55),solid('#2a6a8a',{roughness:.5,metalness:.3})); bin.position.y=.32; bin.userData.v9=true; cart.add(bin);
+    [-1,1].forEach(function(sx){var w=new THREE.Mesh(new THREE.TorusGeometry(.1,.03,6,10),solid('#1a1f2c'));w.position.set(sx*.25,.08,0);w.userData.v9=true;cart.add(w);});
+    janfx.bot=g; janfx.broom=broom; janfx.cart=cart;
+    janfx.pos={x:0,z:6};
+    // cleaning sparkles
+    for(var i=0;i<10;i++){
+      var sp=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),solid('#bfffee',{emissive:'#7fe0c8',emissiveIntensity:1.2}));
+      sp.userData.v9=true; addO(sp); janfx.sparkles.push(sp);
+    }
+  }
+  function tickJanitor(now,dt){
+    if(!janfx.bot) return;
+    // patrol between the 5 islands in a loop
+    var stops=[[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30],[0,0]];
+    var t=(now/9000)%stops.length, i=Math.floor(t), f=t-i;
+    var a=stops[i], b=stops[(i+1)%stops.length];
+    var x=a[0]+(b[0]-a[0])*f, z=a[1]+(b[1]-a[1])*f;
+    janfx.pos.x=x; janfx.pos.z=z;
+    janfx.bot.position.set(x,0,z);
+    janfx.bot.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);
+    janfx.broom.rotation.z=-.4+Math.sin(now/200)*.18;
+    janfx.cart.rotation.y=Math.sin(now/700)*.08;
+    for(var j=0;j<janfx.sparkles.length;j++){
+      var sp=janfx.sparkles[j], ang=j/10*Math.PI*2+now/600;
+      sp.position.set(x+Math.cos(ang)*.8, .2+Math.sin(now/300+j)*.2, z+Math.sin(ang)*.8);
+      sp.material.opacity=.5+.5*Math.sin(now/200+j);
+    }
+  }
+
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
@@ -4996,6 +5048,7 @@
     buildAtmosphere();
     buildJuice();
     buildAlive();
+    buildJanitor();
     spaceRealism();
     vibrantLayer();
     startWalkLoop();
