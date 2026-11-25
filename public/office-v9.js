@@ -4545,6 +4545,56 @@
     }catch(e){}
   }
 
+
+  // ===== VIBRANT GRAPHICS LAYER — colorful nebula + saturated lighting (no heavy assets) =====
+  function nebulaTexture(){
+    var c=document.createElement('canvas'); c.width=1024; c.height=512;
+    var q=c.getContext('2d');
+    // deep-space gradient: teal -> indigo -> magenta -> dark
+    var g=q.createLinearGradient(0,0,0,512);
+    g.addColorStop(0,'#0a1f3c'); g.addColorStop(.35,'#122a5a'); g.addColorStop(.65,'#2a1a5e'); g.addColorStop(1,'#0d1230');
+    q.fillStyle=g; q.fillRect(0,0,1024,512);
+    // soft colorful nebula clouds
+    var clouds=[['rgba(80,220,255,.18)',220,150,260],['rgba(180,110,255,.16)',760,180,300],['rgba(255,110,180,.13)',520,360,240],['rgba(120,255,200,.10)',900,400,220]];
+    clouds.forEach(function(cl){
+      var rg=q.createRadialGradient(cl[1],cl[2],5,cl[1],cl[2],cl[3]);
+      rg.addColorStop(0,cl[0]); rg.addColorStop(1,'rgba(0,0,0,0)');
+      q.fillStyle=rg; q.fillRect(0,0,1024,512);
+    });
+    // stars
+    for(var i=0;i<260;i++){
+      var x=Math.random()*1024,y=Math.random()*512,r=Math.random()*1.6+.2;
+      q.fillStyle='rgba(255,255,255,'+(.3+Math.random()*.6).toFixed(2)+')';
+      q.beginPath(); q.arc(x,y,r,0,Math.PI*2); q.fill();
+    }
+    // bright galaxy core
+    var core=q.createRadialGradient(512,256,4,512,256,180);
+    core.addColorStop(0,'rgba(255,255,255,.55)'); core.addColorStop(.2,'rgba(140,220,255,.30)'); core.addColorStop(1,'rgba(140,220,255,0)');
+    q.fillStyle=core; q.fillRect(0,0,1024,512);
+    var t=new THREE.CanvasTexture(c); t.needsUpdate=true; return t;
+  }
+  function vibrantLayer(){
+    if(!scene3d||!structureGroup) return;
+    // colorful sky background (texture, not flat color)
+    try{ scene3d.background=nebulaTexture(); }catch(e){}
+    // matching colorful fog (lighter, so far islands keep color)
+    if(scene3d.fog){ scene3d.fog.color.set('#1b2c55'); scene3d.fog.near=140; scene3d.fog.far=280; }
+    // vivid colored rim lights (no shadows — perf safe)
+    var cols=[0x63e6ff,0xff8df0,0x7cf0c8,0xffb648,0xb07cff];
+    [[-30,10,-25],[30,10,-25],[-30,10,10],[30,10,10],[0,14,30]].forEach(function(pos,i){
+      var l=new THREE.PointLight(cols[i],1.1,70);
+      l.position.set(pos[0],pos[1],pos[2]); l.userData.v9Light=true; addO(l);
+    });
+    // brighten island materials in place (saturated + emissive)
+    structureGroup.traverse(function(o){
+      if(!o.isMesh||!o.material||!o.material.color) return;
+      var h=o.material.color.getHex();
+      var targets={ '424d63':'#5a6a8c', '52607a':'#6e7fa0', '2f3a4e':'#3d4a66', '46536c':'#5a6b8c' };
+      var hs=('000000'+h.toString(16)).slice(-6);
+      if(targets[hs]){ o.material.color.set(targets[hs]); if(o.material.emissive){o.material.emissive.set('#1a2c4a');o.material.emissiveIntensity=.28;} }
+    });
+  }
+
   function buildAtmosphere(){
     if(!structureGroup||!level3d) return;
     atmfx.haze.length=0; atmfx.glow.length=0;
@@ -4705,6 +4755,7 @@
     buildCivilization();
     buildAtmosphere();
     buildJuice();
+    vibrantLayer();
     startWalkLoop();
     return true;
   }
@@ -4872,8 +4923,8 @@
     var botDt = Math.min(.12, Math.max(0, (now - prevTick) / 1000));
     try {
       if (scene3d) {
-        if (scene3d.background && scene3d.background.getHex() !== 0x070c18) scene3d.background.set('#070c18');
-        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x070c18) scene3d.fog.color.set('#070c18');
+        if (scene3d.background && typeof scene3d.background.getHex==='function' && scene3d.background.getHex()!==0x1b2c55 && !scene3d.background.isTexture) { try{scene3d.background.set('#1b2c55');}catch(e){} }
+        if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x1b2c55) scene3d.fog.color.set('#1b2c55');
       }
       if (g && g.amb && Math.abs(g.amb.intensity - .58) > .01) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
       tameOfficeLights();
