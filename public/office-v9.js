@@ -4101,9 +4101,9 @@
     var mug=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.14,8),solid('#f2eee4',{roughness:.5})); mug.position.set(x-.46,.44,z+.14); mug.userData.v9=true; addO(mug);
   }
   function refIsland(cx,cz,R,color,title,agents) {
-    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,32), solid('#424d63',{roughness:.76,metalness:.14}));
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,32), solid('#0d0d14',{roughness:.6,metalness:.25}));
     slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
-    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,32), solid('#52607a',{roughness:.7,metalness:.2,side:THREE.DoubleSide}));
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,32), solid('#0a0a0f',{roughness:.55,metalness:.25,side:THREE.DoubleSide}));
     top.rotation.x=-Math.PI/2; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
     rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
@@ -4173,12 +4173,12 @@
     var q=c.getContext('2d');
     q.fillStyle='#050a12'; q.fillRect(0,0,256,192);
     q.strokeStyle=color; q.lineWidth=3; q.strokeRect(4,4,248,184);
-    q.fillStyle='#132238'; q.fillRect(8,8,240,20);
-    q.fillStyle=color; q.font='bold 18px Consolas,monospace'; q.textAlign='left';
-    q.fillText('TERMINAL // '+title.slice(0,10),14,22);
-    q.fillStyle='#3dff9e'; q.font='16px Consolas,monospace';
-    ['> system online','> agents linked','> sync active','> pipeline ok','> ready_'].forEach(function(r,i){ q.fillText(r,16,50+i*24); });
-    q.fillStyle=color; q.fillRect(16,160,8,8); q.fillText('_',30,168);
+    q.fillStyle='#132238'; q.fillRect(8,8,240,26);
+    q.fillStyle=color; q.font='bold 26px Consolas,monospace'; q.textAlign='left';
+    q.fillText('TERMINAL // '+title.slice(0,12),14,28);
+    q.fillStyle='#3dff9e'; q.font='22px Consolas,monospace';
+    ['> system online','> agents linked','> sync active','> pipeline ok','> ready_'].forEach(function(r,i){ q.fillText(r,16,62+i*34); });
+    q.fillStyle=color; q.fillRect(16,170,10,10); q.fillText('_',34,180);
     return new THREE.CanvasTexture(c);
   }
   function maxEnhance(){
@@ -4217,9 +4217,9 @@
       });
       // --- holographic data billboard floating above island ---
       var rows=di===0?['REACH  +12%','POSTS  3/3','LEADS  24']:di===1?['TREND  LIVE','SIGNAL OK','REPORT  READY']:di===2?['AGENTS  13/13','UPTIME  99%','SECURE  YES']:di===3?['BANK  MATCHED','PAYROLL READY','FLAGS  0']:['MSGS   18','HAPPY  92%','TEAM   OK'];
-      var panel=new THREE.Mesh(new THREE.PlaneGeometry(6.2,4.65),
+      var panel=new THREE.Mesh(new THREE.PlaneGeometry(9.0,6.75),
         new THREE.MeshBasicMaterial({map:dataPanelTexture(col,nm,rows),transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      panel.position.set(x,6.2,z); panel.userData.v9=true; addO(panel);
+      panel.position.set(x*2.3, 5.5, z*2.3); panel.userData.v9 = true; addO(panel);
       maxfx.billboards.push(panel);
       // --- scanner beam sweeping above island ---
       var beam=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,12,1,true),
@@ -4273,7 +4273,7 @@
         sc.m.material.opacity=.06+.06*(.5+.5*Math.sin(now/900+sc.p));
       }
       for(var k=0;k<maxfx.billboards.length;k++){
-        maxfx.billboards[k].lookAt(camera3d?camera3d.position:new THREE.Vector3(0,20,40));
+                maxfx.billboards[k].lookAt(camera3d?camera3d.position:new THREE.Vector3(0,20,40));
       }
       if(maxfx.shooting) for(var q=0;q<maxfx.shooting.length;q++){
         var t=(now/3000+q*.27)%1, st=maxfx.shooting[q];
@@ -4919,7 +4919,7 @@
     var CX=0, CZ=0;
     navAddZone(0,0,6.2);   // Command hub = zone 0 (bridge crossroads)
     // dark outer-space floor so nothing falls
-    var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#060a14',{roughness:1,metalness:0}));
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#000000',{roughness:1,metalness:0}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
     // stars
     try{
