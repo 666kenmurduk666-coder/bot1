@@ -4029,7 +4029,7 @@
           var diff=Math.atan2(Math.sin(want-cur),Math.cos(want-cur));
           r.g.rotation.y = cur + Math.max(-.1,Math.min(.1,diff*.2));
           var step=Math.min(r.speed*dt,d), nx=r.x+(dx/d)*step, nz=r.z+(dz/d)*step;
-          if(walkable(nx,nz)){ r.x=nx; r.z=nz; r.phase+=step*7; r._blocked=0; }
+          if(walkable(nx,nz)){ r.x=nx; r.z=nz; var oldPhase=r.phase; r.phase+=step*7; if(Math.floor(r.phase/Math.PI)>Math.floor(oldPhase/Math.PI)&&typeof footRing==='function') footRing(r.x,r.z,r.color); r._blocked=0; }
           else {
             // try sliding along axes; never abandon the whole path on one blocked step
             var moved=false;
@@ -4507,7 +4507,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4940,6 +4940,89 @@
 
   // ===== JANITOR BOT — roaming cleaner with broom + sparkle trail =====
   var janfx = { bot:null, cart:null, sparkles:[], pos:{x:0,z:0} };
+
+  // ===== MEGA VISUAL SYSTEM =====
+  var megav = { meteors:[], asteroids:null, galaxy:null, footRings:[], rimMats:[], dayPhase:0 };
+  function buildMegaVisual(){
+    if(!structureGroup||!level3d) return;
+    megav.meteors.length=0; megav.footRings.length=0; megav.rimMats.length=0;
+    // 1) Meteor shower: fast streaks with trails
+    for(var m=0;m<8;m++){
+      var streak=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,3.5),
+        new THREE.MeshBasicMaterial({color:m%2?0xff9fc4:0x8fd8ff,transparent:true,opacity:.6,depthWrite:false,fog:false}));
+      streak.userData.v9=true; addO(streak);
+      megav.meteors.push({m:streak,delay:m*3200,span:2400});
+    }
+    // 2) Asteroid belt (instanced-ish: shared geometry+material, low count)
+    var ag=new THREE.IcosahedronGeometry(.5,0), am=solid('#4a5568',{roughness:.9,metalness:.1});
+    var belt=new THREE.Group(); belt.userData.v9=true; structureGroup.add(belt);
+    for(var a=0;a<40;a++){
+      var rock=new THREE.Mesh(ag,am);
+      var ang=Math.random()*Math.PI*2, r=65+Math.random()*18;
+      rock.position.set(Math.cos(ang)*r,-4+Math.random()*16,Math.sin(ang)*r);
+      var sc=.4+Math.random()*1.2; rock.scale.setScalar(sc); rock.rotation.set(Math.random()*3,Math.random()*3,0);
+      rock.userData.v9=true; belt.add(rock);
+    }
+    megav.asteroids=belt;
+    // 3) Galaxy spiral sprite
+    try{
+      var gc=document.createElement('canvas'); gc.width=256; gc.height=256;
+      var gq=gc.getContext('2d');
+      var gg=gq.createRadialGradient(128,128,4,128,128,128);
+      gg.addColorStop(0,'rgba(255,255,255,.5)'); gg.addColorStop(.3,'rgba(150,180,255,.2)'); gg.addColorStop(1,'rgba(80,120,255,0)');
+      gq.fillStyle=gg; gq.fillRect(0,0,256,256);
+      for(var i=0;i<5;i++){gq.strokeStyle='rgba(180,200,255,'+(.25-i*.04)+')';gq.lineWidth=2;gq.beginPath();gq.arc(128,128,20+i*22,i*.8,i*.8+Math.PI*1.6);gq.stroke();}
+      var gal=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(gc),transparent:true,opacity:.5,depthWrite:false,fog:false}));
+      gal.scale.set(90,90,1); gal.position.set(60,30,-180); gal.userData.v9=true; addO(gal);
+      megav.galaxy=gal;
+    }catch(e){}
+    // 4) Footstep light rings pool
+    for(var f=0;f<14;f++){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(.2,.025,6,16),
+        new THREE.MeshBasicMaterial({color:0x8fd8ff,transparent:true,opacity:0,depthWrite:false,fog:false}));
+      ring.rotation.x=Math.PI/2; ring.visible=false; ring.userData.v9=true; addO(ring);
+      megav.footRings.push({m:ring,life:0});
+    }
+    // 5) collect rim materials for pulse
+    structureGroup.traverse(function(o){
+      if(o.isMesh&&o.material&&o.material.emissiveIntensity>0&&o.geometry&&o.geometry.type==='TorusGeometry') megav.rimMats.push(o.material);
+    });
+  }
+  function footRing(x,z,color){
+    for(var i=0;i<megav.footRings.length;i++){
+      var r=megav.footRings[i];
+      if(!r.m.visible){ r.m.visible=true; r.life=1; r.m.position.set(x,.06,z); r.m.material.color.set(color||0x8fd8ff); return; }
+    }
+  }
+  function tickMegaVisual(now,dt){
+    try{
+      // meteors
+      for(var i=0;i<megav.meteors.length;i++){
+        var me=megav.meteors[i], t=(now+me.delay)%(me.delay+me.span)/me.span;
+        if(t<.35){ me.m.visible=false; continue; }
+        me.m.visible=true;
+        var k=(t-.35)/.65;
+        me.m.position.set(-80+k*160, 30+Math.sin(me.delay)*8, -100+k*40);
+        me.m.material.opacity=.7*(1-k);
+      }
+      if(megav.asteroids) megav.asteroids.rotation.y+=.00008;
+      if(megav.galaxy) megav.galaxy.material.rotation+=.0004;
+      // foot rings fade
+      for(var f=0;f<megav.footRings.length;f++){
+        var r=megav.footRings[f]; if(!r.m.visible)continue;
+        r.life-=dt*2; if(r.life<=0){r.m.visible=false;continue;}
+        r.m.scale.setScalar(1+(1-r.life)*2.5); r.m.material.opacity=r.life*.5;
+      }
+      // rim pulse synced to overall activity
+      if(now-(tick.rim||0)>120){
+        tick.rim=now;
+        var busy=0; if(typeof walkers!=='undefined') walkers.forEach(function(w){if(w.state==='walk'||w.state==='submit')busy++;});
+        var glow=.3+.35*(busy/Math.max(1,walkers.length));
+        for(var q=0;q<megav.rimMats.length;q++){ try{megav.rimMats[q].emissiveIntensity=glow;}catch(e){} }
+      }
+    }catch(e){}
+  }
+
   function buildJanitor(){
     if(!structureGroup||!level3d) return;
     var g=new THREE.Group(); g.position.set(0,0,6); g.userData.v9=true; structureGroup.add(g);
@@ -4972,11 +5055,19 @@
   }
   function tickJanitor(now,dt){
     if(!janfx.bot) return;
-    // patrol between the 5 islands in a loop
-    var stops=[[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30],[0,0]];
-    var t=(now/9000)%stops.length, i=Math.floor(t), f=t-i;
-    var a=stops[i], b=stops[(i+1)%stops.length];
+    // Patrol ONLY on bridges + islands (never cross empty space).
+    // Route: island -> Command hub -> next island, repeating. Command (0,0) is the bridge crossroads.
+    var islands=[[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30]];
+    var legDur=6500, total=islands.length*2*legDur;
+    var t=(now%total)/legDur, seg=Math.floor(t), f=t-seg;
+    var a,b;
+    if(seg%2===0){ a=islands[Math.floor(seg/2)]; b=[0,0]; }
+    else { a=[0,0]; b=islands[(Math.floor(seg/2)+1)%islands.length]; }
     var x=a[0]+(b[0]-a[0])*f, z=a[1]+(b[1]-a[1])*f;
+    // safety: only allow walkable points; otherwise stay at last valid spot
+    if(typeof walkable==='function' && !walkable(x,z)){
+      x=janfx.pos.x; z=janfx.pos.z;
+    }
     janfx.pos.x=x; janfx.pos.z=z;
     janfx.bot.position.set(x,0,z);
     janfx.bot.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);
@@ -5049,6 +5140,7 @@
     buildJuice();
     buildAlive();
     buildJanitor();
+    buildMegaVisual();
     spaceRealism();
     vibrantLayer();
     startWalkLoop();
