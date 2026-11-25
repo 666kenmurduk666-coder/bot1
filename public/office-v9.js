@@ -4082,7 +4082,7 @@
   function decideWalker(r,now){
     if(r.state==='submitHold'){ if(now>r.timer){ setWalk(r,[{x:r.homeX,z:r.homeZ}]); r.zone=zoneOfPoint(r.homeX,r.homeZ); } return; }
     if(r.state==='talk'){ if(now>r.talkFor){r.state='idle';r.partner=null;r.timer=now+1200;} return; }
-    if((r.state==='walk'||r.state==='submit'||r.state==='submitHold')&&r.wp) return;
+    if((r.state==='walk'||r.state==='submit'||r.state==='submitHold'||r.state==='meeting'||r.state==='dance'||r.state==='parade')&&r.wp) return;
     if((r.state==='work'||r.state==='idle')&&now<r.timer) return;
     var p=Math.random();
     if(p<.34){ setWalk(r,[randomPointInZone(r.zone!=null?r.zone:0,1.8)]); }
@@ -4507,7 +4507,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4994,6 +4994,78 @@
       if(!r.m.visible){ r.m.visible=true; r.life=1; r.m.position.set(x,.06,z); r.m.material.color.set(color||0x8fd8ff); return; }
     }
   }
+
+  // ===== MEGA BATCH 2: behaviors + social + interactive hooks =====
+  var mb2={lastEvent:0,event:null,danceUntil:0,meetingUntil:0,paradeUntil:0,xp:0,ach:{}};
+  function celebrate(kind){
+    try{
+      if(!structureGroup)return;
+      for(var i=0;i<24;i++){
+        var c=new THREE.Mesh(new THREE.PlaneGeometry(.18,.18),
+          new THREE.MeshBasicMaterial({color:[0xffd34d,0xff8df0,0x63e6ff,0x7cf0c8][i%4],transparent:true,opacity:1,side:THREE.DoubleSide,fog:false}));
+        c.position.set((Math.random()-.5)*8,4+Math.random()*3,(Math.random()-.5)*8); c.userData.v9=true; addO(c);
+        (function(cc,sp){var life=0;var iv=setInterval(function(){life++;cc.position.y-=.08*sp;cc.rotation.z+=.1;cc.material.opacity=1-life/40;if(life>=40){clearInterval(iv);try{structureGroup.remove(cc);}catch(_){}}},40);})(c,1+Math.random());
+      }
+    }catch(e){}
+  }
+  function robotEvent(now){
+    if(now-mb2.lastEvent<22000) return;
+    if(Math.random()>.22) return;
+    mb2.lastEvent=now;
+    var r=Math.random();
+    if(r<.3 && typeof walkers!=='undefined' && walkers.length>=3){
+      // GROUP MEETING: pick 3 walkers on same island, pull them to a circle
+      var host=walkers[(Math.random()*walkers.length)|0];
+      var near=walkers.filter(function(w){return w!==host && w.zone===host.zone;}).slice(0,2);
+      if(near.length>=2){
+        var cx=host.x,cz=host.z;
+        [host].concat(near).forEach(function(w,i){
+          var a=i/3*Math.PI*2; w.state='meeting'; w.wp={x:cx+Math.cos(a)*1.2,z:cz+Math.sin(a)*1.2};
+          w.talkFor=now+6000+Math.random()*4000;
+        });
+        mb2.event='meeting';
+      }
+    } else if(r<.6){
+      // DANCE PARTY: all robots dance in place briefly
+      if(typeof walkers!=='undefined') walkers.forEach(function(w){ if(w.state!=='submit'){w.state='dance';w.talkFor=now+7000;} });
+      mb2.danceUntil=now+7000; mb2.event='dance'; celebrate('dance');
+    } else if(r<.8){
+      // PARADE: line up near Command
+      if(typeof walkers!=='undefined') walkers.forEach(function(w,i){ w.state='parade'; w.wp={x:(i-6)*1.4,z:6}; });
+      mb2.paradeUntil=now+9000; mb2.event='parade';
+    } else {
+      celebrate('random');
+    }
+    // XP + achievement
+    mb2.xp+=5;
+    if(!mb2.ach.firstEvent){mb2.ach.firstEvent=true; if(typeof window.pixiPop==='function')window.pixiPop('ACHIEVEMENT!',400,200);}
+  }
+  function tickMegaBehavior(now,dt){
+    try{
+      robotEvent(now);
+      if(typeof walkers==='undefined')return;
+      for(var i=0;i<walkers.length;i++){
+        var w=walkers[i];
+        if(w.state==='meeting'){
+          if(w.wp){var dx=w.wp.x-w.x,dz=w.wp.z-w.z,d=Math.hypot(dx,dz);if(d>.2){w.x+=dx/d*Math.min(w.speed*dt,d);w.z+=dz/d*Math.min(w.speed*dt,d);} }
+          w.g.rotation.y=Math.atan2(w.wp.x-w.x,w.wp.z-w.z);
+          w.head.rotation.y=Math.sin(now/400)*.3;
+          w.armL.rotation.x=-.5+Math.sin(now/180)*.4; w.armR.rotation.x=-.5-Math.sin(now/180)*.4;
+          if(now>w.talkFor){ w.state='idle'; w.timer=now+2000; }
+        } else if(w.state==='dance'){
+          w.g.rotation.y+=dt*2; w.body.position.y=Math.abs(Math.sin(now/120))*0.3;
+          w.armL.rotation.x=Math.sin(now/100)*1.2; w.armR.rotation.x=-Math.sin(now/100)*1.2;
+          if(now>w.talkFor){w.state='idle';w.timer=now+1500;}
+        } else if(w.state==='parade'){
+          if(w.wp){var dx2=w.wp.x-w.x,dz2=w.wp.z-w.z,d2=Math.hypot(dx2,dz2);if(d2>.3){w.x+=dx2/d2*Math.min(w.speed*1.6*dt,d2);w.z+=dz2/d2*Math.min(w.speed*1.6*dt,d2);}}
+          w.legL.rotation.x=Math.sin(now/90)*.7; w.legR.rotation.x=-Math.sin(now/90)*.7;
+          if(now>mb2.paradeUntil){w.state='idle';w.timer=now+2000;}
+        }
+        w.g.position.set(w.x,0,w.z);
+      }
+    }catch(e){}
+  }
+
   function tickMegaVisual(now,dt){
     try{
       // meteors
@@ -5021,6 +5093,45 @@
         for(var q=0;q<megav.rimMats.length;q++){ try{megav.rimMats[q].emissiveIntensity=glow;}catch(e){} }
       }
     }catch(e){}
+  }
+
+
+  // ===== MEGA BATCH 4: specialty agent bots (low-poly, perf-safe) =====
+  var specBots=[];
+  function simpleBot(x,z,color,name,prop){
+    var g=new THREE.Group(); g.position.set(x,0,z); g.userData.v9=true; structureGroup.add(g);
+    var body=new THREE.Mesh(new THREE.SphereGeometry(.36,10,8),solid(color,{roughness:.5,metalness:.15})); body.position.y=.55;body.scale.y=1.1;body.userData.v9=true;g.add(body);
+    var hd=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),solid(color,{roughness:.45})); hd.position.y=1.0;hd.userData.v9=true;g.add(hd);
+    [-1,1].forEach(function(sx){var e=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6),solid('#0b1020'));e.position.set(sx*.09,1.03,.24);e.userData.v9=true;g.add(e);});
+    var tag=new THREE.Sprite(new THREE.SpriteMaterial({map:(function(){var c=document.createElement('canvas');c.width=160;c.height=40;var q=c.getContext('2d');q.fillStyle='rgba(8,14,28,.85)';q.fillRect(0,0,160,40);q.fillStyle='#eaf7ff';q.font='bold 20px Arial';q.textAlign='center';q.fillText(name,80,27);return new THREE.CanvasTexture(c);})(),transparent:true}));
+    tag.scale.set(2,.5,1);tag.position.y=1.5;tag.userData.v9=true;g.add(tag);
+    if(prop==='broom'){var br=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1,6),solid('#b98a4d'));br.position.set(.4,.4,0);br.rotation.z=-.4;br.userData.v9=true;g.add(br);}
+    if(prop==='shield'){var sh=new THREE.Mesh(new THREE.CircleGeometry(.4,10),solid(color,{emissive:color,emissiveIntensity:.5,transparent:true,opacity:.5,side:THREE.DoubleSide}));sh.position.set(.45,.6,.2);sh.userData.v9=true;g.add(sh);}
+    if(prop==='tray'){var tr=new THREE.Mesh(new THREE.BoxGeometry(.5,.05,.4),solid('#f2eee4'));tr.position.set(.45,.6,.2);tr.userData.v9=true;g.add(tr);}
+    if(prop==='mic'){var mc=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),solid('#2a3446'));mc.position.set(.45,1.1,.2);mc.userData.v9=true;g.add(mc);}
+    return g;
+  }
+  function buildSpecialtyBots(){
+    if(!structureGroup||!level3d)return;
+    specBots.length=0;
+    var defs=[
+      [-21,-19,'#ff5c7a','SECURITY','shield'],[21,-19,'#8fd8ff','CHEF','tray'],
+      [-28,9,'#7cf0c8','DOCTOR','tray'],[28,9,'#ffd34d','COURIER','tray'],
+      [0,26,'#b07cff','DJ','mic'],[0,5,'#63e6ff','MANAGER','shield']
+    ];
+    defs.forEach(function(d,i){ var g=simpleBot(d[0],d[1],d[2],d[3],d[4]); specBots.push({g:g,p:i*1.3,x:d[0],z:d[1]}); });
+    // robot pets (small drone companions)
+    for(var i=0;i<3;i++){
+      var pet=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:1}));pet.userData.v9=true;addO(pet);
+      specBots.push({pet:pet,p:i*2.1});
+    }
+  }
+  function tickSpecialty(now,dt){
+    for(var i=0;i<specBots.length;i++){
+      var b=specBots[i];
+      if(b.pet){ var a=now/600+b.p; b.pet.position.set(Math.cos(a)*4,2+Math.sin(now/500+i)*.5,Math.sin(a)*4); }
+      else { b.g.position.y=Math.sin(now/800+b.p)*.06; b.g.rotation.y=Math.sin(now/1200+b.p)*.3; }
+    }
   }
 
   function buildJanitor(){
@@ -5141,6 +5252,7 @@
     buildAlive();
     buildJanitor();
     buildMegaVisual();
+    buildSpecialtyBots();
     spaceRealism();
     vibrantLayer();
     startWalkLoop();

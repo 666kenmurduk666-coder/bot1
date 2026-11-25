@@ -649,7 +649,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=153"></script>
+<script src="/office-v9.js?v=154"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -8039,5 +8039,108 @@ setInterval(function(){try{if(window.__officeV9&&!window.__efOk){window.__efOk=1
 </script>
 
 
+
+<script>
+(function(){
+  // ===== MEGA BATCH 3: interaction, audio, day/night, themes =====
+  var selectedBot=null, panel=null, themes=['Neon','Arctic','Sunset','Matrix'], themeIdx=0;
+  function ensurePanel(){
+    if(panel)return;
+    panel=document.createElement('div');
+    panel.id='botInfoPanel';
+    panel.style.cssText='position:absolute;right:10px;top:10px;z-index:60;background:rgba(8,14,30,.92);border:1px solid #63e6ff;border-radius:12px;padding:12px;color:#e6f4ff;font:12px Consolas,monospace;min-width:200px;display:none;pointer-events:auto';
+    (document.getElementById('oc3d')||document.body).appendChild(panel);
+  }
+  function showBot(w){
+    ensurePanel();
+    if(!w){panel.style.display='none';return;}
+    selectedBot=w;
+    panel.style.display='block';
+    var st=w.state||'idle';
+    panel.innerHTML='<b style="color:#63e6ff">'+esc(w.name||'Bot')+'</b><br>'+
+      'Role: '+(w.role||'Team')+'<br>State: '+st+'<br>'+
+      'Zone: '+(w.zone==null?'?':w.zone)+'<br>'+
+      'Speed: '+(w.speed||1).toFixed(2)+'<br>'+
+      '<span style="color:#7fe0a8">● online</span>';
+  }
+  function esc(x){return String(x==null?'':x).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+
+  // click a robot in 3D -> show info (raycast against walker groups)
+  document.addEventListener('click',function(ev){
+    if(typeof view!=='undefined'&&view!=='office')return;
+    try{
+      var c=Array.from(document.querySelectorAll('canvas')).find(function(x){return x.width>600;});
+      if(!c)return;
+      var r=c.getBoundingClientRect();
+      var nx=((ev.clientX-r.left)/r.width)*2-1, ny=-((ev.clientY-r.top)/r.height)*2+1;
+      var rc=new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(nx,ny),camera3d);
+      var v=window.__officeV9;
+      if(!v||!v.walkers)return;
+      var hits=rc.intersectObjects(v.walkers.map(function(w){return w.g;}),true);
+      if(hits.length){var obj=hits[0].object;var found=null;v.walkers.forEach(function(w){if(!found&&(w.g===obj||w.g.getObjectById(obj.id)))found=w;});showBot(found);}
+      else showBot(null);
+    }catch(e){}
+  });
+
+  // keyboard controls: 1-5 camera bookmarks, T theme, P pause, audio toggle
+  var bookmarks={};
+  document.addEventListener('keydown',function(ev){
+    if(ev.target&&/INPUT|TEXTAREA/.test(ev.target.tagName))return;
+    var k=ev.key.toLowerCase();
+    if(k>='1'&&k<='5'&&typeof cam3d!=='undefined'&&cam3d){
+      if(bookmarks[k]){cam3d.target.copy(bookmarks[k]);toast('View '+k);}
+      else {bookmarks[k]=cam3d.target.clone();toast('Saved '+k);}
+    }
+    if(k==='t'){ themeIdx=(themeIdx+1)%themes.length; document.body.style.filter=themeIdx===1?'hue-rotate(140deg)':themeIdx===2?'hue-rotate(-30deg)':themeIdx===3?'grayscale(.7) contrast(1.2)':''; toast('Theme: '+themes[themeIdx]); }
+    if(k==='p'){ window.__paused=!window.__paused; toast(window.__paused?'Paused':'Running'); }
+    if(k==='s'){ try{ var c=Array.from(document.querySelectorAll('canvas')).find(function(x){return x.width>600;}); var a=document.createElement('a');a.download='office.png';a.href=c.toDataURL('image/png');a.click();toast('Snapshot saved');}catch(e){} }
+  });
+
+  // Web Audio: ambient hum + UI beeps (no files)
+  var actx=null,hum=null;
+  function initAudio(){
+    if(actx)return;
+    try{
+      actx=new (window.AudioContext||window.webkitAudioContext)();
+      var osc=actx.createOscillator(), gain=actx.createGain();
+      osc.type='sine'; osc.frequency.value=55; gain.gain.value=.015;
+      osc.connect(gain); gain.connect(actx.destination); osc.start(); hum=gain;
+    }catch(e){}
+  }
+  function beep(freq){ try{initAudio();if(!actx)return;var o=actx.createOscillator(),g=actx.createGain();o.frequency.value=freq||660;g.gain.value=.05;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.08);}catch(e){} }
+  document.addEventListener('click',function(){beep(880);},{once:true});
+  window.__officeBeep=beep;
+
+  // Day/night tint overlay (CSS, cheap)
+  var tint=document.createElement('div');
+  tint.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:2;background:#0a1030;opacity:0;transition:opacity 2s';
+  (document.getElementById('oc3d')||document.body).appendChild(tint);
+  setInterval(function(){
+    try{
+      var h=new Date().getHours();
+      var night=h>=19||h<6;
+      tint.style.opacity=night?.18:0;
+    }catch(e){}
+  },30000);
+
+  // activity log
+  var log=document.createElement('div');
+  log.style.cssText='position:absolute;left:10px;bottom:10px;z-index:60;background:rgba(8,14,30,.85);border:1px solid #2f5fa8;border-radius:8px;padding:6px 8px;color:#9fdcff;font:10px Consolas,monospace;max-height:80px;overflow:hidden';
+  (document.getElementById('oc3d')||document.body).appendChild(log);
+  var lines=[];
+  setInterval(function(){
+    try{
+      var v=window.__officeV9;if(!v||!v.walkers)return;
+      var w=v.walkers[(Math.random()*v.walkers.length)|0];
+      lines.push('• '+w.name+': '+w.state);
+      if(lines.length>5)lines.shift();
+      log.innerHTML=lines.join('<br>');
+    }catch(e){}
+  },4000);
+
+  // expose UI helpers
+  window.__officeUI={showBot:showBot,initAudio:initAudio,beep:beep};
+})();
+</script>
 </body>
 </html>
