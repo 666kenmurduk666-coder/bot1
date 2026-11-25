@@ -3871,10 +3871,10 @@
     else { q.fillStyle = 'rgba(8,12,26,.9)'; q.fillRect(4,4,504,104); }
     q.strokeStyle = color || '#63e6ff'; q.lineWidth = 5;
     if (q.roundRect) { q.beginPath(); q.roundRect(4,4,504,104,26); q.stroke(); } else q.strokeRect(4,4,504,104);
-    q.fillStyle = '#eaf7ff'; q.font = 'bold 42px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
+    q.fillStyle = '#eaf7ff'; q.font = 'bold 54px Arial'; q.textAlign = 'center'; q.textBaseline = 'middle';
     q.fillText(text, 256, 58);
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false }));
-    sp.scale.set(w || 6, h || 1.3, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
+    sp.scale.set((w || 6) * 1.4, (h || 1.3) * 1.4, 1); sp.position.set(x, y, z); sp.userData.v9 = true; addO(sp);
     return sp;
   }
   // ===== LIVING ROBOT EMPLOYEES — articulated walkers with autonomous AI =====
@@ -3944,7 +3944,7 @@
     // glowing joint rings on arms + legs
     [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.08,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.28;j.add(ring);});
     // name label + chat bubble
-    if (name) refLabel(name, color, x, 2.15, z, 3.2, .72);
+    if (name) refLabel(name, color, x, 2.35, z, 4.4, 1.0);
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
     bub.scale.set(2.4,.7,1); bub.position.set(0,2.4,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
     animParts.push({m:belly,k:'led',p:x*.7+z});
@@ -4123,7 +4123,7 @@
     box(.06,1.2,.06,'#8792a6',bx,.6,bz); box(.06,1.2,.06,'#8792a6',bx+1.5,.6,bz);
     var bd=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.8),solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
     bd.position.set(bx+.75,1.0,bz); bd.userData.v9=true; addO(bd);
-    refLabel(title,color,cx,2.6,cz-R*.52,6.4,1.4);
+    refLabel(title,color,cx,3.0,cz-R*.52,9.0,2.0);
   }
   // High-tech walkway: clean lanes, no conflicting direction.
   function refBridge(x1,z1,x2,z2,color) {
@@ -4947,7 +4947,7 @@
     box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
     refDesk(CX,CZ+1.5,'#a98cff');
     refBot(CX,CZ+2.4,'#c08cff','Nazira');
-    refLabel('Command','#a99cff',CX,3.7,CZ-1.6,4.6,1.1);
+    refLabel('Command','#a99cff',CX,4.4,CZ-1.6,7.0,1.7);
     // 5 departments (roles from the reference video)
     var deps=[
       {x:-17.6,z:-24.3,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},
