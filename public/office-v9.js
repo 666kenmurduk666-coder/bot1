@@ -4015,6 +4015,7 @@
               r.state='submitHold'; r.timer=now+2200+Math.random()*1200;
               if(r.project){ r.project.visible=false; }
               if(typeof portalPulse==='function') portalPulse(r.x,r.z,r.color);
+              if(typeof teleportProject==='function') teleportProject(r.x,r.z,r.color);
               if(r.bub){ try{r.bub.material.map.dispose();r.bub.material.map=makeBubbleTex('Submitted!');r.bub.visible=true;r.lastBubble=now;}catch(e){} }
             } else { r.state=r.zone&&r.zone!==0?'work':'idle'; r.timer=now+2000+Math.random()*3400; }
           }
@@ -4119,55 +4120,30 @@
     bd.position.set(bx+.75,1.0,bz); bd.userData.v9=true; addO(bd);
     refLabel(title,color,cx,2.6,cz-R*.52,6.4,1.4);
   }
-  var escalators = [];
+  // High-tech walkway: clean lanes, no conflicting direction.
   function refBridge(x1,z1,x2,z2,color) {
     var dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz),ang=-Math.atan2(dz,dx);
     var mx=(x1+x2)/2, mz=(z1+z2)/2;
-    // solid walkway base + surface
-    var base=new THREE.Mesh(new THREE.BoxGeometry(len,.16,2.8),solid('#2f3a4e',{roughness:.68,metalness:.2}));
-    base.position.set(mx,-.1,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
-    var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.02,2.5),solid('#46536c',{roughness:.62,metalness:.25}));
-    surf.position.set(mx,.005,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
-    // moving escalator steps (animated chevrons)
-    var steps=[];
-    var count=Math.max(6,Math.floor(len/1.1));
-    for(var i=0;i<count;i++){
-      var st=new THREE.Mesh(new THREE.BoxGeometry(.55,.03,2.1),solid('#5a6a86',{roughness:.6,metalness:.3}));
-      st.rotation.y=ang; st.userData.v9=true; addO(st);
-      // glowing leading edge
-      var edge=new THREE.Mesh(new THREE.BoxGeometry(.08,.035,2.1),solid(color,{emissive:color,emissiveIntensity:.9}));
-      edge.rotation.y=ang; edge.userData.v9=true; st.add(edge);
-      edge.position.set(-.27,.01,0);
-      steps.push({m:st, t:i/count});
-    }
-    escalators.push({x1:x1,z1:z1,dx:dx,dz:dz,len:len,steps:steps,sp:.06});
-    // side handrails (two glowing rails on posts) — futuristic escalator look
+    var base=new THREE.Mesh(new THREE.BoxGeometry(len,.12,2.8),solid('#253047',{roughness:.6,metalness:.3}));
+    base.position.set(mx,-.08,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
+    var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.02,2.5),solid('#3a4862',{roughness:.55,metalness:.35}));
+    surf.position.set(mx,.01,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
+    // twin glowing lane lines (symmetric — no direction implied)
+    [-.85,.85].forEach(function(off){
+      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.015,.06),solid(color,{emissive:color,emissiveIntensity:.8}));
+      var ox=Math.sin(ang)*off, oz=Math.cos(ang)*off;
+      line.position.set(mx+ox,.025,mz+oz); line.rotation.y=ang; line.userData.v9=true; addO(line);
+    });
+    // side handrails (static, futuristic)
     [-1,1].forEach(function(side){
-      var off=1.45, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
-      var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.07,.09),solid('#8fa9c4',{roughness:.3,metalness:.6,emissive:color,emissiveIntensity:.35}));
-      rail.position.set(mx+rx,.55,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
-      var glow=new THREE.Mesh(new THREE.BoxGeometry(len,.025,.05),solid(color,{emissive:color,emissiveIntensity:1.0}));
-      glow.position.set(mx+rx,.60,mz+rz); glow.rotation.y=ang; glow.userData.v9=true; addO(glow);
-      for(var t=.04;t<=.97;t+=.1){
-        var post=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.55,6),solid('#7c8aa4',{metalness:.5}));
-        post.position.set(x1+dx*t+rx,.28,z1+dz*t+rz); post.userData.v9=true; addO(post);
+      var off=1.42, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
+      var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.06,.07),solid('#8fa9c4',{roughness:.3,metalness:.6,emissive:color,emissiveIntensity:.3}));
+      rail.position.set(mx+rx,.5,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
+      for(var t=.05;t<=.96;t+=.12){
+        var post=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,6),solid('#6a7a98',{metalness:.5}));
+        post.position.set(x1+dx*t+rx,.26,z1+dz*t+rz); post.userData.v9=true; addO(post);
       }
     });
-    // directional chevrons at entry
-    for(var c=0;c<3;c++){
-      var ch=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),solid(color,{emissive:color,emissiveIntensity:.8,side:THREE.DoubleSide}));
-      ch.rotation.x=-Math.PI/2; ch.rotation.z=ang; ch.position.set(x1+dx*.05,.04,z1+dz*.05+(c-1)*.8); ch.userData.v9=true; addO(ch);
-    }
-  }
-  function tickEscalators(now,dt){
-    for(var i=0;i<escalators.length;i++){
-      var e=escalators[i];
-      for(var j=0;j<e.steps.length;j++){
-        var st=e.steps[j];
-        st.t+=e.sp*dt; if(st.t>1)st.t-=1;
-        st.m.position.set(e.x1+e.dx*st.t,.02,e.z1+e.dz*st.t);
-      }
-    }
   }
 
   // ===== 3D DEPTH ENHANCEMENT (low-poly, perf-safe, no shadows) =====
@@ -4190,13 +4166,14 @@
   function dataPanelTexture(color, title, rows){
     var c=document.createElement('canvas'); c.width=256; c.height=192;
     var q=c.getContext('2d');
-    q.fillStyle='rgba(6,12,26,.9)'; q.fillRect(0,0,256,192);
-    q.strokeStyle=color; q.lineWidth=4; q.strokeRect(4,4,248,184);
-    q.fillStyle=color; q.fillRect(8,8,240,30);
-    q.fillStyle='#06101f'; q.font='bold 20px Arial'; q.textAlign='left'; q.fillText(title||'DATA',16,29);
-    q.fillStyle='#d8ecff'; q.font='14px Consolas,monospace';
-    (rows||['SYS OK','LIVE','SYNC']).forEach(function(r,i){ q.fillText(r,16,60+i*30); });
-    q.fillStyle=color; q.font='12px Arial'; q.textAlign='right'; q.fillText('● LIVE',240,180);
+    q.fillStyle='#050a12'; q.fillRect(0,0,256,192);
+    q.strokeStyle=color; q.lineWidth=3; q.strokeRect(4,4,248,184);
+    q.fillStyle='#132238'; q.fillRect(8,8,240,20);
+    q.fillStyle=color; q.font='bold 13px Consolas,monospace'; q.textAlign='left';
+    q.fillText('TERMINAL // '+title.slice(0,10),14,22);
+    q.fillStyle='#3dff9e'; q.font='12px Consolas,monospace';
+    ['> system online','> agents linked','> sync active','> pipeline ok','> ready_'].forEach(function(r,i){ q.fillText(r,16,50+i*24); });
+    q.fillStyle=color; q.fillRect(16,160,8,8); q.fillText('_',30,168);
     return new THREE.CanvasTexture(c);
   }
   function maxEnhance(){
@@ -4378,6 +4355,77 @@
       dust.userData.v9=true; addO(dust); fx3d.dust=dust;
     }catch(e){}
   }
+
+  // ===== PORTAL PULSE + PROJECT TELEPORT FX =====
+  var portalFx=[], telefx=[];
+  function portalPulse(x,z,color){
+    try{
+      for(var i=0;i<3;i++){
+        var ring=new THREE.Mesh(new THREE.TorusGeometry(.3,.05,8,24),solid(color||'#ffd34d',{emissive:color||'#ffd34d',emissiveIntensity:1.2,transparent:true,opacity:.9}));
+        ring.rotation.x=Math.PI/2; ring.position.set(0,.4+i*.2,0); ring.userData.v9=true; addO(ring);
+        portalFx.push({m:ring,t:0,life:900+i*120});
+      }
+    }catch(e){}
+  }
+  function tickPortal(now,dt){
+    for(var i=portalFx.length-1;i>=0;i--){
+      var p=portalFx[i]; p.t+=dt*1000;
+      var k=p.t/p.life;
+      if(k>=1){ try{p.m.parent&&p.m.parent.remove(p.m);}catch(e){} portalFx.splice(i,1); continue; }
+      p.m.scale.setScalar(1+k*5); p.m.material.opacity=.9*(1-k);
+    }
+  }
+  function teleportProject(x,z,color){
+    try{
+      var beam=new THREE.Mesh(new THREE.CylinderGeometry(.18,.3,10,12,1,true),
+        new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      beam.position.set(x,5,z); beam.userData.v9=true; addO(beam);
+      var cube=new THREE.Mesh(new THREE.BoxGeometry(.45,.45,.45),
+        solid(color,{emissive:color,emissiveIntensity:1.4,roughness:.15,transparent:true,opacity:.95}));
+      cube.position.set(x,.8,z); cube.userData.v9=true; addO(cube);
+      var rings=[];
+      for(var i=0;i<3;i++){
+        var r=new THREE.Mesh(new THREE.TorusGeometry(.5+i*.2,.04,8,24),solid(color,{emissive:color,emissiveIntensity:1.2}));
+        r.rotation.x=Math.PI/2; r.position.set(x,1+i*2,z); r.userData.v9=true; addO(r); rings.push(r);
+      }
+      telefx.push({x:x,z:z,color:color,beam:beam,cube:cube,rings:rings,t:0,phase:'rise'});
+    }catch(e){}
+  }
+  function tickTeleport(now,dt){
+    for(var i=telefx.length-1;i>=0;i--){
+      var e=telefx[i];
+      try{
+        if(e.phase==='rise'){
+          e.t+=dt*1.6;
+          if(e.t>=1){
+            e.t=0; e.phase='streak'; e.beam.visible=false; e.cube.visible=false; e.rings.forEach(function(r){r.visible=false;});
+            var dx=-e.x, dz=-e.z, len=Math.sqrt(dx*dx+dz*dz);
+            var streak=new THREE.Mesh(new THREE.BoxGeometry(len,.10,.10),
+              new THREE.MeshBasicMaterial({color:e.color,transparent:true,opacity:.9,depthWrite:false,fog:false}));
+            streak.position.set(e.x/2,7,e.z/2); streak.rotation.y=-Math.atan2(dz,dx); streak.userData.v9=true; addO(streak);
+            e.streak=streak;
+          } else {
+            e.cube.position.y=.8+e.t*9;
+            e.cube.rotation.y+=dt*4; e.cube.rotation.x+=dt*2;
+            e.beam.material.opacity=.42*(1-e.t*.5);
+            e.rings.forEach(function(r,j){ r.position.y=1+j*2+e.t*7; r.rotation.z+=dt*2; r.material.opacity=1-e.t; });
+          }
+        } else if(e.phase==='streak'){
+          e.t+=dt*2.5;
+          if(e.t>=1){
+            portalPulse(0,0,e.color);
+            try{structureGroup.remove(e.streak);}catch(_){}
+            e.rings.forEach(function(r){try{structureGroup.remove(r);}catch(_){}});
+            try{structureGroup.remove(e.beam);}catch(_){}
+            try{structureGroup.remove(e.cube);}catch(_){}
+            telefx.splice(i,1); continue;
+          }
+          if(e.streak){ e.streak.material.opacity=.9*(1-e.t); e.streak.scale.y=1+e.t*3; }
+        }
+      }catch(err){ try{telefx.splice(i,1);}catch(_){}}
+    }
+  }
+
   function tick3d(now, dt){
     try{
       for(var i=0;i<fx3d.pulses.length;i++){
@@ -4400,7 +4448,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickEscalators(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 50);
@@ -4832,7 +4880,7 @@
 
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
-    walkers.length = 0; navZones.length = 0; navBridges.length = 0; escalators.length = 0;
+    walkers.length = 0; navZones.length = 0; navBridges.length = 0;
     var CX=0, CZ=0;
     navAddZone(0,0,6.2);   // Command hub = zone 0 (bridge crossroads)
     // dark outer-space floor so nothing falls
