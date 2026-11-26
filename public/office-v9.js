@@ -4326,14 +4326,8 @@
         maxfx.rings.push(ring);
         animParts.push({m:ring,k:i?'spinFlatR':'spinFlat',s:.2+i*.1});
       });
-      // --- iisang malaking CYBEE report screen, nakaharap sa mga bot ---
-      if(di===0){
-        var rows=['Abot  +12%','Mga post  3/3','Leads  24','Trend  LIVE','Ulat  HANDA','Ahente  13/13','Uptime  99%','Seguro  OO','Bayaran  HANDA','Mensahe  18','Masaya  92%','Team  OK'];
-        var panel=new THREE.Mesh(new THREE.PlaneGeometry(18,18),
-          new THREE.MeshBasicMaterial({map:dataPanelTexture('#63e6ff','CYBEE',rows),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-        panel.position.set(0,13,-38); panel.userData.v9=true; addO(panel);
-        maxfx.billboards.push(panel);
-      }
+      // Big report screen removed by CEO request (performance).
+
       // --- scanner beam sweeping above island ---
       var beam=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,12,1,true),
         new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.10,side:THREE.DoubleSide,depthWrite:false,fog:false}));
@@ -5767,17 +5761,8 @@
         q.fillStyle='rgba(255,205,150,.14)'; q.fillRect(0,40,64,4);
         faces.push(cv);
       }
-      var env=new THREE.CubeTexture(faces); env.needsUpdate=true;
-      structureGroup.traverse(function(o){
-        if(!o.isMesh||!o.material)return;
-        var ms=Array.isArray(o.material)?o.material:[o.material];
-        ms.forEach(function(m){
-          if(!m)return;
-          if(m.metalness!==undefined&&m.metalness>.18){
-            m.envMap=env; if(m.envMapIntensity!==undefined)m.envMapIntensity=.35; m.needsUpdate=true;
-          }
-        });
-      });
+      // Cube env reflections removed - too heavy on mobile.
+
     }catch(e){}
     // 3) subtle PBR tuning on dark floor/structures (no extra lights)
     try{
