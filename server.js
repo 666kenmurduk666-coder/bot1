@@ -149,6 +149,14 @@ const state = {
       'https://s.shopee.ph/AAIp9tY9om', 'https://s.shopee.ph/1BO0RN5fhB',
       'https://s.shopee.ph/4VeSPVSSFA', 'https://s.shopee.ph/5fqPngwTJC'
     ],
+    // 📢 Quality ads for the CEO's website. Drafts only until CEO approval.
+    adUrl: 'https://cybee-ph.netlify.app/apps.html',
+    adModel: 'gpt-4o-mini',
+    aiDisclosure: true,
+    disclosureText: 'AI-generated content. Made by Cyborg Cheebee AI Office.',
+    autoPostDailyCap: 3,
+    autoPostEveryMin: 240,
+    pendingDraftDailyCap: 4,
     platform: 'Instagram Reels', language: 'Taglish'
   }, readJSON(CONFIG_FILE, {})),
   outputs: {},
@@ -160,6 +168,7 @@ const state = {
   agentHealth: {},
   // P2 governance: CEO approvals, manual publishes and separated finance records.
   approvalLog: [], publishLedger: [],
+  adDrafts: [], adAngleHistory: [], adDraftDay: '', adDraftCount: 0,
   // Office liveness: AI-proposed "shift" tasks wait here until the CEO approves them.
   // Proposals never auto-enqueue and never post/send anything on their own.
   shiftProposals: [],
@@ -306,6 +315,10 @@ const savedState = readJSON(STATE_FILE, null) || {};
 if (savedState.agentHealth && typeof savedState.agentHealth === 'object') state.agentHealth = savedState.agentHealth;
 if (Array.isArray(savedState.approvalLog)) state.approvalLog = savedState.approvalLog.slice(-300);
 if (Array.isArray(savedState.publishLedger)) state.publishLedger = savedState.publishLedger.slice(-300);
+  if (Array.isArray(savedState.adDrafts)) state.adDrafts = savedState.adDrafts.slice(-40);
+  if (Array.isArray(savedState.adAngleHistory)) state.adAngleHistory = savedState.adAngleHistory.slice(-200);
+  state.adDraftDay = String(savedState.adDraftDay || '');
+  state.adDraftCount = Number(savedState.adDraftCount) || 0;
 if (Array.isArray(savedState.shiftProposals)) state.shiftProposals = savedState.shiftProposals.slice(-60);
 if (savedState.ledger && typeof savedState.ledger === 'object') {
   state.ledger = {
@@ -534,6 +547,8 @@ function saveStateNow() {
     shopAnalytics: state.shopAnalytics.slice(-1200), eventShow: state.eventShow,
     botCare: state.botCare, agentHealth: state.agentHealth,
     approvalLog: state.approvalLog.slice(-300), publishLedger: state.publishLedger.slice(-300),
+    adDrafts: state.adDrafts.slice(-40), adAngleHistory: state.adAngleHistory.slice(-200),
+    adDraftDay: state.adDraftDay, adDraftCount: state.adDraftCount,
     ledger: state.ledger
   });
 }
@@ -1349,7 +1364,7 @@ async function runAgent(id, automatic) {
   }
   if (id === 'publisher') {
     autoPostDay();
-    const recent = (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video')).length;
+    const recent = (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video' || x.mode === 'ceo-approved-ad')).length;
     return 'Publisher Bot — ' + (autoPostStore.count || 0) + '/' + AUTO_POST_DAILY_CAP + ' contents ngayon. ' +
       'Kabuuang nai-pasa: ' + recent + '. Video: ' + (autoPostStore.videoDone ? 'nai-pasa na' : 'hintay pa ng token/PC bot') +
       '. Token sa server: ' + (fbPageToken() ? 'handa na' : 'hindi pa na-configure');
@@ -1756,6 +1771,72 @@ const CP_TOPIC_POOL = [
   'Tamang oras ng pagdidilig ng mga halaman'
 ];
 
+/* ===== 📢 CYBEE ADS - curated angles, rotation, and AI disclosure ===== */
+const CYBEE_AD_URL = 'https://cybee-ph.netlify.app/apps.html';
+const AI_DISCLOSURE = 'AI-generated content. Made by Cyborg Cheebee AI Office.';
+const CYBEE_AD_LIBRARY = [
+  { topic: 'Build Your AI Team Today', hook: 'May AI team ka na ba na 24/7 nagtatrabaho?',
+    benefits: ['Robot employees na hindi napapagod', 'Tunay na tasks, tunay na output', 'Ikaw ang boss, ikaw ang kontrol'],
+    cta: 'Simulan ang AI office mo ngayon', videoPrompt: 'dynamic camera flying through a neon space office, robot employees walking and typing with glowing HUD panels, cinematic dolly shot' },
+  { topic: 'Meet Your Robot Coworkers', hook: 'Ito ang mga bagong kasamahan mo sa opisina.',
+    benefits: ['Role-based bots na may sariling personalidad', 'Sila ay nagwo-work, nagme-meet, at nagsu-submit', 'Makikita mo ang lahat sa 3D office'],
+    cta: 'Bisitahin ang apps page', videoPrompt: 'close-up tracking shot of cute chibi robots with LED eyes, glowing name tags, animated gestures and walking motion' },
+  { topic: 'Automate the Boring Stuff', hook: 'Pagod ka na ba sa paulit-ulit na gawain?',
+    benefits: ['AI agents ang gumagawa ng routine tasks', 'CEO approval bago mag-publish', 'Anti-spam at rate limits na naka-built in'],
+    cta: 'Subukan ang automation', videoPrompt: 'fast montage with animated datapads, teleport beams, UFO document delivery, glowing particle trails, upbeat camera moves' },
+  { topic: 'Your 24/7 Digital Workplace', hook: 'Ang opisina mo, hindi na natutulog.',
+    benefits: ['Floating islands at futuristic HQ', 'Bots na tuloy-tuloy ang trabaho', 'Pwede mong i-control kahit saan'],
+    cta: 'Tingnan ang live office', videoPrompt: 'orbiting wide shot of floating islands in space, falling stars and asteroid motion, bridges glowing with energy' },
+  { topic: 'From Idea to Done', hook: 'Ideya lang dito, output agad doon.',
+    benefits: ['Scout, Writer, at Publisher bots', 'Content pipeline na may approval gate', 'May ledger para sa bawat publish'],
+    cta: 'Gawin ang unang project', videoPrompt: 'animated pipeline flow, idea cards flying to robot writer, then to a glowing publish pad, dynamic camera push-in' },
+  { topic: 'Scale Without Hiring', hook: 'Gusto mo ng team, pero hindi ka maghihire?',
+    benefits: ['Magdagdag ng bot roles anytime', 'Walang overhead, walang drama', 'Lahat ng bots, kontrolado mo'],
+    cta: 'Build your team', videoPrompt: 'robots lining up in a futuristic hiring hall, holographic role badges appearing, smooth crane shot' },
+  { topic: 'Smart Office, Real Results', hook: 'Hindi lang maganda — gumagana talaga.',
+    benefits: ['1x DPR, walang shadow maps, 60fps', 'Buhay na buhay ang mga robots', 'Optimized para sa mabilisang experience'],
+    cta: 'Try it now', videoPrompt: 'split shot: performance HUD with live numbers on one side, animated robots working on the other, energetic camera sweep' },
+  { topic: 'Start Free, Dream Big', hook: 'Simulan mo nang libre, palakihin mo pagkatapos.',
+    benefits: ['Libreng simulan ang AI office', 'Madaling controls at bookmarks', 'Pwede mong i-customize ang lahat'],
+    cta: 'Open the apps page', videoPrompt: 'glowing launch pad, robot mascot waving, camera rising into a starfield with a bright futuristic city ahead' }
+];
+function adCfg(){ return (state && state.config) || {}; }
+function adDisclosure(){
+  const c = adCfg();
+  if (c.aiDisclosure === false) return '';
+  return String(c.disclosureText || AI_DISCLOSURE).slice(0, 300);
+}
+function adAngleHash(txt){
+  const s = String(txt || '').toLowerCase().replace(/[^a-z0-9 ]/g,'');
+  let h = 2166136261;
+  for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h,16777619); }
+  return (h >>> 0).toString(36);
+}
+function adAngleUsedRecently(hash){
+  const cutoff = Date.now() - 7*24*60*60*1000;
+  return (state.adAngleHistory || []).some(x => x && x.h === hash && (x.at || 0) > cutoff);
+}
+function adRememberAngle(hash, topic){
+  state.adAngleHistory = (state.adAngleHistory || []).filter(x => x && (x.at || 0) > Date.now()-7*24*60*60*1000);
+  state.adAngleHistory.unshift({ h: hash, topic: String(topic||'').slice(0,120), at: Date.now() });
+  state.adAngleHistory = state.adAngleHistory.slice(0, 200);
+}
+// Use the configured ad model when the active provider supports a model override.
+// Falls back to the existing cpCall() routing - never invents an API.
+async function cpCallAd(sys, user, max){
+  const model = String(adCfg().adModel || '').trim();
+  if (model){
+    try {
+      const st = settings();
+      const cfg = providerCfg(st.provider, st);
+      if (cfg && (cfg.apiKey || isLocalAI(cfg))){
+        const r = await callProvider(Object.assign({}, cfg, { model: model }), sys, user, max);
+        return r.text;
+      }
+    } catch (e) {}
+  }
+  return await cpCall(sys, user, max);
+}
 function cpCleanJSON(raw) {
   if (!raw) return null;
   let s = String(raw).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -1785,117 +1866,121 @@ function cpRecentTopics(n) {
 }
 
 // 🔍 SCOUT — kumuha ng trending, hindi nauuulit, at ginagabayan ng 👍 ni CEO.
+// 🔍 SCOUT — curated QUALITY ADS for the CEO's apps page (7-day no-repeat).
 async function cpGenerateIdeas(count) {
-  const cfg = state.config || {};
-  const niche = cfg.niche || 'herbal plants and tutorials';
-  const platform = cfg.platform || 'Instagram Reels';
-  const language = cfg.language || 'Taglish';
-  const liked = (state.contentPipeline || []).filter(x => x && x.rating === 1)
-    .slice(0, 5).map(x => x.topic).filter(Boolean);
-  const recent = cpRecentTopics(14);
-  const n = Math.max(1, Math.min(8, Number(count) || 6));
+  const cfg = adCfg();
+  const n = Math.max(1, Math.min(8, Number(count) || 3));
+  const url = String(cfg.adUrl || CYBEE_AD_URL);
+  const recent = (state.contentPipeline || []).slice(0, 14).map(x => x && x.topic).filter(Boolean);
+  const liked = (state.contentPipeline || []).filter(x => x && x.rating === 1).slice(0, 5).map(x => x.topic).filter(Boolean);
   let ideas = null;
-
   try {
-    const sys = 'Ikaw ang mananaliksik ng maikling content ng Cyborg Cheebee Office. ' +
-      'Ibalik LAMANG ang valid JSON, walang markdown at walang intro. ' +
-      'Sumulat sa tunay at natural na Tagalog (Pinoy) — HUWAG gumamit ng Taglish o salitang Ingles maliban sa hashtag. ' +
-      'Paksa: mga dahon at halaman, pag-aalaga ng halaman, at edukasyon tungkol sa kalikasan. ' +
-      'SAFETY: huwag kailanman sabihing nakagamot o nakapagpapagaling ang isang halaman — edukasyon at karanasan lamang.';
-    const user = 'Niche: mga dahon at halaman\nPlatform: ' + platform + '\nWika: Tunay na Tagalog\n' +
-      'Ibalik ang JSON nang eksakto: {"ideas":[{"topic":"maikling paksang kawit","angle":"bakit ito mahalaga","hashtags":["#tag"]}]} na may eksaktong ' + n + ' ideya.\n' +
-      (liked.length ? 'Mga paksang gusto ng CEO — gumawa pa ng ganito: ' + liked.join(' | ') + '\n' : '') +
-      'HUWAG ulitin ang mga kamakailang paksa: ' + (recent.join(' | ') || 'wala') + '\n' +
-      'Dapat "alam ba ninyo" o tutorial ang itsura, at tumuon sa dahon o halaman.';
-    const parsed = cpCleanJSON(await cpCall(sys, user, 900));
+    const sys = 'You are the ad strategist of Cyborg Cheebee AI Office. Return ONLY valid JSON, no markdown, no intro. ' +
+      'Promote ONLY this website: ' + url + '. Write natural, friendly Filipino (Tagalog mixed with English is fine). ' +
+      'Create quality promotional ad angles with a hook, three concrete benefits, a clear call-to-action and a short video direction. ' +
+      'NO spam: never use gibberish, never dump random hashtags, never post a bare link only. ' +
+      'Every video direction must show ACTION and futuristic scenes: animated robot characters in a neon space office, dynamic camera movement, glowing HUDs, product showcases. No static images.';
+    const user = 'Website: ' + url + '\nNumber of ad angles: ' + n + '\n' +
+      (liked.length ? 'CEO liked these angles, make more like them: ' + liked.join(' | ') + '\n' : '') +
+      'Do not repeat these recent angles: ' + (recent.join(' | ') || 'none') + '\n' +
+      'Return EXACTLY: {"ideas":[{"topic":"short ad angle","hook":"attention grabber","benefits":["b1","b2","b3"],"cta":"call to action","videoPrompt":"motion and futuristic scene direction","hashtags":["#tag"]}]}';
+    const parsed = cpCleanJSON(await cpCallAd(sys, user, 900));
     if (parsed && Array.isArray(parsed.ideas)) {
       ideas = parsed.ideas.filter(x => x && x.topic).slice(0, n).map(x => ({
         topic: String(x.topic).slice(0, 180),
-        angle: String(x.angle || '').slice(0, 300),
+        angle: String(x.hook || '').slice(0, 300),
+        benefits: Array.isArray(x.benefits) ? x.benefits.slice(0, 3).map(String) : [],
+        cta: String(x.cta || '').slice(0, 200),
+        videoPrompt: String(x.videoPrompt || '').slice(0, 400),
         hashtags: Array.isArray(x.hashtags) ? x.hashtags.slice(0, 8).map(String) : []
       }));
     }
   } catch (e) {}
 
   if (!ideas || !ideas.length) {
-    ideas = [];
-    const used = recent.map(s => String(s).toLowerCase());
-    let guard = 0;
-    while (ideas.length < n && guard++ < 120) {
-      let t = cpBag('topics', CP_TOPIC_POOL);
-      const key = String(t).toLowerCase();
-      // Una: iwasan ang mga recent topics. Kapag naubos na ang pool, bagong
-      // anggle na lang — hindi na uuulitin ang eksaktong pamagat.
-      if (used.some(u => u === key)) {
-        if (guard <= CP_TOPIC_POOL.length) continue;
-        t = 'Bagong anggle: ' + String(t);
-      }
-      used.push(key);
-      ideas.push({ topic: t, angle: 'Educational + trending format, safe for Reels.', hashtags: ['#herbs', '#tutorial', '#fyp'] });
-    }
+    const fresh = CYBEE_AD_LIBRARY.filter(x => !adAngleUsedRecently(adAngleHash(x.topic)) &&
+      !recent.some(r => String(r).toLowerCase() === String(x.topic).toLowerCase()));
+    const pool = fresh.length ? fresh : CYBEE_AD_LIBRARY;
+    ideas = pool.slice(0, n).map(x => ({
+      topic: x.topic, angle: x.hook, benefits: x.benefits.slice(0, 3), cta: x.cta,
+      videoPrompt: x.videoPrompt, hashtags: ['#CyborgCheebee', '#AIOffice', '#AI']
+    }));
   }
 
   const now = Date.now();
-  const made = ideas.map((x, i) => ({
-    id: 'cp' + now + '_' + i, t: now + i, stage: 'idea',
-    topic: String(x.topic || '').slice(0, 180),
-    angle: String(x.angle || '').slice(0, 300),
-    hashtags: Array.isArray(x.hashtags) ? x.hashtags.slice(0, 8).map(String) : [],
-    script: null, rating: 0, niche: niche, platform: platform, language: language
-  }));
+  const made = ideas.map((x, i) => {
+    const topic = String(x.topic || '').slice(0, 180);
+    adRememberAngle(adAngleHash(topic), topic); // 7-day rotation guard
+    return {
+      id: 'cp' + now + '_' + i, t: now + i, stage: 'idea', topic: topic,
+      angle: String(x.angle || '').slice(0, 300),
+      benefits: (Array.isArray(x.benefits) ? x.benefits : []).slice(0, 3).map(x => String(x).slice(0, 240)),
+      cta: String(x.cta || '').slice(0, 200),
+      videoPrompt: String(x.videoPrompt || '').slice(0, 400),
+      hashtags: (Array.isArray(x.hashtags) ? x.hashtags : []).slice(0, 8).map(String),
+      script: null, rating: 0, niche: 'AI office ads', platform: cfg.platform || 'Instagram Reels', language: cfg.language || 'Taglish'
+    };
+  });
   state.contentPipeline = made.concat(state.contentPipeline || []).slice(0, 30);
   saveStateNow();
-  log('Content pipeline: Scout found ' + made.length + ' new ideas', 'system');
+  log('Ad Scout: ' + made.length + ' quality ad angles ready (drafts only)', 'system');
   return made;
 }
 
 // ✍️ WRITER — idea → hook/beats/shot-list/caption/CTA + disclaimer.
+// ✍️ WRITER — ad angle → hook / beats / motion shot-list / caption / CTA / disclosure.
 async function cpWriteScript(id) {
   const item = (state.contentPipeline || []).find(x => x && x.id === id);
   if (!item) throw new Error('Item not found');
-  const cfg = state.config || {};
-  const link = cfg.affiliateLink || '';
-  const platform = item.platform || cfg.platform || 'Instagram Reels';
-  const language = item.language || cfg.language || 'Taglish';
+  const cfg = adCfg();
+  const url = String(cfg.adUrl || CYBEE_AD_URL);
+  const disclosure = adDisclosure();
+  const benefits = Array.isArray(item.benefits) && item.benefits.length ? item.benefits :
+    ['Robot employees that work 24/7', 'Real tasks and real output', 'You stay in control'];
   let sc = null;
-
   try {
-    const sys = 'Ikaw ang manunulat ng maikling video ng Cyborg Cheebee Office. ' +
-      'Ibalik LAMANG ang valid JSON, walang markdown at walang intro. ' +
-      'Sumulat sa tunay at natural na Tagalog (Pinoy) — HUWAG gumamit ng Taglish o salitang Ingles maliban sa hashtag. ' +
-      'Paksa: mga dahon at halaman. SAFETY: huwag mag-angkin ng gamot o paggaling; edukasyon lamang; ' +
-      'isama nang eksakto ang disclaimer na ibibigay.';
-    const user = 'Paksa: ' + item.topic + '\nAnggulo: ' + item.angle + '\nPlatform: ' + platform + '\nWika: Tunay na Tagalog\n' +
-      (link ? 'Link na banggitin nang natural sa CTA: ' + link + '\n' : '') +
-      'Disclaimer (isama nang eksakto): ' + CP_DISCLAIMER + '\n' +
-      'Ibalik ang JSON nang eksakto: {"hook":"unang 3 segundo","beats":["b1","b2","b3"],"shotList":["s1","s2","s3"],"caption":"teksto ng post","hashtags":["#tag"],"cta":"panawagan","disclaimer":"..."} Huwag lampas 60 segundo kung binibigkas.';
-    const parsed = cpCleanJSON(await cpCall(sys, user, 1100));
+    const sys = 'You are the ad copywriter of Cyborg Cheebee AI Office. Return ONLY valid JSON, no markdown, no intro. ' +
+      'Write a benefit-driven, platform-native promotional ad for ' + url + '. ' +
+      'The VIDEO must show ACTION and futuristic scenes: animated robot characters in a neon space office, dynamic camera movement, glowing HUDs, product showcases, short vertical clip. ' +
+      'NO static images and NO text-only ads. Always include the exact AI disclosure text provided. ' +
+      'Return EXACTLY: {"hook":"first 3 seconds","beats":["b1","b2","b3"],"shotList":["motion shot 1","motion shot 2","motion shot 3"],"caption":"post text","hashtags":["#tag"],"cta":"call to action","videoPrompt":"motion and futuristic scene direction","disclaimer":"exact disclosure"}';
+    const user = 'Ad angle: ' + item.topic + '\nHook: ' + (item.angle || '') + '\nBenefits: ' + benefits.join(' | ') +
+      '\nWebsite (CTA link): ' + url + '\nAI disclosure (include exactly): ' + disclosure +
+      '\nVideo direction: ' + (item.videoPrompt || 'animated robots in a neon space office with dynamic camera');
+    const parsed = cpCleanJSON(await cpCallAd(sys, user, 1100));
     if (parsed && parsed.hook) sc = parsed;
   } catch (e) {}
 
   if (!sc) {
     sc = {
-      hook: 'Alam ba ninyo na ' + item.topic + ' ay madaling gawin sa bahay?',
-      beats: ['Ito ang mga pangunahing bagay — simple at hindi nakakalito.', 'Ganito ang tamang paraan, hakbang-hakbang.', 'Ito ang resulta at mga tips para hindi magkamali.'],
-      shotList: ['Malapitang kuha ng mga dahon', 'Demo ng hakbang mula sa itaas', 'Resulta at natural na reaksyon'],
-      caption: item.topic + ' — tutorial na maaari ninyong subukan.',
-      hashtags: (item.hashtags || []).length ? item.hashtags.slice(0, 6) : ['#Dahon', '#Halaman', '#Kalikasan', '#Edukasyon'],
-      cta: link ? 'Tingnan ang link sa bio para sa gamit na ginamit ko.' : 'Itabi ang video para hindi mawala.',
-      disclaimer: CP_DISCLAIMER
+      hook: item.angle || ('Discover ' + item.topic),
+      beats: benefits.slice(0, 3),
+      shotList: [
+        'Dynamic camera flying through the neon AI office',
+        'Animated robot employees walking, typing and presenting with glowing HUD',
+        'Product showcase with the apps page CTA and a rising starfield shot'
+      ],
+      caption: item.topic + ' — ' + benefits.join(' • ') + ' ' + url,
+      hashtags: ['#CyborgCheebee', '#AIOffice', '#AI'],
+      cta: (item.cta || 'Try it now') + ' — ' + url,
+      videoPrompt: item.videoPrompt || 'animated robot characters in a neon space office, dynamic camera movement, glowing HUDs, product showcase, short vertical clip',
+      disclaimer: disclosure
     };
   }
   item.script = {
     hook: String(sc.hook || '').slice(0, 240),
-    beats: (Array.isArray(sc.beats) ? sc.beats : []).slice(0, 5).map(x => String(x).slice(0, 240)),
+    beats: (Array.isArray(sc.beats) ? sc.beats : benefits).slice(0, 5).map(x => String(x).slice(0, 240)),
     shotList: (Array.isArray(sc.shotList) ? sc.shotList : []).slice(0, 6).map(x => String(x).slice(0, 180)),
     caption: String(sc.caption || '').slice(0, 1200),
     hashtags: (Array.isArray(sc.hashtags) ? sc.hashtags : []).slice(0, 10).map(x => String(x).slice(0, 40)),
     cta: String(sc.cta || '').slice(0, 300),
-    disclaimer: CP_DISCLAIMER
+    videoPrompt: String(sc.videoPrompt || '').slice(0, 400),
+    link: url,
+    disclaimer: disclosure
   };
   item.stage = 'script';
   saveStateNow();
-  log('Content pipeline: script written for "' + item.topic + '"', 'system');
+  log('Ad Writer: script + motion video direction ready for "' + item.topic + '"', 'system');
   return item;
 }
 
@@ -1909,30 +1994,36 @@ function cpRate(id, rating) {
 }
 
 // 🎬 ASSEMBLER — script → video editor brief (gumagamit ng existing AI video editor).
+// 🎬 ASSEMBLER — script → video editor brief with ACTION and futuristic direction.
 async function cpWriteBrief(id) {
   const item = (state.contentPipeline || []).find(x => x && x.id === id);
   if (!item) throw new Error('Item not found');
   if (!item.script) throw new Error('Kailangan muna ang script ng Writer');
   const sc = item.script;
+  const motion = String(sc.videoPrompt || 'animated robot characters in a neon space office, dynamic camera movement, glowing HUDs, product showcase, short vertical clip');
   const briefText = 'Title: ' + item.topic + '\nHook: ' + sc.hook + '\nBeats: ' +
-    (sc.beats || []).join(' | ') + '\nShots: ' + (sc.shotList || []).join(' | ') +
-    '\nCTA: ' + sc.cta + '\nFormat: vertical short-form\nWika: Tunay na Tagalog';
+    (sc.beats || []).join(' | ') + '\nMotion shots: ' + (sc.shotList || []).join(' | ') +
+    '\nVideo direction (ACTION, NOT STATIC): ' + motion +
+    '\nCTA: ' + sc.cta + '\nFormat: vertical short-form\nWika: natural Filipino';
   let cfg = null;
   try {
-    const sys = 'You are the AI Video Editor Assistant of Cyborg Cheebee Office. Convert the CEO brief into ONLY a JSON object with keys: title, tagline, cta, format (vertical|wide), mode (product|recap|agent|campus), color1 (#rrggbb), color2 (#rrggbb), imageUrl (string or empty), voiceoverUrl (string or empty), captions (array of short strings). No markdown, no explanation. Match the language of the brief.';
-    const raw = await cpCall(sys, 'Brief: ' + briefText, 500);
+    const sys = 'You are the AI Video Editor Assistant of Cyborg Cheebee Office. Convert the CEO brief into ONLY a JSON object with keys: title, tagline, cta, format (vertical|wide), mode (product|recap|agent|campus), color1 (#rrggbb), color2 (#rrggbb), imageUrl (string or empty), voiceoverUrl (string or empty), captions (array of short strings). No markdown, no explanation. Follow the motion direction: show action and futuristic scenes, never a static image.';
+    const raw = await cpCallAd(sys, 'Brief: ' + briefText, 500);
     const m = String(raw).match(/\{[\s\S]*\}/);
     if (m) cfg = videoConfigFrom(JSON.parse(m[0]));
   } catch (e) {}
-  if (!cfg) cfg = videoConfigFrom({
-    title: String(item.topic).slice(0, 80), tagline: sc.hook, cta: sc.cta,
-    format: 'vertical', mode: 'product', color1: '#7fc7ff', color2: '#e8b04a',
-    captions: (sc.beats || []).slice(0, 6)
+  const motionCaptions = (sc.shotList || []).slice(0, 4).map(x => String(x));
+  if (!cfg || !cfg.captions.length) cfg = videoConfigFrom({
+    title: String(item.topic).slice(0, 80),
+    tagline: String(sc.hook || motion).slice(0, 220),
+    cta: String(sc.cta || '').slice(0, 160),
+    format: 'vertical', mode: 'product', color1: '#77eaff', color2: '#8b5cf6',
+    captions: motionCaptions.length ? motionCaptions : (sc.beats || []).slice(0, 5)
   });
   item.brief = cfg;
   item.stage = 'brief';
   saveStateNow();
-  log('Content pipeline: video brief ready for "' + item.topic + '"', 'system');
+  log('Ad Assembler: motion video brief ready for "' + item.topic + '"', 'video');
   return item;
 }
 
@@ -1978,9 +2069,12 @@ async function botFbPublish(message, opts) {
   if (!pageId) return { ok: false, reason: 'no-page-id' };
   const isVideo = !!(opts && opts.videoUrl);
   const url = 'https://graph.facebook.com/v19.0/' + encodeURIComponent(pageId) + '/' + (isVideo ? 'videos' : 'feed');
+  let publishText = String(message || '');
+  const fbd = adDisclosure();
+  if (fbd && publishText.indexOf(fbd) < 0) publishText += '\n\n' + fbd;
   const payload = isVideo
-    ? { access_token: token, file_url: opts.videoUrl, description: String(message || '').slice(0, 63206) }
-    : { access_token: token, message: String(message || '').slice(0, 63206) };
+    ? { access_token: token, file_url: opts.videoUrl, description: publishText.slice(0, 63206) }
+    : { access_token: token, message: publishText.slice(0, 63206) };
   if (!isVideo && opts && opts.link) payload.link = String(opts.link).slice(0, 500);
   try {
     const r = await fetch(url, {
@@ -2003,12 +2097,15 @@ function cpPostMessage(item) {
   if (sc.hook) lines.push(String(sc.hook).trim());
   (sc.beats || []).slice(0, 3).forEach(b => { if (b) lines.push('• ' + String(b).trim()); });
   if (sc.cta) lines.push(String(sc.cta).trim());
-  const tags = (sc.hashtags || []).map(t => String(t).trim()).filter(Boolean).slice(0, 8);
-  ['#Dahon', '#Halaman'].forEach(t => { if (!tags.some(x => x.toLowerCase() === t.toLowerCase())) tags.push(t); });
+  const link = String(sc.link || adCfg().adUrl || CYBEE_AD_URL).trim();
+  if (link && /^https?:\/\//i.test(link)) lines.push(link);
+  const tags = (sc.hashtags || []).map(t => String(t).trim()).filter(Boolean).slice(0, 5);
   if (tags.length) lines.push(tags.join(' '));
-  lines.push(CP_DISCLAIMER);
+  const d = adDisclosure();
+  if (d) lines.push(d);
   return lines.join('\n\n').slice(0, 63206);
 }
+
 let autoPublishBusy = false;
 async function cpEnsureReady() {
   const ready = (state.contentPipeline || []).find(x => x && x.stage === 'script' && x.script && !x.published);
@@ -2024,7 +2121,7 @@ async function cpEnsureReady() {
   } catch (e) {}
   return made;
 }
-function cpLedgerRow(postId, title, note, actor, mode) {
+function cpLedgerRow(postId, title, note, actor, mode, meta) {
   const now = Date.now();
   const row = {
     id: 'BOT' + now.toString(36), at: now, platform: 'Facebook',
@@ -2033,38 +2130,55 @@ function cpLedgerRow(postId, title, note, actor, mode) {
     note: String(note || '').slice(0, 200),
     actor: actor, mode: mode, approved: true, postId: postId
   };
+  if (meta && typeof meta === 'object') {
+    if (meta.disclosure) row.disclosure = String(meta.disclosure).slice(0, 300);
+    if (meta.angleHash) row.angleHash = String(meta.angleHash).slice(0, 32);
+    row.aiGenerated = meta.aiGenerated !== false;
+  }
   state.publishLedger.unshift(row);
   if (state.publishLedger.length > 300) state.publishLedger.length = 300;
   return row;
 }
-async function botAutoPublish(manual) {
+
+// Scheduler creates QUEUED DRAFTS only. Publishing happens only in the
+// CEO-approved route below, which calls botFbPublish() after authorization.
+function adDraftDay() {
+  const d = bazaarDay();
+  if (state.adDraftDay !== d) { state.adDraftDay = d; state.adDraftCount = 0; }
+  return d;
+}
+async function botAutoDraft(manual) {
   if (autoPublishBusy) return { ok: false, reason: 'busy' };
   autoPublishBusy = true;
   try {
-    if (autoPostStore.paused && !manual) return { ok: false, reason: 'paused' };
-    if (!fbPageToken()) return { ok: false, reason: 'no-page-token' };
-    autoPostDay();
-    if (!manual && autoPostStore.count >= AUTO_POST_DAILY_CAP)
-      return { ok: false, reason: 'daily-cap', count: autoPostStore.count };
-    if (!manual && Date.now() - (autoPostStore.lastAt || 0) < AUTO_POST_EVERY_MS)
-      return { ok: false, reason: 'too-soon', count: autoPostStore.count };
+    if (!manual && autoPostStore.paused) return { ok: false, reason: 'paused' };
+    if (!manual && !fbPageToken()) return { ok: false, reason: 'no-page-token' };
+    adDraftDay();
+    const cap = Math.max(1, Math.min(10, Number(adCfg().pendingDraftDailyCap) || 4));
+    if (!manual && (state.adDraftCount || 0) >= cap) return { ok: false, reason: 'pending-draft-cap', count: state.adDraftCount };
+    if (!manual && autoPostStore.count >= AUTO_POST_DAILY_CAP) return { ok: false, reason: 'daily-publish-cap', count: autoPostStore.count };
+    if (!manual && Date.now() - (autoPostStore.lastAt || 0) < AUTO_POST_EVERY_MS) return { ok: false, reason: 'too-soon' };
     const item = await cpEnsureReady();
     if (!item) return { ok: false, reason: 'no-ready-content' };
-    const r = await botFbPublish(cpPostMessage(item));
-    if (!r.ok) return r;
-    item.published = true;
-    item.publishedAt = Date.now();
-    item.postId = r.postId;
-    autoPostStore.lastAt = Date.now();
-    autoPostStore.count = (autoPostStore.count || 0) + 1;
-    saveAutoPostStore();
-    cpLedgerRow(r.postId, item.topic, 'Bot auto-publish: ' + item.topic, 'Writer Bot + Publisher Bot', 'auto-bot');
+    const hash = adAngleHash(item.topic);
+    if (!manual && adAngleUsedRecently(hash)) return { ok: false, reason: 'angle-recently-used' };
+    const id = 'AD' + Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex');
+    state.adDrafts.unshift({
+      id: id, at: Date.now(), topic: item.topic, itemId: item.id, angleHash: hash,
+      status: 'pending', disclosure: adDisclosure(),
+      videoPrompt: String((item.script && item.script.videoPrompt) || '').slice(0, 400)
+    });
+    state.adDrafts = state.adDrafts.slice(-40);
+    state.adDraftCount = (state.adDraftCount || 0) + 1;
+    adRememberAngle(hash, item.topic);
+    item.stage = 'pending-draft';
     saveStateNow();
-    auditEvent('Bot auto-published: ' + item.topic, 'Publisher Bot');
-    log('📤 Publisher Bot nag-post: ' + String(item.topic).slice(0, 70), 'publisher');
-    return { ok: true, postId: r.postId, topic: item.topic, count: autoPostStore.count };
+    auditEvent('Ad draft queued for CEO approval: ' + item.topic, 'Publisher Bot');
+    log('📝 Ad draft queued (NOT published): ' + String(item.topic).slice(0, 70), 'publisher');
+    return { ok: true, id: id, topic: item.topic, count: state.adDraftCount };
   } finally { autoPublishBusy = false; }
 }
+
 const VIDEO_POST_TEXT = [
   '🎬 MGA KASANTAYAN SA OPISINA',
   '',
@@ -2077,7 +2191,7 @@ const VIDEO_POST_TEXT = [
   '',
   'Manood na ngayon! 💚',
   '',
-  '#CyborgCheebee #Opisina #Kasanayan #Dahon #Halaman'
+  '#CyborgCheebee #AIOffice #AI #Opisina #Kasanayan'
 ].join('\n');
 let videoPublishBusy = false;
 async function botPublishVideo(manual) {
@@ -2099,7 +2213,7 @@ async function botPublishVideo(manual) {
 }
 setInterval(() => {
   if (state.stopped || state.running) return;
-  botAutoPublish(false).catch(e => log('Auto-publish error: ' + e.message, 'publisher'));
+  botAutoDraft(false).catch(e => log('Ad draft error: ' + e.message, 'publisher'));
 }, 60000);
 
 // 🛍️ Ibalik ang Shopee affiliate links kahit burahin ng redeploy ang data/.
@@ -2437,7 +2551,7 @@ function send(res, code, body, type, cache) {
     'Cache-Control': cache === 'static' ? 'public, max-age=86400' : cache === 'html' ? 'no-cache' : 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'X-Frame-Options': 'SAMEORIGIN'
+    "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8787 https://cybee-ph.netlify.app https://*.netlify.app"
   };
   if (enc) { headers['Content-Encoding'] = enc; headers['Vary'] = 'Accept-Encoding'; headers['Content-Length'] = String(out.length); }
   res.writeHead(code, headers);
@@ -2571,8 +2685,6 @@ function youtubeCfg() {
 async function youtubeAccessToken() {
   const { clientId, clientSecret, refreshToken } = youtubeCfg();
   if (!clientId || !clientSecret || !refreshToken) throw new Error('YouTube credentials missing. Set YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN in env/config (server-side).');
-  const body = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refreshToken, grant_type: 'refresh_token' });
-  // Fix: URLSearchParams key should be refresh_token
   const params = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' });
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -2584,6 +2696,9 @@ async function youtubeAccessToken() {
   return j.access_token;
 }
 async function youtubeUploadVideo({ filePath, title, description, tags, privacyStatus }) {
+  const yd = adDisclosure();
+  const ytDescription = String(description || '') + (yd ? '\n\n' + yd : '');
+
   const abs = path.resolve(filePath);
   if (!fs.existsSync(abs)) throw new Error('Video file not found: ' + abs);
   const stat = fs.statSync(abs);
@@ -2591,7 +2706,7 @@ async function youtubeUploadVideo({ filePath, title, description, tags, privacyS
   const metadata = {
     snippet: {
       title: String(title || 'Cyborg Cheebee Short').slice(0, 100),
-      description: String(description || '').slice(0, 5000),
+      description: ytDescription.slice(0, 5000),
       tags: Array.isArray(tags) ? tags.slice(0, 30).map(t => String(t).slice(0, 500)) : [],
       categoryId: '22',
     },
@@ -2741,6 +2856,42 @@ const server = http.createServer(async (req, res) => {
       saveStateNow();
       return sendJSON(res, 201, { ok: true, entry: row, entries: state.publishLedger.slice(0, 100),
         note: 'Record only. This endpoint does not post to any platform.' });
+    }
+
+    // CEO-only ad approval queue. All POST /api/* already pass the gate above;
+    // the identity is checked again here before any publish call.
+    if (p === '/api/ceo/ad-drafts' && req.method === 'POST') {
+      const b = req._body || await body(req);
+      if (!ceoAuthorized(req, b)) return sendJSON(res, 403, { ok: false, error: 'CEO login required.' });
+      const action = String(b.action || 'list');
+      const drafts = (state.adDrafts || []).filter(x => x && x.status === 'pending');
+      if (action === 'list') return sendJSON(res, 200, { ok: true, drafts: drafts.slice(0, 20), count: drafts.length });
+      if (action !== 'approve' && action !== 'reject')
+        return sendJSON(res, 400, { ok: false, error: 'Unknown ad-draft action.' });
+      const id = String(b.id || '');
+      const d = (state.adDrafts || []).find(x => x && x.id === id && x.status === 'pending');
+      if (!d) return sendJSON(res, 404, { ok: false, error: 'Pending ad draft not found.' });
+      if (action === 'reject') {
+        d.status = 'rejected'; d.decidedAt = Date.now(); d.decidedBy = 'CEO';
+        saveStateNow();
+        auditEvent('CEO rejected ad draft: ' + d.topic, 'CEO');
+        return sendJSON(res, 200, { ok: true, draft: d });
+      }
+      if (!fbPageToken()) return sendJSON(res, 400, { ok: false, error: 'Walang Page access token.' });
+      const item = (state.contentPipeline || []).find(x => x && x.id === d.itemId) || { topic: d.topic, script: {} };
+      const message = cpPostMessage(item);
+      const r = await botFbPublish(message, { link: String((item.script && item.script.link) || CYBEE_AD_URL) });
+      if (!r.ok) return sendJSON(res, 502, { ok: false, reason: r.reason, detail: r.detail });
+      d.status = 'published'; d.postId = r.postId; d.publishedAt = Date.now(); d.decidedBy = 'CEO';
+      item.published = true; item.publishedAt = Date.now(); item.postId = r.postId;
+      autoPostStore.lastAt = Date.now();
+      autoPostStore.count = (autoPostStore.count || 0) + 1;
+      saveAutoPostStore(); saveStateNow();
+      cpLedgerRow(r.postId, d.topic, 'CEO-approved ad: ' + d.topic, 'CEO + Publisher Bot', 'ceo-approved-ad',
+        { disclosure: adDisclosure(), angleHash: d.angleHash, aiGenerated: true });
+      auditEvent('CEO approved and published ad: ' + d.topic, 'CEO');
+      log('📤 CEO-approved ad published: ' + String(d.topic).slice(0, 70), 'publisher');
+      return sendJSON(res, 200, { ok: true, postId: r.postId, draft: d, entries: state.publishLedger.slice(0, 100) });
     }
 
     if (p === '/api/ceo/backup-drill' && req.method === 'POST') {
@@ -3571,7 +3722,7 @@ const server = http.createServer(async (req, res) => {
         dailyCap: AUTO_POST_DAILY_CAP, postedToday: autoPostStore.count || 0,
         everyMinutes: Math.round(AUTO_POST_EVERY_MS / 60000), nextInMs,
         videoPublished: !!autoPostStore.videoDone,
-        recent: (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video')).slice(0, 12)
+        recent: (state.publishLedger || []).filter(x => x && (x.mode === 'auto-bot' || x.mode === 'auto-video' || x.mode === 'ceo-approved-ad')).slice(0, 12)
       });
     }
     if (p === '/api/bot/autopost' && req.method === 'POST') {
@@ -3580,7 +3731,7 @@ const server = http.createServer(async (req, res) => {
       if (action === 'pause') { autoPostStore.paused = true; saveAutoPostStore(); return sendJSON(res, 200, { ok: true, paused: true }); }
       if (action === 'resume') { autoPostStore.paused = false; saveAutoPostStore(); return sendJSON(res, 200, { ok: true, paused: false }); }
       if (action === 'now') {
-        const out = await botAutoPublish(true);
+        const out = await botAutoDraft(true);
         return sendJSON(res, out.ok ? 200 : 200, out);
       }
       return sendJSON(res, 400, { ok: false, error: 'Unknown autopost action.' });

@@ -4559,8 +4559,8 @@
     setInterval(function(){
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
-          var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); adaptiveDetail(n,dt); tickAtm(n,dt);
+          var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt);  tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -4760,28 +4760,8 @@
   function buildJuice(){
     if(!structureGroup||!level3d) return;
     ju.coins.length=0; ju.sparkles.length=0; ju.trails.length=0; ju.parallax.length=0;
-    var ctex=coinTexture();
-    // --- coin lines floating above bridges + arcs over islands (SS-style collectibles) ---
-    navBridges.forEach(function(b,bi){
-      for(var i=1;i<=4;i++){
-        var t=i/8;
-        var coin=new THREE.Mesh(new THREE.PlaneGeometry(.55,.55),new THREE.MeshBasicMaterial({map:ctex,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-        coin.position.set(b.x1+(b.x2-b.x1)*t, 1.6+Math.sin(t*Math.PI)*1.2, b.z1+(b.z2-b.z1)*t);
-        coin.userData.v9=true; addO(coin);
-        ju.coins.push({m:coin,p:bi+i*.4});
-      }
-    });
-    // coin arcs over each island
-    var DS=[[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30]];
-    DS.forEach(function(d,di){
-      for(var i=0;i<5;i++){
-        var a=i/5*Math.PI*2;
-        var coin=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),new THREE.MeshBasicMaterial({map:ctex,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-        coin.position.set(d[0]+Math.cos(a)*5, 2.2+Math.sin(a*2)*.5, d[1]+Math.sin(a)*5);
-        coin.userData.v9=true; addO(coin);
-        ju.coins.push({m:coin,p:di*2+i});
-      }
-    });
+    // Floating coins removed by CEO request - cleaner scene, fewer draw calls.
+
     // --- sparkles around each robot + portal (reuse one texture) ---
     var stex=sparkleTexture();
     for(var i=0;i<18;i++){
@@ -5287,9 +5267,13 @@
       }
     }
 
+  var galaxfx = { planets: [], dust: null, santa: null, satellites: [], satGroup: null };
   function buildRealGalaxy(){
       if(!structureGroup||!level3d)return;
-      galaxfx.planets.length=0;
+      galaxfx.planets.length=0; galaxfx.dust=null; galaxfx.santa=null;
+      galaxfx.satellites.length=0;
+      try{ if(galaxfx.satGroup&&galaxfx.satGroup.parent) galaxfx.satGroup.parent.remove(galaxfx.satGroup); }catch(e){}
+      galaxfx.satGroup=null;
       // Multiple planets around the scene — varied colors/sizes, some with rings & moons
       var defs=[
         [-190,-60,-300,34,'#1e5a8a','#3a8fd0',true],   // big blue gas giant w/ ring
@@ -5329,6 +5313,69 @@
         }
         galaxfx.planets.push({g:grp,sp:.02+i*.006});
       });
+      // 🎅 Santa Claus on his sleigh with a sheep - orbiting above the solar system
+      try{
+        var santa=new THREE.Group();
+        var red=new THREE.MeshStandardMaterial({color:'#d32f2f',roughness:.6,metalness:.08,emissive:'#3a0000',emissiveIntensity:.2});
+        var white=new THREE.MeshStandardMaterial({color:'#f7f7f7',roughness:.95});
+        var gold=new THREE.MeshStandardMaterial({color:'#ffd54f',metalness:.7,roughness:.25});
+        var dark=new THREE.MeshStandardMaterial({color:'#2b2b2b',roughness:.9});
+        // sleigh / cart
+        var cart=new THREE.Mesh(new THREE.BoxGeometry(6,1.5,3),red); cart.userData.v9=true; santa.add(cart);
+        var backrest=new THREE.Mesh(new THREE.BoxGeometry(1,2.6,3),red); backrest.position.set(-2.6,1,0); backrest.userData.v9=true; santa.add(backrest);
+        [-1.5,1.5].forEach(function(z){
+          var runner=new THREE.Mesh(new THREE.TorusGeometry(3.3,.14,6,22,Math.PI),gold);
+          runner.rotation.z=Math.PI/2; runner.rotation.y=Math.PI/2; runner.position.set(0,-1.1,z);
+          runner.userData.v9=true; santa.add(runner);
+        });
+        // Santa body
+        var torso=new THREE.Mesh(new THREE.CylinderGeometry(1,.85,2.2,10),red); torso.position.set(.3,1.7,0); torso.userData.v9=true; santa.add(torso);
+        var belt=new THREE.Mesh(new THREE.TorusGeometry(.92,.14,6,14),dark); belt.rotation.x=Math.PI/2; belt.position.set(.3,1.35,0); belt.userData.v9=true; santa.add(belt);
+        var head=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),new THREE.MeshStandardMaterial({color:'#ffc99a',roughness:.9}));
+        head.position.set(.3,3.1,0); head.userData.v9=true; santa.add(head);
+        var hat=new THREE.Mesh(new THREE.ConeGeometry(.78,1.2,10),red); hat.position.set(.3,4,0); hat.userData.v9=true; santa.add(hat);
+        var pom=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),white); pom.position.set(.3,4.65,0); pom.userData.v9=true; santa.add(pom);
+        var beard=new THREE.Mesh(new THREE.SphereGeometry(.48,10,8),white); beard.scale.set(1,1.2,.6);
+        beard.position.set(.3,2.75,.45); beard.userData.v9=true; santa.add(beard);
+        [-.24,.24].forEach(function(dx){
+          var eye=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),new THREE.MeshBasicMaterial({color:'#222'}));
+          eye.position.set(.3+dx,3.2,.6); eye.userData.v9=true; santa.add(eye);
+        });
+        // 🐑 sheep riding with Santa
+        var sheep=new THREE.Group();
+        var wool=new THREE.Mesh(new THREE.SphereGeometry(.68,10,8),white); wool.scale.set(1.25,.9,1); wool.userData.v9=true; sheep.add(wool);
+        var face=new THREE.Mesh(new THREE.SphereGeometry(.32,8,6),dark); face.position.set(.75,.05,0); face.userData.v9=true; sheep.add(face);
+        for(var l=0;l<4;l++){
+          var leg=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.5,6),dark);
+          leg.position.set((l<2?.34:-.34),-.62,(l%2?.28:-.28)); leg.userData.v9=true; sheep.add(leg);
+        }
+        sheep.position.set(-1.3,1.2,1); sheep.userData.v9=true; santa.add(sheep);
+        santa.userData.sheep=sheep;
+        var halo=new THREE.Mesh(new THREE.SphereGeometry(5.5,12,10),
+          new THREE.MeshBasicMaterial({color:'#ffcf6b',transparent:true,opacity:.05,side:THREE.BackSide,depthWrite:false,fog:false}));
+        halo.userData.v9=true; santa.add(halo);
+        santa.userData.v9=true; addO(santa); galaxfx.santa=santa;
+      }catch(e){}
+      // 🛰️ Many small satellites orbiting the solar system
+      try{
+        var satGroup=new THREE.Group();
+        var satBody=new THREE.MeshStandardMaterial({color:'#cfd6e6',metalness:.6,roughness:.35,emissive:'#1b2b4a',emissiveIntensity:.25});
+        var satPanel=new THREE.MeshStandardMaterial({color:'#2a5fb0',metalness:.3,roughness:.5,emissive:'#0e2a55',emissiveIntensity:.45});
+        var satDish=new THREE.MeshStandardMaterial({color:'#e8ecf5',metalness:.2,roughness:.6,side:THREE.DoubleSide});
+        for(var si=0;si<12;si++){
+          var sat=new THREE.Group();
+          var body=new THREE.Mesh(new THREE.BoxGeometry(.9,.7,.7),satBody); body.userData.v9=true; sat.add(body);
+          [-1,1].forEach(function(side){
+            var panel=new THREE.Mesh(new THREE.BoxGeometry(1.5,.06,.7),satPanel);
+            panel.position.x=side*1.2; panel.userData.v9=true; sat.add(panel);
+          });
+          var dish=new THREE.Mesh(new THREE.SphereGeometry(.35,8,6,0,Math.PI*2,0,Math.PI/2),satDish);
+          dish.position.y=.5; dish.userData.v9=true; sat.add(dish);
+          sat.userData.v9=true; satGroup.add(sat);
+          galaxfx.satellites.push({g:sat,r:115+si*17,y:-15+si*12,sp:.00011+si*.000016,ph:si*.7,zc:-140});
+        }
+        satGroup.userData.v9=true; addO(satGroup); galaxfx.satGroup=satGroup;
+      }catch(e){}
       // Galaxy dust clouds (colorful nebula points spread wide)
       try{
         var pts=[],cols=[];
@@ -5355,6 +5402,30 @@
           if(m){ var a=now/2500+i; m.position.set(Math.cos(a)*p.g.children[0].geometry.parameters.radius*2.2,0,Math.sin(a)*p.g.children[0].geometry.parameters.radius*2.2); }
         }
         if(galaxfx.dust) galaxfx.dust.rotation.y+=.0002;
+        for(var si=0;si<galaxfx.satellites.length;si++){
+          var st=galaxfx.satellites[si];
+          var a=now*st.sp+st.ph;
+          st.g.position.set(Math.cos(a)*st.r,st.y+Math.sin(a*2)*6,st.zc+Math.sin(a)*st.r*.6);
+          st.g.rotation.y=-a; st.g.rotation.z=Math.sin(now/1400+st.ph)*.14;
+        }
+        // 🔊 Galaxy ambience: cosmic hum, Santa's sleigh bells, sheep, and orbit whoosh.
+        try{
+          if(typeof soundOn!=='undefined'&&soundOn&&typeof snd==='function'){
+            var gt=Date.now();
+            if(!window.__galaxySnd) window.__galaxySnd={cosmic:0,sleigh:0,sheep:0,orbit:0};
+            if(gt-window.__galaxySnd.cosmic>15000){ snd('cosmic'); window.__galaxySnd.cosmic=gt; }
+            if(gt-window.__galaxySnd.sleigh>11000){ snd('sleigh'); window.__galaxySnd.sleigh=gt; }
+            if(gt-window.__galaxySnd.sheep>19000){ snd('sheep'); window.__galaxySnd.sheep=gt; }
+            if(gt-window.__galaxySnd.orbit>23000){ snd('orbit'); window.__galaxySnd.orbit=gt; }
+          }
+        }catch(e){}
+        if(galaxfx.santa){
+          var sa=now/9000;
+          galaxfx.santa.position.set(Math.cos(sa)*170,118+Math.sin(now/1800)*4,-120+Math.sin(sa)*120);
+          galaxfx.santa.rotation.y=-sa+Math.PI/2;
+          galaxfx.santa.rotation.z=Math.sin(now/2200)*.05;
+          if(galaxfx.santa.userData.sheep) galaxfx.santa.userData.sheep.rotation.z=Math.sin(now/900)*.12;
+        }
       }catch(e){}
     }
 
@@ -5459,31 +5530,8 @@
 
   // ===== PERFORMANCE GUARD: freeze static objects + adaptive detail =====
   var perfg={lastCheck:0,fps:60,low:0,frozen:false,hidden:[]};
-  function optimizeStatic(){
-    if(!structureGroup||perfg.frozen)return;
-    perfg.frozen=true;
-    var animated=new Set();
-    // collect all animated object ids from walkers, janitors, UFOs, particles
-    try{
-      if(typeof walkers!=='undefined') walkers.forEach(function(w){ [w.g,w.body,w.head,w.armL,w.armR,w.legL,w.legR,w.belly,w.tip].forEach(function(o){if(o)animated.add(o.id);}); });
-      if(typeof janfx!=='undefined'&&janfx.crew) janfx.crew.forEach(function(j){animated.add(j.g.id);animated.add(j.broom.id);animated.add(j.cart.id);});
-      if(typeof ufofx!=='undefined'&&ufofx.ships) ufofx.ships.forEach(function(u){animated.add(u.g.id);});
-      if(typeof civfx!=='undefined'&&civfx.ships) civfx.ships.forEach(function(sh){animated.add(sh.g.id);});
-      if(typeof maxfx!=='undefined'&&maxfx.hover) maxfx.hover.forEach(function(h){animated.add(h.g.id);});
-      if(typeof xmasfx!=='undefined'&&xmasfx.tree) animated.add(xmasfx.tree.id);
-      if(typeof maxfx!=='undefined'&&maxfx.drones) maxfx.drones.forEach(function(d){animated.add(d.g.id);});
-      if(typeof fx3d!=='undefined'){ fx3d.shooting&&fx3d.shooting.forEach(function(o){animated.add(o.id);}); }
-    }catch(e){}
-    // freeze everything not animated: skip per-frame matrix recomputation
-    var n=0;
-    structureGroup.traverse(function(o){
-      if(animated.has(o.id))return;
-      if(o.matrixAutoUpdate!==undefined) o.matrixAutoUpdate=false;
-      if(o.updateMatrix) o.updateMatrix();
-      n++;
-    });
-    perfg.frozenCount=n;
-  }
+  function optimizeStatic(){ /* disabled: freezing broke animations */ }
+
   function adaptiveDetail(now,dt){
     if(now-perfg.lastCheck<2000)return;
     perfg.lastCheck=now;
@@ -5509,6 +5557,34 @@
     });
   }
   function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
+
+
+  // ===== CINEMATIC LIGHTING + MATERIALS UPGRADE (perf-safe) =====
+  var cinefx={t:0};
+  function cinematicUpgrade(){
+    if(!structureGroup||!level3d)return;
+    // 1) Multi-layer key light (warm from one side, cool fill from other)
+    var key=new THREE.DirectionalLight(0xffeed0,.55); key.position.set(30,50,-20); key.userData.v9Light=true; addO(key);
+    var fill=new THREE.DirectionalLight(0x7fb8ff,.35); fill.position.set(-30,30,30); fill.userData.v9Light=true; addO(fill);
+    // 2) Studio rim light above Command (makes the hub pop)
+    var rim=new THREE.SpotLight(0xa99cff,1.2,0,Math.PI/3,.6); rim.position.set(0,20,0); rim.target.position.set(0,0,0);
+    rim.userData.v9Light=true; addO(rim); addO(rim.target);
+    // 3) Richer materials on island tops (subtle two-tone via vertex colors baked into canvas)
+    structureGroup.traverse(function(o){
+      if(!o.isMesh||!o.material||!o.material.color)return;
+      // brighten slightly all dark metal surfaces for depth
+      var h=o.material.color.getHex();
+      if(h===0x20242e||h===0x171a22||h===0x0d0d14){
+        if(o.material.emissive){o.material.emissive.set('#101a2c');o.material.emissiveIntensity=.2;}
+      }
+    });
+  }
+  function tickCinematic(now,dt){
+    try{
+      // very slow cinematic pulse on ambient (stays near .58 guard)
+      if(g&&g.amb) g.amb.intensity=.58+.03*Math.sin(now/7000);
+    }catch(e){}
+  }
 
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
@@ -5563,23 +5639,15 @@
     });
     // command bot belongs to hub zone 0
     walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
-    enhance3D();
-    maxEnhance();
-    buildCivilization();
-    buildAtmosphere();
-    buildJuice();
-    buildAlive();
-    buildJanitor();
-    buildMegaVisual();
-    buildSpecialtyBots();
-    buildUfoDelivery();
-    buildRealGalaxy();
-    buildFallingStars();
-    buildChristmas();
-    spaceRealism();
-    vibrantLayer();
+    // Start the living loop FIRST — a failing visual builder must never stop the robots.
     startWalkLoop();
-    setTimeout(optimizeStatic,3000);
+    // Each visual layer is isolated: one failure can't block the others.
+    [ ['enhance3D',enhance3D], ['maxEnhance',maxEnhance], ['buildCivilization',buildCivilization],
+      ['buildAtmosphere',buildAtmosphere], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
+      ['buildJanitor',buildJanitor], ['buildMegaVisual',buildMegaVisual], ['buildSpecialtyBots',buildSpecialtyBots],
+      ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy], ['buildFallingStars',buildFallingStars],
+      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['cinematicUpgrade',cinematicUpgrade]
+    ].forEach(function(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} });
     return true;
   }
 
