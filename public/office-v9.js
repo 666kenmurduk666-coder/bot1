@@ -3934,18 +3934,18 @@
     var teamName=(currentTeam&&currentTeam.name)||'TEAM';
     var body = new THREE.Group(); g.add(body);
     // BIG round belly (chibi), short body — dwarf proportions
-    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.4,metalness:.08,emissive:color,emissiveIntensity:.45}));
+    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid('#262d38',{roughness:.5,metalness:.42,emissive:'#0d1420',emissiveIntensity:.12}));
     torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
-    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.42,metalness:.06,emissive:color,emissiveIntensity:.5}));
+    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid('#303a47',{roughness:.55,metalness:.35,emissive:'#111925',emissiveIntensity:.1}));
     tummy.position.set(0,.42,.34); tummy.scale.set(1.32,1.05,.88); tummy.userData.v9=true; body.add(tummy);
     var belly = new THREE.Mesh(new THREE.CircleGeometry(.32,12), solid('#1a2740',{emissive:'#ff9a3c',emissiveIntensity:.8}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
-    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.38,metalness:.08,emissive:color,emissiveIntensity:.42}));
+    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid('#2b333f',{roughness:.45,metalness:.4,emissive:'#0f1622',emissiveIntensity:.1}));
     skull.userData.v9=true; head.add(skull);
     // 🤖 CYBORG: half metal face plate, red glowing eye, spiky hair, shades
-    var metal=new THREE.MeshStandardMaterial({color:'#8c98a8',metalness:.8,roughness:.3});
+    var metal=new THREE.MeshStandardMaterial({color:'#525e6b',metalness:.85,roughness:.32});
     var plate=new THREE.Mesh(new THREE.SphereGeometry(.405,12,10,0,Math.PI,0,Math.PI),metal);
     plate.position.set(.06,.02,.01); plate.userData.v9=true; head.add(plate);
     var redEye=new THREE.Mesh(new THREE.SphereGeometry(.085,8,8),new THREE.MeshBasicMaterial({color:'#ff2a1f'}));
@@ -3973,7 +3973,7 @@
     var armL=new THREE.Group(); armL.position.set(-.56,.60,0); body.add(armL);
     var armR=new THREE.Group(); armR.position.set(.56,.60,0); body.add(armR);
     [armL,armR].forEach(function(a){
-      var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid(uniform,{roughness:.5})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
+      var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid('#39424f',{roughness:.5,metalness:.35})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
       var shoulder=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),metal); shoulder.position.set(0,.02,0); shoulder.userData.v9=true; a.add(shoulder);
       var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.28; hand.userData.v9=true; a.add(hand);
     });
