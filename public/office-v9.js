@@ -3940,6 +3940,8 @@
     tummy.position.set(0,.42,.34); tummy.scale.set(1.32,1.05,.88); tummy.userData.v9=true; body.add(tummy);
     var belly = new THREE.Mesh(new THREE.CircleGeometry(.32,12), solid('#1a2740',{emissive:'#ff9a3c',emissiveIntensity:.8}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
+    var bellyRing=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,20),solid(color,{emissive:color,emissiveIntensity:1.1,metalness:.4}));
+    bellyRing.position.set(0,.44,.64); bellyRing.userData.v9=true; body.add(bellyRing);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
     var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid('#2b333f',{roughness:.45,metalness:.4,emissive:'#0f1622',emissiveIntensity:.1}));
@@ -3952,16 +3954,18 @@
     redEye.position.set(.15,.07,.38); redEye.userData.v9=true; head.add(redEye);
     var shades=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.05),new THREE.MeshStandardMaterial({color:'#12151d',metalness:.4,roughness:.2}));
     shades.position.set(0,.07,.40); shades.userData.v9=true; head.add(shades);
-    for(var hi=0;hi<5;hi++){
+    for(var hi=0;hi<7;hi++){
       var spike=new THREE.Mesh(new THREE.ConeGeometry(.10,.26,5),new THREE.MeshStandardMaterial({color:'#181b24',roughness:.8}));
       spike.position.set(-.24+hi*.12,.38+((hi%2)?-.03:.05),0); spike.rotation.z=(hi-2)*.18;
       spike.userData.v9=true; head.add(spike);
     }
     [-1,1].forEach(function(s){
-      var e=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6), solid('#0b1020'));
-      e.position.set(s*.13,.05,.35); e.userData.v9=true; head.add(e);
-      var glint=new THREE.Mesh(new THREE.SphereGeometry(.026,6,6), solid('#ffffff'));
-      glint.position.set(s*.13-.012,.075,.40); glint.userData.v9=true; head.add(glint);
+      var eyeW=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),solid('#f2f8ff',{roughness:.35}));
+      eyeW.position.set(s*.145,.05,.345); eyeW.userData.v9=true; head.add(eyeW);
+      var iris=new THREE.Mesh(new THREE.SphereGeometry(.055,8,8),solid(s>0?'#ff3a2f':'#6fd8ff',{emissive:s>0?'#ff2a1f':'#4fc8ff',emissiveIntensity:1.1}));
+      iris.position.set(s*.145,.05,.425); iris.userData.v9=true; head.add(iris);
+      var glint=new THREE.Mesh(new THREE.SphereGeometry(.02,6,6),solid('#ffffff'));
+      glint.position.set(s*.145-.018,.075,.46); glint.userData.v9=true; head.add(glint);
     });
     var smile=new THREE.Mesh(new THREE.TorusGeometry(.12,.022,6,12,Math.PI), solid('#101826'));
     smile.rotation.z=Math.PI; smile.position.set(0,-.09,.37); smile.userData.v9=true; head.add(smile);
@@ -3974,7 +3978,8 @@
     var armR=new THREE.Group(); armR.position.set(.56,.60,0); body.add(armR);
     [armL,armR].forEach(function(a){
       var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid('#39424f',{roughness:.5,metalness:.35})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
-      var shoulder=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),metal); shoulder.position.set(0,.02,0); shoulder.userData.v9=true; a.add(shoulder);
+      var shoulder=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),metal); shoulder.position.set(0,.02,0); shoulder.userData.v9=true; a.add(shoulder);
+      var trim=new THREE.Mesh(new THREE.TorusGeometry(.13,.02,6,12),solid(color,{emissive:color,emissiveIntensity:1.0})); trim.rotation.x=Math.PI/2; trim.position.y=.06; trim.userData.v9=true; a.add(trim);
       var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.28; hand.userData.v9=true; a.add(hand);
     });
     // SHORT stubby legs (dwarf)
@@ -3982,7 +3987,8 @@
     var legR=new THREE.Group(); legR.position.set(.22,.30,0); g.add(legR);
     [legL,legR].forEach(function(l){
       var shin=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.24,8),solid('#2a4a7a',{roughness:.85})); shin.position.y=-.11; shin.userData.v9=true; l.add(shin);
-      var foot=new THREE.Mesh(new THREE.BoxGeometry(.30,.16,.42),solid('#4a5262',{metalness:.45,roughness:.4})); foot.position.set(0,-.27,.08); foot.userData.v9=true; l.add(foot);
+      var foot=new THREE.Mesh(new THREE.BoxGeometry(.32,.18,.44),solid('#3f4856',{metalness:.5,roughness:.35})); foot.position.set(0,-.28,.09); foot.userData.v9=true; l.add(foot);
+      var toe=new THREE.Mesh(new THREE.BoxGeometry(.30,.07,.14),solid(color,{emissive:color,emissiveIntensity:.5,metalness:.4})); toe.position.set(0,-.30,.28); toe.userData.v9=true; l.add(toe);
     });
     // ---- ROLE-SPECIFIC ACCESSORIES ----
     if(role==='boss'){
@@ -4227,9 +4233,9 @@
   function refIsland(cx,cz,R,color,title,agents) {
     currentTeam={name:title,color:color};
     // SOLID GROUND: thick slab + visible top surface so robots stand on real floor
-    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#171a22',{roughness:.75,metalness:.15}));
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#080a0f',{roughness:.7,metalness:.2}));
     slab.position.set(cx,-.6,cz); slab.userData.v9=true; addO(slab);
-    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#20242e',{roughness:.8,metalness:.12,side:THREE.DoubleSide}));
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#030406',{roughness:.55,metalness:.28,side:THREE.DoubleSide}));
     top.rotation.x=-Math.PI/2; top.position.set(cx,.01,cz); top.userData.v9=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
     rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
@@ -5838,7 +5844,7 @@
       stars.userData.v9=true; addO(stars);
     }catch(e){}
     // Command hub (octagon)
-    var hub=new THREE.Mesh(new THREE.CylinderGeometry(10.5,9.5,.7,16),solid('#2c2740',{roughness:.68,metalness:.16}));
+    var hub=new THREE.Mesh(new THREE.CylinderGeometry(10.5,9.5,.7,16),solid('#0a0910',{roughness:.6,metalness:.25}));
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; addO(hub);
     var hr=new THREE.Mesh(new THREE.TorusGeometry(10.6,.07,8,16),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);

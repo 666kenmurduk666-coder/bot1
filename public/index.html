@@ -329,11 +329,6 @@ if(window.__OFFICE_LOCKED){
         </div>
         <div id="mmoChatResize" title="I-drag para baguhin ang laki"></div>
       </div>
-      <!-- Always-visible audio controls (works in UI-hidden / full-screen mode) -->
-      <div id="audioDock" style="position:fixed;right:10px;bottom:10px;z-index:9999;display:flex;gap:6px;background:rgba(9,16,34,.88);border:1px solid #3a6bb5;border-radius:9px;padding:5px;box-shadow:0 3px 12px #0009;backdrop-filter:blur(3px)">
-        <button id="sfxDock" data-no-sfx title="Sound effects on/off" style="background:#1c2b49;border:1px solid #3a6bb5;color:#e6ecf7;border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer">🔊 Sounds</button>
-        <button id="voiceDock" data-no-sfx title="Bot voice on/off" style="background:#1c2b49;border:1px solid #3a6bb5;color:#e6ecf7;border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer">🗣️ Voice</button>
-      </div>
     </div>
       <div id="eventShowCard" style="display:none;position:absolute;right:10px;bottom:52px;z-index:14;width:220px;max-width:62vw;background:rgba(9,17,35,.78);border:1px solid rgba(201,162,39,.65);border-radius:10px;padding:7px 9px;color:#e9edf7;font-size:10px;box-shadow:0 3px 14px #0007">
         <div style="font-weight:700;color:#ffd34d;font-size:10px">🎤 LIVE EVENT STAGE</div>
@@ -368,8 +363,6 @@ if(window.__OFFICE_LOCKED){
           <button id="auto" class="ceoOnly">⏸ Pause 24/7 mode</button>
           <button class="reloadBtn" title="I-clear ang cache at i-reload ang dashboard">🔄 Reload UI</button>
           <button id="xray">👁 Silip</button>
-          <button id="sfx">🔊 Sounds</button>
-          <button id="voice" title="I-on ang actual na boses ng bots">🗣️ Voice</button>
         </div>
         <div class="bar" id="officeTools" style="flex-wrap:wrap"></div>
         <div id="healthBanner" style="display:none;margin:8px 0;padding:8px 10px;border-radius:9px;background:#4a2b12;border:1px solid #b97a2b;color:#ffd9a0;font-size:12px">
@@ -685,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=208"></script>
+<script src="/office-v9.js?v=212"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1308,16 +1301,16 @@ const xrayApply=()=>{
   });
 };
 $('xray').onclick=()=>{xrayOn=!xrayOn;$('xray').textContent=xrayOn?'👁 Normal view':'👁 Silip';xrayApply();toast(xrayOn?'X-ray: makikita mo na ang loob ng mga building!':'Balik sa normal view')};
-$('sfx').onclick=()=>{
+if($('sfx'))$('sfx').onclick=()=>{
   soundOn=!soundOn;
   const label=soundOn?'🔊 Sounds':'🔇 Mute';
-  $('sfx').textContent=label;
+  if($('sfx'))$('sfx').textContent=label;
   if($('sfxDock'))$('sfxDock').textContent=label;
   toast(soundOn?'Sound effects: ON! ✨':'Sound effects: mute ✨');
 };
-$('voice').onclick=toggleVoice;
-$('sfxDock').onclick=()=>$('sfx').click();
-$('voiceDock').onclick=toggleVoice;
+if($('voice'))$('voice').onclick=toggleVoice;
+if($('sfxDock')&&$('sfx'))$('sfxDock').onclick=()=>$('sfx').click();
+if($('voiceDock'))$('voiceDock').onclick=toggleVoice;
 // chat typing sound disabled
 
 // ⚙️ Controls — iisa ang toggle, hindi na puno ang bar sa baba
