@@ -89,6 +89,12 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
    nag-aanimate → compositor ang gumagawa, hindi buong pahina ang repaint. */
 #audioDock::after,#eventShowCard.live::after{content:'';position:absolute;inset:-3px;border-radius:inherit;pointer-events:none;animation:glowBreath 4.2s ease-in-out infinite;will-change:opacity}
 #audioDock::after{box-shadow:0 0 0 2px #7fc7ff55,0 3px 18px #7fc7ff44}
+#audioDock,#sfxDock,#sfx,#voice{display:none!important}
+/* Watercooler talk panel removed - World Chat + comic bubbles stay */
+/* CEO password change button removed from UI */
+#changePw{display:none!important}
+div.card:has(#convFeed){display:none!important}
+#convFeed,#genConv{display:none!important}
 #eventShowCard.live::after{box-shadow:0 0 0 3px #ffd34d33,0 3px 24px #ffb64866}
 #eventShowCard.live>div:first-child{animation:glowBreath 1.6s ease-in-out infinite alternate}
 .toast{animation:toastIn .28s cubic-bezier(.2,.9,.3,1) both}
@@ -111,7 +117,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 .v9bub:after{border-top-color:#2f6f9e}
 .v9bub.talking:after{border-top-color:#ffb648}
 /* MMORPG world chat */
-#mmoChat{position:absolute;left:10px;bottom:10px;width:min(300px,60%);height:124px;min-width:200px;max-width:min(560px,90%);min-height:96px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
+#mmoChat{position:absolute;left:10px;bottom:10px;width:min(400px,86vw);height:172px;min-width:280px;max-width:min(560px,92vw);min-height:150px;max-height:68vh;z-index:9998;background:rgba(9,16,34,.9);border:1px solid #3a6bb5;border-radius:9px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 3px 12px #0009;pointer-events:auto;backdrop-filter:blur(3px)}
 #mmoChat.min{height:24px!important;min-height:0!important;width:auto!important;min-width:0!important;max-width:none!important}
 #mmoChat.min #mmoChatHead{padding:2px 6px;font-size:11px}
 #mmoChat.min #mmoChatFull,#mmoChat.min #mmoChatHint,#mmoChat.min #mmoChatSize,#mmoChat.min #mmoChatMin,#mmoChat.min #mmoChatBody,#mmoChat.min #mmoChatResize{display:none}
@@ -161,10 +167,13 @@ body.ui-hidden #oc3d canvas{width:100%!important;height:100%!important}
 #uiHideBtn{background:linear-gradient(135deg,#3f5f8a,#2f5fa8);color:#fff;font-weight:700}
 #mmoChatHead{display:flex;align-items:center;gap:4px;padding:3px 6px;background:linear-gradient(90deg,#16325d,#102342);color:#cfe0ff;font-size:10px;font-weight:700;cursor:pointer;user-select:none}
 #mmoChatBody{flex:1;display:flex;flex-direction:column;min-height:0}
-#mmoChatLog{flex:1;overflow:auto;padding:3px 6px;font-size:11px;line-height:1.35;color:#d9e6ff;scrollbar-width:thin}
+#mmoChatLog{flex:1;overflow:auto;padding:5px 7px;font-size:12px;line-height:1.35;color:#d9e6ff;scrollbar-width:thin}
 #mmoChatLog b{color:#7fc7ff}
 #mmoChatFoot{display:flex;gap:4px;padding:3px 5px;border-top:1px solid #223a63}
-#mmoChatIn{flex:1;min-width:0;background:#0b1730;border:1px solid #2f5fa8;border-radius:6px;padding:3px 6px;color:#e9edf7;font-size:11px}
+#mmoChatIn{flex:1;min-width:0;background:#0b1730;border:1px solid #2f5fa8;border-radius:6px;padding:5px 7px;color:#e9edf7;font-size:12px}
+#mmoChatEmo{display:flex;gap:4px;padding:3px 6px;border-top:1px solid #223a63;flex-wrap:wrap}
+#mmoChatEmo button{background:#16294a;border:1px solid #33578f;border-radius:5px;color:#e6f0ff;font-size:13px;line-height:1;padding:3px 7px;cursor:pointer}
+#mmoChatEmo button:hover{background:#22406e}
 #mmoChatSend{padding:3px 7px;margin-right:11px;font-size:10px;font-weight:700;background:#e8622c;border-color:#e8622c;color:#fff}
 /* my workflows */
 .wfhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -310,10 +319,11 @@ if(window.__OFFICE_LOCKED){
         </div>
       </div>
       <!-- 💬 MMORPG WORLD CHAT -->
-      <div id="mmoChat" style="width:200px;height:100px" title="💬 World chat — pindutin ang – para mas maliit pa">
+      <div id="mmoChat" style="width:min(400px,86vw);height:172px" title="💬 World chat — pindutin ang – para mas maliit pa">
         <div id="mmoChatHead" title="Click para itago / ipakita"><span>💬 WORLD CHAT</span><span style="flex:1"></span><span id="mmoChatHint" style="font-weight:400;color:#9fb2d0;font-size:9px">Enter = mag-type</span><button id="mmoChatSize" title="Palitan ang laki" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:11px;line-height:14px">⤢</button><button id="mmoChatMin" title="Hide / show" style="background:transparent;border:0;color:#cfe0ff;padding:0 4px;font-size:12px;line-height:14px">–</button></div>
         <div id="mmoChatBody">
           <div id="mmoChatLog"></div>
+          <div id="mmoChatEmo"><button data-e="👍">👍</button><button data-e="❤️">❤️</button><button data-e="😄">😄</button><button data-e="🔥">🔥</button><button data-e="💡">💡</button><button data-e="🙌">🙌</button><button data-e="✅">✅</button></div>
           <div id="mmoChatFoot"><input id="mmoChatIn" maxlength="120" placeholder="Mag-type ng mensahe..." autocomplete="off"><button id="mmoChatSend" title="I-send">➤</button></div>
         </div>
         <div id="mmoChatResize" title="I-drag para baguhin ang laki"></div>
@@ -674,7 +684,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=181"></script>
+<script src="/office-v9.js?v=190"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1010,12 +1020,21 @@ function renderContentPipeline(){
 }
 function renderAgents(){
   $('agentSummary').textContent=(S.agents||[]).length+' agents · '+Object.keys(S.outputs||{}).length+' outputs ready · '+(S.running?'working…':'idle');
-  $('agentGrid').innerHTML=(S.agents||[]).map(a=>{
-    const out=(S.outputs||{})[a.id],rid=(S.replyIds||{})[a.id];
-    return '<div class="agent-card"><div class="top">'+icon(a)+'<div class="grow"><b>'+a.n+'</b><small style="display:block;color:var(--mut)">'+a.group+' · '+a.room+'</small></div><span class="status '+(out?(String(out).startsWith('ERROR')?'failed':'done'):'')+'">'+(out?'ready':'idle')+'</span></div>'+
-      '<p class="hint">'+a.desc+'</p><div class="out" style="max-height:110px">'+(out?esc(out):'No output yet.')+'</div>'+
-      '<div class="bar"><button data-run="'+a.id+'">▶️ Run</button>'+(rid?'<button data-rate="'+a.id+'|up">👍</button><button data-rate="'+a.id+'|down">👎</button>':'')+'</div></div>';
-  }).join('');
+  // Group agents by role for a cleaner view
+  var ROLE_LABEL={pipeline:'🎬 CONTENT PIPELINE',staff:'🧭 TEAM / STAFF','video editor':'✨ VIDEO EDITOR',content:'✍️ CONTENT TEAM'};
+  var groups={};
+  (S.agents||[]).forEach(function(a){var g=a.group||'staff';(groups[g]=groups[g]||[]).push(a);});
+  var html='';
+  Object.keys(groups).forEach(function(g){
+    html+='<h3 style="grid-column:1/-1;margin:14px 0 2px;font-size:14px;letter-spacing:1px;color:#7fc7ff;border-bottom:1px solid #2a3a56;padding-bottom:6px">'+(ROLE_LABEL[g]||esc(g.toUpperCase()))+'</h3>';
+    groups[g].forEach(function(a){
+      const out=(S.outputs||{})[a.id],rid=(S.replyIds||{})[a.id];
+      html+='<div class="agent-card"><div class="top">'+icon(a)+'<div class="grow"><b>'+a.n+'</b><small style="display:block;color:var(--mut)">'+esc(a.group||'')+' · '+esc(a.room||'')+'</small></div><span class="status '+(out?(String(out).startsWith('ERROR')?'failed':'done'):'')+'">'+(out?'ready':'idle')+'</span></div>'+
+        '<p class="hint">'+a.desc+'</p><div class="out" style="max-height:110px">'+(out?esc(out):'No output yet.')+'</div>'+
+        '<div class="bar"><button data-run="'+a.id+'">▶️ Run</button>'+(rid?'<button data-rate="'+a.id+'|up">👍</button><button data-rate="'+a.id+'|down">👎</button>':'')+'</div></div>';
+    });
+  });
+  $('agentGrid').innerHTML=html;
   document.querySelectorAll('[data-run]').forEach(b=>b.onclick=async()=>{toast(meta(b.dataset.run).n+' working…');const r=await api('/api/agent',{method:'POST',body:JSON.stringify({id:b.dataset.run})});toast(r.ok?'Done':'Error: '+r.error);await refresh()});
   document.querySelectorAll('[data-rate]').forEach(b=>b.onclick=async()=>{const [id,rt]=b.dataset.rate.split('|');const r=await api('/api/feedback',{method:'POST',body:JSON.stringify({agent:id,rating:rt,tags:[rt==='up'?'helpful':'unhelpful']})});toast(r.ok?'Rated '+rt:'Failed: '+r.error)});
 }
@@ -1495,6 +1514,22 @@ function bandBeat(){
   g2.gain.setValueAtTime(.13,t);g2.gain.exponentialRampToValueAtTime(.001,t+.15);o2.start(t);o2.stop(t+.15);
 }
 document.addEventListener('mousedown',ensureAC);document.addEventListener('touchstart',ensureAC);
+/* 🌌 Outer-space ambience - starts after first interaction, no buttons needed. */
+var spaceAmb=null;
+function startSpaceAmbience(){
+  if(!soundOn||spaceAmb)return;
+  ensureAC(); if(!AC)return;
+  try{
+    var g=AC.createGain(); g.gain.value=.016; g.connect(AC.destination);
+    var a1=AC.createOscillator(); a1.type='sine'; a1.frequency.value=56; a1.connect(g); a1.start();
+    var a2=AC.createOscillator(); a2.type='sine'; a2.frequency.value=84; a2.connect(g); a2.start();
+    var lfo=AC.createOscillator(); lfo.type='sine'; lfo.frequency.value=.06;
+    var lg=AC.createGain(); lg.gain.value=.006; lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    spaceAmb={g:g,a1:a1,a2:a2,lfo:lfo};
+  }catch(e){}
+}
+document.addEventListener('mousedown',startSpaceAmbience);
+document.addEventListener('touchstart',startSpaceAmbience);
 /* 🔊 Bot voices + light UI clicks (all synthesized, no audio files) */
 let lastBubbleSfx={k:'',t:0};
 function bubbleSfx(k,id){
@@ -5212,6 +5247,12 @@ function frame3D(){
 }
 
 /* 💬 World chat HUD handlers */
+document.querySelectorAll('#mmoChatEmo button').forEach(function(b){
+  b.addEventListener('click',function(){
+    const inp=$('mmoChatIn'); if(!inp)return;
+    inp.value=(inp.value+b.getAttribute('data-e')).slice(0,120); inp.focus();
+  });
+});
 $('mmoChatSend').onclick=mmoSend;
 $('mmoChatIn').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();mmoSend()}};
 const mmoToggle=()=>$('mmoChat').classList.toggle('min');
@@ -5221,8 +5262,8 @@ $('mmoChatHead').onclick=mmoToggle;
 (()=>{
   const box=$('mmoChat'),grip=$('mmoChatResize'),sz=$('mmoChatSize');
   if(!box||!grip||!sz)return;
-  const save=()=>{try{localStorage.setItem('mmoChatSize2',JSON.stringify({w:box.style.width,h:box.style.height}))}catch(e){}};
-  try{const v=JSON.parse(localStorage.getItem('mmoChatSize2')||'null');
+  const save=()=>{try{localStorage.setItem('mmoChatSize3',JSON.stringify({w:box.style.width,h:box.style.height}))}catch(e){}};
+  try{const v=JSON.parse(localStorage.getItem('mmoChatSize3')||'null');
     if(v&&v.w&&v.h){box.style.width=v.w;box.style.height=v.h;}}catch(e){}
   let drag=false,sx=0,sy=0,sw=0,sh=0;
   grip.addEventListener('pointerdown',e=>{

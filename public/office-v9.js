@@ -4274,16 +4274,22 @@
   // ===== MAX ENHANCEMENT LAYER =====
   var maxfx = { drones:[], scanners:[], billboards:[], rings:[] };
   function dataPanelTexture(color, title, rows){
-    var c=document.createElement('canvas'); c.width=256; c.height=192;
+    var c=document.createElement('canvas'); c.width=512; c.height=512;
     var q=c.getContext('2d');
-    q.fillStyle='#050a12'; q.fillRect(0,0,256,192);
-    q.strokeStyle=color; q.lineWidth=3; q.strokeRect(4,4,248,184);
-    q.fillStyle='#132238'; q.fillRect(8,8,240,26);
-    q.fillStyle=color; q.font='bold 26px Consolas,monospace'; q.textAlign='left';
-    q.fillText('TERMINAL // '+title.slice(0,12),14,28);
-    q.fillStyle='#3dff9e'; q.font='22px Consolas,monospace';
-    ['> system online','> agents linked','> sync active','> pipeline ok','> ready_'].forEach(function(r,i){ q.fillText(r,16,62+i*34); });
-    q.fillStyle=color; q.fillRect(16,170,10,10); q.fillText('_',34,180);
+    q.fillStyle='#050a12'; q.fillRect(0,0,512,512);
+    var grd=q.createLinearGradient(0,0,0,512); grd.addColorStop(0,'#0d2b4a'); grd.addColorStop(1,'#070c18');
+    q.fillStyle=grd; q.fillRect(0,0,512,512);
+    q.strokeStyle=color; q.lineWidth=4; q.strokeRect(6,6,500,500);
+    q.fillStyle=color; q.font='bold 62px Arial Black, Arial'; q.textAlign='left'; q.textBaseline='middle';
+    q.shadowColor=color; q.shadowBlur=18;
+    q.fillText(title||'CYBEE', 26, 62, 460);
+    q.shadowBlur=0;
+    q.fillStyle='rgba(255,255,255,.75)'; q.font='bold 24px Arial';
+    q.fillText('MGA ULAT NG OPISINA  ·  LIVE', 28, 112, 450);
+    q.fillStyle='rgba(255,255,255,.2)'; q.fillRect(24,140,464,2);
+    q.fillStyle='#7cf0c8'; q.font='bold 25px Arial';
+    (rows||[]).slice(0,12).forEach(function(r,i){ q.fillText(r, 30, 174+i*28, 450); });
+    q.fillStyle=color; q.fillRect(24,486,12,12);
     return new THREE.CanvasTexture(c);
   }
   function maxEnhance(){
@@ -4320,12 +4326,14 @@
         maxfx.rings.push(ring);
         animParts.push({m:ring,k:i?'spinFlatR':'spinFlat',s:.2+i*.1});
       });
-      // --- holographic data billboard floating above island ---
-      var rows=di===0?['REACH  +12%','POSTS  3/3','LEADS  24']:di===1?['TREND  LIVE','SIGNAL OK','REPORT  READY']:di===2?['AGENTS  13/13','UPTIME  99%','SECURE  YES']:di===3?['BANK  MATCHED','PAYROLL READY','FLAGS  0']:['MSGS   18','HAPPY  92%','TEAM   OK'];
-      var panel=new THREE.Mesh(new THREE.PlaneGeometry(9.0,6.75),
-        new THREE.MeshBasicMaterial({map:dataPanelTexture(col,nm,rows),transparent:true,opacity:.82,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      panel.position.set(x*2.3, 5.5, z*2.3); panel.userData.v9 = true; addO(panel);
-      maxfx.billboards.push(panel);
+      // --- iisang malaking CYBEE report screen, nakaharap sa mga bot ---
+      if(di===0){
+        var rows=['Abot  +12%','Mga post  3/3','Leads  24','Trend  LIVE','Ulat  HANDA','Ahente  13/13','Uptime  99%','Seguro  OO','Bayaran  HANDA','Mensahe  18','Masaya  92%','Team  OK'];
+        var panel=new THREE.Mesh(new THREE.PlaneGeometry(18,18),
+          new THREE.MeshBasicMaterial({map:dataPanelTexture('#63e6ff','CYBEE',rows),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+        panel.position.set(0,9,-14); panel.userData.v9=true; addO(panel);
+        maxfx.billboards.push(panel);
+      }
       // --- scanner beam sweeping above island ---
       var beam=new THREE.Mesh(new THREE.ConeGeometry(1.5,4,12,1,true),
         new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.10,side:THREE.DoubleSide,depthWrite:false,fog:false}));
@@ -4588,7 +4596,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt);  tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);  tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -5688,6 +5696,50 @@
   }
   function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
 
+  // ===== 🤖 AI OPTIMIZER: specs-based quality, downgrade only (strong = unchanged) =====
+  var aiOpt={tier:'high',score:0,applied:false,last:0,lowStreak:0};
+  function aiDetectSpecs(){
+    var ua=navigator.userAgent||'';
+    var mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    var cores=navigator.hardwareConcurrency||4;
+    var mem=navigator.deviceMemory||4;
+    var w=window.innerWidth||1920,h=window.innerHeight||1080;
+    var score=0;
+    if(mobile) score+=3;
+    if(cores<=4) score+=2; else if(cores<=8) score+=1;
+    if(mem<=4) score+=2; else if(mem<=8) score+=1;
+    if(w<900||h<600) score+=1;
+    return score;
+  }
+  function aiApplyTier(tier){
+    if(aiOpt.tier===tier&&aiOpt.applied)return;
+    aiOpt.tier=tier; aiOpt.applied=true;
+    // Strong device: leave everything exactly as-is.
+    if(tier==='high'){ window.__officeDetail='high'; applyDetailLevel(true); return; }
+    window.__officeDetail = tier==='low'?'low':'high';
+    applyDetailLevel(true);
+    if(tier==='low'){
+      try{ if(renderer3d&&renderer3d.setPixelRatio) renderer3d.setPixelRatio(.8); }catch(e){}
+      try{
+        [fx.dust,fx.pets,fx.outfits].forEach(function(o){ if(o&&o.visible!==undefined)o.visible=false; });
+        if(perfg.low<1){perfg.low=1;hideTinyDetails();}
+      }catch(e){}
+    }
+  }
+  function aiOptimizeTick(now,dt){
+    if(now-(aiOpt.last||0)<3000)return;
+    aiOpt.last=now;
+    if(!aiOpt.applied){
+      aiOpt.score=aiDetectSpecs();
+      aiApplyTier(aiOpt.score>=5?'low':aiOpt.score>=3?'medium':'high');
+      return;
+    }
+    if(aiOpt.tier==='high')return; // malakas: walang binabago kahit magbago ang FPS
+    var fps=dt>0?1/dt:60;
+    if(fps<24)aiOpt.lowStreak++; else aiOpt.lowStreak=0;
+    if(aiOpt.lowStreak>=3&&aiOpt.tier!=='low'){aiOpt.lowStreak=0;aiApplyTier('low');}
+  }
+
 
   // ===== CINEMATIC LIGHTING + MATERIALS UPGRADE (perf-safe) =====
   var cinefx={t:0};
@@ -5720,7 +5772,7 @@
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
     var CX=0, CZ=0;
-    navAddZone(0,0,6.2);   // Command hub = zone 0 (bridge crossroads)
+    navAddZone(0,0,10.5);  // Command hub = zone 0 (bigger floor so bots stay on solid ground)
     // dark outer-space floor so nothing falls
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#000000',{roughness:1,metalness:0}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
@@ -5733,9 +5785,9 @@
       stars.userData.v9=true; addO(stars);
     }catch(e){}
     // Command hub (octagon)
-    var hub=new THREE.Mesh(new THREE.CylinderGeometry(6.2,5.6,.7,8),solid('#2c2740',{roughness:.68,metalness:.16}));
+    var hub=new THREE.Mesh(new THREE.CylinderGeometry(10.5,9.5,.7,16),solid('#2c2740',{roughness:.68,metalness:.16}));
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; addO(hub);
-    var hr=new THREE.Mesh(new THREE.TorusGeometry(6.25,.07,8,8),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
+    var hr=new THREE.Mesh(new THREE.TorusGeometry(10.6,.07,8,16),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
@@ -5772,12 +5824,19 @@
     // Start the living loop FIRST — a failing visual builder must never stop the robots.
     startWalkLoop();
     // Each visual layer is isolated: one failure can't block the others.
-    [ ['enhance3D',enhance3D], ['maxEnhance',maxEnhance], ['buildCivilization',buildCivilization],
+    var layers=[ ['enhance3D',enhance3D], ['maxEnhance',maxEnhance], ['buildCivilization',buildCivilization],
       ['buildAtmosphere',buildAtmosphere], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
       ['buildJanitor',buildJanitor], ['buildMegaVisual',buildMegaVisual], ['buildSpecialtyBots',buildSpecialtyBots],
       ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy], ['buildFallingStars',buildFallingStars],
-      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['cinematicUpgrade',cinematicUpgrade]
-    ].forEach(function(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} });
+      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['cinematicUpgrade',cinematicUpgrade] ];
+    function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
+    // ⚡ First open: build only the 3 essential layers now; defer the rest one per
+    // idle callback so the page becomes interactive immediately (no first-open lag).
+    layers.slice(0,3).forEach(runLayer);
+    var rest=layers.slice(3), li=0;
+    var idle=window.requestIdleCallback||function(cb){ setTimeout(cb,24); };
+    function nextLayer(){ if(li>=rest.length)return; runLayer(rest[li++]); idle(nextLayer); }
+    idle(function(){ idle(nextLayer); });
     return true;
   }
 
@@ -5846,6 +5905,7 @@
   // the camera zooms out. A deterministic stack pass keeps them from colliding
   // even inside a narrow office panel.
   function updateBubbles(now) {
+
     var conv = currentConv(), lines = null, start = 0;
     // Keep comic bubbles on screen even if a scheduled AI refresh gets skipped
     // (busy task / low quota). The server refreshes every 3 min now, so the
