@@ -5743,6 +5743,53 @@
 
   // ===== CINEMATIC LIGHTING + MATERIALS UPGRADE (perf-safe) =====
   var cinefx={t:0};
+  // 🎬 UE-style look using only supported WebGL features (no ray tracing / no shadow maps)
+  function unrealStyle(){
+    if(!structureGroup||!level3d)return;
+    // 1) filmic + sRGB color pipeline (cinematic tone response)
+    try{
+      if(renderer3d){
+        if(THREE.ACESFilmicToneMapping!==undefined) renderer3d.toneMapping=THREE.ACESFilmicToneMapping;
+        if(THREE.SRGBColorSpace!==undefined && renderer3d.outputColorSpace!==undefined) renderer3d.outputColorSpace=THREE.SRGBColorSpace;
+        else if(THREE.sRGBEncoding!==undefined) renderer3d.outputEncoding=THREE.sRGBEncoding;
+      }
+    }catch(e){}
+    // 2) cheap procedural cube env map for realistic reflections on metal surfaces
+    try{
+      var faces=[];
+      for(var i=0;i<6;i++){
+        var cv=document.createElement('canvas'); cv.width=64; cv.height=64;
+        var q=cv.getContext('2d');
+        var g=q.createLinearGradient(0,0,0,64);
+        g.addColorStop(0,'#2d4262'); g.addColorStop(.45,'#12213a'); g.addColorStop(1,'#050a14');
+        q.fillStyle=g; q.fillRect(0,0,64,64);
+        q.fillStyle='rgba(150,215,255,.28)'; q.fillRect(0,6,64,7);
+        q.fillStyle='rgba(255,205,150,.14)'; q.fillRect(0,40,64,4);
+        faces.push(cv);
+      }
+      var env=new THREE.CubeTexture(faces); env.needsUpdate=true;
+      structureGroup.traverse(function(o){
+        if(!o.isMesh||!o.material)return;
+        var ms=Array.isArray(o.material)?o.material:[o.material];
+        ms.forEach(function(m){
+          if(!m)return;
+          if(m.metalness!==undefined&&m.metalness>.18){
+            m.envMap=env; if(m.envMapIntensity!==undefined)m.envMapIntensity=.35; m.needsUpdate=true;
+          }
+        });
+      });
+    }catch(e){}
+    // 3) subtle PBR tuning on dark floor/structures (no extra lights)
+    try{
+      structureGroup.traverse(function(o){
+        if(!o.isMesh||!o.material||!o.material.color)return;
+        var h=o.material.color.getHex();
+        if(h===0x20242e||h===0x171a22||h===0x0d0d14){
+          o.material.roughness=.62; o.material.metalness=.22;
+        }
+      });
+    }catch(e){}
+  }
   function cinematicUpgrade(){
     if(!structureGroup||!level3d)return;
     // 1) Multi-layer key light (warm from one side, cool fill from other)
@@ -5828,7 +5875,7 @@
       ['buildAtmosphere',buildAtmosphere], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
       ['buildJanitor',buildJanitor], ['buildMegaVisual',buildMegaVisual], ['buildSpecialtyBots',buildSpecialtyBots],
       ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy], ['buildFallingStars',buildFallingStars],
-      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['cinematicUpgrade',cinematicUpgrade] ];
+      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: build only the 3 essential layers now; defer the rest one per
     // idle callback so the page becomes interactive immediately (no first-open lag).
