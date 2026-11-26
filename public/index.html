@@ -70,7 +70,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 #oc{width:100%;max-width:900px;display:block;image-rendering:auto;border-radius:11px;box-shadow:0 0 30px #1b3a7a55}
 #oc3d{width:100%;height:clamp(520px,72vh,900px);min-height:460px;position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#a9b6c6,#7a899d);box-shadow:0 0 34px #243a5c55;border:1px solid #35527e;isolation:isolate}
 #oc3d canvas{display:block;width:100%;height:100%;touch-action:none}
-#v16Grade{position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;animation:v16Breath 12s ease-in-out infinite alternate;background:radial-gradient(ellipse 78% 68% at 50% 42%,rgba(255,244,220,.055) 0%,rgba(255,244,220,0) 42%,rgba(11,20,38,.13) 78%,rgba(5,10,22,.34) 100%),linear-gradient(180deg,rgba(130,180,230,.055),rgba(255,205,150,.035) 55%,rgba(20,35,60,.10))}
+#v16Grade{position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;animation:v16Breath 12s ease-in-out infinite alternate;background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(120,200,255,.07) 0%,rgba(90,140,220,0) 45%,rgba(6,12,28,.22) 80%,rgba(2,5,14,.5) 100%),linear-gradient(180deg,rgba(90,170,255,.09),rgba(150,110,230,.04) 50%,rgba(20,40,75,.16))}
 #v16Grade:after{content:'';position:absolute;inset:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
 @keyframes v16Breath{from{opacity:.88}to{opacity:1}}
 /* ⏱ 4D time-life — GPU-friendly: transform/opacity lang. Hindi na ginagamit ang
@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=215"></script>
+<script src="/office-v9.js?v=216"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];

@@ -4269,7 +4269,7 @@
     var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#080a0f',{roughness:.7,metalness:.2}));
     slab.position.set(cx,-.6,cz); slab.userData.v9=true; addO(slab);
     var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#030406',{roughness:.55,metalness:.28,side:THREE.DoubleSide}));
-    top.rotation.x=-Math.PI/2; top.position.set(cx,.01,cz); top.userData.v9=true; addO(top);
+    top.rotation.x=-Math.PI/2; top.position.set(cx,.01,cz); top.userData.v9=true; top.userData.v9Floor=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
     rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
     var n=agents.length;
@@ -5860,6 +5860,47 @@
     }catch(e){}
   }
 
+  // 🌌 X10000 visual upgrade - texture-only, ZERO extra draw calls
+  function enhancedVisuals(){
+    if(!structureGroup||!level3d)return;
+    // 1) Deep-space sky texture (nebula + stars) as scene background
+    try{
+      var sc=document.createElement('canvas'); sc.width=512; sc.height=512;
+      var q=sc.getContext('2d');
+      var g=q.createRadialGradient(256,200,20,256,256,380);
+      g.addColorStop(0,'#20345e'); g.addColorStop(.45,'#101d3a'); g.addColorStop(1,'#050812');
+      q.fillStyle=g; q.fillRect(0,0,512,512);
+      [[120,140,90,'rgba(80,140,230,.16)'],[380,180,110,'rgba(150,90,220,.13)'],[260,390,130,'rgba(40,180,190,.10)']].forEach(function(n){
+        var ng=q.createRadialGradient(n[0],n[1],0,n[0],n[1],n[2]);
+        ng.addColorStop(0,n[3]); ng.addColorStop(1,'rgba(0,0,0,0)');
+        q.fillStyle=ng; q.fillRect(0,0,512,512);
+      });
+      for(var i=0;i<160;i++){
+        var a=Math.random()*512,b=Math.random()*512,r=Math.random()*.9+.25;
+        q.fillStyle='rgba(220,238,255,'+(.25+Math.random()*.6)+')';
+        q.beginPath(); q.arc(a,b,r,0,Math.PI*2); q.fill();
+      }
+      var skyTex=new THREE.CanvasTexture(sc);
+      scene3d.background=skyTex;
+    }catch(e){}
+    // 2) Dark tech-grid floor texture (keeps black floor, adds detail)
+    try{
+      var fc=document.createElement('canvas'); fc.width=256; fc.height=256;
+      var f=fc.getContext('2d');
+      f.fillStyle='#06080d'; f.fillRect(0,0,256,256);
+      f.strokeStyle='rgba(110,180,240,.085)'; f.lineWidth=1;
+      for(var gx=0;gx<=256;gx+=32){f.beginPath();f.moveTo(gx,0);f.lineTo(gx,256);f.stroke();}
+      for(var gy=0;gy<=256;gy+=32){f.beginPath();f.moveTo(0,gy);f.lineTo(256,gy);f.stroke();}
+      f.strokeStyle='rgba(120,200,255,.16)'; f.lineWidth=2;
+      f.strokeRect(4,4,248,248);
+      var floorTex=new THREE.CanvasTexture(fc);
+      floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;
+      structureGroup.traverse(function(o){
+        if(!o.userData.v9Floor||!o.material||!o.material.color)return;
+        o.material.map=floorTex; o.material.color.set('#ffffff'); o.material.needsUpdate=true;
+      });
+    }catch(e){}
+  }
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
@@ -5878,7 +5919,7 @@
     }catch(e){}
     // Command hub (octagon)
     var hub=new THREE.Mesh(new THREE.CylinderGeometry(10.5,9.5,.7,16),solid('#0a0910',{roughness:.6,metalness:.25}));
-    hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; addO(hub);
+    hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
     var hr=new THREE.Mesh(new THREE.TorusGeometry(10.6,.07,8,16),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
@@ -5913,6 +5954,7 @@
     });
     // command bot belongs to hub zone 0
     walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
+    enhancedVisuals();
     // Start the living loop FIRST — a failing visual builder must never stop the robots.
     startWalkLoop();
     // Each visual layer is isolated: one failure can't block the others.
