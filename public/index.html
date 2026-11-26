@@ -93,6 +93,7 @@ input,textarea,select{width:100%;font:inherit;background:#12151e;color:var(--tx)
 /* Watercooler talk panel removed - World Chat + comic bubbles stay */
 /* CEO password change button removed from UI */
 #changePw{display:none!important}
+#toast{display:none!important}
 div.card:has(#convFeed){display:none!important}
 #convFeed,#genConv{display:none!important}
 #eventShowCard.live::after{box-shadow:0 0 0 3px #ffd34d33,0 3px 24px #ffb64866}
@@ -684,7 +685,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=191"></script>
+<script src="/office-v9.js?v=192"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -695,7 +696,7 @@ const MENU=[
  {s:'MANAGE',items:[['approvals','☑','Approvals','appr'],['dashboard','▣','Dashboard']]}
 ];
 let S=null,view='office',selItem=null,selRoom='hq',editRoom='hq',drag=null,selEditItem=null;
-function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',3200)}
+function toast(m){ return; } // all notifications disabled by CEO request
 /* 💬 MMORPG WORLD CHAT — chatbox sa loob ng 3D game */
 let mmoSpeech=null,mmoAnchor=null;
 /* 🎲 Shuffle-bag: hindi nauulit ang linya hangga't hindi pa nauubos ang pool.
