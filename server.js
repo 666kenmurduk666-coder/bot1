@@ -2551,7 +2551,7 @@ function send(res, code, body, type, cache) {
     'Cache-Control': cache === 'static' ? 'public, max-age=86400' : cache === 'html' ? 'no-cache' : 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8787 https://cybee-ph.netlify.app https://*.netlify.app"
+    "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8787 https://cybee-ph.netlify.app https://*.netlify.app https://cybee-ph.pages.dev https://*.pages.dev"
   };
   if (enc) { headers['Content-Encoding'] = enc; headers['Vary'] = 'Accept-Encoding'; headers['Content-Length'] = String(out.length); }
   res.writeHead(code, headers);
