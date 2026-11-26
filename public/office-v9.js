@@ -3942,6 +3942,16 @@
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     var bellyRing=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,20),solid(color,{emissive:color,emissiveIntensity:1.1,metalness:.4}));
     bellyRing.position.set(0,.44,.64); bellyRing.userData.v9=true; body.add(bellyRing);
+    var chestPlate=new THREE.Mesh(new THREE.BoxGeometry(.52,.30,.06),new THREE.MeshStandardMaterial({color:'#3b4552',metalness:.7,roughness:.35}));
+    chestPlate.position.set(0,.72,.55); chestPlate.userData.v9=true; body.add(chestPlate);
+    for(var pl=-1;pl<=1;pl++){
+      var line=new THREE.Mesh(new THREE.BoxGeometry(.025,.24,.02),solid(color,{emissive:color,emissiveIntensity:.8}));
+      line.position.set(pl*.15,.72,.59); line.userData.v9=true; body.add(line);
+    }
+    var belt=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.07,14),solid('#1a202b',{metalness:.5,roughness:.4}));
+    belt.position.y=.28; belt.userData.v9=true; body.add(belt);
+    var buckle=new THREE.Mesh(new THREE.BoxGeometry(.16,.12,.04),solid('#ffc24d',{emissive:'#ff9a3c',emissiveIntensity:.8,metalness:.6}));
+    buckle.position.set(0,.28,.53); buckle.userData.v9=true; body.add(buckle);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
     var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid('#2b333f',{roughness:.45,metalness:.4,emissive:'#0f1622',emissiveIntensity:.1}));
@@ -3967,6 +3977,12 @@
       var glint=new THREE.Mesh(new THREE.SphereGeometry(.02,6,6),solid('#ffffff'));
       glint.position.set(s*.145-.018,.075,.46); glint.userData.v9=true; head.add(glint);
     });
+    [-1,1].forEach(function(s){
+      var brow=new THREE.Mesh(new THREE.BoxGeometry(.13,.025,.03),solid('#151a24',{roughness:.7}));
+      brow.position.set(s*.15,.16,.36); brow.rotation.z=s*.12; brow.userData.v9=true; head.add(brow);
+    });
+    var nose=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),solid('#ffcfa8',{roughness:.8}));
+    nose.position.set(0,-.01,.40); nose.userData.v9=true; head.add(nose);
     var smile=new THREE.Mesh(new THREE.TorusGeometry(.12,.022,6,12,Math.PI), solid('#101826'));
     smile.rotation.z=Math.PI; smile.position.set(0,-.09,.37); smile.userData.v9=true; head.add(smile);
     [-1,1].forEach(function(sx){var ch=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6),solid('#ff9fb0',{emissive:'#ff9fb0',emissiveIntensity:.3}));ch.position.set(sx*.24,-.06,.33);ch.userData.v9=true;head.add(ch);});
@@ -3980,7 +3996,9 @@
       var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid('#39424f',{roughness:.5,metalness:.35})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
       var shoulder=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),metal); shoulder.position.set(0,.02,0); shoulder.userData.v9=true; a.add(shoulder);
       var trim=new THREE.Mesh(new THREE.TorusGeometry(.13,.02,6,12),solid(color,{emissive:color,emissiveIntensity:1.0})); trim.rotation.x=Math.PI/2; trim.position.y=.06; trim.userData.v9=true; a.add(trim);
-      var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.28; hand.userData.v9=true; a.add(hand);
+      var elbow=new THREE.Mesh(new THREE.SphereGeometry(.085,8,6),metal); elbow.position.y=-.24; elbow.userData.v9=true; a.add(elbow);
+      var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#c8d2df',{metalness:.5,roughness:.4})); hand.position.y=-.30; hand.userData.v9=true; a.add(hand);
+      var fist=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.7})); fist.rotation.x=Math.PI/2; fist.position.y=-.31; fist.userData.v9=true; a.add(fist);
     });
     // SHORT stubby legs (dwarf)
     var legL=new THREE.Group(); legL.position.set(-.22,.30,0); g.add(legL);
@@ -3989,6 +4007,8 @@
       var shin=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.24,8),solid('#2a4a7a',{roughness:.85})); shin.position.y=-.11; shin.userData.v9=true; l.add(shin);
       var foot=new THREE.Mesh(new THREE.BoxGeometry(.32,.18,.44),solid('#3f4856',{metalness:.5,roughness:.35})); foot.position.set(0,-.28,.09); foot.userData.v9=true; l.add(foot);
       var toe=new THREE.Mesh(new THREE.BoxGeometry(.30,.07,.14),solid(color,{emissive:color,emissiveIntensity:.5,metalness:.4})); toe.position.set(0,-.30,.28); toe.userData.v9=true; l.add(toe);
+      var knee=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),metal); knee.position.set(0,-.13,.09); knee.userData.v9=true; l.add(knee);
+      var strap=new THREE.Mesh(new THREE.BoxGeometry(.34,.035,.45),solid('#232b37',{metalness:.4,roughness:.5})); strap.position.set(0,-.22,.09); strap.userData.v9=true; l.add(strap);
     });
     // ---- ROLE-SPECIFIC ACCESSORIES ----
     if(role==='boss'){
