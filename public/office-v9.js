@@ -905,7 +905,7 @@
   }
   function sunGlow() {
     var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#ffd89a', transparent: true,
-      opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
     s.position.set(8, 11.5, -27); s.scale.set(6, 6, 1); s.renderOrder = 1; addO(s);
     fx.sun = s;
   }
@@ -3779,7 +3779,7 @@
       var mine = o.userData && o.userData.v9Light;
       if (o.isAmbientLight) o.intensity = .58;
       else if (o.isHemisphereLight) o.intensity = .25;
-      else if (o.isDirectionalLight) o.intensity = mine ? .32 : .18;
+      else if (o.isDirectionalLight) o.intensity = mine ? .06 : .04;
       else if (o.isPointLight) {
         if (!mine) { o.intensity = .12; o.visible = false; }
         else o.intensity = .3;
@@ -3937,13 +3937,26 @@
     var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.4,metalness:.08,emissive:color,emissiveIntensity:.45}));
     torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
     var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.42,metalness:.06,emissive:color,emissiveIntensity:.5}));
-    tummy.position.set(0,.44,.30); tummy.scale.set(1,.8,.6); tummy.userData.v9=true; body.add(tummy);
-    var belly = new THREE.Mesh(new THREE.CircleGeometry(.24,12), solid('#1a2740',{emissive:color,emissiveIntensity:.75}));
+    tummy.position.set(0,.42,.34); tummy.scale.set(1.32,1.05,.88); tummy.userData.v9=true; body.add(tummy);
+    var belly = new THREE.Mesh(new THREE.CircleGeometry(.32,12), solid('#1a2740',{emissive:'#ff9a3c',emissiveIntensity:.8}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
     var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.38,metalness:.08,emissive:color,emissiveIntensity:.42}));
     skull.userData.v9=true; head.add(skull);
+    // 🤖 CYBORG: half metal face plate, red glowing eye, spiky hair, shades
+    var metal=new THREE.MeshStandardMaterial({color:'#8c98a8',metalness:.8,roughness:.3});
+    var plate=new THREE.Mesh(new THREE.SphereGeometry(.405,12,10,0,Math.PI,0,Math.PI),metal);
+    plate.position.set(.06,.02,.01); plate.userData.v9=true; head.add(plate);
+    var redEye=new THREE.Mesh(new THREE.SphereGeometry(.085,8,8),new THREE.MeshBasicMaterial({color:'#ff2a1f'}));
+    redEye.position.set(.15,.07,.38); redEye.userData.v9=true; head.add(redEye);
+    var shades=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.05),new THREE.MeshStandardMaterial({color:'#12151d',metalness:.4,roughness:.2}));
+    shades.position.set(0,.07,.40); shades.userData.v9=true; head.add(shades);
+    for(var hi=0;hi<5;hi++){
+      var spike=new THREE.Mesh(new THREE.ConeGeometry(.10,.26,5),new THREE.MeshStandardMaterial({color:'#181b24',roughness:.8}));
+      spike.position.set(-.24+hi*.12,.38+((hi%2)?-.03:.05),0); spike.rotation.z=(hi-2)*.18;
+      spike.userData.v9=true; head.add(spike);
+    }
     [-1,1].forEach(function(s){
       var e=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6), solid('#0b1020'));
       e.position.set(s*.13,.05,.35); e.userData.v9=true; head.add(e);
@@ -3961,14 +3974,15 @@
     var armR=new THREE.Group(); armR.position.set(.56,.60,0); body.add(armR);
     [armL,armR].forEach(function(a){
       var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid(uniform,{roughness:.5})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
+      var shoulder=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),metal); shoulder.position.set(0,.02,0); shoulder.userData.v9=true; a.add(shoulder);
       var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.28; hand.userData.v9=true; a.add(hand);
     });
     // SHORT stubby legs (dwarf)
     var legL=new THREE.Group(); legL.position.set(-.22,.30,0); g.add(legL);
     var legR=new THREE.Group(); legR.position.set(.22,.30,0); g.add(legR);
     [legL,legR].forEach(function(l){
-      var shin=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.22,8),solid('#2f3a4e',{roughness:.5})); shin.position.y=-.11; shin.userData.v9=true; l.add(shin);
-      var foot=new THREE.Mesh(new THREE.BoxGeometry(.26,.09,.34),solid('#202b3e',{roughness:.6})); foot.position.set(0,-.24,.05); foot.userData.v9=true; l.add(foot);
+      var shin=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.24,8),solid('#2a4a7a',{roughness:.85})); shin.position.y=-.11; shin.userData.v9=true; l.add(shin);
+      var foot=new THREE.Mesh(new THREE.BoxGeometry(.30,.16,.42),solid('#4a5262',{metalness:.45,roughness:.4})); foot.position.set(0,-.27,.08); foot.userData.v9=true; l.add(foot);
     });
     // ---- ROLE-SPECIFIC ACCESSORIES ----
     if(role==='boss'){
@@ -4009,6 +4023,10 @@
     var stripe=new THREE.Mesh(new THREE.TorusGeometry(.47,.055,6,18,Math.PI),
       solid(uniform,{emissive:uniform,emissiveIntensity:.85,roughness:.25}));
     stripe.rotation.z=Math.PI; stripe.rotation.y=Math.PI/2; stripe.position.set(0,.52,.06); stripe.userData.v9=true; body.add(stripe);
+    var coreRing=new THREE.Mesh(new THREE.TorusGeometry(.14,.035,8,16),solid('#ff9a3c',{emissive:'#ff7a1f',emissiveIntensity:1.4,metalness:.5}));
+    coreRing.position.set(0,.62,.68); coreRing.userData.v9=true; body.add(coreRing);
+    var coreDot=new THREE.Mesh(new THREE.SphereGeometry(.09,10,8),solid('#ffd36b',{emissive:'#ff9a3c',emissiveIntensity:1.6}));
+    coreDot.position.set(0,.62,.70); coreDot.userData.v9=true; body.add(coreDot);
     // ROLE NAME printed ON THE UNIFORM (chest badge with real text)
     var roleLabel=(role||'TEAM').toUpperCase();
     var roleCv=document.createElement('canvas'); roleCv.width=256; roleCv.height=64;
@@ -4703,7 +4721,7 @@
       glow.scale.set(60,60,1); glow.position.copy(sun.position); glow.userData.v9=true; addO(glow);
     }catch(e){}
     // Dramatic key light from the sun direction (no shadows)
-    var key=new THREE.DirectionalLight(0xfff0d0,.3); key.position.set(40,60,-30); key.userData.v9Light=true; addO(key);
+    var key=new THREE.DirectionalLight(0xa9c8ff,.06); key.position.set(40,60,-30); key.userData.v9Light=true; addO(key);
   }
 
   function buildAlive(){
@@ -5781,10 +5799,10 @@
   function cinematicUpgrade(){
     if(!structureGroup||!level3d)return;
     // 1) Multi-layer key light (warm from one side, cool fill from other)
-    var key=new THREE.DirectionalLight(0xffeed0,.22); key.position.set(30,50,-20); key.userData.v9Light=true; addO(key);
-    var fill=new THREE.DirectionalLight(0x7fb8ff,.14); fill.position.set(-30,30,30); fill.userData.v9Light=true; addO(fill);
+    var key=new THREE.DirectionalLight(0x9fc4ff,.10); key.position.set(30,50,-20); key.userData.v9Light=true; addO(key);
+    var fill=new THREE.DirectionalLight(0x6f9fd8,.06); fill.position.set(-30,30,30); fill.userData.v9Light=true; addO(fill);
     // 2) Studio rim light above Command (makes the hub pop)
-    var rim=new THREE.SpotLight(0xa99cff,.35,0,Math.PI/3,.6); rim.position.set(0,20,0); rim.target.position.set(0,0,0);
+    var rim=new THREE.SpotLight(0x8fb8ff,.12,0,Math.PI/3,.6); rim.position.set(0,20,0); rim.target.position.set(0,0,0);
     rim.userData.v9Light=true; addO(rim); addO(rim.target);
     // 3) Richer materials on island tops (subtle two-tone via vertex colors baked into canvas)
     structureGroup.traverse(function(o){
@@ -5904,7 +5922,7 @@
     scene3d.fog = new THREE.Fog('#070c18', 120, 240);
     scene3d.isNight = 0;
     try { renderer3d.toneMappingExposure = .66; } catch (e) {}
-    if (g.amb) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
+    if (g.amb) { g.amb.intensity = .48; g.amb.color.set('#7d9cc8'); }
     if (g.sun) g.sun.intensity = .86;
     [[12, 3.1, 9], [34, 3.1, 9], [23, 3.1, 28]].forEach(function (p) {
       var l = new THREE.PointLight(0xffe9c0, .3, 38);
@@ -6042,7 +6060,7 @@
         if (scene3d.background && typeof scene3d.background.getHex==='function' && scene3d.background.getHex()!==0x1b2c55 && !scene3d.background.isTexture) { try{scene3d.background.set('#1b2c55');}catch(e){} }
         if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x1b2c55) scene3d.fog.color.set('#1b2c55');
       }
-      if (g && g.amb && Math.abs(g.amb.intensity - .48) > .01) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
+      if (g && g.amb && Math.abs(g.amb.intensity - .48) > .01) { g.amb.intensity = .48; g.amb.color.set('#7d9cc8'); }
       tameOfficeLights();
       if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .66;
     } catch (e) {}
@@ -6368,7 +6386,7 @@
       if (fx.sun) {
         var sp = 1 + .04 * Math.sin(now / 1900);
         fx.sun.scale.set(11 * sp, 11 * sp, 1);
-        if (fx.sun.material) fx.sun.material.opacity = .10 + .03 * (.5 + .5 * Math.sin(now / 2400));
+        if (fx.sun.material) fx.sun.material.opacity = 0;
       }
     } catch (e) {}
     // ⏱ 4D time-life para sa hardin — dahan-dahang hihipa ng oras (crops: nasa tick na).
