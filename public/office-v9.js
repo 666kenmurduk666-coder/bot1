@@ -3883,75 +3883,111 @@
   var navBridges = [];   // {x1,z1,x2,z2}
   var WALK_PHRASES = ['Kumusta!','Sige, boss!','Copy that!','Ano’ng balita?','Nice!','Mag-andar tayo!','Got it!','Hi! 👋'];
 
+
+  // Role detection from name → visual accessory
+  function botRole(name){
+    var n=(name||'').toLowerCase();
+    if(/nazira|ceo|manager|chief|cos/.test(n)) return 'boss';
+    if(/milia|marketing|zara|marco/.test(n)) return 'creative';
+    if(/rena|aria|data|insight|seo/.test(n)) return 'analyst';
+    if(/kai|dan|systems|fixer|bantay|security/.test(n)) return 'tech';
+    if(/faris|hanna|finance/.test(n)) return 'finance';
+    if(/hafiz|lara|sophia|people|customer|community/.test(n)) return 'care';
+    if(/chef/.test(n)) return 'chef';
+    if(/doctor|health/.test(n)) return 'doctor';
+    if(/dj/.test(n)) return 'dj';
+    if(/janitor|clean/.test(n)) return 'janitor';
+    return 'worker';
+  }
   function refBot(x, z, color, name) {
-    var g = new THREE.Group(); g.position.set(x, 0, z); g.userData.v9 = true; structureGroup.add(g);
+    var g = new THREE.Group(); g.position.set(x, -0.02, z); g.userData.v9 = true; structureGroup.add(g);
+    var role=botRole(name);
     var body = new THREE.Group(); g.add(body);
-    var torso = new THREE.Mesh(new THREE.SphereGeometry(.42,12,10), solid(color,{roughness:.45,metalness:.1}));
-    torso.position.y=.66; torso.scale.y=1.15; torso.userData.v9=true; body.add(torso);
-    var belly = new THREE.Mesh(new THREE.CircleGeometry(.22,12), solid('#1a2740',{emissive:color,emissiveIntensity:.35}));
-    belly.position.set(0,.66,.40); belly.userData.v9=true; body.add(belly);
-    var head = new THREE.Group(); head.position.y=1.16; body.add(head);
-    var skull = new THREE.Mesh(new THREE.SphereGeometry(.35,12,10), solid(color,{roughness:.4,metalness:.1}));
+    // BIG round belly (chibi), short body — dwarf proportions
+    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.45,metalness:.1}));
+    torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
+    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.5,metalness:.08}));
+    tummy.position.set(0,.44,.30); tummy.scale.set(1,.8,.6); tummy.userData.v9=true; body.add(tummy);
+    var belly = new THREE.Mesh(new THREE.CircleGeometry(.24,12), solid('#1a2740',{emissive:color,emissiveIntensity:.35}));
+    belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
+    // BIG head (chibi) sitting low on the body
+    var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
+    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.4,metalness:.1}));
     skull.userData.v9=true; head.add(skull);
     [-1,1].forEach(function(s){
-      var e=new THREE.Mesh(new THREE.SphereGeometry(.065,8,6), solid('#0b1020'));
-      e.position.set(s*.11,.05,.31); e.userData.v9=true; head.add(e);
-      var glint=new THREE.Mesh(new THREE.SphereGeometry(.022,6,6), solid('#ffffff'));
-      glint.position.set(s*.11-.012,.075,.36); glint.userData.v9=true; head.add(glint);
+      var e=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6), solid('#0b1020'));
+      e.position.set(s*.13,.05,.35); e.userData.v9=true; head.add(e);
+      var glint=new THREE.Mesh(new THREE.SphereGeometry(.026,6,6), solid('#ffffff'));
+      glint.position.set(s*.13-.012,.075,.40); glint.userData.v9=true; head.add(glint);
     });
-    var smile=new THREE.Mesh(new THREE.TorusGeometry(.10,.02,6,12,Math.PI), solid('#101826'));
-    smile.rotation.z=Math.PI; smile.position.set(0,-.08,.33); smile.userData.v9=true; head.add(smile);
-    // antenna
-    var ant=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.18,6),solid('#2a3446')); ant.position.set(0,.40,0); ant.userData.v9=true; head.add(ant);
-    var tip=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9})); tip.position.set(0,.50,0); tip.userData.v9=true; head.add(tip);
-    // arms (pivot groups swing)
-    var armL=new THREE.Group(); armL.position.set(-.44,.82,0); body.add(armL);
-    var armR=new THREE.Group(); armR.position.set(.44,.82,0); body.add(armR);
+    var smile=new THREE.Mesh(new THREE.TorusGeometry(.12,.022,6,12,Math.PI), solid('#101826'));
+    smile.rotation.z=Math.PI; smile.position.set(0,-.09,.37); smile.userData.v9=true; head.add(smile);
+    [-1,1].forEach(function(sx){var ch=new THREE.Mesh(new THREE.SphereGeometry(.05,6,6),solid('#ff9fb0',{emissive:'#ff9fb0',emissiveIntensity:.3}));ch.position.set(sx*.24,-.06,.33);ch.userData.v9=true;head.add(ch);});
+    // tiny antenna
+    var ant=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.16,6),solid('#2a3446')); ant.position.set(0,.44,0); ant.userData.v9=true; head.add(ant);
+    var tip=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9})); tip.position.set(0,.54,0); tip.userData.v9=true; head.add(tip);
+    // SHORT stubby arms
+    var armL=new THREE.Group(); armL.position.set(-.56,.60,0); body.add(armL);
+    var armR=new THREE.Group(); armR.position.set(.56,.60,0); body.add(armR);
     [armL,armR].forEach(function(a){
-      var upper=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.34,8),solid(color,{roughness:.5})); upper.position.y=-.17; upper.userData.v9=true; a.add(upper);
-      var hand=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.36; hand.userData.v9=true; a.add(hand);
+      var upper=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.26,8),solid(color,{roughness:.5})); upper.position.y=-.13; upper.userData.v9=true; a.add(upper);
+      var hand=new THREE.Mesh(new THREE.SphereGeometry(.10,8,6),solid('#f2eee4',{roughness:.6})); hand.position.y=-.28; hand.userData.v9=true; a.add(hand);
     });
-    // legs (pivot groups step)
-    var legL=new THREE.Group(); legL.position.set(-.18,.46,0); g.add(legL);
-    var legR=new THREE.Group(); legR.position.set(.18,.46,0); g.add(legR);
+    // SHORT stubby legs (dwarf)
+    var legL=new THREE.Group(); legL.position.set(-.22,.30,0); g.add(legL);
+    var legR=new THREE.Group(); legR.position.set(.22,.30,0); g.add(legR);
     [legL,legR].forEach(function(l){
-      var shin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.34,8),solid('#2f3a4e',{roughness:.5})); shin.position.y=-.17; shin.userData.v9=true; l.add(shin);
-      var foot=new THREE.Mesh(new THREE.BoxGeometry(.22,.09,.32),solid('#202b3e',{roughness:.6})); foot.position.set(0,-.36,.06); foot.userData.v9=true; l.add(foot);
+      var shin=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.22,8),solid('#2f3a4e',{roughness:.5})); shin.position.y=-.11; shin.userData.v9=true; l.add(shin);
+      var foot=new THREE.Mesh(new THREE.BoxGeometry(.26,.09,.34),solid('#202b3e',{roughness:.6})); foot.position.set(0,-.24,.05); foot.userData.v9=true; l.add(foot);
     });
-    // carried project — glowing golden datapad with halo, clearly visible while walking to submit
-    var project=new THREE.Group(); project.position.set(0,1.05,.62); project.visible=false; project.userData.v9=true; body.add(project);
-    var prjBody=new THREE.Mesh(new THREE.BoxGeometry(.46,.40,.30),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:1.2,roughness:.2,metalness:.4}));
-    prjBody.userData.v9=true; project.add(prjBody);
-    var prjGlow=new THREE.Mesh(new THREE.TorusGeometry(.34,.045,8,20),solid('#fff3b0',{emissive:'#fff3b0',emissiveIntensity:1.4,roughness:.15}));
-    prjGlow.position.z=.18; prjGlow.userData.v9=true; project.add(prjGlow);
-    var prjCore=new THREE.Mesh(new THREE.SphereGeometry(.10,8,8),solid('#ffffff',{emissive:'#ffffff',emissiveIntensity:1.5}));
-    prjCore.position.z=.19; prjCore.userData.v9=true; project.add(prjCore);
-    // ---- enhanced character details ----
-    // visor band across the eyes
-    var visor=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.10),solid('#0b1220',{roughness:.25,metalness:.6,emissive:color,emissiveIntensity:.14}));
-    visor.position.set(0,.05,.30); visor.userData.v9=true; head.add(visor);
-    // glowing cheek dots
-    [-1,1].forEach(function(sx){var ch=new THREE.Mesh(new THREE.SphereGeometry(.04,6,6),solid(color,{emissive:color,emissiveIntensity:1.1}));ch.position.set(sx*.22,-.08,.29);ch.userData.v9=true;head.add(ch);});
-    // chest screen with colored bars
-    var chest=new THREE.Mesh(new THREE.PlaneGeometry(.24,.18),solid('#0a1628',{emissive:color,emissiveIntensity:.45,side:THREE.DoubleSide}));
-    chest.position.set(0,.70,.40); chest.userData.v9=true; body.add(chest);
-    for(var cb=0;cb<3;cb++){var bar=new THREE.Mesh(new THREE.PlaneGeometry(.16,.025),solid(color,{emissive:color,emissiveIntensity:.9,side:THREE.DoubleSide}));bar.position.set(0,.74-cb*.045,.405);bar.userData.v9=true;body.add(bar);}
-    // backpack core
-    var pack=new THREE.Mesh(new THREE.BoxGeometry(.38,.34,.20),solid('#2a3550',{roughness:.5,metalness:.4}));
-    pack.position.set(0,.70,-.40); pack.userData.v9=true; body.add(pack);
-    var packGlow=new THREE.Mesh(new THREE.CircleGeometry(.09,10),solid(color,{emissive:color,emissiveIntensity:1.2,side:THREE.DoubleSide}));
-    packGlow.position.set(0,.70,-.51); packGlow.userData.v9=true; body.add(packGlow);
-    // glowing joint rings on arms + legs
-    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.08,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.28;j.add(ring);});
-    // name label + chat bubble
-    if (name) refLabel(name, color, x, 2.0, z, 3.0, .7);
+    // ---- ROLE-SPECIFIC ACCESSORIES ----
+    if(role==='boss'){
+      var crown=new THREE.Mesh(new THREE.CylinderGeometry(.24,.30,.18,8),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.7}));crown.position.y=.48;crown.userData.v9=true;head.add(crown);
+    }
+    if(role==='analyst'){
+      [-1,1].forEach(function(sx){var lens=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,6,12),solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:.6}));lens.position.set(sx*.13,.05,.36);lens.userData.v9=true;head.add(lens);});
+    }
+    if(role==='tech'){
+      var badge=new THREE.Mesh(new THREE.BoxGeometry(.24,.16,.02),solid('#5fa8ff',{emissive:'#5fa8ff',emissiveIntensity:.5}));badge.position.set(0,.55,.55);badge.userData.v9=true;body.add(badge);
+    }
+    if(role==='finance'){
+      var glasses=new THREE.Mesh(new THREE.BoxGeometry(.5,.04,.04),solid('#d8c860',{metalness:.6}));glasses.position.set(0,.06,.37);glasses.userData.v9=true;head.add(glasses);
+    }
+    if(role==='creative'){
+      var hat=new THREE.Mesh(new THREE.ConeGeometry(.32,.32,10),solid('#ff8fb1',{roughness:.7}));hat.position.y=.48;hat.userData.v9=true;head.add(hat);
+    }
+    if(role==='chef'){
+      var chef=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.30,12),solid('#ffffff',{roughness:.7}));chef.position.y=.50;chef.userData.v9=true;head.add(chef);
+    }
+    if(role==='doctor'){
+      var cross1=new THREE.Mesh(new THREE.BoxGeometry(.22,.07,.02),solid('#ffffff',{emissive:'#ff5c7a',emissiveIntensity:.5}));cross1.position.set(0,.6,.55);cross1.userData.v9=true;body.add(cross1);
+      var cross2=new THREE.Mesh(new THREE.BoxGeometry(.07,.22,.02),solid('#ffffff',{emissive:'#ff5c7a',emissiveIntensity:.5}));cross2.position.set(0,.6,.55);cross2.userData.v9=true;body.add(cross2);
+    }
+    if(role==='dj'){
+      var hp1=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),solid('#2a1a3a',{metalness:.4}));hp1.position.set(-.40,.05,0);hp1.userData.v9=true;head.add(hp1);
+      var hp2=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),solid('#2a1a3a',{metalness:.4}));hp2.position.set(.40,.05,0);hp2.userData.v9=true;head.add(hp2);
+    }
+    if(role==='care'){
+      var heart=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),solid('#ff8fb1',{emissive:'#ff8fb1',emissiveIntensity:.8}));heart.position.set(0,.6,.55);heart.userData.v9=true;body.add(heart);
+    }
+    // carried project — glowing datapad
+    var project=new THREE.Group(); project.position.set(0,1.1,.72); project.visible=false; project.userData.v9=true; body.add(project);
+    var prjBody=new THREE.Mesh(new THREE.BoxGeometry(.44,.38,.28),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:1.2,roughness:.2,metalness:.4}));prjBody.userData.v9=true;project.add(prjBody);
+    var prjGlow=new THREE.Mesh(new THREE.TorusGeometry(.32,.045,8,20),solid('#fff3b0',{emissive:'#fff3b0',emissiveIntensity:1.4}));prjGlow.position.z=.18;prjGlow.userData.v9=true;project.add(prjGlow);
+    // chest screen
+    var chest=new THREE.Mesh(new THREE.PlaneGeometry(.24,.18),solid('#0a1628',{emissive:color,emissiveIntensity:.45,side:THREE.DoubleSide}));chest.position.set(0,.60,.60);chest.userData.v9=true;body.add(chest);
+    // backpack
+    var pack=new THREE.Mesh(new THREE.BoxGeometry(.36,.32,.18),solid('#2a3550',{roughness:.5,metalness:.4}));pack.position.set(0,.60,-.42);pack.userData.v9=true;body.add(pack);
+    // joint rings
+    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
+    if (name) refLabel(name, color, x, 2.15, z, 3.0, .7);
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
-    bub.scale.set(2.4,.7,1); bub.position.set(0,2.4,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
+    bub.scale.set(2.4,.7,1); bub.position.set(0,2.5,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
     animParts.push({m:belly,k:'led',p:x*.7+z});
     var seed = walkers.length;
     var r = {
       g:g, body:body, head:head, armL:armL, armR:armR, legL:legL, legR:legR, belly:belly, tip:tip, bub:bub, project:project,
-      x:x, z:z, homeX:x, homeZ:z, color:color, name:name||'Bot',
+      x:x, z:z, homeX:x, homeZ:z, color:color, name:name||'Bot', role:role,
       phase:seed*1.7, speed:.9+(seed%4)*.18, personality:seed%5,
       state:'work', timer:Date.now()-1000+seed*40, wp:null, path:[], zone:null, partner:null, talkFor:0,
       blink:0, look:0, lastBubble:0, decisionAt:Date.now()-500+seed*30
@@ -4065,7 +4101,7 @@
         r.head.rotation.x*=.9;
       }
       if(r.bub&&r.bub.visible&&now-r.lastBubble>3800) r.bub.visible=false;
-      r.g.position.set(r.x,0,r.z);
+      r.g.position.set(r.x,-0.04,r.z);
     }
     for(var a=0;a<walkers.length;a++) for(var b=a+1;b<walkers.length;b++){
       var A=walkers[a],B=walkers[b];
@@ -4125,15 +4161,13 @@
     for(var v=0;v<4;v++){ var vent=new THREE.Mesh(new THREE.BoxGeometry(.32,.02,.02),solid('#3a4a63')); vent.position.set(-.27,-.1-v*.1,.1); vent.userData.v9=true; pc.add(vent); }
   }
   function refIsland(cx,cz,R,color,title,agents) {
-    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.86,.85,32), solid('#0d0d14',{roughness:.6,metalness:.25}));
-    slab.position.set(cx,-.43,cz); slab.userData.v9=true; addO(slab);
-    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.92,32), solid('#0a0a0f',{roughness:.55,metalness:.25,side:THREE.DoubleSide}));
-    top.rotation.x=-Math.PI/2; top.position.set(cx,.005,cz); top.userData.v9=true; addO(top);
+    // SOLID GROUND: thick slab + visible top surface so robots stand on real floor
+    var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#171a22',{roughness:.75,metalness:.15}));
+    slab.position.set(cx,-.6,cz); slab.userData.v9=true; addO(slab);
+    var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#20242e',{roughness:.8,metalness:.12,side:THREE.DoubleSide}));
+    top.rotation.x=-Math.PI/2; top.position.set(cx,.01,cz); top.userData.v9=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
     rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
-    // soft shadow beneath (floating look)
-    var sh=new THREE.Mesh(new THREE.CircleGeometry(R*.8,32), new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.28,depthWrite:false}));
-    sh.rotation.x=-Math.PI/2; sh.position.set(cx,-2.4,cz); sh.userData.v9=true; addO(sh);
     var n=agents.length;
     agents.forEach(function(a,i){
       var ox=(i-(n-1)/2)*2.8;
@@ -5180,7 +5214,7 @@
       x=janfx.pos.x; z=janfx.pos.z;
     }
     janfx.pos.x=x; janfx.pos.z=z;
-    janfx.bot.position.set(x,0,z);
+    janfx.bot.position.set(x,-0.04,z);
     janfx.bot.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);
     janfx.broom.rotation.z=-.4+Math.sin(now/200)*.18;
     janfx.cart.rotation.y=Math.sin(now/700)*.08;
