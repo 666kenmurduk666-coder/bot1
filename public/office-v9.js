@@ -2273,8 +2273,8 @@
       var foot = new THREE.Mesh(new THREE.BoxGeometry(1.1, .14, .8), solid('#2e3a4d'));
       foot.position.set(px, .07, 0); grp.add(foot);
     });
-    grp.position.set(23, 0, 34.2); grp.rotation.y = 0; addO(grp);
-    reflection(23, 34.2, 6.5, 1.4, '#5fd6ff', 0, .09);
+    grp.position.set(23, 0, 66); grp.rotation.y = 0; grp.scale.setScalar(1.55); addO(grp);
+    reflection(23, 66, 9.5, 2.1, '#5fd6ff', 0, .09);
     fetch('/api/agents', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       ((j && j.agents) || []).forEach(function (a) {
         if (a && a.id) boardState.names[a.id] = a.n || a.name || a.id;
@@ -4228,7 +4228,7 @@
     box(.06,1.2,.06,'#8792a6',bx,.6,bz); box(.06,1.2,.06,'#8792a6',bx+1.5,.6,bz);
     var bd=new THREE.Mesh(new THREE.PlaneGeometry(3.0,1.5),solid('#0e1b2c',{emissive:color,emissiveIntensity:.12,side:THREE.DoubleSide}));
     bd.position.set(bx+.75,1.3,bz); bd.userData.v9=true; addO(bd);
-    refLabel(title,color,cx,2.6,cz-R*.52,5.6,1.3);
+    // Department signs removed - one big CYBEE board only.
   }
   // High-tech walkway: clean lanes, no conflicting direction.
   function refBridge(x1,z1,x2,z2,color) {
@@ -5750,7 +5750,7 @@
     box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
     refDesk(CX,CZ+1.5,'#a98cff');
     refBot(CX,CZ+2.4,'#c08cff','Nazira');
-    refLabel('Command','#a99cff',CX,3.7,CZ-1.6,4.8,1.2);
+    // Command sign removed - one big CYBEE board only.
     // 5 departments (roles from the reference video)
     var deps=[
       {x:-17.6,z:-24.3,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},

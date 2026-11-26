@@ -216,6 +216,16 @@ dialog::backdrop{background:#000a}
 .tileLabel{position:absolute;left:8px;top:8px;background:#0d1b38d9;border:1px solid #3a6bb5;border-radius:6px;padding:3px 8px;font-size:10px}
 /* CEO clean */
 .officeBar,#v-office>.grid{display:none!important}
+/* CYBEE x10000 enhancement */
+html{scroll-behavior:smooth}
+::selection{background:rgba(0,229,255,.35);color:#fff}
+*{scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.5) transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:linear-gradient(120deg,rgba(0,229,255,.55),rgba(124,92,255,.55));border-radius:8px}
+a,button{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
+a:active,button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid #00e5ff;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}a,button{transition:none!important}}
 </style>
 
 <!-- 🔒 VIEWER LOCK: embedded visitors can watch, but cannot control the office -->
@@ -664,7 +674,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=180"></script>
+<script src="/office-v9.js?v=181"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
