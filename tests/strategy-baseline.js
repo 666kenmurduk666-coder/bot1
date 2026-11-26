@@ -70,7 +70,7 @@ const protectedHashes = {
   // status/control APIs. Token stays in Render env only; hash refreshed.
   // 2026-11-22: failed routines now back off (6h for no-page-token, 15m otherwise)
   // so the Video Bot cannot retry every tick and spam the activity log.
-  'server.js': '36afe7244caef8ae76b2151ac45c77c47fd0f587dcfa700ac320b48ca4d2de44',
+  'server.js': 'ec2958691a264108c7ed471eb09c5ad9c9e1b2b07ec471e49d6ce4cb9bb216fc',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
@@ -198,7 +198,7 @@ const protectedHashes = {
   // portals/floor medallions and animated ceiling halos. All prior 4D kept.
   // 2026-11-21 v74 LIVING GROUND: mosaic ribbons, sunburst plazas, flower beds,
   // batched confetti/studs/dots and 4D led beacons across the whole map.
-  'public/office-v9.js': 'bf7a0393f7f97faa91494e6070d049c71dd9d04baf963c08366f2b07bb295170',
+  'public/office-v9.js': '2958af9846e42f828256bdaad951ab5a1157224af7ba86a5499658eeb3be6d1c',
   // v30 Office Studio: new editor shell (undo/redo, tools, snap/zoom/pan,
   // inspector, presets), photo presets/freeze, bot cards, adaptive FPS guard,
   // chat quick actions, farm interaction hook and accessibility mode.

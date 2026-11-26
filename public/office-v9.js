@@ -109,6 +109,13 @@
     walk: ['😊', '✨', '🙂']
   };
   var cuteBots = [], animId = null, animParts = [], _bubV = null;
+  // Layer state containers (previously undeclared -> silent builder failures)
+  var ISLANDS = [[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30]];
+  var fallfx = [];
+  var xmasfx = { lights:[], gifts:[], snow:[], tree:null, star:null };
+  var megav = { meteors:[], asteroids:null, galaxy:null, footRings:[], rimMats:[] };
+  var specBots = [];
+  var mb2 = { lastEvent:0, event:'', danceUntil:0, paradeUntil:0 };
   var TEX = {}, screenCounter = 0;
   var fx = { shafts: [], screens: [], dust: null, bubbles: [], steam: [], plants: [], sparkles: [], birds: [], scan: [], windows: [], sheen: null,
     auras: [], antennae: [], glints: [], bands: [], cars: [], sun: null, sky: null,
@@ -2110,6 +2117,18 @@
     q.fillStyle = 'rgba(255,255,255,.88)'; q.font = 'bold 13px sans-serif';
     q.fillText('CHEEBEE OS', 14, 23);
     q.fillStyle = 'rgba(255,255,255,.45)'; q.fillText('live', S - 34, 23);
+    // BIG readable CYBEE brand on every desk monitor
+    q.fillStyle = 'rgba(6,16,32,.72)'; q.fillRect(46, 38, S - 52, S - 42);
+    q.save();
+    q.textAlign = 'center'; q.textBaseline = 'middle';
+    q.font = 'bold ' + Math.round(S * .40) + 'px Arial Black, Arial, sans-serif';
+    q.shadowColor = accent; q.shadowBlur = S * .09;
+    q.fillStyle = accent; q.fillText('CYBEE', S / 2, S * .46, S * .86);
+    q.shadowBlur = 0;
+    q.fillStyle = 'rgba(255,255,255,.95)';
+    q.font = 'bold ' + Math.round(S * .095) + 'px Arial';
+    q.fillText('AI OFFICE  ·  LIVE', S / 2, S * .68, S * .8);
+    q.restore();
     q.fillStyle = 'rgba(8,20,38,.42)'; q.fillRect(0, 34, 42, S - 34);
     for (var n = 0; n < 5; n++) {
       q.fillStyle = n === (idx + step) % 5 ? accent : 'rgba(255,255,255,.23)';
@@ -2169,29 +2188,33 @@
     q.fillStyle = '#5fd6ff'; q.fillRect(0, 0, W, 7);
     q.fillStyle = '#a78bfa'; q.fillRect(0, 7, W, 3);
     q.textBaseline = 'middle'; q.textAlign = 'left';
-    q.fillStyle = '#ffffff'; q.font = 'bold 40px Arial, sans-serif';
-    q.fillText('BOT OUTPUT WALL', 44, 52, 700);
-    q.fillStyle = 'rgba(255,255,255,.55)'; q.font = '20px Arial, sans-serif';
-    q.fillText('CYBORG CHEEBEE OFFICE  ·  LIVE', 46, 82, 700);
+    // ONE huge CYBEE sign with every office report
+    q.textAlign = 'left'; q.textBaseline = 'middle';
+    q.shadowColor = '#5fd6ff'; q.shadowBlur = 22;
+    q.fillStyle = '#ffffff'; q.font = 'bold 86px Arial Black, Arial, sans-serif';
+    q.fillText('CYBEE', 42, 62, 520);
+    q.shadowBlur = 0;
+    q.fillStyle = '#5fd6ff'; q.font = 'bold 22px Arial, sans-serif';
+    q.fillText('OFFICE REPORTS  ·  LIVE', 46, 116, 620);
     q.textAlign = 'right'; q.fillStyle = '#79e0b2'; q.font = 'bold 20px Arial, sans-serif';
-    q.fillText(time || 'CONNECTING', W - 40, 56);
+    q.fillText(time || 'CONNECTING', W - 40, 70);
     q.textAlign = 'left';
-    q.fillStyle = 'rgba(255,255,255,.18)'; q.fillRect(44, 104, W - 88, 2);
+    q.fillStyle = 'rgba(255,255,255,.18)'; q.fillRect(44, 142, W - 88, 2);
     if (!items.length) {
       q.fillStyle = 'rgba(255,255,255,.62)'; q.font = '26px Arial, sans-serif';
-      q.fillText('Waiting for bot outputs…', 48, 190, 900);
+      q.fillText('Waiting for office reports…', 48, 190, 900);
       q.fillStyle = 'rgba(255,255,255,.34)'; q.font = '18px Arial, sans-serif';
       q.fillText('Run an agent or the full pipeline to light up this wall.', 48, 228, 900);
     } else {
       var accent = ['#5fd6ff', '#79e0b2', '#ffd27d', '#ff9fc4', '#a78bfa'];
-      items.slice(0, 7).forEach(function (it, i) {
-        var y = 140 + i * 51;
-        q.fillStyle = 'rgba(8,16,34,.62)'; q.fillRect(44, y - 18, W - 88, 44);
-        q.fillStyle = accent[i % accent.length]; q.fillRect(44, y - 18, 6, 44);
-        q.fillStyle = '#ffffff'; q.font = 'bold 21px Arial, sans-serif';
-        q.fillText(names[it.id] || it.name || it.id, 64, y - 3, 300);
-        q.fillStyle = 'rgba(255,255,255,.72)'; q.font = '19px Arial, sans-serif';
-        q.fillText(boardShort(it.text, 92), 372, y - 3, W - 430);
+      items.slice(0, 10).forEach(function (it, i) {
+        var y = 168 + i * 34;
+        q.fillStyle = 'rgba(8,16,34,.68)'; q.fillRect(44, y - 14, W - 88, 30);
+        q.fillStyle = accent[i % accent.length]; q.fillRect(44, y - 14, 6, 30);
+        q.fillStyle = '#ffffff'; q.font = 'bold 17px Arial, sans-serif';
+        q.fillText(names[it.id] || it.name || it.id, 62, y, 230);
+        q.fillStyle = 'rgba(255,255,255,.78)'; q.font = '16px Arial, sans-serif';
+        q.fillText(boardShort(it.text, 100), 300, y, W - 360);
       });
     }
     q.fillStyle = 'rgba(255,255,255,.28)'; q.font = '16px Arial, sans-serif';
@@ -2206,6 +2229,11 @@
         var items = Object.keys(outputs).filter(function (id) { return outputs[id]; }).sort().slice(0, 7).map(function (id) {
           return { id: id, name: BOARD_NAMES[id] || boardState.names[id] || id, text: boardShort(outputs[id], 120) };
         });
+        // Include recent office activity so every report is on the one big sign
+        var acts=(j && j.activity || []).slice(0,6).map(function(a){
+          return { id:'ACT', name:'OFFICE', text:boardShort((a.who||'')+': '+(a.text||''),120) };
+        });
+        items=items.concat(acts).slice(0,10);
         var stamp = new Date().toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
         paintBoard(boardState.q, boardState.W, boardState.H, { items: items, names: boardState.names, time: stamp });
         boardState.tex.needsUpdate = true;
@@ -3900,21 +3928,21 @@
     return 'worker';
   }
   function refBot(x, z, color, name) {
-    var g = new THREE.Group(); g.position.set(x, -0.02, z); g.userData.v9 = true; structureGroup.add(g);
+    var g = new THREE.Group(); g.position.set(x, -0.02, z); g.scale.setScalar(1.28); g.userData.v9 = true; structureGroup.add(g);
     var role=botRole(name);
     var uniform=(currentTeam&&currentTeam.color)||color;   // TEAM UNIFORM COLOR
     var teamName=(currentTeam&&currentTeam.name)||'TEAM';
     var body = new THREE.Group(); g.add(body);
     // BIG round belly (chibi), short body — dwarf proportions
-    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(uniform,{roughness:.45,metalness:.1}));
+    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.4,metalness:.08,emissive:color,emissiveIntensity:.85}));
     torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
-    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(uniform,{roughness:.5,metalness:.08}));
+    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.42,metalness:.06,emissive:color,emissiveIntensity:.95}));
     tummy.position.set(0,.44,.30); tummy.scale.set(1,.8,.6); tummy.userData.v9=true; body.add(tummy);
-    var belly = new THREE.Mesh(new THREE.CircleGeometry(.24,12), solid('#1a2740',{emissive:color,emissiveIntensity:.35}));
+    var belly = new THREE.Mesh(new THREE.CircleGeometry(.24,12), solid('#1a2740',{emissive:color,emissiveIntensity:.75}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
-    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(uniform,{roughness:.4,metalness:.1}));
+    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.38,metalness:.08,emissive:color,emissiveIntensity:.8}));
     skull.userData.v9=true; head.add(skull);
     [-1,1].forEach(function(s){
       var e=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6), solid('#0b1020'));
@@ -3979,7 +4007,7 @@
     // chest screen
     // TEAM UNIFORM STRIPE (department color band across the chest)
     var stripe=new THREE.Mesh(new THREE.TorusGeometry(.47,.055,6,18,Math.PI),
-      solid(uniform,{emissive:uniform,emissiveIntensity:.55,roughness:.3}));
+      solid(uniform,{emissive:uniform,emissiveIntensity:.85,roughness:.25}));
     stripe.rotation.z=Math.PI; stripe.rotation.y=Math.PI/2; stripe.position.set(0,.52,.06); stripe.userData.v9=true; body.add(stripe);
     // ROLE NAME printed ON THE UNIFORM (chest badge with real text)
     var roleLabel=(role||'TEAM').toUpperCase();
@@ -4940,10 +4968,8 @@
     var sTop=new THREE.Mesh(new THREE.OctahedronGeometry(.7,0),solid('#bff4ff',{emissive:'#63e6ff',emissiveIntensity:1.3,roughness:.1}));
     sTop.position.y=10.2; sTop.userData.v9=true; spire.add(sTop);
     animParts.push({m:sTop,k:'spin',s:.6});
-    // ---- giant orbital ring around the whole campus ----
-    var ring=new THREE.Mesh(new THREE.TorusGeometry(52,.18,8,96),solid('#5f8fd0',{emissive:'#4a90ff',emissiveIntensity:.45,transparent:true,opacity:.5,roughness:.3}));
-    ring.rotation.x=Math.PI/2.35; ring.rotation.z=.25; ring.position.y=12; ring.userData.v9=true; addO(ring);
-    civfx.ring=ring;
+    // Big white campus ring removed by CEO request.
+    civfx.ring=null;
     // ---- flying vehicles on smooth orbital paths ----
     var paths=[ {r:38,y:14,sp:.12},{r:46,y:19,sp:-.09},{r:33,y:11,sp:.16},{r:52,y:23,sp:-.07},{r:42,y:16,sp:.11},{r:56,y:27,sp:-.06} ];
     paths.forEach(function(pa,i){
@@ -5178,6 +5204,23 @@
       }catch(e){}
     }
 
+  // Lightweight static specialty bot (no walker registration = no extra AI/motion cost)
+  function simpleBot(x,z,color,name,prop){
+    var g=new THREE.Group(); g.position.set(x,0,z); g.userData.v9=true; structureGroup.add(g);
+    var body=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),solid(color,{emissive:color,emissiveIntensity:.55,roughness:.45}));
+    body.position.y=.5; body.scale.set(1.1,.95,1); body.userData.v9=true; g.add(body);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),solid(color,{emissive:color,emissiveIntensity:.45,roughness:.4}));
+    head.position.y=1.05; head.userData.v9=true; g.add(head);
+    [-1,1].forEach(function(sd){
+      var eye=new THREE.Mesh(new THREE.SphereGeometry(.065,6,6),solid('#0b1020'));
+      eye.position.set(sd*.12,1.08,.30); eye.userData.v9=true; g.add(eye);
+    });
+    if(prop){
+      var item=new THREE.Mesh(new THREE.BoxGeometry(.22,.22,.12),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9}));
+      item.position.set(0,.72,.45); item.userData.v9=true; g.add(item);
+    }
+    return g;
+  }
   function buildSpecialtyBots(){
       if(!structureGroup||!level3d)return;
       specBots.length=0;
@@ -5202,6 +5245,29 @@
       }
     }
 
+  // UFO delivery layer (declared here - was an undeclared global -> silent failure)
+  var ufofx = { ships: [], docs: [] };
+  function ufoShip(col){
+    var g=new THREE.Group();
+    var hull=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.05,.45,16),
+      new THREE.MeshStandardMaterial({color:col,metalness:.55,roughness:.3,emissive:col,emissiveIntensity:.45}));
+    hull.userData.v9=true; g.add(hull);
+    var dome=new THREE.Mesh(new THREE.SphereGeometry(.85,12,8,0,Math.PI*2,0,Math.PI/2),
+      new THREE.MeshStandardMaterial({color:'#bff6ff',metalness:.2,roughness:.15,transparent:true,opacity:.78,emissive:'#3cc8ff',emissiveIntensity:.35}));
+    dome.position.y=.34; dome.userData.v9=true; g.add(dome);
+    for(var i=0;i<8;i++){
+      var ang=i/8*Math.PI*2;
+      var lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),
+        new THREE.MeshBasicMaterial({color:i%2?'#ffffff':col}));
+      lamp.position.set(Math.cos(ang)*1.34,-.1,Math.sin(ang)*1.34);
+      lamp.userData.v9=true; g.add(lamp);
+    }
+    var beam=new THREE.Mesh(new THREE.ConeGeometry(1.05,4,16,1,true),
+      new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    beam.rotation.x=Math.PI; beam.position.y=-2.2; beam.userData.v9=true; g.add(beam);
+    g.userData.beam=beam; g.userData.v9=true; addO(g);
+    return g;
+  }
   function buildUfoDelivery(){
       if(!structureGroup||!level3d)return;
       ufofx.ships.length=0;ufofx.docs.length=0;
@@ -5217,57 +5283,65 @@
   function tickUfo(now,dt){
       for(var i=0;i<ufofx.ships.length;i++){
         var u=ufofx.ships[i], g=u.g, beam=g.userData.beam;
-        var A=ISLANDS[u.from], B=ISLANDS[u.to];
+        var A=ISLANDS[u.from]||[0,0];
+        var C=[0,0]; // Command hub at the center
+        var E=galaxfx.earth?galaxfx.earth.position:new THREE.Vector3(38,34,-18);
         if(u.phase==='wait'){
           if(now>u.pause){u.phase='pick';u.t=0;}
           continue;
         }
         if(u.phase==='pick'){
-          // fly above source island and lower
-          u.t+=dt*.5; if(u.t>1)u.t=1;
-          var ty=4+Math.sin(u.t*Math.PI)*0;
-          g.position.set(A[0]+(u.x-A[0])*(1-u.t), 9+(ty-9)*u.t, A[1]+(u.z-A[1])*(1-u.t));
-          beam.material.opacity=.35*u.t;
-          if(u.t>=1){
-            // create a document cube rising from island into UFO
-            if(!u.doc){
-              var d=new THREE.Mesh(new THREE.BoxGeometry(.4,.5,.06),solid('#f5f1e6',{emissive:'#ffd34d',emissiveIntensity:.5}));
-              d.position.set(A[0],.5,A[1]); d.userData.v9=true; addO(d); u.doc=d;
-            }
-            u.doc.position.y+=dt*6;
-            if(u.doc.position.y>3.8){ u.phase='carry'; u.t=0; beam.material.opacity=0; }
+          // fly from the island to the center to pick up the message
+          u.t+=dt*.45; if(u.t>1)u.t=1;
+          var sx=A[0]+(C[0]-A[0])*u.t, sz=A[1]+(C[1]-A[1])*u.t;
+          g.position.set(sx,9+Math.sin(u.t*Math.PI)*3,sz);
+          beam.material.opacity=.14*u.t;
+          if(u.t>=1){ u.phase='vacuum'; u.t=0; }
+        } else if(u.phase==='vacuum'){
+          // hover at the center and suck the message up into the ship
+          u.t+=dt*.6; if(u.t>1)u.t=1;
+          g.position.set(C[0],8,C[1]);
+          beam.material.opacity=.6*u.t;
+          if(!u.doc){
+            var d=new THREE.Mesh(new THREE.BoxGeometry(.45,.55,.06),solid('#f5f1e6',{emissive:'#ffd34d',emissiveIntensity:.6}));
+            d.position.set(C[0],.5,C[1]); d.userData.v9=true; addO(d); u.doc=d;
           }
+          u.doc.position.y=.5+u.t*6.5;
+          u.doc.rotation.y+=dt*4;
+          if(u.t>=1){ u.phase='carry'; u.t=0; beam.material.opacity=0; }
         } else if(u.phase==='carry'){
-          // fly to destination island with doc attached under UFO
-          u.t+=dt*u.speed; if(u.t>1)u.t=1;
-          var x=A[0]+(B[0]-A[0])*u.t, z=A[1]+(B[1]-A[1])*u.t;
-          var y=8+Math.sin(u.t*Math.PI)*4;
-          g.position.set(x,y,z);
-          if(u.doc){ u.doc.position.set(x,y-1.4,z); u.doc.rotation.y+=dt*3; }
-          g.rotation.y=Math.atan2(B[0]-A[0],B[1]-A[1]);
+          // fly away to Planet Earth beside the office
+          u.t+=dt*.16; if(u.t>1)u.t=1;
+          var st=new THREE.Vector3(C[0],8,C[1]);
+          g.position.set(
+            st.x+(E.x-st.x)*u.t,
+            st.y+(E.y-st.y)*u.t+Math.sin(u.t*Math.PI)*10,
+            st.z+(E.z-st.z)*u.t
+          );
+          if(u.doc){ u.doc.position.set(g.position.x,g.position.y-1.4,g.position.z); u.doc.rotation.y+=dt*3; }
+          g.rotation.y=Math.atan2(E.x-st.x,E.z-st.z);
           if(u.t>=1){ u.phase='drop'; u.t=0; }
         } else if(u.phase==='drop'){
-          u.t+=dt*.6; if(u.t>1)u.t=1;
-          beam.material.opacity=.4*(1-u.t);
-          if(u.doc){ u.doc.position.y=g.position.y-1.4-u.t*5; }
+          u.t+=dt*.7; if(u.t>1)u.t=1;
+          beam.material.opacity=.5*(1-u.t);
+          if(u.doc){ u.doc.position.y=g.position.y-1.4-u.t*4; }
           if(u.t>=1){
-            // deliver: pulse a ring at destination
+            // delivery pulse at Earth
             try{
-              var ring=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,8,24),solid(u.color,{emissive:u.color,emissiveIntensity:1.2}));
-              ring.rotation.x=Math.PI/2; ring.position.set(B[0],.3,B[1]); ring.userData.v9=true; addO(ring);
+              var ring=new THREE.Mesh(new THREE.TorusGeometry(.6,.06,8,24),solid(u.color,{emissive:u.color,emissiveIntensity:1.2,fog:false}));
+              ring.rotation.x=Math.PI/2; ring.position.set(E.x,E.y-14,E.z); ring.userData.v9=true; addO(ring);
               (function(r){var l=0;var iv=setInterval(function(){l++;r.scale.setScalar(1+l*.4);r.material.opacity=1-l/25;if(l>=25){clearInterval(iv);try{structureGroup.remove(r);}catch(_){}}},40);})(ring);
             }catch(e){}
             if(u.doc){try{structureGroup.remove(u.doc);}catch(_){} u.doc=null;}
             beam.material.opacity=0;
-            // swap route and wait
-            var old=u.from; u.from=u.to; u.to=(old+2+((Math.random()*2)|0))%ISLANDS.length;
-            u.phase='wait'; u.pause=now+4000+Math.random()*5000;
+            u.from=(u.from+2)%ISLANDS.length;
+            u.phase='wait'; u.pause=now+5000+Math.random()*6000;
           }
         }
       }
     }
 
-  var galaxfx = { planets: [], dust: null, santa: null, satellites: [], satGroup: null };
+  var galaxfx = { planets: [], dust: null, santa: null, satellites: [], satGroup: null, earth: null, bigPlanet: null };
   function buildRealGalaxy(){
       if(!structureGroup||!level3d)return;
       galaxfx.planets.length=0; galaxfx.dust=null; galaxfx.santa=null;
@@ -5362,7 +5436,7 @@
         var satBody=new THREE.MeshStandardMaterial({color:'#cfd6e6',metalness:.6,roughness:.35,emissive:'#1b2b4a',emissiveIntensity:.25});
         var satPanel=new THREE.MeshStandardMaterial({color:'#2a5fb0',metalness:.3,roughness:.5,emissive:'#0e2a55',emissiveIntensity:.45});
         var satDish=new THREE.MeshStandardMaterial({color:'#e8ecf5',metalness:.2,roughness:.6,side:THREE.DoubleSide});
-        for(var si=0;si<12;si++){
+        for(var si=0;si<6;si++){
           var sat=new THREE.Group();
           var body=new THREE.Mesh(new THREE.BoxGeometry(.9,.7,.7),satBody); body.userData.v9=true; sat.add(body);
           [-1,1].forEach(function(side){
@@ -5372,14 +5446,14 @@
           var dish=new THREE.Mesh(new THREE.SphereGeometry(.35,8,6,0,Math.PI*2,0,Math.PI/2),satDish);
           dish.position.y=.5; dish.userData.v9=true; sat.add(dish);
           sat.userData.v9=true; satGroup.add(sat);
-          galaxfx.satellites.push({g:sat,r:115+si*17,y:-15+si*12,sp:.00011+si*.000016,ph:si*.7,zc:-140});
+          galaxfx.satellites.push({g:sat,r:62+si*8,y:38+si*5,sp:.00011+si*.000016,ph:si*.7,zc:16});
         }
         satGroup.userData.v9=true; addO(satGroup); galaxfx.satGroup=satGroup;
       }catch(e){}
       // Galaxy dust clouds (colorful nebula points spread wide)
       try{
         var pts=[],cols=[];
-        for(var i=0;i<250;i++){
+        for(var i=0;i<120;i++){
           var a=Math.random()*Math.PI*2, r=120+Math.random()*280;
           pts.push(Math.cos(a)*r,-40+Math.random()*160,Math.sin(a)*r);
           var c=new THREE.Color().setHSL(.55+Math.random()*.25,.3+Math.random()*.4,.4+Math.random()*.4);
@@ -5390,6 +5464,61 @@
         geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
         var dust=new THREE.Points(geo,new THREE.PointsMaterial({size:.6,vertexColors:true,transparent:true,opacity:.35,depthWrite:false,fog:false}));
         dust.userData.v9=true; addO(dust); galaxfx.dust=dust;
+        // 🌍 Big close planet so the whole planet is visible above the office
+        var bigP=new THREE.Group();
+        var globe=new THREE.Mesh(new THREE.SphereGeometry(24,32,24),
+          new THREE.MeshStandardMaterial({color:'#2e74b8',roughness:.85,metalness:.05,emissive:'#123a60',emissiveIntensity:.4,fog:false}));
+        globe.userData.v9=true; bigP.add(globe);
+        var bigAtm=new THREE.Mesh(new THREE.SphereGeometry(25.5,32,24),
+          new THREE.MeshBasicMaterial({color:'#67d6ff',transparent:true,opacity:.14,side:THREE.BackSide,depthWrite:false,fog:false}));
+        bigAtm.userData.v9=true; bigP.add(bigAtm);
+        var bigRing=new THREE.Mesh(new THREE.RingGeometry(31,42,48),
+          new THREE.MeshBasicMaterial({color:'#8fd8ff',transparent:true,opacity:.32,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+        bigRing.rotation.x=Math.PI/2.6; bigRing.userData.v9=true; bigP.add(bigRing);
+        bigP.position.set(23,78,-62); bigP.userData.v9=true; addO(bigP);
+        galaxfx.bigPlanet=bigP;
+        // 🌍 PLANET EARTH beside the office - UFO delivery destination
+        try{
+          var earth=new THREE.Group();
+          var cv=document.createElement('canvas'); cv.width=256; cv.height=128;
+          var cx=cv.getContext('2d');
+          cx.fillStyle='#1e63b0'; cx.fillRect(0,0,256,128);
+          cx.fillStyle='#2f8fd0'; cx.fillRect(0,54,256,22);
+          cx.fillStyle='#3fae68';
+          [[42,42,34,18],[104,74,46,20],[188,38,30,16],[150,100,26,10]].forEach(function(c){
+            cx.beginPath(); cx.ellipse(c[0],c[1],c[2],c[3],.4,0,Math.PI*2); cx.fill();
+          });
+          cx.fillStyle='#eaf6ff'; cx.globalAlpha=.55;
+          [[70,30,40,7],[140,52,52,8],[210,84,36,6]].forEach(function(c){
+            cx.beginPath(); cx.ellipse(c[0],c[1],c[2],c[3],0,0,Math.PI*2); cx.fill();
+          });
+          cx.globalAlpha=1;
+          var etex=new THREE.CanvasTexture(cv);
+          var globe2=new THREE.Mesh(new THREE.SphereGeometry(13,32,24),
+            new THREE.MeshStandardMaterial({map:etex,roughness:.9,metalness:.02,emissive:'#0e2d52',emissiveIntensity:.35,fog:false}));
+          globe2.userData.v9=true; earth.add(globe2);
+          var eatm=new THREE.Mesh(new THREE.SphereGeometry(13.8,32,24),
+            new THREE.MeshBasicMaterial({color:'#78d6ff',transparent:true,opacity:.2,side:THREE.BackSide,depthWrite:false,fog:false}));
+          eatm.userData.v9=true; earth.add(eatm);
+          earth.position.set(38,34,-18); earth.userData.v9=true; addO(earth);
+          // Thin Venus-style orbital ring around Earth (not the old white campus circle)
+          var vRing=new THREE.Mesh(new THREE.TorusGeometry(18.5,.09,8,96),
+            new THREE.MeshBasicMaterial({color:'#ffd9a0',transparent:true,opacity:.55,depthWrite:false,fog:false}));
+          vRing.rotation.x=Math.PI/2.25; vRing.rotation.z=.35; vRing.userData.v9=true; earth.add(vRing);
+          var vRing2=new THREE.Mesh(new THREE.TorusGeometry(20,.04,6,96),
+            new THREE.MeshBasicMaterial({color:'#7fd8ff',transparent:true,opacity:.3,depthWrite:false,fog:false}));
+          vRing2.rotation.x=Math.PI/2.4; vRing2.rotation.z=-.2; vRing2.userData.v9=true; earth.add(vRing2);
+          galaxfx.earth=earth;
+        }catch(e){}
+        // Fog starts at 120 and ends at 240 — every far galaxy mesh must opt out.
+        [galaxfx.santa,galaxfx.satGroup,galaxfx.bigPlanet].concat(galaxfx.planets.map(function(x){return x.g;})).forEach(function(root){
+          if(!root||!root.traverse)return;
+          root.traverse(function(o){
+            if(!o.material)return;
+            var ms=Array.isArray(o.material)?o.material:[o.material];
+            ms.forEach(function(m){ if(m) m.fog=false; });
+          });
+        });
       }catch(e){}
     }
 
@@ -5405,7 +5534,7 @@
         for(var si=0;si<galaxfx.satellites.length;si++){
           var st=galaxfx.satellites[si];
           var a=now*st.sp+st.ph;
-          st.g.position.set(Math.cos(a)*st.r,st.y+Math.sin(a*2)*6,st.zc+Math.sin(a)*st.r*.6);
+          st.g.position.set(23+Math.cos(a)*st.r,st.y+Math.sin(a*2)*6,st.zc+Math.sin(a)*st.r);
           st.g.rotation.y=-a; st.g.rotation.z=Math.sin(now/1400+st.ph)*.14;
         }
         // 🔊 Galaxy ambience: cosmic hum, Santa's sleigh bells, sheep, and orbit whoosh.
@@ -5421,7 +5550,8 @@
         }catch(e){}
         if(galaxfx.santa){
           var sa=now/9000;
-          galaxfx.santa.position.set(Math.cos(sa)*170,118+Math.sin(now/1800)*4,-120+Math.sin(sa)*120);
+          galaxfx.santa.scale.setScalar(1.6);
+          galaxfx.santa.position.set(23+Math.cos(sa)*82,66+Math.sin(now/1800)*4,16+Math.sin(sa)*82);
           galaxfx.santa.rotation.y=-sa+Math.PI/2;
           galaxfx.santa.rotation.z=Math.sin(now/2200)*.05;
           if(galaxfx.santa.userData.sheep) galaxfx.santa.userData.sheep.rotation.z=Math.sin(now/900)*.12;
@@ -5432,7 +5562,7 @@
   function buildFallingStars(){
       if(!structureGroup||!level3d)return;
       fallfx.length=0;
-      for(var i=0;i<12;i++){
+      for(var i=0;i<6;i++){
         var g=new THREE.Group(); g.userData.v9=true; structureGroup.add(g);
         // bright head
         var head=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),
@@ -5472,7 +5602,7 @@
       if(!structureGroup||!level3d)return;
       xmasfx.lights.length=0;xmasfx.gifts.length=0;xmasfx.snow.length=0;
       // Big christmas tree at Command hub side
-      var tree=new THREE.Group(); tree.position.set(5,0,5); tree.userData.v9=true; structureGroup.add(tree);
+      var tree=new THREE.Group(); tree.position.set(0,0,30); tree.scale.setScalar(.82); tree.userData.v9=true; structureGroup.add(tree);
       var trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,1,8),solid('#6b4423',{roughness:.85}));trunk.position.y=.5;trunk.userData.v9=true;tree.add(trunk);
       for(var L=0;L<4;L++){
         var cone=new THREE.Mesh(new THREE.ConeGeometry(1.8-L*.35,1.6,10),solid(L%2?'#0e6b3a':'#0a5c32',{roughness:.85}));
@@ -5486,7 +5616,7 @@
       for(var i=0;i<16;i++){
         var ang=i/40*Math.PI*2, r=2.2;
         var bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),solid(lc[i%5],{emissive:lc[i%5],emissiveIntensity:1.3}));
-        bulb.position.set(5+Math.cos(ang)*r, 1+Math.sin(i*.7)*3.5, 5+Math.sin(ang)*r);
+        bulb.position.set(0+Math.cos(ang)*r*1.5, 1+Math.sin(i*.7)*3, 30+Math.sin(ang)*r*1.5);
         bulb.userData.v9=true; addO(bulb);
         xmasfx.lights.push({m:bulb,p:i*.5});
       }
@@ -5927,9 +6057,9 @@
     }
     try {
       // Animated monitor dashboards (staggered so 24 canvases never repaint at once).
-      if (now - (tick.screens || 0) > 320 && fx.screens.length) {
+      if (now - (tick.screens || 0) > 500 && fx.screens.length) {
         tick.screens = now;
-        for (var si = 0; si < 5; si++) {
+        for (var si = 0; si < 3; si++) {
           var sc = fx.screens[(tick.screenPtr || 0) % fx.screens.length];
           tick.screenPtr = ((tick.screenPtr || 0) + 1) % fx.screens.length;
           sc.step++;

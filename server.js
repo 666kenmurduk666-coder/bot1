@@ -1244,8 +1244,10 @@ async function generateConversation(ids) {
   // If the model fell back to the same joke again, give it one explicit second chance.
   if (convoTooSimilar(lines, recent)) {
     try {
-      const fresh = (await callAI(sys, user + '\nIMPORTANT: Pick a COMPLETELY different topic and totally new wording.', 500))
-        .split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
+      const fresh = (await Promise.race([
+        callAI(sys, user + '\nIMPORTANT: Pick a COMPLETELY different topic and totally new wording.', 500),
+        new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('ad retry timeout')); }, 8000); })
+      ])).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 6);
       if (fresh.length && !convoTooSimilar(fresh, recent)) lines = fresh;
     } catch (e) { /* keep the first result */ }
   }
