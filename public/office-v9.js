@@ -4624,7 +4624,7 @@
     q.fillStyle='#2f3b4e'; q.fillRect(0,0,256,256);
     // subtle realistic ground speckle + concentric tech rings
     var rnd=function(){return Math.random();};
-    for(var i=0;i<180;i++){
+    for(var i=0;i<0;i++){
       q.fillStyle='rgba(255,255,255,'+(0.015+rnd()*0.035).toFixed(3)+')';
       q.fillRect(rnd()*256,rnd()*256,1+rnd()*2,1+rnd()*2);
     }
@@ -4683,7 +4683,7 @@
     // Dense realistic starfield (multiple colors, varied brightness)
     try{
       var pts=[],cols=[];
-      for(var i=0;i<220;i++){
+      for(var i=0;i<0;i++){
         var a=Math.random()*Math.PI*2, r=90+Math.random()*220;
         pts.push(Math.cos(a)*r,-30+Math.random()*120,Math.sin(a)*r);
         var c=new THREE.Color().setHSL(.55+Math.random()*.12,.2+Math.random()*.5,.6+Math.random()*.4);
@@ -4794,7 +4794,7 @@
 
     // --- sparkles around each robot + portal (reuse one texture) ---
     var stex=sparkleTexture();
-    for(var i=0;i<6;i++){
+    for(var i=0;i<0;i++){
       var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:.7,depthWrite:false,fog:false}));
       sp.scale.set(.4,.4,1); sp.userData.v9=true; addO(sp);
       ju.sparkles.push({m:sp,r:20+Math.random()*35,a:Math.random()*Math.PI*2,y:1+Math.random()*8,sp:.2+Math.random()*.3});
@@ -4802,7 +4802,7 @@
     // --- parallax star layers (3 depths, different drift speeds) ---
     [[60,.10,120],[100,.06,200],[160,.035,300]].forEach(function(L,li){
       var pts=[];
-      for(var i=0;i<70;i++){var a=Math.random()*Math.PI*2,r=L[0]*.4+Math.random()*L[0];pts.push(Math.cos(a)*r,Math.random()*60-10,Math.sin(a)*r);}
+      for(var i=0;i<0;i++){var a=Math.random()*Math.PI*2,r=L[0]*.4+Math.random()*L[0];pts.push(Math.cos(a)*r,Math.random()*60-10,Math.sin(a)*r);}
       var g2=new THREE.BufferGeometry(); g2.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
       var stars=new THREE.Points(g2,new THREE.PointsMaterial({color:li===0?'#ffffff':'#8fc7ff',size:.18+li*.06,transparent:true,opacity:.8,depthWrite:false,fog:false}));
       stars.userData.v9=true; addO(stars);
@@ -4865,7 +4865,7 @@
       q.fillStyle=rg; q.fillRect(0,0,1024,512);
     });
     // stars
-    for(var i=0;i<260;i++){
+    for(var i=0;i<0;i++){
       var x=Math.random()*1024,y=Math.random()*512,r=Math.random()*1.6+.2;
       q.fillStyle='rgba(255,255,255,'+(.3+Math.random()*.6).toFixed(2)+')';
       q.beginPath(); q.arc(x,y,r,0,Math.PI*2); q.fill();
@@ -5031,7 +5031,7 @@
       janfx.crew.push({g:g,broom:broom,cart:cart,color:col,phase:idx*1.7,pos:{x:0,z:0}});
     });
     // cleaning sparkles (shared pool)
-    for(var i=0;i<4;i++){
+    for(var i=0;i<0;i++){
       var sp=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),solid('#bfffee',{emissive:'#7fe0c8',emissiveIntensity:1.2}));
       sp.userData.v9=true; addO(sp); janfx.sparkles.push(sp);
     }
@@ -5637,7 +5637,7 @@
         xmasfx.gifts.push({g:gi,p:g});
       }
       // falling "snow" sparkles across the scene
-      for(var sn=0;sn<60;sn++){
+      for(var sn=0;sn<0;sn++){
         var flake=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),solid('#ffffff',{emissive:'#ffffff',emissiveIntensity:.8,transparent:true,opacity:.8}));
         flake.position.set((Math.random()-.5)*120,Math.random()*40,(Math.random()-.5)*120);
         flake.userData.v9=true; addO(flake);
@@ -5814,7 +5814,7 @@
     // stars
     try{
       var pts=[];
-      for(var i=0;i<120;i++){var a=Math.random()*Math.PI*2,r=40+Math.random()*100;pts.push(Math.cos(a)*r,-6+Math.random()*50,Math.sin(a)*r);}
+      for(var i=0;i<0;i++){var a=Math.random()*Math.PI*2,r=40+Math.random()*100;pts.push(Math.cos(a)*r,-6+Math.random()*50,Math.sin(a)*r);}
       var geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
       var stars=new THREE.Points(geo,new THREE.PointsMaterial({color:'#9fc7ff',size:.18,transparent:true,opacity:.85,fog:false}));
       stars.userData.v9=true; addO(stars);
