@@ -4221,7 +4221,7 @@
       var off=1.42, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
       var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.06,.07),solid('#8fa9c4',{roughness:.3,metalness:.6,emissive:color,emissiveIntensity:.3}));
       rail.position.set(mx+rx,.5,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
-      for(var t=.05;t<=.96;t+=.12){
+      for(var t=.05;t<=.96;t+=.2){
         var post=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,6),solid('#6a7a98',{metalness:.5}));
         post.position.set(x1+dx*t+rx,.26,z1+dz*t+rz); post.userData.v9=true; addO(post);
       }
@@ -4560,10 +4560,10 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); adaptiveDetail(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
-    }, 50);
+    }, 90);
   }
 
 
@@ -4653,7 +4653,7 @@
     // Dense realistic starfield (multiple colors, varied brightness)
     try{
       var pts=[],cols=[];
-      for(var i=0;i<700;i++){
+      for(var i=0;i<220;i++){
         var a=Math.random()*Math.PI*2, r=90+Math.random()*220;
         pts.push(Math.cos(a)*r,-30+Math.random()*120,Math.sin(a)*r);
         var c=new THREE.Color().setHSL(.55+Math.random()*.12,.2+Math.random()*.5,.6+Math.random()*.4);
@@ -4714,7 +4714,7 @@
       alivefx.lights.push({l:L,p:di});
     });
     // --- fireflies drifting around Command ---
-    for(var i=0;i<26;i++){
+    for(var i=0;i<12;i++){
       var f=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),solid(i%2?'#ff8df0':'#8fd8ff',{emissive:i%2?'#ff8df0':'#8fd8ff',emissiveIntensity:1.4}));
       f.userData.v9=true; addO(f);
       alivefx.fireflies.push({m:f,r:6+Math.random()*22,a:Math.random()*Math.PI*2,y:1+Math.random()*9,sp:.3+Math.random()*.4});
@@ -4763,7 +4763,7 @@
     var ctex=coinTexture();
     // --- coin lines floating above bridges + arcs over islands (SS-style collectibles) ---
     navBridges.forEach(function(b,bi){
-      for(var i=1;i<=7;i++){
+      for(var i=1;i<=4;i++){
         var t=i/8;
         var coin=new THREE.Mesh(new THREE.PlaneGeometry(.55,.55),new THREE.MeshBasicMaterial({map:ctex,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
         coin.position.set(b.x1+(b.x2-b.x1)*t, 1.6+Math.sin(t*Math.PI)*1.2, b.z1+(b.z2-b.z1)*t);
@@ -4784,7 +4784,7 @@
     });
     // --- sparkles around each robot + portal (reuse one texture) ---
     var stex=sparkleTexture();
-    for(var i=0;i<40;i++){
+    for(var i=0;i<18;i++){
       var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:.7,depthWrite:false,fog:false}));
       sp.scale.set(.4,.4,1); sp.userData.v9=true; addO(sp);
       ju.sparkles.push({m:sp,r:20+Math.random()*35,a:Math.random()*Math.PI*2,y:1+Math.random()*8,sp:.2+Math.random()*.3});
@@ -5020,7 +5020,7 @@
       janfx.crew.push({g:g,broom:broom,cart:cart,color:col,phase:idx*1.7,pos:{x:0,z:0}});
     });
     // cleaning sparkles (shared pool)
-    for(var i=0;i<20;i++){
+    for(var i=0;i<8;i++){
       var sp=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),solid('#bfffee',{emissive:'#7fe0c8',emissiveIntensity:1.2}));
       sp.userData.v9=true; addO(sp); janfx.sparkles.push(sp);
     }
@@ -5332,7 +5332,7 @@
       // Galaxy dust clouds (colorful nebula points spread wide)
       try{
         var pts=[],cols=[];
-        for(var i=0;i<900;i++){
+        for(var i=0;i<250;i++){
           var a=Math.random()*Math.PI*2, r=120+Math.random()*280;
           pts.push(Math.cos(a)*r,-40+Math.random()*160,Math.sin(a)*r);
           var c=new THREE.Color().setHSL(.55+Math.random()*.25,.3+Math.random()*.4,.4+Math.random()*.4);
@@ -5361,7 +5361,7 @@
   function buildFallingStars(){
       if(!structureGroup||!level3d)return;
       fallfx.length=0;
-      for(var i=0;i<26;i++){
+      for(var i=0;i<12;i++){
         var g=new THREE.Group(); g.userData.v9=true; structureGroup.add(g);
         // bright head
         var head=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),
@@ -5412,7 +5412,7 @@
       xmasfx.tree=tree; xmasfx.star=star;
       // colorful christmas lights around tree + islands (String lights)
       var lc=['#ff3b3b','#ffd34d','#3dff9e','#63e6ff','#ff8df0'];
-      for(var i=0;i<40;i++){
+      for(var i=0;i<16;i++){
         var ang=i/40*Math.PI*2, r=2.2;
         var bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),solid(lc[i%5],{emissive:lc[i%5],emissiveIntensity:1.3}));
         bulb.position.set(5+Math.cos(ang)*r, 1+Math.sin(i*.7)*3.5, 5+Math.sin(ang)*r);
@@ -5456,6 +5456,60 @@
       }catch(e){}
     }
 
+
+  // ===== PERFORMANCE GUARD: freeze static objects + adaptive detail =====
+  var perfg={lastCheck:0,fps:60,low:0,frozen:false,hidden:[]};
+  function optimizeStatic(){
+    if(!structureGroup||perfg.frozen)return;
+    perfg.frozen=true;
+    var animated=new Set();
+    // collect all animated object ids from walkers, janitors, UFOs, particles
+    try{
+      if(typeof walkers!=='undefined') walkers.forEach(function(w){ [w.g,w.body,w.head,w.armL,w.armR,w.legL,w.legR,w.belly,w.tip].forEach(function(o){if(o)animated.add(o.id);}); });
+      if(typeof janfx!=='undefined'&&janfx.crew) janfx.crew.forEach(function(j){animated.add(j.g.id);animated.add(j.broom.id);animated.add(j.cart.id);});
+      if(typeof ufofx!=='undefined'&&ufofx.ships) ufofx.ships.forEach(function(u){animated.add(u.g.id);});
+      if(typeof civfx!=='undefined'&&civfx.ships) civfx.ships.forEach(function(sh){animated.add(sh.g.id);});
+      if(typeof maxfx!=='undefined'&&maxfx.hover) maxfx.hover.forEach(function(h){animated.add(h.g.id);});
+      if(typeof xmasfx!=='undefined'&&xmasfx.tree) animated.add(xmasfx.tree.id);
+      if(typeof maxfx!=='undefined'&&maxfx.drones) maxfx.drones.forEach(function(d){animated.add(d.g.id);});
+      if(typeof fx3d!=='undefined'){ fx3d.shooting&&fx3d.shooting.forEach(function(o){animated.add(o.id);}); }
+    }catch(e){}
+    // freeze everything not animated: skip per-frame matrix recomputation
+    var n=0;
+    structureGroup.traverse(function(o){
+      if(animated.has(o.id))return;
+      if(o.matrixAutoUpdate!==undefined) o.matrixAutoUpdate=false;
+      if(o.updateMatrix) o.updateMatrix();
+      n++;
+    });
+    perfg.frozenCount=n;
+  }
+  function adaptiveDetail(now,dt){
+    if(now-perfg.lastCheck<2000)return;
+    perfg.lastCheck=now;
+    try{
+      var info=renderer3d&&renderer3d.info;
+      var calls=info?info.render.calls:0;
+      // estimate load from draw calls; if very high, hide tiny decorative meshes far away
+      if(calls>700 && perfg.low<3){ perfg.low++; hideTinyDetails(); }
+      else if(calls<450 && perfg.low>0){ perfg.low--; showTinyDetails(); }
+    }catch(e){}
+  }
+  function hideTinyDetails(){
+    perfg.hidden=[];
+    if(!structureGroup)return;
+    structureGroup.traverse(function(o){
+      if(perfg.hidden.length>400)return;
+      if(!o.isMesh||!o.geometry)return;
+      if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      var r=o.geometry.boundingSphere?o.geometry.boundingSphere.radius:0;
+      if(r<0.16 && o.visible && !o.userData.v9Keep){
+        o.visible=false; perfg.hidden.push(o);
+      }
+    });
+  }
+  function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
+
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
@@ -5467,7 +5521,7 @@
     // stars
     try{
       var pts=[];
-      for(var i=0;i<340;i++){var a=Math.random()*Math.PI*2,r=40+Math.random()*100;pts.push(Math.cos(a)*r,-6+Math.random()*50,Math.sin(a)*r);}
+      for(var i=0;i<120;i++){var a=Math.random()*Math.PI*2,r=40+Math.random()*100;pts.push(Math.cos(a)*r,-6+Math.random()*50,Math.sin(a)*r);}
       var geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
       var stars=new THREE.Points(geo,new THREE.PointsMaterial({color:'#9fc7ff',size:.18,transparent:true,opacity:.85,fog:false}));
       stars.userData.v9=true; addO(stars);
@@ -5525,6 +5579,7 @@
     spaceRealism();
     vibrantLayer();
     startWalkLoop();
+    setTimeout(optimizeStatic,3000);
     return true;
   }
 
