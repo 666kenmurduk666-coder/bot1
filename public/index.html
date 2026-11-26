@@ -685,7 +685,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=196"></script>
+<script src="/office-v9.js?v=197"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1448,8 +1448,10 @@ function startBotAct(c){
 }
 /* ---------- sound effects (Web Audio synth — walang files!) ---------- */
 let AC=null,soundOn=true,bandLoop=null;
-function ensureAC(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
-function snd(kind,seed){
+function ensureAC(){ return; // all audio disabled
+if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
+function snd(kind,seed){ return; // all sound effects disabled
+
   if(!soundOn)return;ensureAC();if(!AC)return;
   const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
   o.connect(g);g.connect(AC.destination);
@@ -1518,7 +1520,8 @@ function bandBeat(){
 document.addEventListener('mousedown',ensureAC);document.addEventListener('touchstart',ensureAC);
 /* 🌌 Outer-space ambience - starts after first interaction, no buttons needed. */
 var spaceAmb=null;
-function startSpaceAmbience(){
+function startSpaceAmbience(){ return; // ambience disabled
+
   if(!soundOn||spaceAmb)return;
   ensureAC(); if(!AC)return;
   try{
@@ -1534,7 +1537,7 @@ document.addEventListener('mousedown',startSpaceAmbience);
 document.addEventListener('touchstart',startSpaceAmbience);
 /* 🔊 Bot voices + light UI clicks (all synthesized, no audio files) */
 let lastBubbleSfx={k:'',t:0};
-function bubbleSfx(k,id){ return; // chat sounds disabled
+function bubbleSfx(k,id){ return;
 
   const n=Date.now();
   if(k===lastBubbleSfx.k||n-lastBubbleSfx.t<2500)return;
@@ -1571,7 +1574,7 @@ function taglishForVoice(text){
   return t.slice(0,180);
 }
 const speakSeen={};
-function speak(text,id,interrupt){ return; // bot voice disabled
+function speak(text,id,interrupt){ return;
 
   if(!voiceOn||!window.speechSynthesis||!text)return;
   const clean=taglishForVoice(text);

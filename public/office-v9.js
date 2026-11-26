@@ -905,8 +905,8 @@
   }
   function sunGlow() {
     var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex(), color: '#ffd89a', transparent: true,
-      opacity: .38, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
-    s.position.set(8, 11.5, -27); s.scale.set(11, 11, 1); s.renderOrder = 1; addO(s);
+      opacity: .12, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    s.position.set(8, 11.5, -27); s.scale.set(6, 6, 1); s.renderOrder = 1; addO(s);
     fx.sun = s;
   }
   function wallFrame(x, y, z, w, h, rot, seed) {
@@ -3779,7 +3779,7 @@
       var mine = o.userData && o.userData.v9Light;
       if (o.isAmbientLight) o.intensity = .58;
       else if (o.isHemisphereLight) o.intensity = .25;
-      else if (o.isDirectionalLight) o.intensity = mine ? .86 : .3;
+      else if (o.isDirectionalLight) o.intensity = mine ? .32 : .18;
       else if (o.isPointLight) {
         if (!mine) { o.intensity = .12; o.visible = false; }
         else o.intensity = .3;
@@ -4750,7 +4750,7 @@
       alivefx.fireflies.push({m:f,r:6+Math.random()*22,a:Math.random()*Math.PI*2,y:1+Math.random()*9,sp:.3+Math.random()*.4});
     }
     // --- day/night color cycle on ambient + fog (subtle, keeps guards) ---
-    alivefx.ambBase=.58;
+    alivefx.ambBase=.34;
   }
   function tickAlive(now,dt){
     try{
@@ -4794,7 +4794,7 @@
 
     // --- sparkles around each robot + portal (reuse one texture) ---
     var stex=sparkleTexture();
-    for(var i=0;i<18;i++){
+    for(var i=0;i<6;i++){
       var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:.7,depthWrite:false,fog:false}));
       sp.scale.set(.4,.4,1); sp.userData.v9=true; addO(sp);
       ju.sparkles.push({m:sp,r:20+Math.random()*35,a:Math.random()*Math.PI*2,y:1+Math.random()*8,sp:.2+Math.random()*.3});
@@ -5455,7 +5455,7 @@
       // Galaxy dust clouds (colorful nebula points spread wide)
       try{
         var pts=[],cols=[];
-        for(var i=0;i<120;i++){
+        for(var i=0;i<40;i++){
           var a=Math.random()*Math.PI*2, r=120+Math.random()*280;
           pts.push(Math.cos(a)*r,-40+Math.random()*160,Math.sin(a)*r);
           var c=new THREE.Color().setHSL(.55+Math.random()*.25,.3+Math.random()*.4,.4+Math.random()*.4);
@@ -5900,7 +5900,7 @@
     scene3d.background = new THREE.Color('#070c18');
     scene3d.fog = new THREE.Fog('#070c18', 120, 240);
     scene3d.isNight = 0;
-    try { renderer3d.toneMappingExposure = .78; } catch (e) {}
+    try { renderer3d.toneMappingExposure = .66; } catch (e) {}
     if (g.amb) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
     if (g.sun) g.sun.intensity = .86;
     [[12, 3.1, 9], [34, 3.1, 9], [23, 3.1, 28]].forEach(function (p) {
@@ -6041,7 +6041,7 @@
       }
       if (g && g.amb && Math.abs(g.amb.intensity - .48) > .01) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
       tameOfficeLights();
-      if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .78;
+      if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .66;
     } catch (e) {}
     applyCeilingView();
     // ⏱ Detail check 2s na lang, hindi 25×/second (may change guard na ito).
@@ -6365,7 +6365,7 @@
       if (fx.sun) {
         var sp = 1 + .04 * Math.sin(now / 1900);
         fx.sun.scale.set(11 * sp, 11 * sp, 1);
-        if (fx.sun.material) fx.sun.material.opacity = .32 + .08 * (.5 + .5 * Math.sin(now / 2400));
+        if (fx.sun.material) fx.sun.material.opacity = .10 + .03 * (.5 + .5 * Math.sin(now / 2400));
       }
     } catch (e) {}
     // ⏱ 4D time-life para sa hardin — dahan-dahang hihipa ng oras (crops: nasa tick na).
