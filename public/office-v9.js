@@ -5031,7 +5031,7 @@
       janfx.crew.push({g:g,broom:broom,cart:cart,color:col,phase:idx*1.7,pos:{x:0,z:0}});
     });
     // cleaning sparkles (shared pool)
-    for(var i=0;i<8;i++){
+    for(var i=0;i<4;i++){
       var sp=new THREE.Mesh(new THREE.SphereGeometry(.06,6,6),solid('#bfffee',{emissive:'#7fe0c8',emissiveIntensity:1.2}));
       sp.userData.v9=true; addO(sp); janfx.sparkles.push(sp);
     }
@@ -5441,7 +5441,7 @@
         var satBody=new THREE.MeshStandardMaterial({color:'#cfd6e6',metalness:.6,roughness:.35,emissive:'#1b2b4a',emissiveIntensity:.25});
         var satPanel=new THREE.MeshStandardMaterial({color:'#2a5fb0',metalness:.3,roughness:.5,emissive:'#0e2a55',emissiveIntensity:.45});
         var satDish=new THREE.MeshStandardMaterial({color:'#e8ecf5',metalness:.2,roughness:.6,side:THREE.DoubleSide});
-        for(var si=0;si<6;si++){
+        for(var si=0;si<3;si++){
           var sat=new THREE.Group();
           var body=new THREE.Mesh(new THREE.BoxGeometry(.9,.7,.7),satBody); body.userData.v9=true; sat.add(body);
           [-1,1].forEach(function(side){
@@ -5458,7 +5458,7 @@
       // Galaxy dust clouds (colorful nebula points spread wide)
       try{
         var pts=[],cols=[];
-        for(var i=0;i<40;i++){
+        for(var i=0;i<6;i++){
           var a=Math.random()*Math.PI*2, r=120+Math.random()*280;
           pts.push(Math.cos(a)*r,-40+Math.random()*160,Math.sin(a)*r);
           var c=new THREE.Color().setHSL(.55+Math.random()*.25,.3+Math.random()*.4,.4+Math.random()*.4);
@@ -5567,7 +5567,7 @@
   function buildFallingStars(){
       if(!structureGroup||!level3d)return;
       fallfx.length=0;
-      for(var i=0;i<6;i++){
+      for(var i=0;i<3;i++){
         var g=new THREE.Group(); g.userData.v9=true; structureGroup.add(g);
         // bright head
         var head=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),
@@ -5668,7 +5668,7 @@
   function optimizeStatic(){ /* disabled: freezing broke animations */ }
 
   function adaptiveDetail(now,dt){
-    if(now-perfg.lastCheck<2000)return;
+    if(now-perfg.lastCheck<6000)return;
     perfg.lastCheck=now;
     try{
       var info=renderer3d&&renderer3d.info;
@@ -5716,7 +5716,7 @@
     window.__officeDetail = tier==='low'?'low':'high';
     applyDetailLevel(true);
     if(tier==='low'){
-      try{ if(renderer3d&&renderer3d.setPixelRatio) renderer3d.setPixelRatio(.8); }catch(e){}
+      try{ if(renderer3d&&renderer3d.setPixelRatio) renderer3d.setPixelRatio(.65); }catch(e){}
       try{
         [fx.dust,fx.pets,fx.outfits].forEach(function(o){ if(o&&o.visible!==undefined)o.visible=false; });
         if(perfg.low<1){perfg.low=1;hideTinyDetails();}
@@ -5859,11 +5859,11 @@
     // Start the living loop FIRST — a failing visual builder must never stop the robots.
     startWalkLoop();
     // Each visual layer is isolated: one failure can't block the others.
-    var layers=[ ['enhance3D',enhance3D], ['maxEnhance',maxEnhance], ['buildCivilization',buildCivilization],
-      ['buildAtmosphere',buildAtmosphere], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
-      ['buildJanitor',buildJanitor], ['buildMegaVisual',buildMegaVisual], ['buildSpecialtyBots',buildSpecialtyBots],
-      ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy], ['buildFallingStars',buildFallingStars],
-      ['buildChristmas',buildChristmas], ['spaceRealism',spaceRealism], ['vibrantLayer',vibrantLayer], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
+    // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
+    // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
+    var layers=[ ['enhance3D',enhance3D], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
+      ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
+      ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: build only the 3 essential layers now; defer the rest one per
     // idle callback so the page becomes interactive immediately (no first-open lag).
@@ -6152,7 +6152,7 @@
     }
     try {
       // Animated monitor dashboards (staggered so 24 canvases never repaint at once).
-      if (now - (tick.screens || 0) > 500 && fx.screens.length) {
+      if (false && now - (tick.screens || 0) > 500 && fx.screens.length) {
         tick.screens = now;
         for (var si = 0; si < 3; si++) {
           var sc = fx.screens[(tick.screenPtr || 0) % fx.screens.length];
