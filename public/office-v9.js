@@ -3927,6 +3927,35 @@
     if(/janitor|clean/.test(n)) return 'janitor';
     return 'worker';
   }
+  // 🎬 Cinematic shared textures (built once, reused by every bot)
+  var _cineSkin=null, _cineGlow=null;
+  function cineSkinTex(){
+    if(_cineSkin)return _cineSkin;
+    var c=document.createElement('canvas'); c.width=128; c.height=128;
+    var q=c.getContext('2d');
+    var g=q.createLinearGradient(0,0,128,128);
+    g.addColorStop(0,'#5a6675'); g.addColorStop(.35,'#2b3440'); g.addColorStop(.7,'#1a202b'); g.addColorStop(1,'#0d121a');
+    q.fillStyle=g; q.fillRect(0,0,128,128);
+    // brushed metal streaks
+    for(var i=0;i<26;i++){
+      q.strokeStyle='rgba(190,220,255,'+(.02+Math.random()*.05)+')'; q.lineWidth=Math.random()*2+.5;
+      q.beginPath(); q.moveTo(0,i*5+Math.random()*4); q.lineTo(128,i*5-10+Math.random()*8); q.stroke();
+    }
+    // rim highlight
+    var rg=q.createRadialGradient(100,18,2,100,18,90);
+    rg.addColorStop(0,'rgba(200,230,255,.35)'); rg.addColorStop(1,'rgba(200,230,255,0)');
+    q.fillStyle=rg; q.fillRect(0,0,128,128);
+    _cineSkin=new THREE.CanvasTexture(c); return _cineSkin;
+  }
+  function cineGlowTex(){
+    if(_cineGlow)return _cineGlow;
+    var c=document.createElement('canvas'); c.width=64; c.height=64;
+    var q=c.getContext('2d');
+    var g=q.createRadialGradient(32,32,1,32,32,32);
+    g.addColorStop(0,'rgba(150,215,255,.65)'); g.addColorStop(.4,'rgba(90,150,230,.22)'); g.addColorStop(1,'rgba(40,90,180,0)');
+    q.fillStyle=g; q.fillRect(0,0,64,64);
+    _cineGlow=new THREE.CanvasTexture(c); return _cineGlow;
+  }
   function refBot(x, z, color, name) {
     var g = new THREE.Group(); g.position.set(x, -0.02, z); g.scale.setScalar(1.28); g.userData.v9 = true; structureGroup.add(g);
     var role=botRole(name);
@@ -3935,9 +3964,9 @@
     var body = new THREE.Group(); g.add(body);
     // BIG round belly (chibi), short body — dwarf proportions
     var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid('#262d38',{roughness:.5,metalness:.42,emissive:'#0d1420',emissiveIntensity:.12}));
-    torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
+    torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; torso.material.map=cineSkinTex(); torso.material.color.set('#ffffff'); torso.material.needsUpdate=true; body.add(torso);
     var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid('#303a47',{roughness:.55,metalness:.35,emissive:'#111925',emissiveIntensity:.1}));
-    tummy.position.set(0,.42,.34); tummy.scale.set(1.32,1.05,.88); tummy.userData.v9=true; body.add(tummy);
+    tummy.position.set(0,.42,.34); tummy.scale.set(1.32,1.05,.88); tummy.userData.v9=true; tummy.material.map=cineSkinTex(); tummy.material.color.set('#ffffff'); tummy.material.needsUpdate=true; body.add(tummy);
     var belly = new THREE.Mesh(new THREE.CircleGeometry(.32,12), solid('#1a2740',{emissive:'#ff9a3c',emissiveIntensity:.8}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     var bellyRing=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,20),solid(color,{emissive:color,emissiveIntensity:1.1,metalness:.4}));
@@ -3955,7 +3984,7 @@
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
     var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid('#2b333f',{roughness:.45,metalness:.4,emissive:'#0f1622',emissiveIntensity:.1}));
-    skull.userData.v9=true; head.add(skull);
+    skull.userData.v9=true; skull.material.map=cineSkinTex(); skull.material.color.set('#ffffff'); skull.material.needsUpdate=true; head.add(skull);
     // 🤖 CYBORG: half metal face plate, red glowing eye, spiky hair, shades
     var metal=new THREE.MeshStandardMaterial({color:'#525e6b',metalness:.85,roughness:.32});
     var plate=new THREE.Mesh(new THREE.SphereGeometry(.405,12,10,0,Math.PI,0,Math.PI),metal);
@@ -4052,7 +4081,7 @@
     var coreRing=new THREE.Mesh(new THREE.TorusGeometry(.14,.035,8,16),solid('#ff9a3c',{emissive:'#ff7a1f',emissiveIntensity:1.4,metalness:.5}));
     coreRing.position.set(0,.62,.68); coreRing.userData.v9=true; body.add(coreRing);
     var coreDot=new THREE.Mesh(new THREE.SphereGeometry(.09,10,8),solid('#ffd36b',{emissive:'#ff9a3c',emissiveIntensity:1.6}));
-    coreDot.position.set(0,.62,.70); coreDot.userData.v9=true; body.add(coreDot);
+    coreDot.position.set(0,.62,.70); coreDot.userData.v9=true; body.add(coreDot); animParts.push({m:coreDot,k:'led',p:x*.7+z});
     // ROLE NAME printed ON THE UNIFORM (chest badge with real text)
     var roleLabel=(role||'TEAM').toUpperCase();
     var roleCv=document.createElement('canvas'); roleCv.width=256; roleCv.height=64;
@@ -4069,6 +4098,9 @@
     var pack=new THREE.Mesh(new THREE.BoxGeometry(.36,.32,.18),solid('#2a3550',{roughness:.5,metalness:.4}));pack.position.set(0,.60,-.42);pack.userData.v9=true;body.add(pack);
     // joint rings
     [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.45}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
+    var cineFloor=new THREE.Mesh(new THREE.CircleGeometry(.85,16),
+      new THREE.MeshBasicMaterial({map:cineGlowTex(),transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide,fog:false,blending:THREE.AdditiveBlending}));
+    cineFloor.rotation.x=-Math.PI/2; cineFloor.position.set(0,.035,0); cineFloor.userData.v9=true; g.add(cineFloor);
     if (name) refLabel(name, color, x, 2.15, z, 3.0, .7);
     // 🏅 ROLE & HIERARCHY badge above the bot
     try{
