@@ -649,7 +649,7 @@ dialog::backdrop{background:#000a}
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=155"></script>
+<script src="/office-v9.js?v=162"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -8058,7 +8058,7 @@ setInterval(function(){try{if(window.__officeV9&&!window.__efOk){window.__efOk=1
     panel.style.display='block';
     var st=w.state||'idle';
     panel.innerHTML='<b style="color:#63e6ff">'+esc(w.name||'Bot')+'</b><br>'+
-      'Role: '+(w.role||'Team')+'<br>State: '+st+'<br>'+
+      'Role: '+(w.role||'Team')+'<br>Team: '+(w.team||'—')+'<br>State: '+st+'<br>'+
       'Zone: '+(w.zone==null?'?':w.zone)+'<br>'+
       'Speed: '+(w.speed||1).toFixed(2)+'<br>'+
       '<span style="color:#7fe0a8">● online</span>';
