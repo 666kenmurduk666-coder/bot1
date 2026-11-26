@@ -5287,7 +5287,7 @@
         var u=ufofx.ships[i], g=u.g, beam=g.userData.beam;
         var A=ISLANDS[u.from]||[0,0];
         var C=[0,0]; // Command hub at the center
-        var E=galaxfx.earth?galaxfx.earth.position:new THREE.Vector3(38,34,-18);
+        var E=galaxfx.earth?galaxfx.earth.position:new THREE.Vector3(78,62,-88);
         if(u.phase==='wait'){
           if(now>u.pause){u.phase='pick';u.t=0;}
           continue;
@@ -5497,12 +5497,12 @@
           cx.globalAlpha=1;
           var etex=new THREE.CanvasTexture(cv);
           var globe2=new THREE.Mesh(new THREE.SphereGeometry(13,32,24),
-            new THREE.MeshStandardMaterial({map:etex,roughness:.9,metalness:.02,emissive:'#0e2d52',emissiveIntensity:.35,fog:false}));
+            new THREE.MeshStandardMaterial({map:etex,roughness:.9,metalness:.02,emissive:'#0e2d52',emissiveIntensity:.14,fog:false}));
           globe2.userData.v9=true; earth.add(globe2);
           var eatm=new THREE.Mesh(new THREE.SphereGeometry(13.8,32,24),
-            new THREE.MeshBasicMaterial({color:'#78d6ff',transparent:true,opacity:.2,side:THREE.BackSide,depthWrite:false,fog:false}));
+            new THREE.MeshBasicMaterial({color:'#78d6ff',transparent:true,opacity:.1,side:THREE.BackSide,depthWrite:false,fog:false}));
           eatm.userData.v9=true; earth.add(eatm);
-          earth.position.set(38,34,-18); earth.userData.v9=true; addO(earth);
+          earth.position.set(78,62,-88); earth.userData.v9=true; addO(earth);
           // Thin Venus-style orbital ring around Earth (not the old white campus circle)
           var vRing=new THREE.Mesh(new THREE.TorusGeometry(18.5,.09,8,96),
             new THREE.MeshBasicMaterial({color:'#ffd9a0',transparent:true,opacity:.55,depthWrite:false,fog:false}));
