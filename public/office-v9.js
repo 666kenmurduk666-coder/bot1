@@ -3801,7 +3801,7 @@
       // glowing edge lines
       var off=1.5;
       [-off,off].forEach(function(o){
-        var edge=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.08),solid(accent,{emissive:accent,emissiveIntensity:.8}));
+        var edge=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.08),solid(accent,{emissive:accent,emissiveIntensity:.42}));
         edge.position.set((x1+x2)/2+Math.cos(ang+Math.PI/2)*o,.06,(z1+z2)/2-Math.sin(ang+Math.PI/2)*o);
         edge.rotation.y=ang; edge.userData.v9=true; addO(edge);
       });
@@ -3934,15 +3934,15 @@
     var teamName=(currentTeam&&currentTeam.name)||'TEAM';
     var body = new THREE.Group(); g.add(body);
     // BIG round belly (chibi), short body — dwarf proportions
-    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.4,metalness:.08,emissive:color,emissiveIntensity:.85}));
+    var torso = new THREE.Mesh(new THREE.SphereGeometry(.5,14,12), solid(color,{roughness:.4,metalness:.08,emissive:color,emissiveIntensity:.45}));
     torso.position.y=.48; torso.scale.set(1.15,.95,1.05); torso.userData.v9=true; body.add(torso);
-    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.42,metalness:.06,emissive:color,emissiveIntensity:.95}));
+    var tummy = new THREE.Mesh(new THREE.SphereGeometry(.38,12,10), solid(color,{roughness:.42,metalness:.06,emissive:color,emissiveIntensity:.5}));
     tummy.position.set(0,.44,.30); tummy.scale.set(1,.8,.6); tummy.userData.v9=true; body.add(tummy);
     var belly = new THREE.Mesh(new THREE.CircleGeometry(.24,12), solid('#1a2740',{emissive:color,emissiveIntensity:.75}));
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     // BIG head (chibi) sitting low on the body
     var head = new THREE.Group(); head.position.y=1.02; head.scale.setScalar(1.1); body.add(head);
-    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.38,metalness:.08,emissive:color,emissiveIntensity:.8}));
+    var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid(color,{roughness:.38,metalness:.08,emissive:color,emissiveIntensity:.42}));
     skull.userData.v9=true; head.add(skull);
     [-1,1].forEach(function(s){
       var e=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6), solid('#0b1020'));
@@ -3998,7 +3998,7 @@
       var hp2=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),solid('#2a1a3a',{metalness:.4}));hp2.position.set(.40,.05,0);hp2.userData.v9=true;head.add(hp2);
     }
     if(role==='care'){
-      var heart=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),solid('#ff8fb1',{emissive:'#ff8fb1',emissiveIntensity:.8}));heart.position.set(0,.6,.55);heart.userData.v9=true;body.add(heart);
+      var heart=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),solid('#ff8fb1',{emissive:'#ff8fb1',emissiveIntensity:.42}));heart.position.set(0,.6,.55);heart.userData.v9=true;body.add(heart);
     }
     // carried project — glowing datapad
     var project=new THREE.Group(); project.position.set(0,1.1,.72); project.visible=false; project.userData.v9=true; body.add(project);
@@ -4024,7 +4024,7 @@
     // backpack
     var pack=new THREE.Mesh(new THREE.BoxGeometry(.36,.32,.18),solid('#2a3550',{roughness:.5,metalness:.4}));pack.position.set(0,.60,-.42);pack.userData.v9=true;body.add(pack);
     // joint rings
-    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.85}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
+    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.45}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
     if (name) refLabel(name, color, x, 2.15, z, 3.0, .7);
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
     bub.scale.set(2.4,.7,1); bub.position.set(0,2.5,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
@@ -4240,7 +4240,7 @@
     surf.position.set(mx,.01,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
     // twin glowing lane lines (symmetric — no direction implied)
     [-.85,.85].forEach(function(off){
-      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.015,.06),solid(color,{emissive:color,emissiveIntensity:.8}));
+      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.015,.06),solid(color,{emissive:color,emissiveIntensity:.42}));
       var ox=Math.sin(ang)*off, oz=Math.cos(ang)*off;
       line.position.set(mx+ox,.025,mz+oz); line.rotation.y=ang; line.userData.v9=true; addO(line);
     });
@@ -4709,7 +4709,7 @@
       glow.scale.set(60,60,1); glow.position.copy(sun.position); glow.userData.v9=true; addO(glow);
     }catch(e){}
     // Dramatic key light from the sun direction (no shadows)
-    var key=new THREE.DirectionalLight(0xfff0d0,.7); key.position.set(40,60,-30); key.userData.v9Light=true; addO(key);
+    var key=new THREE.DirectionalLight(0xfff0d0,.3); key.position.set(40,60,-30); key.userData.v9Light=true; addO(key);
   }
 
   function buildAlive(){
@@ -5746,10 +5746,10 @@
   function cinematicUpgrade(){
     if(!structureGroup||!level3d)return;
     // 1) Multi-layer key light (warm from one side, cool fill from other)
-    var key=new THREE.DirectionalLight(0xffeed0,.55); key.position.set(30,50,-20); key.userData.v9Light=true; addO(key);
-    var fill=new THREE.DirectionalLight(0x7fb8ff,.35); fill.position.set(-30,30,30); fill.userData.v9Light=true; addO(fill);
+    var key=new THREE.DirectionalLight(0xffeed0,.22); key.position.set(30,50,-20); key.userData.v9Light=true; addO(key);
+    var fill=new THREE.DirectionalLight(0x7fb8ff,.14); fill.position.set(-30,30,30); fill.userData.v9Light=true; addO(fill);
     // 2) Studio rim light above Command (makes the hub pop)
-    var rim=new THREE.SpotLight(0xa99cff,1.2,0,Math.PI/3,.6); rim.position.set(0,20,0); rim.target.position.set(0,0,0);
+    var rim=new THREE.SpotLight(0xa99cff,.35,0,Math.PI/3,.6); rim.position.set(0,20,0); rim.target.position.set(0,0,0);
     rim.userData.v9Light=true; addO(rim); addO(rim.target);
     // 3) Richer materials on island tops (subtle two-tone via vertex colors baked into canvas)
     structureGroup.traverse(function(o){
@@ -5764,7 +5764,7 @@
   function tickCinematic(now,dt){
     try{
       // very slow cinematic pulse on ambient (stays near .58 guard)
-      if(g&&g.amb) g.amb.intensity=.58+.03*Math.sin(now/7000);
+      if(g&&g.amb) g.amb.intensity=.48+.03*Math.sin(now/7000);
     }catch(e){}
   }
 
@@ -5868,8 +5868,8 @@
     scene3d.background = new THREE.Color('#070c18');
     scene3d.fog = new THREE.Fog('#070c18', 120, 240);
     scene3d.isNight = 0;
-    try { renderer3d.toneMappingExposure = .85; } catch (e) {}
-    if (g.amb) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
+    try { renderer3d.toneMappingExposure = .78; } catch (e) {}
+    if (g.amb) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
     if (g.sun) g.sun.intensity = .86;
     [[12, 3.1, 9], [34, 3.1, 9], [23, 3.1, 28]].forEach(function (p) {
       var l = new THREE.PointLight(0xffe9c0, .3, 38);
@@ -6007,9 +6007,9 @@
         if (scene3d.background && typeof scene3d.background.getHex==='function' && scene3d.background.getHex()!==0x1b2c55 && !scene3d.background.isTexture) { try{scene3d.background.set('#1b2c55');}catch(e){} }
         if (scene3d.fog && scene3d.fog.color && scene3d.fog.color.getHex() !== 0x1b2c55) scene3d.fog.color.set('#1b2c55');
       }
-      if (g && g.amb && Math.abs(g.amb.intensity - .58) > .01) { g.amb.intensity = .58; g.amb.color.set('#8fa4c4'); }
+      if (g && g.amb && Math.abs(g.amb.intensity - .48) > .01) { g.amb.intensity = .48; g.amb.color.set('#8fa4c4'); }
       tameOfficeLights();
-      if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .85;
+      if (renderer3d && Math.abs(renderer3d.toneMappingExposure - .85) > .01) renderer3d.toneMappingExposure = .78;
     } catch (e) {}
     applyCeilingView();
     // ⏱ Detail check 2s na lang, hindi 25×/second (may change guard na ito).
