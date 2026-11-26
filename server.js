@@ -2034,8 +2034,8 @@ async function cpWriteBrief(id) {
    sa Facebook Page gamit ang Graph API. Tunay na Tagalog, paksang dahon/halaman.
    Mabagal na cadence (120 minuto) para ligtas sa anti-spam ng Facebook. */
 const AUTOPOST_FILE = path.join(DATA, 'auto-post.json');
-const AUTO_POST_DAILY_CAP = Math.max(1, Math.min(200, Number(process.env.AUTO_POST_DAILY_CAP) || 8));
-const AUTO_POST_EVERY_MS = Math.max(30, Math.min(720, Number(process.env.AUTO_POST_EVERY_MIN) || 120)) * 60000;
+const AUTO_POST_DAILY_CAP = Math.max(1, Math.min(200, Number(process.env.AUTO_POST_DAILY_CAP) || Number((state.config||{}).autoPostDailyCap) || 3));
+const AUTO_POST_EVERY_MS = Math.max(30, Math.min(720, Number(process.env.AUTO_POST_EVERY_MIN) || Number((state.config||{}).autoPostEveryMin) || 240)) * 60000;
 const AUTO_POST_VIDEO = String(process.env.AUTO_POST_VIDEO_URL ||
   'https://cyborgcheebeeworkspace-d7sf.onrender.com/videos/office-skills-tagalog.mp4');
 const autoPostStore = Object.assign(

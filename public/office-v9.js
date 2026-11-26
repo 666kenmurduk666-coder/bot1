@@ -4070,6 +4070,19 @@
     // joint rings
     [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.45}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
     if (name) refLabel(name, color, x, 2.15, z, 3.0, .7);
+    // 🏅 ROLE & HIERARCHY badge above the bot
+    try{
+      var rankTxt = role==='boss' ? '👑 CEO' : role==='manager' ? '⭐ MGR' : (role||'STAFF').toUpperCase();
+      var rankCol = role==='boss' ? '#ffd34d' : role==='manager' ? '#b9c8dd' : color;
+      var rc=document.createElement('canvas'); rc.width=256; rc.height=56;
+      var rq=rc.getContext('2d');
+      rq.fillStyle='rgba(6,12,24,.88)'; rq.fillRect(0,0,256,56);
+      rq.strokeStyle=rankCol; rq.lineWidth=3; rq.strokeRect(2,2,252,52);
+      rq.fillStyle=rankCol; rq.font='bold 26px Arial'; rq.textAlign='center'; rq.textBaseline='middle';
+      rq.fillText(rankTxt,128,30);
+      var rankSpr=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(rc),transparent:true,depthTest:false}));
+      rankSpr.scale.set(1.9,.42,1); rankSpr.position.set(0,2.62,0); rankSpr.userData.v9=true; g.add(rankSpr);
+    }catch(e){}
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
     bub.scale.set(2.4,.7,1); bub.position.set(0,2.5,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
     animParts.push({m:belly,k:'led',p:x*.7+z});

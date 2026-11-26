@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=213"></script>
+<script src="/office-v9.js?v=214"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -1013,7 +1013,7 @@ function renderContentPipeline(){
   });
 }
 function renderAgents(){
-  $('agentSummary').textContent=(S.agents||[]).length+' agents · '+Object.keys(S.outputs||{}).length+' outputs ready · '+(S.running?'working…':'idle');
+  $('agentSummary').textContent='👑 CEO → ⭐ Managers → Staff  ·  '+(S.agents||[]).length+' agents · '+Object.keys(S.outputs||{}).length+' outputs ready · '+(S.running?'working…':'idle');
   // Group agents by role for a cleaner view
   var ROLE_LABEL={pipeline:'🎬 CONTENT PIPELINE',staff:'🧭 TEAM / STAFF','video editor':'✨ VIDEO EDITOR',content:'✍️ CONTENT TEAM'};
   var groups={};
