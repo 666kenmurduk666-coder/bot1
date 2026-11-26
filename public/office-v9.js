@@ -4331,7 +4331,7 @@
         var rows=['Abot  +12%','Mga post  3/3','Leads  24','Trend  LIVE','Ulat  HANDA','Ahente  13/13','Uptime  99%','Seguro  OO','Bayaran  HANDA','Mensahe  18','Masaya  92%','Team  OK'];
         var panel=new THREE.Mesh(new THREE.PlaneGeometry(18,18),
           new THREE.MeshBasicMaterial({map:dataPanelTexture('#63e6ff','CYBEE',rows),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-        panel.position.set(0,9,-14); panel.userData.v9=true; addO(panel);
+        panel.position.set(0,13,-38); panel.userData.v9=true; addO(panel);
         maxfx.billboards.push(panel);
       }
       // --- scanner beam sweeping above island ---
