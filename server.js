@@ -1886,7 +1886,10 @@ async function cpGenerateIdeas(count) {
       (liked.length ? 'CEO liked these angles, make more like them: ' + liked.join(' | ') + '\n' : '') +
       'Do not repeat these recent angles: ' + (recent.join(' | ') || 'none') + '\n' +
       'Return EXACTLY: {"ideas":[{"topic":"short ad angle","hook":"attention grabber","benefits":["b1","b2","b3"],"cta":"call to action","videoPrompt":"motion and futuristic scene direction","hashtags":["#tag"]}]}';
-    const parsed = cpCleanJSON(await cpCallAd(sys, user, 900));
+    const parsed = cpCleanJSON(await Promise.race([
+      cpCallAd(sys, user, 900),
+      new Promise(function(_,rej){ setTimeout(function(){rej(new Error('scout timeout'));},8000); })
+    ]));
     if (parsed && Array.isArray(parsed.ideas)) {
       ideas = parsed.ideas.filter(x => x && x.topic).slice(0, n).map(x => ({
         topic: String(x.topic).slice(0, 180),
@@ -1949,7 +1952,10 @@ async function cpWriteScript(id) {
     const user = 'Ad angle: ' + item.topic + '\nHook: ' + (item.angle || '') + '\nBenefits: ' + benefits.join(' | ') +
       '\nWebsite (CTA link): ' + url + '\nAI disclosure (include exactly): ' + disclosure +
       '\nVideo direction: ' + (item.videoPrompt || 'animated robots in a neon space office with dynamic camera');
-    const parsed = cpCleanJSON(await cpCallAd(sys, user, 1100));
+    const parsed = cpCleanJSON(await Promise.race([
+      cpCallAd(sys, user, 1100),
+      new Promise(function(_,rej){ setTimeout(function(){rej(new Error('writer timeout'));},8000); })
+    ]));
     if (parsed && parsed.hook) sc = parsed;
   } catch (e) {}
 

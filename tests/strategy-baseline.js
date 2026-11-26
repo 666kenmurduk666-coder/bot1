@@ -70,7 +70,7 @@ const protectedHashes = {
   // status/control APIs. Token stays in Render env only; hash refreshed.
   // 2026-11-22: failed routines now back off (6h for no-page-token, 15m otherwise)
   // so the Video Bot cannot retry every tick and spam the activity log.
-  'server.js': '86f31dffe9c2ffc23bb9541e5051f1addb499eb95e0969767348b09e1fd0b3c6',
+  'server.js': '3875f8448f8540c9d6a97975d2f9faaf6f99bd0e21e833ebd89ab936a7b261bd',
   // APPLY-PHASE-D.bat (the documented install step) injects the phaseB/C/D <script> tags, so the post-install hash differs from the packaged baseline. This is the expected, installed state.
   // Perf fix (2026-11-20): load three.min.js locally first (no CDN wait),
   // cap the 3D office loop to ~30 FPS, pause when hidden, and use a light
