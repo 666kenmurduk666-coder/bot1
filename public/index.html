@@ -685,7 +685,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=198"></script>
+<script src="/office-v9.js?v=201"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -5895,19 +5895,7 @@ $('ceoModeBtn').onclick=()=>{
   if(playerMode){ if(view!=='office'){setView('office');} spawnPlayer(); }
   else despawnPlayer();
 };
-/* ✨ PROMO LINES: minumulto ng mga promoter ang mga bisita! */
-let promoI=0;
-const PROMO_LINES=[
-  'Bili na po sa Cyborg Mall! 🛍️',
-  'May bagong paninda galing sa content natin! ✨',
-  'FREE parking sa unang 2 oras! 🎉',
-  'Shopee link lang — one click lang po yan! 🛍️',
-  'Sale ngayong araw sa Cyborg Mall! 💥'
-];
-setInterval(()=>{
-  if(typeof view!=='undefined'&&view!=='office')return;
-  toast('📢 Ate Posh at Kuya Migz: '+PROMO_LINES[promoI++%PROMO_LINES.length]);
-},22000);
+/* Promo notifications removed by CEO request. */
 let lastSecT=0;
 setInterval(async()=>{
   try{

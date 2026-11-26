@@ -5007,10 +5007,10 @@
     if(!structureGroup||!level3d) return;
     janfx.crew.length=0; janfx.sparkles.length=0;
     JAN_COLORS.forEach(function(col,idx){
-      var g=new THREE.Group(); g.position.set(0,0,0); g.userData.v9=true; structureGroup.add(g);
-      var body=new THREE.Mesh(new THREE.SphereGeometry(.40,12,10),solid(col,{roughness:.5,metalness:.15}));
+      var g=new THREE.Group(); g.position.set(0,0,0); g.scale.setScalar(1.3); g.userData.v9=true; structureGroup.add(g);
+      var body=new THREE.Mesh(new THREE.SphereGeometry(.40,12,10),solid(col,{roughness:.5,metalness:.15,emissive:col,emissiveIntensity:.5}));
       body.position.y=.62; body.scale.y=1.1; body.userData.v9=true; g.add(body);
-      var head=new THREE.Mesh(new THREE.SphereGeometry(.33,12,10),solid(col,{roughness:.45}));
+      var head=new THREE.Mesh(new THREE.SphereGeometry(.33,12,10),solid(col,{roughness:.45,emissive:col,emissiveIntensity:.4}));
       head.position.y=1.12; head.userData.v9=true; g.add(head);
       [-1,1].forEach(function(sx){var e=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#0b1020'));e.position.set(sx*.1,1.15,.3);e.userData.v9=true;g.add(e);});
       var cap=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.16,12),solid(col,{roughness:.6}));cap.position.y=1.42;cap.userData.v9=true;g.add(cap);
@@ -5025,6 +5025,9 @@
       var cv=document.createElement('canvas');cv.width=160;cv.height=40;var q=cv.getContext('2d');
       q.fillStyle='rgba(8,14,28,.85)';q.fillRect(0,0,160,40);q.fillStyle='#fff';q.font='bold 18px Arial';q.textAlign='center';q.fillText('CLEANER '+(idx+1),80,26);
       var tag=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));tag.scale.set(2.2,.55,1);tag.position.y=1.8;tag.userData.v9=true;g.add(tag);
+      var mark=new THREE.Mesh(new THREE.CircleGeometry(.9,16),
+        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+      mark.rotation.x=-Math.PI/2; mark.position.y=.03; mark.userData.v9=true; g.add(mark);
       janfx.crew.push({g:g,broom:broom,cart:cart,color:col,phase:idx*1.7,pos:{x:0,z:0}});
     });
     // cleaning sparkles (shared pool)
@@ -5049,7 +5052,7 @@
       J.pos.x=x;J.pos.z=z;
       J.g.position.set(x,0,z);
       J.g.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);
-      J.broom.rotation.z=-.4+Math.sin(now/200+c)*.18;
+      J.broom.rotation.z=-.4+Math.sin(now/160+c)*.42;
       J.cart.rotation.y=Math.sin(now/700+c)*.08;
     }
     for(var j=0;j<janfx.sparkles.length;j++){
@@ -5864,8 +5867,8 @@
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: build only the 3 essential layers now; defer the rest one per
     // idle callback so the page becomes interactive immediately (no first-open lag).
-    layers.slice(0,3).forEach(runLayer);
-    var rest=layers.slice(3), li=0;
+    layers.slice(0,4).forEach(runLayer);
+    var rest=layers.slice(4), li=0;
     var idle=window.requestIdleCallback||function(cb){ setTimeout(cb,24); };
     function nextLayer(){ if(li>=rest.length)return; runLayer(rest[li++]); idle(nextLayer); }
     idle(function(){ idle(nextLayer); });
