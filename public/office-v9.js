@@ -153,6 +153,25 @@
   function rnd(seed) {
     return function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   }
+  /* 🎅 SANTA COSTUME - red hat + white brim/pom + beard (cheap, low-poly) */
+  function santaHat(target, y, scale){
+    var S=scale||1, RED='#d62828', WHITE='#ffffff';
+    try{
+      var hat=new THREE.Mesh(new THREE.ConeGeometry(.30*S,.40*S,8),solid(RED,{emissive:'#5a0d0d',emissiveIntensity:.08}));
+      hat.position.y=y+.24*S; hat.userData.v9=true; target.add(hat);
+      var brim=new THREE.Mesh(new THREE.TorusGeometry(.29*S,.065*S,6,12),solid(WHITE));
+      brim.rotation.x=Math.PI/2; brim.position.y=y+.06*S; brim.userData.v9=true; target.add(brim);
+      var pom=new THREE.Mesh(new THREE.SphereGeometry(.09*S,6,6),solid(WHITE));
+      pom.position.y=y+.46*S; pom.userData.v9=true; target.add(pom);
+    }catch(e){}
+  }
+  function santaBeard(target, y, z, scale){
+    var S=scale||1, WHITE='#ffffff';
+    try{
+      var beard=new THREE.Mesh(new THREE.SphereGeometry(.24*S,8,6),solid(WHITE,{emissive:'#777',emissiveIntensity:.04}));
+      beard.scale.set(1,.85,.5); beard.position.set(0,y,z); beard.userData.v9=true; target.add(beard);
+    }catch(e){}
+  }
   function addO(o) {
     o.userData.v9 = true; // protect v9 geometry from the old >3.15m "simple mode" cull
     var parent = (typeof structureGroup !== 'undefined' && structureGroup) ? structureGroup : g.level;
@@ -609,7 +628,7 @@
     fx.shafts.push({ m: m, p: x + z });
   }
   function dustField() {
-    var pos = [], ph = [], N = 150;
+    var pos = [], ph = [], N = 0;
     for (var i = 0; i < N; i++) {
       pos.push(2 + Math.random() * 42, .4 + Math.random() * 2.7, 1 + Math.random() * 32);
       ph.push(Math.random() * 6.3);
@@ -3252,6 +3271,9 @@
       [-.32, .32].forEach(function (sx) {
         var arm = new THREE.Mesh(new THREE.BoxGeometry(.1, .42, .1), bodyMat); arm.position.set(sx, .52, .05); arm.rotation.x = -.45; g.add(arm);
       });
+      // 🎅 Santa costume
+      santaHat(head,.20,.8); santaBeard(head,-.13,.19,.8);
+      try{ bodyMat.color.set('#d62828'); }catch(e){}
       g.position.set(x, 0, z); g.rotation.y = Math.PI; addO(g);
       stationLabel(role, x, 1.62, z, 0, accent || '#63e6ff');
     }
@@ -4070,6 +4092,12 @@
     if(role==='care'){
       var heart=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),solid('#ff8fb1',{emissive:'#ff8fb1',emissiveIntensity:.42}));heart.position.set(0,.6,.55);heart.userData.v9=true;body.add(heart);
     }
+    // 🎅 Santa costume
+    santaHat(head,.42,1); santaBeard(head,-.22,.27,1);
+    try{
+      var sCollar=new THREE.Mesh(new THREE.TorusGeometry(.48,.08,6,14),solid('#d62828',{emissive:'#5a0d0d',emissiveIntensity:.08}));
+      sCollar.rotation.x=Math.PI/2; sCollar.position.y=.80; sCollar.userData.v9=true; body.add(sCollar);
+    }catch(e){}
     // carried project — glowing datapad
     var project=new THREE.Group(); project.position.set(0,1.1,.72); project.visible=false; project.userData.v9=true; body.add(project);
     var prjBody=new THREE.Mesh(new THREE.BoxGeometry(.44,.38,.28),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:1.2,roughness:.2,metalness:.4}));prjBody.userData.v9=true;project.add(prjBody);
@@ -4437,7 +4465,7 @@
     // --- far shooting stars ---
     try{
       var sp=[];
-      for(var q=0;q<4;q++){var st=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),new THREE.MeshBasicMaterial({color:'#ffffff',fog:false}));st.userData.v9=true;addO(st);sp.push(st);}
+      for(var q=0;q<0;q++){var st=new THREE.Mesh(new THREE.SphereGeometry(.12,6,6),new THREE.MeshBasicMaterial({color:'#ffffff',fog:false}));st.userData.v9=true;addO(st);sp.push(st);}
       maxfx.shooting=sp;
     }catch(e){}
   }
@@ -4818,7 +4846,7 @@
       alivefx.lights.push({l:L,p:di});
     });
     // --- fireflies drifting around Command ---
-    for(var i=0;i<12;i++){
+    for(var i=0;i<0;i++){
       var f=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),solid(i%2?'#ff8df0':'#8fd8ff',{emissive:i%2?'#ff8df0':'#8fd8ff',emissiveIntensity:1.4}));
       f.userData.v9=true; addO(f);
       alivefx.fireflies.push({m:f,r:6+Math.random()*22,a:Math.random()*Math.PI*2,y:1+Math.random()*9,sp:.3+Math.random()*.4});
@@ -5089,6 +5117,9 @@
       [-1,1].forEach(function(sx){var e=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),solid('#0b1020'));e.position.set(sx*.1,1.15,.3);e.userData.v9=true;g.add(e);});
       var cap=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.16,12),solid(col,{roughness:.6}));cap.position.y=1.42;cap.userData.v9=true;g.add(cap);
       var brim=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.04,12),solid(col));brim.position.y=1.36;brim.userData.v9=true;g.add(brim);
+      // 🎅 Santa costume
+      try{ body.material.color.set('#d62828'); head.material.color.set('#f0c9a0'); }catch(e){}
+      santaHat(g,1.42,.9); santaBeard(g,1.0,.23,.9);
       var broom=new THREE.Group(); broom.position.set(.5,.5,.15); broom.rotation.z=-.4; g.add(broom);
       var handle=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1.3,8),solid('#b98a4d'));handle.position.y=-.3;handle.userData.v9=true;broom.add(handle);
       var brush=new THREE.Mesh(new THREE.BoxGeometry(.5,.14,.3),solid('#e8c86a'));brush.position.y=-.95;brush.userData.v9=true;broom.add(brush);
@@ -5298,6 +5329,9 @@
       var item=new THREE.Mesh(new THREE.BoxGeometry(.22,.22,.12),solid('#ffd34d',{emissive:'#ffd34d',emissiveIntensity:.9}));
       item.position.set(0,.72,.45); item.userData.v9=true; g.add(item);
     }
+    // 🎅 Santa costume
+    try{ body.material.color.set('#d62828'); }catch(e){}
+    santaHat(g,1.22,.9); santaBeard(g,.92,.24,.9);
     return g;
   }
   function buildSpecialtyBots(){
