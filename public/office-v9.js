@@ -6094,11 +6094,82 @@
       sm.position.set(m[1],m[2],-9); sm.userData.v9=true; addO(sm);
     });
   }
+  // 🏢 CENTRAL OFFICE - wide main office at the center of the whole layout
+  function buildCentralOffice(){
+    if(!structureGroup||!level3d)return;
+    // main floor surface with subtle tech grid
+    var floorMat=solid('#05070d',{roughness:.55,metalness:.3,side:THREE.DoubleSide});
+    var f=new THREE.Mesh(new THREE.CircleGeometry(17.2,32),floorMat);
+    f.rotation.x=-Math.PI/2; f.position.set(0,.02,0); f.userData.v9=true; f.userData.v9Floor=true; addO(f);
+    // outer glowing ring
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(17.3,.1,8,48),
+      solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:.9}));
+    ring.rotation.x=Math.PI/2; ring.position.y=.05; ring.userData.v9=true; addO(ring);
+    // ceiling light strips (floating, no solid ceiling)
+    for(var i=0;i<6;i++){
+      var a=i/6*Math.PI*2;
+      var strip=new THREE.Mesh(new THREE.BoxGeometry(9,.06,.3),
+        new THREE.MeshBasicMaterial({color:i%2?'#a78bfa':'#00e5ff',transparent:true,opacity:.5,depthWrite:false,fog:false}));
+      strip.position.set(Math.cos(a)*9,5.5,Math.sin(a)*9); strip.rotation.y=-a;
+      strip.userData.v9=true; addO(strip);
+    }
+    // 4 workstations with monitors + bots working
+    var stations=[
+      [-8,-6,'#63e6ff','DEV OFFICE'],
+      [8,-6,'#a78bfa','DEV WEB'],
+      [-8,6,'#ffd34d','DEV MAINT'],
+      [8,6,'#7cf0c8','DEV SOCIAL']
+    ];
+    stations.forEach(function(st,idx){
+      var x=st[0],z=st[1],col=st[2],label=st[3];
+      // desk
+      box(3.6,.16,1.6,solid('#28344a',{metalness:.4}),x,.55,z);
+      // monitor with website UI
+      var scr=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.4),
+        new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      scr.position.set(x,1.55,z-.4); scr.userData.v9=true; addO(scr);
+      var frame=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.6,.1),solid('#1a2438',{metalness:.5}));
+      frame.position.set(x,1.55,z-.48); frame.userData.v9=true; addO(frame);
+      // seated dev bot at the desk
+      var bot=new THREE.Group(); bot.position.set(x,.2,z+1.5); bot.userData.v9=true; structureGroup.add(bot);
+      var body=new THREE.Mesh(new THREE.SphereGeometry(.46,12,10),solid('#202a38',{metalness:.4,emissive:col,emissiveIntensity:.16}));
+      body.position.y=.62; body.scale.set(1.1,1.05,1); body.userData.v9=true; bot.add(body);
+      var head=new THREE.Mesh(new THREE.SphereGeometry(.36,12,10),solid('#e8b78e'));
+      head.position.y=1.2; head.userData.v9=true; bot.add(head);
+      var hair=new THREE.Mesh(new THREE.SphereGeometry(.37,10,8,0,Math.PI*2,0,Math.PI/2),solid('#181d28'));
+      hair.position.y=1.24; hair.userData.v9=true; bot.add(hair);
+      var glasses=new THREE.Mesh(new THREE.BoxGeometry(.5,.07,.04),solid('#0c1018',{metalness:.5}));
+      glasses.position.set(0,1.22,.32); glasses.userData.v9=true; bot.add(glasses);
+      var tie=new THREE.Mesh(new THREE.BoxGeometry(.11,.42,.03),solid(col,{emissive:col,emissiveIntensity:.7}));
+      tie.position.set(0,.68,.42); tie.userData.v9=true; bot.add(tie);
+      [-1,1].forEach(function(sd){
+        var arm=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.45,8),solid('#2a3444'));
+        arm.position.set(sd*.46,.7,.2); arm.rotation.z=sd*.25; arm.rotation.x=-.7;
+        arm.userData.v9=true; bot.add(arm);
+      });
+      var glow=new THREE.Mesh(new THREE.BoxGeometry(.6,.05,.4),solid(col,{emissive:col,emissiveIntensity:1.1}));
+      glow.position.set(0,.62,.65); glow.userData.v9=true; bot.add(glow);
+      animParts.push({m:glow,k:'led',p:idx*1.7});
+      var lab=devLabel(label,col,1.95); bot.add(lab);
+    });
+    // central meeting table + chairs
+    var mt=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,.16,20),solid('#2b3650',{metalness:.5}));
+    mt.position.set(0,.6,0); mt.userData.v9=true; addO(mt);
+    for(var c=0;c<5;c++){
+      var a=c/5*Math.PI*2;
+      var ch=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,10),solid('#3a4a66'));
+      ch.position.set(Math.cos(a)*3.2,.3,Math.sin(a)*3.2); ch.userData.v9=true; addO(ch);
+    }
+    // huge wall monitor at the back of the central office
+    var wall=new THREE.Mesh(new THREE.PlaneGeometry(10,5.6),
+      new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    wall.position.set(0,6,-15); wall.userData.v9=true; addO(wall);
+  }
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
     var CX=0, CZ=0;
-    navAddZone(0,0,10.5);  // Command hub = zone 0 (bigger floor so bots stay on solid ground)
+    navAddZone(0,0,18);  // Central office = wide main floor at the center
     // dark outer-space floor so nothing falls
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#000000',{roughness:1,metalness:0}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
@@ -6111,9 +6182,9 @@
       stars.userData.v9=true; addO(stars);
     }catch(e){}
     // Command hub (octagon)
-    var hub=new THREE.Mesh(new THREE.CylinderGeometry(10.5,9.5,.7,16),solid('#0a0910',{roughness:.6,metalness:.25}));
+    var hub=new THREE.Mesh(new THREE.CylinderGeometry(18,17,.7,24),solid('#0a0910',{roughness:.6,metalness:.25}));
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
-    var hr=new THREE.Mesh(new THREE.TorusGeometry(10.6,.07,8,16),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
+    var hr=new THREE.Mesh(new THREE.TorusGeometry(18.1,.09,8,32),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
@@ -6153,14 +6224,14 @@
     // Each visual layer is isolated: one failure can't block the others.
     // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
     // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
-    var layers=[ ['enhance3D',enhance3D], ['buildUfoInterior',buildUfoInterior], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
+    var layers=[ ['enhance3D',enhance3D], ['buildUfoInterior',buildUfoInterior], ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
       ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
       ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: build only the 3 essential layers now; defer the rest one per
     // idle callback so the page becomes interactive immediately (no first-open lag).
-    layers.slice(0,6).forEach(runLayer);
-    var rest=layers.slice(6), li=0;
+    layers.slice(0,7).forEach(runLayer);
+    var rest=layers.slice(7), li=0;
     var idle=window.requestIdleCallback||function(cb){ setTimeout(cb,24); };
     function nextLayer(){ if(li>=rest.length)return; runLayer(rest[li++]); idle(nextLayer); }
     idle(function(){ idle(nextLayer); });
