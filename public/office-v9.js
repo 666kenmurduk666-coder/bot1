@@ -5117,9 +5117,7 @@
       var cv=document.createElement('canvas');cv.width=160;cv.height=40;var q=cv.getContext('2d');
       q.fillStyle='rgba(8,14,28,.85)';q.fillRect(0,0,160,40);q.fillStyle='#fff';q.font='bold 18px Arial';q.textAlign='center';q.fillText('CLEANER '+(idx+1),80,26);
       var tag=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));tag.scale.set(2.2,.55,1);tag.position.y=1.8;tag.userData.v9=true;g.add(tag);
-      var mark=new THREE.Mesh(new THREE.CircleGeometry(.9,16),
-        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide,fog:false}));
-      mark.rotation.x=-Math.PI/2; mark.position.y=.03; mark.userData.v9=true; g.add(mark);
+      // janitor floor mark removed - cyan disc shimmer
       janfx.crew.push({g:g,broom:broom,cart:cart,color:col,phase:idx*1.7,pos:{x:0,z:0}});
     });
     // cleaning sparkles (shared pool)
@@ -6170,11 +6168,7 @@
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.1,30,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.3,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,15,CZ); beam.userData.v9=true; addO(beam);
     animParts.push({m:beam,k:'led',p:.4});
-    [1.3,2.1,2.9,3.7,4.5,5.3].forEach(function(r,i){
-      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.08,8,32),solid(i%2?'#ff8df0':'#63e6ff',{emissive:i%2?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
-      ring.rotation.x=Math.PI/2; ring.position.set(CX,.5+i*4.5,CZ); ring.userData.v9=true; addO(ring);
-      animParts.push({m:ring,k:i%2?'spinFlatR':'spinFlat',s:.45});
-    });    // CEO decision paper + operator
+    // pole rings removed - shimmer   // CEO decision paper + operator
     box(1.0,.03,.65,solid('#f5f1e6',{roughness:.7}),CX-.9,.46,CZ+1.0);
     box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
     refDesk(CX,CZ+1.5,'#a98cff');
