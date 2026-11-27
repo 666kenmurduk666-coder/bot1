@@ -4692,7 +4692,8 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);
+          // ⚡ only characters animate (boss request)
+          walkerTick(n,dt); tickJanitor(n,dt); tickSpecialty(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -6498,20 +6499,7 @@
       updateBotBatch2(b, now, i);
     });
     updateBotParticles(now);
-    if (now - (tick.glow || 0) > 140) {
-      tick.glow = now;
-      animParts.forEach(function (a) {
-        var m = a.m;
-        if (!m) return;
-        if (a.k === 'spin') { m.rotation.y += (a.s || .5) * 0.016; m.rotation.x += (a.s || .5) * 0.008; return; }
-        if (a.k === 'spinFlat') { m.rotation.z += (a.s || .3) * 0.016; return; }
-        if (a.k === 'spinFlatR') { m.rotation.z -= (a.s || .3) * 0.016; return; }
-        if (a.k === 'spinY') { m.rotation.y += (a.s || .3) * 0.016; return; }
-        if (a.k === 'bob') { m.position.y = Math.sin(now/600 + a.p) * 0.06; return; }
-        if (!m.material || m.material.emissiveIntensity === undefined) return;
-        m.material.emissiveIntensity = a.k === 'led' ? .42 : .72;
-      });
-    }
+    // animParts frozen - only characters move}
     try {
       // Animated monitor dashboards (staggered so 24 canvases never repaint at once).
       if (false && now - (tick.screens || 0) > 500 && fx.screens.length) {
