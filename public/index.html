@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=248"></script>
+<script src="/office-v9.js?v=249"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -2329,8 +2329,8 @@ function init3D(){
   /* Lightweight renderer: no MSAA, 1x pixel ratio, no shadow map. The old
      settings (antialias + up to 2x DPR + 1024px soft shadows) filled the
      8 GB RX 6600 and caused system-wide stutter. */
-  renderer3d=new THREE.WebGLRenderer({antialias:false});
-  renderer3d.setPixelRatio(.65);
+  renderer3d=new THREE.WebGLRenderer({antialias:true});
+  renderer3d.setPixelRatio(1);
   renderer3d.setSize(host.clientWidth||900,host.clientHeight||520);
   renderer3d.shadowMap.enabled=false;
   renderer3d.toneMapping=THREE.ACESFilmicToneMapping;renderer3d.toneMappingExposure=.85;
