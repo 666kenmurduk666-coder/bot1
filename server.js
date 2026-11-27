@@ -150,7 +150,7 @@ const state = {
       'https://s.shopee.ph/4VeSPVSSFA', 'https://s.shopee.ph/5fqPngwTJC'
     ],
     // 📢 Quality ads for the CEO's website. Drafts only until CEO approval.
-    adUrl: 'https://cybee-ph.netlify.app/apps.html',
+    adUrl: 'https://cybee-ph.pages.dev/apps.html',
     adModel: 'gpt-4o-mini',
     aiDisclosure: true,
     disclosureText: 'AI-generated content. Made by Cyborg Cheebee AI Office.',
@@ -1774,7 +1774,7 @@ const CP_TOPIC_POOL = [
 ];
 
 /* ===== 📢 CYBEE ADS - curated angles, rotation, and AI disclosure ===== */
-const CYBEE_AD_URL = 'https://cybee-ph.netlify.app/apps.html';
+const CYBEE_AD_URL = 'https://cybee-ph.pages.dev/apps.html';
 const AI_DISCLOSURE = 'AI-generated content. Made by Cyborg Cheebee AI Office.';
 const CYBEE_AD_LIBRARY = [
   { topic: 'Build Your AI Team Today', hook: 'May AI team ka na ba na 24/7 nagtatrabaho?',
@@ -2559,7 +2559,7 @@ function send(res, code, body, type, cache) {
     'Cache-Control': cache === 'static' ? 'public, max-age=86400' : cache === 'html' ? 'no-cache' : 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8787 https://cybee-ph.netlify.app https://*.netlify.app https://cybee-ph.pages.dev https://*.pages.dev"
+    "Content-Security-Policy": "frame-ancestors 'self' http://localhost:8787 https://cybee-ph.pages.dev https://*.Cloudflare Pages.app https://cybee-ph.pages.dev https://*.pages.dev"
   };
   if (enc) { headers['Content-Encoding'] = enc; headers['Vary'] = 'Accept-Encoding'; headers['Content-Length'] = String(out.length); }
   res.writeHead(code, headers);

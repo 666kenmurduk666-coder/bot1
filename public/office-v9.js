@@ -4679,7 +4679,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);  tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); tickPortalRider(n); aiOptimizeTick(n,dt);  tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -5782,6 +5782,14 @@
   }
   function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
 
+  // 🛸 portal rider motion (up/down through the elevator rings)
+  function tickPortalRider(now){
+    var r=window.__devPortalRider; if(!r)return;
+    var t=(now%11000)/11000;
+    var y=t<.5 ? t*2*7 : (1-t)*2*7;
+    r.position.set(0,.2+y,-4);
+    r.rotation.y=now/1400;
+  }
   // ===== 🤖 AI OPTIMIZER: specs-based quality, downgrade only (strong = unchanged) =====
   var aiOpt={tier:'high',score:0,applied:false,last:0,lowStreak:0};
   function aiDetectSpecs(){
@@ -5933,6 +5941,159 @@
       });
     }catch(e){}
   }
+  // 👨‍💻 DEV FLOOR - second floor for the dev team only
+  function devLabel(text,color,y){
+    var c=document.createElement('canvas'); c.width=256; c.height=56;
+    var q=c.getContext('2d');
+    q.fillStyle='rgba(5,10,22,.9)'; q.fillRect(0,0,256,56);
+    q.strokeStyle=color; q.lineWidth=3; q.strokeRect(2,2,252,52);
+    q.fillStyle=color; q.font='bold 24px Arial'; q.textAlign='center'; q.textBaseline='middle';
+    q.fillText(text,128,30);
+    var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));
+    sp.scale.set(2.4,.52,1); sp.position.set(0,y,0); sp.userData.v9=true; return sp;
+  }
+  function devBot(x,z,color,name,label){
+    var g=new THREE.Group(); g.position.set(x,7.35,z); g.userData.v9=true; structureGroup.add(g);
+    var suit=solid('#1d2634',{metalness:.4,roughness:.55});
+    var body=new THREE.Mesh(new THREE.SphereGeometry(.43,12,10),suit);
+    body.position.y=.55; body.scale.set(1.08,1.12,1); body.userData.v9=true; g.add(body);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(.35,12,10),solid('#e8b78e',{roughness:.8}));
+    head.position.y=1.13; head.userData.v9=true; g.add(head);
+    var hair=new THREE.Mesh(new THREE.SphereGeometry(.355,10,8,0,Math.PI*2,0,Math.PI/2),solid('#151a24',{roughness:.85}));
+    hair.position.y=1.17; hair.userData.v9=true; g.add(hair);
+    var glasses=new THREE.Mesh(new THREE.BoxGeometry(.48,.07,.04),solid('#0c1018',{metalness:.5}));
+    glasses.position.set(0,1.15,.32); glasses.userData.v9=true; g.add(glasses);
+    var tie=new THREE.Mesh(new THREE.BoxGeometry(.1,.4,.03),solid(color,{emissive:color,emissiveIntensity:.55}));
+    tie.position.set(0,.62,.4); tie.userData.v9=true; g.add(tie);
+    [-1,1].forEach(function(sd){
+      var arm=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.42,8),suit);
+      arm.position.set(sd*.44,.58,.16); arm.rotation.z=sd*.22; arm.rotation.x=-.55;
+      arm.userData.v9=true; g.add(arm);
+    });
+    var lap=new THREE.Mesh(new THREE.BoxGeometry(.52,.05,.38),solid(color,{emissive:color,emissiveIntensity:.9}));
+    lap.position.set(0,.5,.62); lap.userData.v9=true; g.add(lap);
+    animParts.push({m:lap,k:'led',p:x*.3+z});
+    g.add(devLabel(label,color,1.85));
+    return g;
+  }
+  function buildDevFloor(){
+    if(!structureGroup||!level3d)return;
+    var cx=0, cz=30, Y=7;
+    // platform
+    var disc=new THREE.Mesh(new THREE.CylinderGeometry(8.2,7.6,.5,20),solid('#0a0d15',{roughness:.6,metalness:.25}));
+    disc.position.set(cx,Y-.25,cz); disc.userData.v9=true; addO(disc);
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(8.25,.09,8,32),solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:.9}));
+    rim.rotation.x=Math.PI/2; rim.position.set(cx,Y,cz); rim.userData.v9=true; addO(rim);
+    // glass railings
+    for(var i=0;i<12;i++){
+      var a=i/12*Math.PI*2;
+      var post=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.9,6),solid('#3b5678',{metalness:.5}));
+      post.position.set(cx+Math.cos(a)*8,Y+.45,cz+Math.sin(a)*8); post.userData.v9=true; addO(post);
+    }
+    var rail=new THREE.Mesh(new THREE.TorusGeometry(8,.05,6,32),solid('#4a7fb0',{emissive:'#4a7fb0',emissiveIntensity:.4}));
+    rail.rotation.x=Math.PI/2; rail.position.set(cx,Y+.9,cz); rail.userData.v9=true; addO(rail);
+    // 🌀 FLOATING PORTAL ELEVATOR - glowing rings, no solid post
+    var portal=new THREE.Group(); portal.position.set(cx,0,cz-4); portal.userData.v9=true; structureGroup.add(portal);
+    // ground pad (floating just above the island floor)
+    var pad=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,.12,24),
+      solid('#13233c',{emissive:'#00c8ff',emissiveIntensity:.35,metalness:.5}));
+    pad.position.y=.08; pad.userData.v9=true; portal.add(pad);
+    var padRing=new THREE.Mesh(new THREE.TorusGeometry(1.75,.12,8,32),
+      solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:1.2}));
+    padRing.rotation.x=Math.PI/2; padRing.position.y=.16; padRing.userData.v9=true; portal.add(padRing);
+    // floating portal rings going up (no column - just hovering rings)
+    for(var ri=0;ri<5;ri++){
+      var pr=new THREE.Mesh(new THREE.TorusGeometry(1.5-ri*.12,.08,8,28),
+        new THREE.MeshBasicMaterial({color:ri%2?'#a78bfa':'#00e5ff',transparent:true,opacity:.5,depthWrite:false,fog:false}));
+      pr.rotation.x=Math.PI/2; pr.position.y=1.5+ri*1.35; pr.userData.v9=true; portal.add(pr);
+      animParts.push({m:pr,k:'spinFlat',s:.2+ri*.05});
+    }
+    // energy column (very subtle, gives the elevator feel)
+    var col=new THREE.Mesh(new THREE.CylinderGeometry(1.1,.7,7,16,1,true),
+      new THREE.MeshBasicMaterial({color:'#00e5ff',transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    col.position.y=3.5; col.userData.v9=true; portal.add(col);
+    // portal label
+    var pl=devLabel('⇧ DEV FLOOR','#00e5ff',6.5);
+    pl.position.set(0,6.5,0); pl.scale.set(2.6,.56,1); portal.add(pl);
+    // desks + dev bots
+    var defs=[
+      [-4.2,-1.2,'#63e6ff','Dev on my office','DEV OFFICE'],
+      [-1.4,-1.2,'#a78bfa','Dev on my website','DEV WEB'],
+      [1.4,-1.2,'#ffd34d','Dev Maintenance','DEV MAINT'],
+      [4.2,-1.2,'#7cf0c8','DEV on my social media','DEV SOCIAL']
+    ];
+    defs.forEach(function(d,i){
+      var dx=cx+d[0], dz=cz+d[1];
+      box(2.4,.14,1.2,solid('#35435a',{metalness:.4}),dx,Y+.78,dz);
+      var scr=new THREE.Mesh(new THREE.PlaneGeometry(1.8,1.05),
+        new THREE.MeshBasicMaterial({map:dataPanelTexture(d[2],d[4],['> code online','> build ok','> deploy ready']),transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      scr.position.set(dx,Y+1.5,dz-.3); scr.userData.v9=true; addO(scr);
+      devBot(dx,dz+1.1,d[2],d[3],d[4]);
+    });
+    // 🛸 portal rider - a bot riding up and down the portal (visible elevator)
+    var rider=new THREE.Group(); rider.userData.v9=true; structureGroup.add(rider);
+    var riderBody=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),solid('#7cf0c8',{emissive:'#7cf0c8',emissiveIntensity:.5}));
+    riderBody.position.y=.6; riderBody.userData.v9=true; rider.add(riderBody);
+    var riderHead=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),solid('#e8b78e'));
+    riderHead.position.y=1.05; riderHead.userData.v9=true; rider.add(riderHead);
+    var riderRing=new THREE.Mesh(new THREE.TorusGeometry(.5,.06,6,16),solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:1.1}));
+    riderRing.rotation.x=Math.PI/2; riderRing.position.y=.06; riderRing.userData.v9=true; rider.add(riderRing);
+    animParts.push({m:riderRing,k:'spinFlat',s:.5});
+    var riderPhase=0;
+    // store rider for tick
+    window.__devPortalRider=rider;
+    // floor sign
+    var sign=devLabel('👨‍💻 DEV FLOOR','#63e6ff',3.4);
+    sign.position.set(cx,Y+3.4,cz-7.6); sign.scale.set(4,.85,1); structureGroup.add(sign);
+  }
+  // 🛸 UFO INTERIOR - metallic dome, website monitors, seated devs at work
+  var _ufoWebTex=null;
+  function ufoWebsiteTex(){
+    if(_ufoWebTex)return _ufoWebTex;
+    var c=document.createElement('canvas'); c.width=512; c.height=288;
+    var q=c.getContext('2d');
+    q.fillStyle='#070d1c'; q.fillRect(0,0,512,288);
+    var g=q.createLinearGradient(0,0,512,0); g.addColorStop(0,'#0f2a4a'); g.addColorStop(1,'#1a1240');
+    q.fillStyle=g; q.fillRect(0,0,512,44);
+    q.fillStyle='#00e5ff'; q.font='bold 30px Arial'; q.textAlign='left'; q.textBaseline='middle';
+    q.fillText('CYBEE',18,23);
+    q.fillStyle='#9db6d8'; q.font='16px Arial'; q.fillText('Apps  ·  AI Office  ·  Marketplace',130,24);
+    q.fillStyle='#ffffff'; q.font='bold 18px Arial'; q.fillText('Lahat ng serbisyo, isang lugar.',18,80);
+    var apps=[['🤖 AI Office','cyan'],['🛒 Marketplace','violet'],['🏠 Hanapbuhay','gold'],['📱 Social','pink']];
+    apps.forEach(function(a,i){
+      var x=18+(i%2)*244, y=106+Math.floor(i/2)*84;
+      q.fillStyle='rgba(20,34,62,.9)'; q.fillRect(x,y,226,70);
+      q.strokeStyle=['#00e5ff','#a78bfa','#ffd34d','#ff8fb1'][i]; q.lineWidth=2; q.strokeRect(x,y,226,70);
+      q.fillStyle='#eaf2ff'; q.font='bold 17px Arial'; q.fillText(a[0],x+14,y+30);
+      q.fillStyle='#8fa5c8'; q.font='13px Arial'; q.fillText('Buksan ang app →',x+14,y+54);
+    });
+    _ufoWebTex=new THREE.CanvasTexture(c); return _ufoWebTex;
+  }
+  function buildUfoInterior(){
+    if(!structureGroup||!level3d)return;
+    // dome shell (BackSide, transparent - does not block the view)
+    var dome=new THREE.Mesh(new THREE.SphereGeometry(78,24,16),
+      new THREE.MeshBasicMaterial({color:'#12233f',transparent:true,opacity:.07,side:THREE.BackSide,depthWrite:false,fog:false}));
+    dome.userData.v9=true; addO(dome);
+    // ceiling light rings
+    [46,58,70].forEach(function(r,i){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.12,6,48),
+        new THREE.MeshBasicMaterial({color:i===1?'#a78bfa':'#00e5ff',transparent:true,opacity:.35,depthWrite:false,fog:false}));
+      ring.rotation.x=Math.PI/2; ring.position.y=22+i*4; ring.userData.v9=true; addO(ring);
+    });
+    // main website monitor above Command
+    var screen=new THREE.Mesh(new THREE.PlaneGeometry(11,6.2),
+      new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    screen.position.set(0,12,-11); screen.userData.v9=true; addO(screen);
+    var frame=new THREE.Mesh(new THREE.BoxGeometry(11.4,6.6,.18),solid('#1a2a44',{metalness:.6,roughness:.3}));
+    frame.position.set(0,12,-11.2); frame.userData.v9=true; addO(frame);
+    // side monitors by role
+    [['DEV OFFICE',-13,7,'#63e6ff'],['DEV WEB',13,7,'#a78bfa'],['DEV MAINT',-13,15,'#ffd34d'],['DEV SOCIAL',13,15,'#7cf0c8']].forEach(function(m){
+      var sm=new THREE.Mesh(new THREE.PlaneGeometry(5,2.8),
+        new THREE.MeshBasicMaterial({map:dataPanelTexture(m[3],m[0],['> online','> working','> synced']),transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      sm.position.set(m[1],m[2],-9); sm.userData.v9=true; addO(sm);
+    });
+  }
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
@@ -5992,14 +6153,14 @@
     // Each visual layer is isolated: one failure can't block the others.
     // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
     // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
-    var layers=[ ['enhance3D',enhance3D], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
+    var layers=[ ['enhance3D',enhance3D], ['buildUfoInterior',buildUfoInterior], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
       ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
       ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: build only the 3 essential layers now; defer the rest one per
     // idle callback so the page becomes interactive immediately (no first-open lag).
-    layers.slice(0,4).forEach(runLayer);
-    var rest=layers.slice(4), li=0;
+    layers.slice(0,6).forEach(runLayer);
+    var rest=layers.slice(6), li=0;
     var idle=window.requestIdleCallback||function(cb){ setTimeout(cb,24); };
     function nextLayer(){ if(li>=rest.length)return; runLayer(rest[li++]); idle(nextLayer); }
     idle(function(){ idle(nextLayer); });
