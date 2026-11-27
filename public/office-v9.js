@@ -4314,9 +4314,9 @@
     var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#080a0f',{roughness:.7,metalness:.2}));
     slab.position.set(cx,-.6,cz); slab.userData.v9=true; addO(slab);
     var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#030406',{roughness:.55,metalness:.28,side:THREE.DoubleSide}));
-    top.rotation.x=-Math.PI/2; top.position.set(cx,.01,cz); top.userData.v9=true; top.userData.v9Floor=true; addO(top);
+    top.rotation.x=-Math.PI/2; top.position.set(cx,.05,cz); top.userData.v9=true; top.userData.v9Floor=true; addO(top);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(R*1.01,.06,8,32), solid(color,{emissive:color,emissiveIntensity:.85,roughness:.3}));
-    rim.rotation.x=Math.PI/2; rim.position.set(cx,0,cz); rim.userData.v9=true; addO(rim);
+    rim.rotation.x=Math.PI/2; rim.position.set(cx,.16,cz); rim.userData.v9=true; addO(rim);
     var n=agents.length;
     agents.forEach(function(a,i){
       var ox=(i-(n-1)/2)*2.8;
@@ -6122,11 +6122,11 @@
     // main floor surface with subtle tech grid
     var floorMat=solid('#05070d',{roughness:.55,metalness:.3,side:THREE.DoubleSide});
     var f=new THREE.Mesh(new THREE.CircleGeometry(17.2,32),floorMat);
-    f.rotation.x=-Math.PI/2; f.position.set(0,.02,0); f.userData.v9=true; f.userData.v9Floor=true; addO(f);
+    f.rotation.x=-Math.PI/2; f.position.set(0,.06,0); f.userData.v9=true; f.userData.v9Floor=true; addO(f);
     // outer glowing ring
     var ring=new THREE.Mesh(new THREE.TorusGeometry(17.3,.1,8,48),
       solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:.9}));
-    ring.rotation.x=Math.PI/2; ring.position.y=.05; ring.userData.v9=true; addO(ring);
+    ring.rotation.x=Math.PI/2; ring.position.y=.16; ring.userData.v9=true; addO(ring);
     // 4 workstations with monitors + bots working
     var stations=[
       [-8,-6,'#63e6ff','DEV OFFICE'],
@@ -6186,7 +6186,7 @@
     var hub=new THREE.Mesh(new THREE.CylinderGeometry(18,17,.7,24),solid('#0a0910',{roughness:.6,metalness:.25}));
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
     var hr=new THREE.Mesh(new THREE.TorusGeometry(18.1,.09,8,32),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
-    hr.rotation.x=Math.PI/2; hr.position.set(CX,0,CZ); hr.userData.v9=true; addO(hr);
+    hr.rotation.x=Math.PI/2; hr.position.set(CX,.16,CZ); hr.userData.v9=true; addO(hr);
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
     animParts.push({m:beam,k:'led',p:.4});
