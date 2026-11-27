@@ -6484,9 +6484,7 @@
         if (a.k === 'spinY') { m.rotation.y += (a.s || .3) * 0.016; return; }
         if (a.k === 'bob') { m.position.y = Math.sin(now/600 + a.p) * 0.06; return; }
         if (!m.material || m.material.emissiveIntensity === undefined) return;
-        m.material.emissiveIntensity = a.k === 'led'
-          ? .34 + .3 * (.5 + .5 * Math.sin(now / 900 + a.p))
-          : .7 + .22 * Math.sin(now / 720 + a.p);
+        m.material.emissiveIntensity = a.k === 'led' ? .42 : .72;
       });
     }
     try {
