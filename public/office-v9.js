@@ -4310,7 +4310,7 @@
     currentTeam={name:title,color:color};
     // SOLID GROUND: thick slab + visible top surface so robots stand on real floor
     var slab=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.9,1.2,32), solid('#080a0f',{roughness:.7,metalness:.2}));
-    slab.position.set(cx,-.6,cz); slab.userData.v9=true; addO(slab);
+    slab.position.set(cx,-.9,cz); slab.userData.v9=true; addO(slab);
     var top=new THREE.Mesh(new THREE.CircleGeometry(R*.9,32), solid('#030406',{roughness:.55,metalness:.28,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
     top.rotation.x=-Math.PI/2; top.position.set(cx,.05,cz); top.userData.v9=true; top.userData.v9Floor=true; addO(top);
     // island edge rings removed - caused shimmer/flicker (boss request)
@@ -6156,7 +6156,7 @@
     }catch(e){}
     // Command hub (octagon)
     var hub=new THREE.Mesh(new THREE.CylinderGeometry(18,17,.7,24),solid('#0a0910',{roughness:.6,metalness:.25}));
-    hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
+    hub.position.set(CX,-.65,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
     // hub ring removed - shimmer
     var beam=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.1,30,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.3,side:THREE.DoubleSide,depthWrite:false,fog:false}));
     beam.position.set(CX,15,CZ); beam.userData.v9=true; addO(beam);
