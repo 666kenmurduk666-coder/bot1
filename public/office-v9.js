@@ -158,9 +158,10 @@
     var parent = (typeof structureGroup !== 'undefined' && structureGroup) ? structureGroup : g.level;
     parent.add(o); return o;
   }
-  function solid(c, opts) {
-    return new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .62, metalness: .1 }, opts || {}));
-  }
+  /* ⚡ PERF: strip PBR-only keys then use Lambert (much cheaper shader compile). */
+  function lambertOpts(o){ var r={}; for(var k in o){ if(k!=='metalness'&&k!=='roughness') r[k]=o[k]; } return r; }
+  function stdMat(o){ return new THREE.MeshLambertMaterial(lambertOpts(o||{})); }
+  function solid(c, opts) { return stdMat(Object.assign({ color: c }, opts || {})); }
   function box(w, h, d, mat, x, y, z) {
     var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof mat === 'string' ? solid(mat) : mat);
     m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return addO(m);
@@ -1937,7 +1938,7 @@
 
   /* ---------- architecture helpers ---------- */
   function glass(w, h, d, x, y, z, op, color) {
-    var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({
+    var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), stdMat({
       color: color || '#bcd9ec', transparent: true, opacity: op || .3, roughness: .08,
       metalness: .25, side: THREE.DoubleSide, depthWrite: false
     }));
@@ -3971,7 +3972,7 @@
     belly.position.set(0,.44,.62); belly.userData.v9=true; body.add(belly);
     var bellyRing=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,20),solid(color,{emissive:color,emissiveIntensity:1.1,metalness:.4}));
     bellyRing.position.set(0,.44,.64); bellyRing.userData.v9=true; body.add(bellyRing);
-    var chestPlate=new THREE.Mesh(new THREE.BoxGeometry(.52,.30,.06),new THREE.MeshStandardMaterial({color:'#3b4552',metalness:.7,roughness:.35}));
+    var chestPlate=new THREE.Mesh(new THREE.BoxGeometry(.52,.30,.06),stdMat({color:'#3b4552',metalness:.7,roughness:.35}));
     chestPlate.position.set(0,.72,.55); chestPlate.userData.v9=true; body.add(chestPlate);
     for(var pl=-1;pl<=1;pl++){
       var line=new THREE.Mesh(new THREE.BoxGeometry(.025,.24,.02),solid(color,{emissive:color,emissiveIntensity:.8}));
@@ -3986,15 +3987,15 @@
     var skull = new THREE.Mesh(new THREE.SphereGeometry(.40,14,12), solid('#2b333f',{roughness:.45,metalness:.4,emissive:'#0f1622',emissiveIntensity:.1}));
     skull.userData.v9=true; skull.material.map=cineSkinTex(); skull.material.color.set('#ffffff'); skull.material.needsUpdate=true; head.add(skull);
     // 🤖 CYBORG: half metal face plate, red glowing eye, spiky hair, shades
-    var metal=new THREE.MeshStandardMaterial({color:'#525e6b',metalness:.85,roughness:.32});
+    var metal=stdMat({color:'#525e6b',metalness:.85,roughness:.32});
     var plate=new THREE.Mesh(new THREE.SphereGeometry(.405,12,10,0,Math.PI,0,Math.PI),metal);
     plate.position.set(.06,.02,.01); plate.userData.v9=true; head.add(plate);
     var redEye=new THREE.Mesh(new THREE.SphereGeometry(.085,8,8),new THREE.MeshBasicMaterial({color:'#ff2a1f'}));
     redEye.position.set(.15,.07,.38); redEye.userData.v9=true; head.add(redEye);
-    var shades=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.05),new THREE.MeshStandardMaterial({color:'#12151d',metalness:.4,roughness:.2}));
+    var shades=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.05),stdMat({color:'#12151d',metalness:.4,roughness:.2}));
     shades.position.set(0,.07,.40); shades.userData.v9=true; head.add(shades);
     for(var hi=0;hi<3;hi++){
-      var spike=new THREE.Mesh(new THREE.ConeGeometry(.10,.26,5),new THREE.MeshStandardMaterial({color:'#181b24',roughness:.8}));
+      var spike=new THREE.Mesh(new THREE.ConeGeometry(.10,.26,5),stdMat({color:'#181b24',roughness:.8}));
       spike.position.set(-.24+hi*.12,.38+((hi%2)?-.03:.05),0); spike.rotation.z=(hi-2)*.18;
       spike.userData.v9=true; head.add(spike);
     }
@@ -4663,7 +4664,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);  tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -4738,7 +4739,7 @@
     try{
       var pg=new THREE.Group(); pg.position.set(-150,-70,-230); pg.userData.v9=true; structureGroup.add(pg);
       var planet=new THREE.Mesh(new THREE.SphereGeometry(90,48,32),
-        new THREE.MeshStandardMaterial({color:'#123a5e',roughness:.95,metalness:.05,emissive:'#0a2240',emissiveIntensity:.25}));
+        stdMat({color:'#123a5e',roughness:.95,metalness:.05,emissive:'#0a2240',emissiveIntensity:.25}));
       planet.userData.v9=true; pg.add(planet);
       // atmospheric glow shell
       var atm=new THREE.Mesh(new THREE.SphereGeometry(93,48,32),
@@ -5328,10 +5329,10 @@
   function ufoShip(col){
     var g=new THREE.Group();
     var hull=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.05,.45,16),
-      new THREE.MeshStandardMaterial({color:col,metalness:.55,roughness:.3,emissive:col,emissiveIntensity:.45}));
+      stdMat({color:col,metalness:.55,roughness:.3,emissive:col,emissiveIntensity:.45}));
     hull.userData.v9=true; g.add(hull);
     var dome=new THREE.Mesh(new THREE.SphereGeometry(.85,12,8,0,Math.PI*2,0,Math.PI/2),
-      new THREE.MeshStandardMaterial({color:'#bff6ff',metalness:.2,roughness:.15,transparent:true,opacity:.78,emissive:'#3cc8ff',emissiveIntensity:.35}));
+      stdMat({color:'#bff6ff',metalness:.2,roughness:.15,transparent:true,opacity:.78,emissive:'#3cc8ff',emissiveIntensity:.35}));
     dome.position.y=.34; dome.userData.v9=true; g.add(dome);
     for(var i=0;i<8;i++){
       var ang=i/8*Math.PI*2;
@@ -5438,7 +5439,7 @@
       defs.forEach(function(p,i){
         var grp=new THREE.Group(); grp.position.set(p[0],p[1],p[2]); grp.userData.v9=true; structureGroup.add(grp);
         var planet=new THREE.Mesh(new THREE.SphereGeometry(p[3],32,24),
-          new THREE.MeshStandardMaterial({color:p[4],roughness:.92,metalness:.05,emissive:p[4],emissiveIntensity:.12}));
+          stdMat({color:p[4],roughness:.92,metalness:.05,emissive:p[4],emissiveIntensity:.12}));
         planet.userData.v9=true; grp.add(planet);
         // atmosphere glow
         var atm=new THREE.Mesh(new THREE.SphereGeometry(p[3]*1.06,32,24),
@@ -5459,7 +5460,7 @@
         // moon for some planets
         if(i%2===0){
           var moon=new THREE.Mesh(new THREE.SphereGeometry(p[3]*.25,12,10),
-            new THREE.MeshStandardMaterial({color:'#c9c9d6',roughness:1}));
+            stdMat({color:'#c9c9d6',roughness:1}));
           moon.position.set(p[3]*2.2,0,0); moon.userData.v9=true; grp.add(moon);
           grp.userData.moon=moon;
         }
@@ -5468,10 +5469,10 @@
       // 🎅 Santa Claus on his sleigh with a sheep - orbiting above the solar system
       try{
         var santa=new THREE.Group();
-        var red=new THREE.MeshStandardMaterial({color:'#d32f2f',roughness:.6,metalness:.08,emissive:'#3a0000',emissiveIntensity:.2});
-        var white=new THREE.MeshStandardMaterial({color:'#f7f7f7',roughness:.95});
-        var gold=new THREE.MeshStandardMaterial({color:'#ffd54f',metalness:.7,roughness:.25});
-        var dark=new THREE.MeshStandardMaterial({color:'#2b2b2b',roughness:.9});
+        var red=stdMat({color:'#d32f2f',roughness:.6,metalness:.08,emissive:'#3a0000',emissiveIntensity:.2});
+        var white=stdMat({color:'#f7f7f7',roughness:.95});
+        var gold=stdMat({color:'#ffd54f',metalness:.7,roughness:.25});
+        var dark=stdMat({color:'#2b2b2b',roughness:.9});
         // sleigh / cart
         var cart=new THREE.Mesh(new THREE.BoxGeometry(6,1.5,3),red); cart.userData.v9=true; santa.add(cart);
         var backrest=new THREE.Mesh(new THREE.BoxGeometry(1,2.6,3),red); backrest.position.set(-2.6,1,0); backrest.userData.v9=true; santa.add(backrest);
@@ -5483,7 +5484,7 @@
         // Santa body
         var torso=new THREE.Mesh(new THREE.CylinderGeometry(1,.85,2.2,10),red); torso.position.set(.3,1.7,0); torso.userData.v9=true; santa.add(torso);
         var belt=new THREE.Mesh(new THREE.TorusGeometry(.92,.14,6,14),dark); belt.rotation.x=Math.PI/2; belt.position.set(.3,1.35,0); belt.userData.v9=true; santa.add(belt);
-        var head=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),new THREE.MeshStandardMaterial({color:'#ffc99a',roughness:.9}));
+        var head=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),stdMat({color:'#ffc99a',roughness:.9}));
         head.position.set(.3,3.1,0); head.userData.v9=true; santa.add(head);
         var hat=new THREE.Mesh(new THREE.ConeGeometry(.78,1.2,10),red); hat.position.set(.3,4,0); hat.userData.v9=true; santa.add(hat);
         var pom=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),white); pom.position.set(.3,4.65,0); pom.userData.v9=true; santa.add(pom);
@@ -5511,9 +5512,9 @@
       // 🛰️ Many small satellites orbiting the solar system
       try{
         var satGroup=new THREE.Group();
-        var satBody=new THREE.MeshStandardMaterial({color:'#cfd6e6',metalness:.6,roughness:.35,emissive:'#1b2b4a',emissiveIntensity:.25});
-        var satPanel=new THREE.MeshStandardMaterial({color:'#2a5fb0',metalness:.3,roughness:.5,emissive:'#0e2a55',emissiveIntensity:.45});
-        var satDish=new THREE.MeshStandardMaterial({color:'#e8ecf5',metalness:.2,roughness:.6,side:THREE.DoubleSide});
+        var satBody=stdMat({color:'#cfd6e6',metalness:.6,roughness:.35,emissive:'#1b2b4a',emissiveIntensity:.25});
+        var satPanel=stdMat({color:'#2a5fb0',metalness:.3,roughness:.5,emissive:'#0e2a55',emissiveIntensity:.45});
+        var satDish=stdMat({color:'#e8ecf5',metalness:.2,roughness:.6,side:THREE.DoubleSide});
         for(var si=0;si<3;si++){
           var sat=new THREE.Group();
           var body=new THREE.Mesh(new THREE.BoxGeometry(.9,.7,.7),satBody); body.userData.v9=true; sat.add(body);
@@ -5545,7 +5546,7 @@
         // 🌍 Big close planet so the whole planet is visible above the office
         var bigP=new THREE.Group();
         var globe=new THREE.Mesh(new THREE.SphereGeometry(24,32,24),
-          new THREE.MeshStandardMaterial({color:'#2e74b8',roughness:.85,metalness:.05,emissive:'#123a60',emissiveIntensity:.4,fog:false}));
+          stdMat({color:'#2e74b8',roughness:.85,metalness:.05,emissive:'#123a60',emissiveIntensity:.4,fog:false}));
         globe.userData.v9=true; bigP.add(globe);
         var bigAtm=new THREE.Mesh(new THREE.SphereGeometry(25.5,32,24),
           new THREE.MeshBasicMaterial({color:'#67d6ff',transparent:true,opacity:.14,side:THREE.BackSide,depthWrite:false,fog:false}));
@@ -5573,7 +5574,7 @@
           cx.globalAlpha=1;
           var etex=new THREE.CanvasTexture(cv);
           var globe2=new THREE.Mesh(new THREE.SphereGeometry(13,32,24),
-            new THREE.MeshStandardMaterial({map:etex,roughness:.9,metalness:.02,emissive:'#0e2d52',emissiveIntensity:.14,fog:false}));
+            stdMat({map:etex,roughness:.9,metalness:.02,emissive:'#0e2d52',emissiveIntensity:.14,fog:false}));
           globe2.userData.v9=true; earth.add(globe2);
           var eatm=new THREE.Mesh(new THREE.SphereGeometry(13.8,32,24),
             new THREE.MeshBasicMaterial({color:'#78d6ff',transparent:true,opacity:.1,side:THREE.BackSide,depthWrite:false,fog:false}));
@@ -5797,7 +5798,7 @@
     window.__officeDetail = tier==='low'?'low':'high';
     applyDetailLevel(true);
     if(tier==='low'){
-      try{ if(renderer3d&&renderer3d.setPixelRatio) renderer3d.setPixelRatio(.65); }catch(e){}
+      /* no runtime pixel-ratio change - resizes canvas and causes a visible flash */
       try{
         [fx.dust,fx.pets,fx.outfits].forEach(function(o){ if(o&&o.visible!==undefined)o.visible=false; });
         if(perfg.low<1){perfg.low=1;hideTinyDetails();}
@@ -5805,17 +5806,11 @@
     }
   }
   function aiOptimizeTick(now,dt){
-    if(now-(aiOpt.last||0)<3000)return;
-    aiOpt.last=now;
-    if(!aiOpt.applied){
-      aiOpt.score=aiDetectSpecs();
-      aiApplyTier(aiOpt.score>=5?'low':aiOpt.score>=3?'medium':'high');
-      return;
-    }
-    if(aiOpt.tier==='high')return; // malakas: walang binabago kahit magbago ang FPS
-    var fps=dt>0?1/dt:60;
-    if(fps<24)aiOpt.lowStreak++; else aiOpt.lowStreak=0;
-    if(aiOpt.lowStreak>=3&&aiOpt.tier!=='low'){aiOpt.lowStreak=0;aiApplyTier('low');}
+    /* ⚡ PERF: fixed HIGH detail, no runtime downgrade.
+       The old check read dt from the 90ms walk loop (capped .08 => ~12 FPS),
+       so it ALWAYS thought the device was slow, dropped to LOW and called
+       setPixelRatio(.65) -> canvas resize FLASH + details popping out. */
+    return;
   }
 
 
