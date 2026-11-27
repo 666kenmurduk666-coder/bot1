@@ -5075,7 +5075,7 @@
   // ===== JANITOR BOT — roaming cleaner with broom + sparkle trail =====
 
   var janfx = { crew:[], sparkles:[] };
-  var JAN_COLORS=['#3ec9a8','#ff8df0','#63e6ff','#ffd34d','#b07cff','#ff8f5f'];
+  var JAN_COLORS=['#3ec9a8'];
   function buildJanitor(){
     if(!structureGroup||!level3d) return;
     janfx.crew.length=0; janfx.sparkles.length=0;
@@ -6017,10 +6017,8 @@
     pl.position.set(0,6.5,0); pl.scale.set(2.6,.56,1); portal.add(pl);
     // desks + dev bots
     var defs=[
-      [-4.2,-1.2,'#63e6ff','Dev on my office','DEV OFFICE'],
-      [-1.4,-1.2,'#a78bfa','Dev on my website','DEV WEB'],
-      [1.4,-1.2,'#ffd34d','Dev Maintenance','DEV MAINT'],
-      [4.2,-1.2,'#7cf0c8','DEV on my social media','DEV SOCIAL']
+      [-3,-1.2,'#63e6ff','Dev on my office','DEV OFFICE'],
+      [3,-1.2,'#a78bfa','Dev on my website','DEV WEB']
     ];
     defs.forEach(function(d,i){
       var dx=cx+d[0], dz=cz+d[1];
@@ -6102,9 +6100,7 @@
     // 4 workstations with monitors + bots working
     var stations=[
       [-8,-6,'#63e6ff','DEV OFFICE'],
-      [8,-6,'#a78bfa','DEV WEB'],
-      [-8,6,'#ffd34d','DEV MAINT'],
-      [8,6,'#7cf0c8','DEV SOCIAL']
+      [8,-6,'#a78bfa','DEV WEB']
     ];
     stations.forEach(function(st,idx){
       var x=st[0],z=st[1],col=st[2],label=st[3];
@@ -6177,11 +6173,11 @@
     // Command sign removed - one big CYBEE board only.
     // 5 departments (roles from the reference video)
     var deps=[
-      {x:-17.6,z:-24.3,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040'],['Zara','#ffb060'],['Marco','#b98cff']]},
-      {x:17.6,z:-24.3,c:'#4fd6b0',t:'Data & Insights',a:[['Rena','#4fd6b0'],['Aria','#63e6ff']]},
-      {x:-28.5,z:9.3,c:'#5fa8ff',t:'Systems',a:[['Kai','#5fa8ff'],['Dan','#4fd6b0']]},
-      {x:28.5,z:9.3,c:'#d8c860',t:'Finance',a:[['Faris','#d8c860'],['Hanna','#e8d98f']]},
-      {x:0,z:30,c:'#ff7fb0',t:'People & Customers',a:[['Hafiz','#ff7fb0'],['Lara','#ff9ec4'],['Sophia','#c08cff']]}
+      {x:-17.6,z:-24.3,c:'#f0a040',t:'Marketing',a:[['Milia','#f0a040']]},
+      {x:17.6,z:-24.3,c:'#4fd6b0',t:'Data & Insights',a:[['Rena','#4fd6b0']]},
+      {x:-28.5,z:9.3,c:'#5fa8ff',t:'Systems',a:[['Kai','#5fa8ff']]},
+      {x:28.5,z:9.3,c:'#d8c860',t:'Finance',a:[['Faris','#d8c860']]},
+      {x:0,z:30,c:'#ff7fb0',t:'People & Customers',a:[['Hafiz','#ff7fb0']]}
     ];
     deps.forEach(function(d){
       refIsland(d.x,d.z,10,d.c,d.t,d.a);
