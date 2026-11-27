@@ -4351,14 +4351,16 @@
     var dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz),ang=-Math.atan2(dz,dx);
     var mx=(x1+x2)/2, mz=(z1+z2)/2;
     var base=new THREE.Mesh(new THREE.BoxGeometry(len,.12,2.8),solid('#253047',{roughness:.6,metalness:.3}));
-    base.position.set(mx,-.08,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
+    base.position.set(mx,-.10+(Math.abs(x1)+Math.abs(z1)+Math.abs(x2)+Math.abs(z2))%9*.012,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
+    // ⚡ unique height per bridge: prevents coplanar overlap (z-fighting) where bridges meet
+    var by=.01 + ((Math.abs(x1)+Math.abs(z1)+Math.abs(x2)+Math.abs(z2))%9)*.015;
     var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.02,2.5),solid('#3a4862',{roughness:.55,metalness:.35}));
-    surf.position.set(mx,.01,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
+    surf.position.set(mx,by,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
     // twin glowing lane lines (symmetric — no direction implied)
     [-.85,.85].forEach(function(off){
-      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.015,.06),solid(color,{emissive:color,emissiveIntensity:.42}));
+      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.03,.09),solid(color,{emissive:color,emissiveIntensity:.42}));
       var ox=Math.sin(ang)*off, oz=Math.cos(ang)*off;
-      line.position.set(mx+ox,.025,mz+oz); line.rotation.y=ang; line.userData.v9=true; addO(line);
+      line.position.set(mx+ox,by+.07,mz+oz); line.rotation.y=ang; line.userData.v9=true; addO(line);
     });
     // side handrails (static, futuristic)
     [-1,1].forEach(function(side){
