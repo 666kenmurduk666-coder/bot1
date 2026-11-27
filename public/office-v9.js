@@ -6047,17 +6047,14 @@
     // platform
     var disc=new THREE.Mesh(new THREE.CylinderGeometry(8.2,7.6,.5,20),solid('#0a0d15',{roughness:.6,metalness:.25}));
     disc.position.set(cx,Y-.25,cz); disc.userData.v9=true; addO(disc);
-    var rim=new THREE.Mesh(new THREE.TorusGeometry(8.25,.09,8,32),solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:.9}));
-    rim.rotation.x=Math.PI/2; rim.position.set(cx,Y,cz); rim.userData.v9=true; addO(rim);
+    // 2nd floor platform ring removed - shimmer (boss request)
     // 🌀 FLOATING PORTAL ELEVATOR - glowing rings, no solid post
     var portal=new THREE.Group(); portal.position.set(cx,0,cz-4); portal.userData.v9=true; structureGroup.add(portal);
     // ground pad (floating just above the island floor)
     var pad=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,.12,24),
       solid('#13233c',{emissive:'#00c8ff',emissiveIntensity:.35,metalness:.5}));
     pad.position.y=.08; pad.userData.v9=true; portal.add(pad);
-    var padRing=new THREE.Mesh(new THREE.TorusGeometry(1.75,.12,8,32),
-      solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:1.2}));
-    padRing.rotation.x=Math.PI/2; padRing.position.y=.16; padRing.userData.v9=true; portal.add(padRing);
+    // portal pad ring removed - shimmer
     // floating portal rings going up (no column - just hovering rings)
     for(var ri=0;ri<3;ri++){
       var pr=new THREE.Mesh(new THREE.TorusGeometry(1.5-ri*.12,.08,8,28),
