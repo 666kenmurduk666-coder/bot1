@@ -4249,6 +4249,21 @@
       }
       if(r.bub&&r.bub.visible&&now-r.lastBubble>3800) r.bub.visible=false;
       r.g.position.set(r.x,-0.04,r.z);
+      // 🛸 UFO abduction: rise up the beam, spin small, then reappear at home
+      if(r.state==='abduct'){
+        var k=Math.min(1,(now-r.abductStart)/r.abductDur);
+        r.g.position.y=-.04+k*k*14;
+        r.g.rotation.y+=dt*7;
+        r.g.scale.setScalar(1.28*(1-k*.55));
+        if(r.bub)r.bub.visible=false;
+        if(abductBeam){ abductBeam.material.opacity=.4*(1-k*.85); abductBeam.rotation.y+=dt*1.5; }
+        if(k>=1){
+          r.g.position.y=-.04; r.g.scale.setScalar(1.28);
+          if(r.bub)r.bub.visible=true;
+          if(abductBeam){ try{abductBeam.parent&&abductBeam.parent.remove(abductBeam);}catch(e){} abductBeam=null; }
+          setWalk(r,[{x:r.homeX,z:r.homeZ}]); r.zone=zoneOfPoint(r.homeX,r.homeZ);
+        }
+      }
     }
     for(var a=0;a<walkers.length;a++) for(var b=a+1;b<walkers.length;b++){
       var A=walkers[a],B=walkers[b];
@@ -4263,7 +4278,7 @@
     }
   }
   function decideWalker(r,now){
-    if(r.state==='submitHold'){ if(now>r.timer){ setWalk(r,[{x:r.homeX,z:r.homeZ}]); r.zone=zoneOfPoint(r.homeX,r.homeZ); } return; }
+    if(r.state==='submitHold'){ if(now>r.timer){ r.state='abduct'; r.abductStart=now; r.abductDur=2800; startAbductionBeam(r.x,r.z,r.color); } return; }
     if(r.state==='talk'){ if(now>r.talkFor){r.state='idle';r.partner=null;r.timer=now+1200;} return; }
     if((r.state==='walk'||r.state==='submit'||r.state==='submitHold'||r.state==='meeting'||r.state==='dance'||r.state==='parade')&&r.wp) return;
     if((r.state==='work'||r.state==='idle')&&now<r.timer) return;
@@ -4572,6 +4587,17 @@
 
   // ===== PORTAL PULSE + PROJECT TELEPORT FX =====
   var portalFx=[], telefx=[];
+  /* 🛸 UFO ABDUCTION BEAM - bot beamed up through the Command portal */
+  var abductBeam=null;
+  function startAbductionBeam(x,z,color){
+    try{
+      if(abductBeam){ abductBeam.parent&&abductBeam.parent.remove(abductBeam); abductBeam=null; }
+      var beam=new THREE.Mesh(new THREE.CylinderGeometry(.85,1.5,15,16,1,true),
+        new THREE.MeshBasicMaterial({color:color||'#7cf0c8',transparent:true,opacity:.4,side:THREE.DoubleSide,
+          depthWrite:false,fog:false,blending:THREE.AdditiveBlending}));
+      beam.position.set(x,7.5,z); beam.userData.v9=true; addO(beam); abductBeam=beam;
+    }catch(e){}
+  }
   function portalPulse(x,z,color){
     try{
       for(var i=0;i<3;i++){
@@ -6039,9 +6065,9 @@
       animParts.push({m:pr,k:'spinFlat',s:.2+ri*.05});
     }
     // energy column (very subtle, gives the elevator feel)
-    var col=new THREE.Mesh(new THREE.CylinderGeometry(1.1,.7,7,16,1,true),
+    var col=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.0,13,16,1,true),
       new THREE.MeshBasicMaterial({color:'#00e5ff',transparent:true,opacity:.07,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-    col.position.y=3.5; col.userData.v9=true; portal.add(col);
+    col.position.y=6.5; col.userData.v9=true; portal.add(col);
     // portal label
     var pl=devLabel('⇧ DEV FLOOR','#00e5ff',6.5);
     pl.position.set(0,6.5,0); pl.scale.set(2.6,.56,1); portal.add(pl);
@@ -6187,12 +6213,12 @@
     hub.position.set(CX,-.35,CZ); hub.rotation.y=Math.PI/8; hub.userData.v9=true; hub.userData.v9Floor=true; addO(hub);
     var hr=new THREE.Mesh(new THREE.TorusGeometry(18.1,.09,8,32),solid('#8b7cff',{emissive:'#8b7cff',emissiveIntensity:.9}));
     hr.rotation.x=Math.PI/2; hr.position.set(CX,.16,CZ); hr.userData.v9=true; addO(hr);
-    var beam=new THREE.Mesh(new THREE.CylinderGeometry(.32,.5,11,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-    beam.position.set(CX,5.5,CZ); beam.userData.v9=true; addO(beam);
+    var beam=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.1,30,16,1,true),new THREE.MeshBasicMaterial({color:'#63e6ff',transparent:true,opacity:.3,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+    beam.position.set(CX,15,CZ); beam.userData.v9=true; addO(beam);
     animParts.push({m:beam,k:'led',p:.4});
-    [1.0,1.7,2.5].forEach(function(r,i){
-      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.05,8,32),solid(i===1?'#ff8df0':'#63e6ff',{emissive:i===1?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
-      ring.rotation.x=Math.PI/2; ring.position.set(CX,.3+i*.35,CZ); ring.userData.v9=true; addO(ring);
+    [1.3,2.1,2.9,3.7,4.5,5.3].forEach(function(r,i){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.08,8,32),solid(i%2?'#ff8df0':'#63e6ff',{emissive:i%2?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
+      ring.rotation.x=Math.PI/2; ring.position.set(CX,.5+i*4.5,CZ); ring.userData.v9=true; addO(ring);
       animParts.push({m:ring,k:i===1?'spinFlatR':'spinFlat',s:.45});
     });
     // CEO decision paper + operator
