@@ -3993,7 +3993,7 @@
     redEye.position.set(.15,.07,.38); redEye.userData.v9=true; head.add(redEye);
     var shades=new THREE.Mesh(new THREE.BoxGeometry(.56,.10,.05),new THREE.MeshStandardMaterial({color:'#12151d',metalness:.4,roughness:.2}));
     shades.position.set(0,.07,.40); shades.userData.v9=true; head.add(shades);
-    for(var hi=0;hi<7;hi++){
+    for(var hi=0;hi<3;hi++){
       var spike=new THREE.Mesh(new THREE.ConeGeometry(.10,.26,5),new THREE.MeshStandardMaterial({color:'#181b24',roughness:.8}));
       spike.position.set(-.24+hi*.12,.38+((hi%2)?-.03:.05),0); spike.rotation.z=(hi-2)*.18;
       spike.userData.v9=true; head.add(spike);
@@ -4097,24 +4097,8 @@
     // backpack
     var pack=new THREE.Mesh(new THREE.BoxGeometry(.36,.32,.18),solid('#2a3550',{roughness:.5,metalness:.4}));pack.position.set(0,.60,-.42);pack.userData.v9=true;body.add(pack);
     // joint rings
-    [armL,armR,legL,legR].forEach(function(j){var ring=new THREE.Mesh(new THREE.TorusGeometry(.075,.02,6,10),solid(color,{emissive:color,emissiveIntensity:.45}));ring.rotation.x=Math.PI/2;ring.position.y=-.2;j.add(ring);});
-    var cineFloor=new THREE.Mesh(new THREE.CircleGeometry(.85,16),
-      new THREE.MeshBasicMaterial({map:cineGlowTex(),transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide,fog:false,blending:THREE.AdditiveBlending}));
-    cineFloor.rotation.x=-Math.PI/2; cineFloor.position.set(0,.035,0); cineFloor.userData.v9=true; g.add(cineFloor);
+
     if (name) refLabel(name, color, x, 2.15, z, 3.0, .7);
-    // 🏅 ROLE & HIERARCHY badge above the bot
-    try{
-      var rankTxt = role==='boss' ? '👑 CEO' : role==='manager' ? '⭐ MGR' : (role||'STAFF').toUpperCase();
-      var rankCol = role==='boss' ? '#ffd34d' : role==='manager' ? '#b9c8dd' : color;
-      var rc=document.createElement('canvas'); rc.width=256; rc.height=56;
-      var rq=rc.getContext('2d');
-      rq.fillStyle='rgba(6,12,24,.88)'; rq.fillRect(0,0,256,56);
-      rq.strokeStyle=rankCol; rq.lineWidth=3; rq.strokeRect(2,2,252,52);
-      rq.fillStyle=rankCol; rq.font='bold 26px Arial'; rq.textAlign='center'; rq.textBaseline='middle';
-      rq.fillText(rankTxt,128,30);
-      var rankSpr=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(rc),transparent:true,depthTest:false}));
-      rankSpr.scale.set(1.9,.42,1); rankSpr.position.set(0,2.62,0); rankSpr.userData.v9=true; g.add(rankSpr);
-    }catch(e){}
     var bub = new THREE.Sprite(new THREE.SpriteMaterial({map:makeBubbleTex('…'),transparent:true,depthTest:false}));
     bub.scale.set(2.4,.7,1); bub.position.set(0,2.5,0); bub.visible=false; bub.userData.v9=true; g.add(bub);
     animParts.push({m:belly,k:'led',p:x*.7+z});
@@ -4127,14 +4111,6 @@
       blink:0, look:0, lastBubble:0, decisionAt:Date.now()-500+seed*30
     };
     walkers.push(r);
-    // ✨ glowing role aura under the bot (cheap additive circle)
-    try{
-      var aura=new THREE.Mesh(new THREE.CircleGeometry(.8,16),
-        new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:.2,depthWrite:false,
-          side:THREE.DoubleSide,fog:false,blending:THREE.AdditiveBlending}));
-      aura.rotation.x=-Math.PI/2; aura.position.set(x,.035,z); aura.userData.v9=true; addO(aura);
-      wAuras.push(aura);
-    }catch(e){}
     return g;
   }
 
@@ -4687,7 +4663,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); tickPortalRider(n); tickWalkerAuras(n); aiOptimizeTick(n,dt);  tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); aiOptimizeTick(n,dt);  tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -5790,17 +5766,6 @@
   }
   function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
 
-  // ✨ role auras follow the bots and pulse gently
-  function tickWalkerAuras(now){
-    try{
-      for(var i=0;i<wAuras.length&&i<walkers.length;i++){
-        var w=walkers[i],a=wAuras[i];
-        if(!w||!a)continue;
-        a.position.set(w.x,.035,w.z);
-        a.material.opacity=.14+.1*(.5+.5*Math.sin(now/500+i));
-      }
-    }catch(e){}
-  }
   // 🛸 portal rider motion (up/down through the elevator rings)
   function tickPortalRider(now){
     var r=window.__devPortalRider; if(!r)return;
@@ -6027,14 +5992,6 @@
     disc.position.set(cx,Y-.25,cz); disc.userData.v9=true; addO(disc);
     var rim=new THREE.Mesh(new THREE.TorusGeometry(8.25,.09,8,32),solid('#63e6ff',{emissive:'#63e6ff',emissiveIntensity:.9}));
     rim.rotation.x=Math.PI/2; rim.position.set(cx,Y,cz); rim.userData.v9=true; addO(rim);
-    // glass railings
-    for(var i=0;i<12;i++){
-      var a=i/12*Math.PI*2;
-      var post=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.9,6),solid('#3b5678',{metalness:.5}));
-      post.position.set(cx+Math.cos(a)*8,Y+.45,cz+Math.sin(a)*8); post.userData.v9=true; addO(post);
-    }
-    var rail=new THREE.Mesh(new THREE.TorusGeometry(8,.05,6,32),solid('#4a7fb0',{emissive:'#4a7fb0',emissiveIntensity:.4}));
-    rail.rotation.x=Math.PI/2; rail.position.set(cx,Y+.9,cz); rail.userData.v9=true; addO(rail);
     // 🌀 FLOATING PORTAL ELEVATOR - glowing rings, no solid post
     var portal=new THREE.Group(); portal.position.set(cx,0,cz-4); portal.userData.v9=true; structureGroup.add(portal);
     // ground pad (floating just above the island floor)
@@ -6045,7 +6002,7 @@
       solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:1.2}));
     padRing.rotation.x=Math.PI/2; padRing.position.y=.16; padRing.userData.v9=true; portal.add(padRing);
     // floating portal rings going up (no column - just hovering rings)
-    for(var ri=0;ri<5;ri++){
+    for(var ri=0;ri<3;ri++){
       var pr=new THREE.Mesh(new THREE.TorusGeometry(1.5-ri*.12,.08,8,28),
         new THREE.MeshBasicMaterial({color:ri%2?'#a78bfa':'#00e5ff',transparent:true,opacity:.5,depthWrite:false,fog:false}));
       pr.rotation.x=Math.PI/2; pr.position.y=1.5+ri*1.35; pr.userData.v9=true; portal.add(pr);
@@ -6073,18 +6030,6 @@
       scr.position.set(dx,Y+1.5,dz-.3); scr.userData.v9=true; addO(scr);
       devBot(dx,dz+1.1,d[2],d[3],d[4]);
     });
-    // 🛸 portal rider - a bot riding up and down the portal (visible elevator)
-    var rider=new THREE.Group(); rider.userData.v9=true; structureGroup.add(rider);
-    var riderBody=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),solid('#7cf0c8',{emissive:'#7cf0c8',emissiveIntensity:.5}));
-    riderBody.position.y=.6; riderBody.userData.v9=true; rider.add(riderBody);
-    var riderHead=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),solid('#e8b78e'));
-    riderHead.position.y=1.05; riderHead.userData.v9=true; rider.add(riderHead);
-    var riderRing=new THREE.Mesh(new THREE.TorusGeometry(.5,.06,6,16),solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:1.1}));
-    riderRing.rotation.x=Math.PI/2; riderRing.position.y=.06; riderRing.userData.v9=true; rider.add(riderRing);
-    animParts.push({m:riderRing,k:'spinFlat',s:.5});
-    var riderPhase=0;
-    // store rider for tick
-    window.__devPortalRider=rider;
     // floor sign
     var sign=devLabel('👨‍💻 DEV FLOOR','#63e6ff',3.4);
     sign.position.set(cx,Y+3.4,cz-7.6); sign.scale.set(4,.85,1); structureGroup.add(sign);
@@ -6114,16 +6059,6 @@
   }
   function buildUfoInterior(){
     if(!structureGroup||!level3d)return;
-    // dome shell (BackSide, transparent - does not block the view)
-    var dome=new THREE.Mesh(new THREE.SphereGeometry(78,24,16),
-      new THREE.MeshBasicMaterial({color:'#12233f',transparent:true,opacity:.07,side:THREE.BackSide,depthWrite:false,fog:false}));
-    dome.userData.v9=true; addO(dome);
-    // ceiling light rings
-    [28,36,44].forEach(function(r,i){
-      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.08,6,48),
-        new THREE.MeshBasicMaterial({color:i===1?'#a78bfa':'#00e5ff',transparent:true,opacity:.16,depthWrite:false,fog:false}));
-      ring.rotation.x=Math.PI/2; ring.position.y=13+i*4; ring.userData.v9=true; addO(ring);
-    });
     // main website monitor above Command
     var screen=new THREE.Mesh(new THREE.PlaneGeometry(11,6.2),
       new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
@@ -6179,14 +6114,6 @@
     var ring=new THREE.Mesh(new THREE.TorusGeometry(17.3,.1,8,48),
       solid('#00e5ff',{emissive:'#00e5ff',emissiveIntensity:.9}));
     ring.rotation.x=Math.PI/2; ring.position.y=.05; ring.userData.v9=true; addO(ring);
-    // ceiling light strips (floating, no solid ceiling)
-    for(var i=0;i<6;i++){
-      var a=i/6*Math.PI*2;
-      var strip=new THREE.Mesh(new THREE.BoxGeometry(9,.06,.3),
-        new THREE.MeshBasicMaterial({color:i%2?'#a78bfa':'#00e5ff',transparent:true,opacity:.5,depthWrite:false,fog:false}));
-      strip.position.set(Math.cos(a)*9,5.5,Math.sin(a)*9); strip.rotation.y=-a;
-      strip.userData.v9=true; addO(strip);
-    }
     // 4 workstations with monitors + bots working
     var stations=[
       [-8,-6,'#63e6ff','DEV OFFICE'],
