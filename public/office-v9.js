@@ -6118,6 +6118,37 @@
       sm.position.set(m[1],m[2],-9); sm.userData.v9=true; addO(sm);
     });
   }
+  // 🎨 UNIFIED COLOR SYSTEM - snap all colors into 5 coordinated families
+  function harmonizeColors(){
+    var HUES=[0.53,0.74,0.13,0.92,0.40]; // cyan, violet, gold, pink, green
+    var hsl={h:0,s:0,l:0};
+    function snap(col){
+      if(!col||!col.getHSL)return;
+      try{
+        col.getHSL(hsl);
+        if(hsl.s<0.16){
+          var l=Math.min(.92,Math.max(.04,hsl.l));
+          col.setHSL(.58,.22,l);
+          return;
+        }
+        var best=HUES[0],d=9;
+        for(var i=0;i<HUES.length;i++){
+          var dd=Math.abs(hsl.h-HUES[i]); dd=Math.min(dd,1-dd);
+          if(dd<d){d=dd;best=HUES[i];}
+        }
+        var sat=Math.min(.72,Math.max(.38,hsl.s*.85));
+        var lig=Math.min(.72,Math.max(.16,hsl.l));
+        col.setHSL(best,sat,lig);
+      }catch(e){}
+    }
+    try{
+      structureGroup.traverse(function(o){
+        if(!o.material)return;
+        var ms=Array.isArray(o.material)?o.material:[o.material];
+        ms.forEach(function(m){ if(m.color)snap(m.color); if(m.emissive)snap(m.emissive); });
+      });
+    }catch(e){}
+  }
   // 🏢 CENTRAL OFFICE - wide main office at the center of the whole layout
   function buildCentralOffice(){
     if(!structureGroup||!level3d)return;
@@ -6260,6 +6291,7 @@
     function nextLayer(){
       if(qi>=queue.length)return;
       runLayer(queue[qi++]);
+      if(qi>=queue.length){ runLayer(['harmonizeColors',harmonizeColors]); return; }
       idle(nextLayer);
     }
     idle(nextLayer);
