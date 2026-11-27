@@ -6025,9 +6025,6 @@
     defs.forEach(function(d,i){
       var dx=cx+d[0], dz=cz+d[1];
       box(2.4,.14,1.2,solid('#35435a',{metalness:.4}),dx,Y+.78,dz);
-      var scr=new THREE.Mesh(new THREE.PlaneGeometry(1.8,1.05),
-        new THREE.MeshBasicMaterial({map:dataPanelTexture(d[2],d[4],['> code online','> build ok','> deploy ready']),transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      scr.position.set(dx,Y+1.5,dz-.3); scr.userData.v9=true; addO(scr);
       devBot(dx,dz+1.1,d[2],d[3],d[4]);
     });
     // floor sign
@@ -6059,18 +6056,6 @@
   }
   function buildUfoInterior(){
     if(!structureGroup||!level3d)return;
-    // main website monitor above Command
-    var screen=new THREE.Mesh(new THREE.PlaneGeometry(11,6.2),
-      new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.96,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-    screen.position.set(0,12,-11); screen.userData.v9=true; addO(screen);
-    var frame=new THREE.Mesh(new THREE.BoxGeometry(11.4,6.6,.18),solid('#1a2a44',{metalness:.6,roughness:.3}));
-    frame.position.set(0,12,-11.2); frame.userData.v9=true; addO(frame);
-    // side monitors by role
-    [['DEV OFFICE',-13,7,'#63e6ff'],['DEV WEB',13,7,'#a78bfa'],['DEV MAINT',-13,15,'#ffd34d'],['DEV SOCIAL',13,15,'#7cf0c8']].forEach(function(m){
-      var sm=new THREE.Mesh(new THREE.PlaneGeometry(5,2.8),
-        new THREE.MeshBasicMaterial({map:dataPanelTexture(m[3],m[0],['> online','> working','> synced']),transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      sm.position.set(m[1],m[2],-9); sm.userData.v9=true; addO(sm);
-    });
   }
   // 🎨 UNIFIED COLOR SYSTEM - snap all colors into 5 coordinated families
   function harmonizeColors(){
@@ -6125,12 +6110,6 @@
       var x=st[0],z=st[1],col=st[2],label=st[3];
       // desk
       box(3.6,.16,1.6,solid('#28344a',{metalness:.4}),x,.55,z);
-      // monitor with website UI
-      var scr=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.4),
-        new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-      scr.position.set(x,1.55,z-.4); scr.userData.v9=true; addO(scr);
-      var frame=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.6,.1),solid('#1a2438',{metalness:.5}));
-      frame.position.set(x,1.55,z-.48); frame.userData.v9=true; addO(frame);
       // seated dev bot at the desk
       var bot=new THREE.Group(); bot.position.set(x,.2,z+1.5); bot.userData.v9=true; structureGroup.add(bot);
       var body=new THREE.Mesh(new THREE.SphereGeometry(.46,12,10),solid('#202a38',{metalness:.4,emissive:col,emissiveIntensity:.16}));
@@ -6161,10 +6140,6 @@
       var ch=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,10),solid('#3a4a66'));
       ch.position.set(Math.cos(a)*3.2,.3,Math.sin(a)*3.2); ch.userData.v9=true; addO(ch);
     }
-    // huge wall monitor at the back of the central office
-    var wall=new THREE.Mesh(new THREE.PlaneGeometry(10,5.6),
-      new THREE.MeshBasicMaterial({map:ufoWebsiteTex(),transparent:true,opacity:.95,side:THREE.DoubleSide,depthWrite:false,fog:false}));
-    wall.position.set(0,6,-15); wall.userData.v9=true; addO(wall);
   }
   function buildReferenceSystem() {
     if (!level3d || !structureGroup) return false;
@@ -6224,7 +6199,7 @@
     // Each visual layer is isolated: one failure can't block the others.
     // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
     // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
-    var layers=[ ['enhance3D',enhance3D], ['buildUfoInterior',buildUfoInterior], ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
+    var layers=[ ['enhance3D',enhance3D], ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
       ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
       ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
@@ -6234,13 +6209,8 @@
     var idle=window.requestIdleCallback
       ? function(cb){ window.requestIdleCallback(cb,{timeout:120}); }
       : function(cb){ setTimeout(cb,40); };
-    function nextLayer(){
-      if(qi>=queue.length)return;
-      runLayer(queue[qi++]);
-      if(qi>=queue.length){ runLayer(['harmonizeColors',harmonizeColors]); return; }
-      idle(nextLayer);
-    }
-    idle(nextLayer);
+    // build everything in ONE deferred batch - no step-by-step pop-in / flicker
+    idle(function(){ queue.forEach(runLayer); });
     return true;
   }
 
@@ -6515,7 +6485,7 @@
         if (a.k === 'bob') { m.position.y = Math.sin(now/600 + a.p) * 0.06; return; }
         if (!m.material || m.material.emissiveIntensity === undefined) return;
         m.material.emissiveIntensity = a.k === 'led'
-          ? .3 + .65 * (.5 + .5 * Math.sin(now / 240 + a.p))
+          ? .34 + .3 * (.5 + .5 * Math.sin(now / 900 + a.p))
           : .7 + .22 * Math.sin(now / 720 + a.p);
       });
     }
