@@ -5906,7 +5906,7 @@
     // 1) DEEP SPACE sky - black void, colorful stars, nebula, galaxies, planets
     try{
       var S=1024;
-      var sc=document.createElement('canvas'); sc.width=S; sc.height=S;
+      var sc=document.createElement('canvas'); S=768; sc.width=S; sc.height=S;
       var q=sc.getContext('2d');
       q.fillStyle='#010208'; q.fillRect(0,0,S,S);
       // nebula clouds
@@ -5935,7 +5935,7 @@
       });
       // colorful stars
       var cols=['#ffffff','#bcdcff','#ffb27a','#ff6a5a','#ffe08a','#9fd8ff'];
-      for(var i=0;i<760;i++){
+      for(var i=0;i<440;i++){
         var x=Math.random()*S,y=Math.random()*S,r=Math.random()*1.4+.2;
         var c=cols[(Math.random()*cols.length)|0];
         q.globalAlpha=.35+Math.random()*.65;
@@ -6241,7 +6241,7 @@
     });
     // command bot belongs to hub zone 0
     walkers.forEach(function(w){ if(w.zone==null) w.zone=0; });
-    enhancedVisuals();
+    // enhancedVisuals deferred to idle (heavy canvas work)
     // Start the living loop FIRST — a failing visual builder must never stop the robots.
     startWalkLoop();
     // Each visual layer is isolated: one failure can't block the others.
@@ -6251,13 +6251,18 @@
       ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
       ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
-    // ⚡ First open: build only the 3 essential layers now; defer the rest one per
-    // idle callback so the page becomes interactive immediately (no first-open lag).
-    layers.slice(0,7).forEach(runLayer);
-    var rest=layers.slice(7), li=0;
-    var idle=window.requestIdleCallback||function(cb){ setTimeout(cb,24); };
-    function nextLayer(){ if(li>=rest.length)return; runLayer(rest[li++]); idle(nextLayer); }
-    idle(function(){ idle(nextLayer); });
+    // ⚡ First open: ZERO synchronous heavy work. Robots render immediately;
+    // visuals are built one per idle callback so the page never freezes.
+    var queue=[['enhancedVisuals',enhancedVisuals]].concat(layers), qi=0;
+    var idle=window.requestIdleCallback
+      ? function(cb){ window.requestIdleCallback(cb,{timeout:120}); }
+      : function(cb){ setTimeout(cb,40); };
+    function nextLayer(){
+      if(qi>=queue.length)return;
+      runLayer(queue[qi++]);
+      idle(nextLayer);
+    }
+    idle(nextLayer);
     return true;
   }
 
