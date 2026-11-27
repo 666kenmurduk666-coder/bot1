@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=237"></script>
+<script src="/office-v9.js?v=238"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -5284,7 +5284,7 @@ setInterval(()=>{
 },4000);
 /* ---------- boot ---------- */
 const tick=()=>{$('clock').textContent='Asia/Manila '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'})};
-tick();setInterval(tick,30000);
+tick(); // setup once - no repeating particle loop
 refresh().then(()=>{setView('office');setTimeout(()=>{if(typeof islandsOfficeView==='function')islandsOfficeView();},900);setTimeout(()=>{if(typeof islandsOfficeView==='function')islandsOfficeView();},1800);setTimeout(()=>toast('🎮 Roblox Mode ON! WASD = lakad, Space = jump, E = interact!'),4000)});
 setInterval(refresh,12000);
 /* P0: queued tasks are now driven by the SERVER (serverTaskRunner), not by this tab.

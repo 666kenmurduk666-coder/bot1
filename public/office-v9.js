@@ -6290,7 +6290,7 @@
         o.userData.v9 = true;
       });
     } catch (e) {}
-    if (!animId) animId = requestAnimationFrame(tick);
+    // RAF particle loop removed - only characters move
     return true;
   }
 
@@ -6391,7 +6391,7 @@
     });
   }
   function tick() {
-    animId = requestAnimationFrame(tick);
+    // RAF loop deleted (boss request) - runs once for setup only
     if (document.hidden) return;
     // ⏱ Perf: ang 4D world ay tumatakbo lang habang nasa office/boardroom.
     // Hindi inaalis ang galaw — tinitigil lang kapag hindi nakikita.
@@ -6498,7 +6498,7 @@
       b.tx = b.group.position.x; b.tz = b.group.position.z;
       updateBotBatch2(b, now, i);
     });
-    updateBotParticles(now);
+    // bot particles frozen
     // animParts frozen - only characters move}
     try {
       // Animated monitor dashboards (staggered so 24 canvases never repaint at once).
