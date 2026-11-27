@@ -6076,10 +6076,10 @@
       new THREE.MeshBasicMaterial({color:'#12233f',transparent:true,opacity:.07,side:THREE.BackSide,depthWrite:false,fog:false}));
     dome.userData.v9=true; addO(dome);
     // ceiling light rings
-    [46,58,70].forEach(function(r,i){
-      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.12,6,48),
-        new THREE.MeshBasicMaterial({color:i===1?'#a78bfa':'#00e5ff',transparent:true,opacity:.35,depthWrite:false,fog:false}));
-      ring.rotation.x=Math.PI/2; ring.position.y=22+i*4; ring.userData.v9=true; addO(ring);
+    [28,36,44].forEach(function(r,i){
+      var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.08,6,48),
+        new THREE.MeshBasicMaterial({color:i===1?'#a78bfa':'#00e5ff',transparent:true,opacity:.16,depthWrite:false,fog:false}));
+      ring.rotation.x=Math.PI/2; ring.position.y=13+i*4; ring.userData.v9=true; addO(ring);
     });
     // main website monitor above Command
     var screen=new THREE.Mesh(new THREE.PlaneGeometry(11,6.2),
