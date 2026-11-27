@@ -3816,30 +3816,13 @@
 
 
     // Four futuristic approach roads leading out of the HQ (N/S/E/W).
-    function approachRoad(x1,z1,x2,z2,accent) {
-      var dx=x2-x1, dz=z2-z1, len=Math.sqrt(dx*dx+dz*dz);
-      var ang=-Math.atan2(dz,dx);
-      var base=new THREE.Mesh(new THREE.BoxGeometry(len,.06,3.2),solid('#2a3446',{roughness:.7,metalness:.18}));
-      base.position.set((x1+x2)/2,.02,(z1+z2)/2); base.rotation.y=ang; base.userData.v9=true; addO(base);
-      // glowing edge lines
-      var off=1.5;
-      [-off,off].forEach(function(o){
-        var edge=new THREE.Mesh(new THREE.BoxGeometry(len,.02,.08),solid(accent,{emissive:accent,emissiveIntensity:.42}));
-        edge.position.set((x1+x2)/2+Math.cos(ang+Math.PI/2)*o,.06,(z1+z2)/2-Math.sin(ang+Math.PI/2)*o);
-        edge.rotation.y=ang; edge.userData.v9=true; addO(edge);
-      });
-      // dashed center line
-      for(var t=.05;t<.98;t+=.09){
-        var dash=new THREE.Mesh(new THREE.BoxGeometry(len*.045,.02,.12),solid('#9fe8ff',{emissive:'#9fe8ff',emissiveIntensity:.6}));
-        dash.position.set(x1+dx*t,.06,z1+dz*t); dash.rotation.y=ang; dash.userData.v9=true; addO(dash);
-      }
+    function approachRoad(x1,z1,x2,z2,accent) { /* approach roads removed - boss request */
     }
     // Short roads from the round HQ edge to small agent offices.
     function agentOffice(x, z, col, agents) {
       var base = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, .3, 32), solid('#2a3446', { roughness: .7, metalness: .18 }));
       base.position.set(x, .02, z); base.userData.v9 = true; addO(base);
-      var rim = new THREE.Mesh(new THREE.TorusGeometry(4.2, .06, 8, 32), solid(col, { emissive: col, emissiveIntensity: .8 }));
-      rim.rotation.x = Math.PI / 2; rim.position.set(x, .18, z); rim.userData.v9 = true; addO(rim);
+      // office rim ring removed - shimmer
       // small desk + monitor
       box(2.2, .16, 1.0, '#4a5568', x, .32, z);
       box(.06, .4, .06, '#2a3446', x, .6, z-.2);
@@ -4347,31 +4330,7 @@
     // Department signs removed - one big CYBEE board only.
   }
   // High-tech walkway: clean lanes, no conflicting direction.
-  function refBridge(x1,z1,x2,z2,color) {
-    var dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz),ang=-Math.atan2(dz,dx);
-    var mx=(x1+x2)/2, mz=(z1+z2)/2;
-    var base=new THREE.Mesh(new THREE.BoxGeometry(len,.12,2.8),solid('#253047',{roughness:.6,metalness:.3}));
-    base.position.set(mx,-.10+(Math.abs(x1)+Math.abs(z1)+Math.abs(x2)+Math.abs(z2))%9*.012,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
-    // ⚡ unique height per bridge: prevents coplanar overlap (z-fighting) where bridges meet
-    var by=.01 + ((Math.abs(x1)+Math.abs(z1)+Math.abs(x2)+Math.abs(z2))%9)*.015;
-    var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.02,2.5),solid('#3a4862',{roughness:.55,metalness:.35}));
-    surf.position.set(mx,by,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
-    // twin glowing lane lines (symmetric — no direction implied)
-    [-.85,.85].forEach(function(off){
-      var line=new THREE.Mesh(new THREE.BoxGeometry(len,.03,.09),solid(color,{emissive:color,emissiveIntensity:.42}));
-      var ox=Math.sin(ang)*off, oz=Math.cos(ang)*off;
-      line.position.set(mx+ox,by+.07,mz+oz); line.rotation.y=ang; line.userData.v9=true; addO(line);
-    });
-    // side handrails (static, futuristic)
-    [-1,1].forEach(function(side){
-      var off=1.42, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
-      var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.06,.07),solid('#8fa9c4',{roughness:.3,metalness:.6,emissive:color,emissiveIntensity:.3}));
-      rail.position.set(mx+rx,.5,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
-      for(var t=.05;t<=.96;t+=.2){
-        var post=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,6),solid('#6a7a98',{metalness:.5}));
-        post.position.set(x1+dx*t+rx,.26,z1+dz*t+rz); post.userData.v9=true; addO(post);
-      }
-    });
+  function refBridge(x1,z1,x2,z2,color) { /* all bridges removed - boss request */ 
   }
 
   // ===== 3D DEPTH ENHANCEMENT (low-poly, perf-safe, no shadows) =====
@@ -6214,9 +6173,8 @@
     [1.3,2.1,2.9,3.7,4.5,5.3].forEach(function(r,i){
       var ring=new THREE.Mesh(new THREE.TorusGeometry(r,.08,8,32),solid(i%2?'#ff8df0':'#63e6ff',{emissive:i%2?'#ff8df0':'#63e6ff',emissiveIntensity:1}));
       ring.rotation.x=Math.PI/2; ring.position.set(CX,.5+i*4.5,CZ); ring.userData.v9=true; addO(ring);
-      animParts.push({m:ring,k:i===1?'spinFlatR':'spinFlat',s:.45});
-    });
-    // CEO decision paper + operator
+      animParts.push({m:ring,k:i%2?'spinFlatR':'spinFlat',s:.45});
+    });    // CEO decision paper + operator
     box(1.0,.03,.65,solid('#f5f1e6',{roughness:.7}),CX-.9,.46,CZ+1.0);
     box(.75,.02,.04,'#c9d2e0',CX-.9,.49,CZ+.93);
     refDesk(CX,CZ+1.5,'#a98cff');
