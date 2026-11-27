@@ -108,7 +108,7 @@
     edit: ['✂️', '🎬', '💡'], render: ['🧪', '⏱️', '🎞️'],
     walk: ['😊', '✨', '🙂']
   };
-  var cuteBots = [], animId = null, animParts = [], _bubV = null;
+  var cuteBots = [], animId = null, animParts = [], _bubV = null, wAuras = [];
   // Layer state containers (previously undeclared -> silent builder failures)
   var ISLANDS = [[-17.6,-24.3],[17.6,-24.3],[-28.5,9.3],[28.5,9.3],[0,30]];
   var fallfx = [];
@@ -4127,6 +4127,14 @@
       blink:0, look:0, lastBubble:0, decisionAt:Date.now()-500+seed*30
     };
     walkers.push(r);
+    // ✨ glowing role aura under the bot (cheap additive circle)
+    try{
+      var aura=new THREE.Mesh(new THREE.CircleGeometry(.8,16),
+        new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:.2,depthWrite:false,
+          side:THREE.DoubleSide,fog:false,blending:THREE.AdditiveBlending}));
+      aura.rotation.x=-Math.PI/2; aura.position.set(x,.035,z); aura.userData.v9=true; addO(aura);
+      wAuras.push(aura);
+    }catch(e){}
     return g;
   }
 
@@ -4679,7 +4687,7 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); tickPortalRider(n); aiOptimizeTick(n,dt);  tickAtm(n,dt);
+          walkerTick(n,dt); tick3d(n,dt); tickMax(n,dt); tickCiv(n,dt); tickAtm(n,dt); tickPortal(n,dt); tickTeleport(n,dt); tickJuice(n,dt); tickAlive(n,dt); tickJanitor(n,dt); tickMegaVisual(n,dt); tickMegaBehavior(n,dt); tickSpecialty(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt); tickFallingStars(n,dt); tickChristmas(n,dt); tickCinematic(n,dt); adaptiveDetail(n,dt); tickPortalRider(n); tickWalkerAuras(n); aiOptimizeTick(n,dt);  tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -5782,6 +5790,17 @@
   }
   function showTinyDetails(){ perfg.hidden.forEach(function(o){o.visible=true;}); perfg.hidden=[]; }
 
+  // ✨ role auras follow the bots and pulse gently
+  function tickWalkerAuras(now){
+    try{
+      for(var i=0;i<wAuras.length&&i<walkers.length;i++){
+        var w=walkers[i],a=wAuras[i];
+        if(!w||!a)continue;
+        a.position.set(w.x,.035,w.z);
+        a.material.opacity=.14+.1*(.5+.5*Math.sin(now/500+i));
+      }
+    }catch(e){}
+  }
   // 🛸 portal rider motion (up/down through the elevator rings)
   function tickPortalRider(now){
     var r=window.__devPortalRider; if(!r)return;

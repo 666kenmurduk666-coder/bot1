@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=226"></script>
+<script src="/office-v9.js?v=227"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -8204,6 +8204,28 @@ setInterval(function(){try{if(window.__officeV9&&!window.__efOk){window.__efOk=1
 
   // expose UI helpers
   window.__officeUI={showBot:showBot,initAudio:initAudio,beep:beep};
+})();
+</script>
+
+<style>
+/* 🎬 Cinematic intro */
+#officeIntro{position:fixed;inset:0;z-index:10050;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 45%,#0d1b34 0%,#03060f 70%);transition:opacity .9s ease;pointer-events:none}
+#officeIntro .ttl{font-size:clamp(26px,5vw,54px);font-weight:900;letter-spacing:3px;color:#eaf6ff;text-shadow:0 0 30px #00e5ff88}
+#officeIntro .sub{margin-top:12px;font-size:13px;letter-spacing:4px;color:#7fd8ff}
+#officeIntro .bar{margin-top:26px;width:min(280px,60vw);height:3px;background:#ffffff18;border-radius:3px;overflow:hidden}
+#officeIntro .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00e5ff,#a78bfa,#ffd34d);animation:introLoad 2.4s ease forwards}
+@keyframes introLoad{to{width:100%}}
+/* 💎 UI glass polish */
+#mmoChat{box-shadow:0 8px 32px #000a,0 0 0 1px #7fc7ff33!important}
+#mmoChatHead{background:linear-gradient(90deg,#17345f99,#0e2340cc)!important}
+#mmoChatLog{background:linear-gradient(180deg,#08122788,#050a16aa)}
+</style>
+<div id="officeIntro"><div class="ttl">🤖 CYBORG CHEEBEE</div><div class="sub">AI OFFICE · DEV FLOOR · LIVE</div><div class="bar"><i></i></div></div>
+<script>
+(function(){var e=document.getElementById('officeIntro');if(!e)return;
+  setTimeout(function(){e.style.opacity='0';},2400);
+  setTimeout(function(){if(e.parentNode)e.parentNode.removeChild(e);},3400);
 })();
 </script>
 </body>
