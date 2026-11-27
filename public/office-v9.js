@@ -5903,23 +5903,47 @@
   // 🌌 X10000 visual upgrade - texture-only, ZERO extra draw calls
   function enhancedVisuals(){
     if(!structureGroup||!level3d)return;
-    // 1) Deep-space sky texture (nebula + stars) as scene background
+    // 1) DEEP SPACE sky - black void, colorful stars, nebula, galaxies, planets
     try{
-      var sc=document.createElement('canvas'); sc.width=512; sc.height=512;
+      var S=1024;
+      var sc=document.createElement('canvas'); sc.width=S; sc.height=S;
       var q=sc.getContext('2d');
-      var g=q.createRadialGradient(256,200,20,256,256,380);
-      g.addColorStop(0,'#20345e'); g.addColorStop(.45,'#101d3a'); g.addColorStop(1,'#050812');
-      q.fillStyle=g; q.fillRect(0,0,512,512);
-      [[120,140,90,'rgba(80,140,230,.16)'],[380,180,110,'rgba(150,90,220,.13)'],[260,390,130,'rgba(40,180,190,.10)']].forEach(function(n){
+      q.fillStyle='#010208'; q.fillRect(0,0,S,S);
+      // nebula clouds
+      [[210,250,300,'90,140,255,.16'],[760,300,340,'160,80,230,.13'],[520,760,360,'40,170,200,.10'],
+       [880,820,260,'220,80,90,.10'],[120,820,240,'120,90,220,.09']].forEach(function(n){
         var ng=q.createRadialGradient(n[0],n[1],0,n[0],n[1],n[2]);
-        ng.addColorStop(0,n[3]); ng.addColorStop(1,'rgba(0,0,0,0)');
-        q.fillStyle=ng; q.fillRect(0,0,512,512);
+        ng.addColorStop(0,'rgba('+n[3]+')'); ng.addColorStop(.5,'rgba('+n[3].replace(/,\s*[\d.]+\)/,',0.03)')+')'); ng.addColorStop(1,'rgba(0,0,0,0)');
+        q.fillStyle=ng; q.fillRect(0,0,S,S);
       });
-      for(var i=0;i<160;i++){
-        var a=Math.random()*512,b=Math.random()*512,r=Math.random()*.9+.25;
-        q.fillStyle='rgba(220,238,255,'+(.25+Math.random()*.6)+')';
-        q.beginPath(); q.arc(a,b,r,0,Math.PI*2); q.fill();
+      // galaxy spirals
+      [[260,300,150],[800,700,120]].forEach(function(gx){
+        var gr=q.createRadialGradient(gx[0],gx[1],2,gx[0],gx[1],gx[2]);
+        gr.addColorStop(0,'rgba(255,245,220,.5)'); gr.addColorStop(.18,'rgba(150,190,255,.2)');
+        gr.addColorStop(.55,'rgba(120,90,220,.08)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+        q.fillStyle=gr; q.fillRect(gx[0]-gx[2],gx[1]-gx[2],gx[2]*2,gx[2]*2);
+        for(var a=0;a<3;a++){
+          q.strokeStyle='rgba(160,200,255,.06)'; q.lineWidth=2+a;
+          q.beginPath(); q.ellipse(gx[0],gx[1],gx[2]*(.5+a*.18),gx[2]*(.22+a*.1),a*.6,0,Math.PI*2); q.stroke();
+        }
+      });
+      // distant planets
+      [[150,170,26,'#d9723b'],[900,180,18,'#4a8fd0'],[640,900,22,'#b06a4a'],[960,560,14,'#7a6ad0']].forEach(function(pl){
+        var pg=q.createRadialGradient(pl[0]-pl[2]*.3,pl[1]-pl[2]*.3,1,pl[0],pl[1],pl[2]);
+        pg.addColorStop(0,'#ffffff'); pg.addColorStop(.25,pl[3]); pg.addColorStop(1,'#05070f');
+        q.fillStyle=pg; q.beginPath(); q.arc(pl[0],pl[1],pl[2],0,Math.PI*2); q.fill();
+      });
+      // colorful stars
+      var cols=['#ffffff','#bcdcff','#ffb27a','#ff6a5a','#ffe08a','#9fd8ff'];
+      for(var i=0;i<760;i++){
+        var x=Math.random()*S,y=Math.random()*S,r=Math.random()*1.4+.2;
+        var c=cols[(Math.random()*cols.length)|0];
+        q.globalAlpha=.35+Math.random()*.65;
+        q.fillStyle=c; q.beginPath(); q.arc(x,y,r,0,Math.PI*2); q.fill();
+        if(Math.random()<.06){ q.strokeStyle=c; q.globalAlpha=.28; q.lineWidth=.7;
+          q.beginPath(); q.moveTo(x-r*4,y); q.lineTo(x+r*4,y); q.moveTo(x,y-r*4); q.lineTo(x,y+r*4); q.stroke(); }
       }
+      q.globalAlpha=1;
       var skyTex=new THREE.CanvasTexture(sc);
       scene3d.background=skyTex;
     }catch(e){}
