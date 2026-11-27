@@ -678,7 +678,7 @@ if(window.__OFFICE_LOCKED){
 <script src="/three.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js';"></script>
 <!-- office-v9 must load BEFORE the main app: buildRoom3d() calls it. Loaded here
      so buildRealOffice3d is always defined even when init3D runs very early. -->
-<script src="/office-v9.js?v=238"></script>
+<script src="/office-v9.js?v=239"></script>
 <script>
 const $=id=>document.getElementById(id);
 const PL=['TikTok','Facebook','Instagram','YouTube'];
@@ -2708,7 +2708,7 @@ function buildRoom3d(id){
   for(let i=0;i<120;i++){dustPos.push((Math.random()-0.5)*20, Math.random()*8+0.5, (Math.random()-0.5)*14);}
   dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));
   const dustMat=new THREE.PointsMaterial({color:0xffffff,size:.06,transparent:true,opacity:.35,sizeAttenuation:true});
-  const dust=new THREE.Points(dustGeo,dustMat);g.level.add(dust);g.dust=dust;room3dId=id;escArr=[];
+  const dust=new THREE.Points(dustGeo,dustMat);dust.visible=false;g.level.add(dust);g.dust=dust;room3dId=id;escArr=[];
   // The detailed-office block below is disabled (if(false)) for the light
   // single-floor design, but the layout still calls doorAt(). office-v9 draws
   // its own entrance, so keep this a harmless no-op instead of a ReferenceError.
@@ -3449,7 +3449,7 @@ function tree3d(x,z,s){
   const f1=new THREE.Mesh(new THREE.ConeGeometry(.75*s,1.3*s,8),m3('#3f9e4f'));f1.position.set(x,1.45*s,z);f1.castShadow=true;g.level.add(f1);
   const f2=new THREE.Mesh(new THREE.ConeGeometry(.55*s,1*s,8),m3('#4fae5e'));f2.position.set(x,2.15*s,z);f2.castShadow=true;g.level.add(f2);
   if(!g.trees)g.trees=[];
-  g.trees.push({f1,f2,ph:x*1.7+z*2.3});
+  f1.visible=false;f2.visible=false;g.trees.push({f1,f2,ph:x*1.7+z*2.3});
 }
 function cityBlock3d(x,z,w,d,h,color){
   const plain=m3(color);
@@ -3645,7 +3645,7 @@ function buildScenery3d(){
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:cTex,transparent:true,opacity:.5,fog:false,depthWrite:false}));
     s.scale.set(20+Math.random()*16,5+Math.random()*3,1);
     s.position.set(11+(Math.random()-.5)*220,26+Math.random()*24,7+(Math.random()-.5)*220);
-    g.level.add(s);g.clouds.push({s,sp:.25+Math.random()*.5});
+    s.visible=false;g.level.add(s);g.clouds.push({s,sp:.25+Math.random()*.5});
   }
   // --- IBON ---
   const wing=new THREE.BufferGeometry();
@@ -3692,7 +3692,7 @@ function buildScenery3d(){
     const mp=[];for(let i=0;i<26;i++)mp.push(x+(Math.random()-.5)*w,y-Math.random()*2,z+(Math.random()-.5)*3);
     const mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.Float32BufferAttribute(mp,3));
     const mist=new THREE.Points(mg,new THREE.PointsMaterial({color:0xffffff,size:.55,transparent:true,opacity:.5,depthWrite:false}));
-    g.level.add(mist);g.mist.push({mist,x,z,y,h});
+    mist.visible=false;g.level.add(mist);g.mist.push({mist,x,z,y,h});
   };
   falls(-28,-50,6,6,12,7);
   falls(66,-44,6.5,5,13,6);
@@ -3732,7 +3732,7 @@ function buildExtraScenery3d(){
   const fp=[];for(let i=0;i<42;i++)fp.push(-28+(Math.random()-.5)*22,.6+Math.random()*2.6,24+(Math.random()-.5)*20);
   const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));
   const ff=new THREE.Points(fg,new THREE.PointsMaterial({color:0xffe680,size:.3,transparent:true,opacity:.8,depthWrite:false,blending:THREE.AdditiveBlending}));
-  g.level.add(ff);g.fireflies=ff;
+  ff.visible=false;g.level.add(ff);g.fireflies=ff;
   // 🌬️ WINDMILL sa malayong burol
   const hill=new THREE.Mesh(new THREE.ConeGeometry(14,9,8),m3('#6f7d68'));hill.position.set(-62,3,-38);g.level.add(hill);
   const wm=new THREE.Group();wm.position.set(-62,8,-38);
@@ -4137,7 +4137,7 @@ function buildLivingWorld3d(){
     const y=.4+Math.random()*7;
     m.position.set(-48+Math.random()*106,y,-25+Math.random()*70);
     g.level.add(m);
-    g.windParts.push({m,ph:Math.random()*6.28,baseY:y,sp:.5+Math.random()*1.1});
+    m.visible=false;g.windParts.push({m,ph:Math.random()*6.28,baseY:y,sp:.5+Math.random()*1.1});
   }
   // 🚩 WAVING FLAGS — tatlong bandila sa court, playground, at coffee cart
   g.flags=[];
@@ -4147,7 +4147,7 @@ function buildLivingWorld3d(){
     const geo=new THREE.PlaneGeometry(1.5,.9,10,4);
     const f=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:col,side:THREE.DoubleSide,roughness:.8}));
     f.position.set(x+.75,2.6,z);g.level.add(f);
-    g.flags.push({f,base:Float32Array.from(geo.attributes.position.array)});
+    f.visible=false;g.flags.push({f,base:Float32Array.from(geo.attributes.position.array)});
   };
   flag(23.7,5.5,'#e8622c');flag(9.9,25.5,'#4b8dff');flag(24.2,15.8,'#f0b429');
   // ☕ COFFEE STEAM — usok na umaangat mula sa cart
@@ -4160,7 +4160,7 @@ function buildLivingWorld3d(){
   for(let i=0;i<16;i++){
     const m=new THREE.Sprite(new THREE.SpriteMaterial({map:stex,transparent:true,opacity:.3,depthWrite:false}));
     m.scale.set(.25,.25,1);g.level.add(m);
-    g.steam.push({m,ph:i/16,x:30+(Math.random()-.5)*.8,z:13.4+(Math.random()-.5)*.4});
+    m.visible=false;g.steam.push({m,ph:i/16,x:30+(Math.random()-.5)*.8,z:13.4+(Math.random()-.5)*.4});
   }
 }
 /* ===== 🌱 BERMUDA GRASS: siksikang damo sa lupa (hindi sa kalsada/court/tubig) ===== */
@@ -4754,18 +4754,14 @@ function frame3D(){
     const flap=Math.sin(t/110+b.ph)*.55;b.lw.rotation.z=flap;b.rw.rotation.z=-flap;
   });
   if(typeof updateWaterFx==='function')updateWaterFx(t);
-  if(g.clouds)g.clouds.forEach(c=>{c.s.position.x+=c.sp*dt;if(c.s.position.x>130)c.s.position.x=-110;});
+  // clouds frozen
   if(g.riverTex)g.riverTex.offset.y=(t/9000)%1;
   if(g.fallTex)g.fallTex.forEach((ft,i)=>{ft.offset.y=((-t/1100)+i*.37)%1;});
-  if(g.mist)g.mist.forEach(m=>{
-    const pa=m.mist.geometry.attributes.position.array;
-    for(let i=0;i<pa.length;i+=3){pa[i+1]+=dt*.012;if(pa[i+1]>m.y+1)pa[i+1]=m.y-m.h*.6;}
-    m.mist.geometry.attributes.position.needsUpdate=true;
-  });
+  // mist frozen
   if(g.sunGlow)g.sunGlow.material.opacity=.7+Math.sin(t/1800)*.12;
   if(g.balloon){g.balloon.position.x=-90+((t/320)%180);g.balloon.position.y=38+Math.sin(t/1600)*1.8;g.balloon.position.z=-70+Math.sin(t/9000)*12;g.balloon.rotation.y=t/8000;}
   if(g.windmill)g.windmill.rotation.z+=dt*.012;
-  if(g.fireflies){g.fireflies.position.y=Math.sin(t/1200)*.3;g.fireflies.material.opacity=.6+Math.sin(t/700)*.25;}
+  // fireflies frozen
   if(g.fountainJets){g.fountainJets.rotation.y+=dt*.004;g.fountainJets.children.forEach((j,i)=>{j.position.y=2.4+Math.sin(t/380+i*.7)*.55;});}
   // 🐾 ANIMALS: malayang lakad-lakad sa damo, hindi pumapasok sa opisina/kalsada
   if(g.animals)g.animals.forEach(a=>{

@@ -6225,13 +6225,13 @@
     // Each visual layer is isolated: one failure can't block the others.
     // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
     // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
-    var layers=[ ['enhance3D',enhance3D], ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor], ['buildJuice',buildJuice], ['buildAlive',buildAlive],
-      ['buildJanitor',buildJanitor], ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
-      ['buildChristmas',buildChristmas], ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
+    // ⚡ OFFICE + CHARACTERS ONLY (boss request) - solar system & all effects removed
+    var layers=[ ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor],
+      ['buildJanitor',buildJanitor], ['unrealStyle',unrealStyle] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: ZERO synchronous heavy work. Robots render immediately;
     // visuals are built one per idle callback so the page never freezes.
-    var queue=[['enhancedVisuals',enhancedVisuals]].concat(layers), qi=0;
+    var queue=layers.slice(), qi=0;
     var idle=window.requestIdleCallback
       ? function(cb){ window.requestIdleCallback(cb,{timeout:120}); }
       : function(cb){ setTimeout(cb,40); };
