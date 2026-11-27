@@ -6194,9 +6194,8 @@
     walkers.length = 0; navZones.length = 0; navBridges.length = 0;
     var CX=0, CZ=0;
     navAddZone(0,0,18);  // Central office = wide main floor at the center
-    // dark outer-space floor so nothing falls
-    var ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), solid('#000000',{roughness:1,metalness:0}));
-    ground.rotation.x=-Math.PI/2; ground.position.y=-2.6; ground.userData.v9=true; addO(ground);
+    // Dark ground plane removed - office now floats freely in deep space.
+
     // stars
     try{
       var pts=[];
