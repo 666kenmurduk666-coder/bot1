@@ -3816,7 +3816,13 @@
 
 
     // Four futuristic approach roads leading out of the HQ (N/S/E/W).
-    function approachRoad(x1,z1,x2,z2,accent) { /* approach roads removed - boss request */
+    function approachRoad(x1,z1,x2,z2,accent) {
+      var dx=x2-x1, dz=z2-z1, len=Math.sqrt(dx*dx+dz*dz), ang=-Math.atan2(dz,dx);
+      var base=new THREE.Mesh(new THREE.BoxGeometry(len,.24,3.2),
+        solid('#2a3446',{roughness:.7,metalness:.18,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+      base.position.set((x1+x2)/2,.10,(z1+z2)/2); base.rotation.y=ang; base.userData.v9=true; addO(base);
+      var edge=new THREE.Mesh(new THREE.BoxGeometry(len,.16,.24),solid(accent,{emissive:accent,emissiveIntensity:.5}));
+      edge.position.set((x1+x2)/2,.30,(z1+z2)/2); edge.rotation.y=ang; edge.userData.v9=true; addO(edge);
     }
     // Short roads from the round HQ edge to small agent offices.
     function agentOffice(x, z, col, agents) {
@@ -4330,7 +4336,29 @@
     // Department signs removed - one big CYBEE board only.
   }
   // High-tech walkway: clean lanes, no conflicting direction.
-  function refBridge(x1,z1,x2,z2,color) { /* all bridges removed - boss request */ 
+  /* 🌉 CLEAN BRIDGE - solid surfaces, no thin lines, unique height so nothing overlaps */
+  function refBridge(x1,z1,x2,z2,color) {
+    var dx=x2-x1, dz=z2-z1, len=Math.sqrt(dx*dx+dz*dz), ang=-Math.atan2(dz,dx);
+    var mx=(x1+x2)/2, mz=(z1+z2)/2;
+    var seed=(Math.abs(x1)+Math.abs(z1)+Math.abs(x2)+Math.abs(z2))%11;
+    var y=.06+seed*.02; // unique height per bridge - no coplanar overlap at hub
+    var base=new THREE.Mesh(new THREE.BoxGeometry(len,.22,3.0),
+      solid('#253047',{roughness:.65,metalness:.25,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+    base.position.set(mx,y-.14,mz); base.rotation.y=ang; base.userData.v9=true; addO(base);
+    var surf=new THREE.Mesh(new THREE.BoxGeometry(len,.08,2.7),
+      solid('#465670',{roughness:.6,metalness:.3,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
+    surf.position.set(mx,y,mz); surf.rotation.y=ang; surf.userData.v9=true; addO(surf);
+    // thick glowing rails (not thin lines - no shimmer)
+    [-1,1].forEach(function(side){
+      var off=1.42, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
+      var rail=new THREE.Mesh(new THREE.BoxGeometry(len,.14,.16),
+        solid(color,{emissive:color,emissiveIntensity:.55,roughness:.4}));
+      rail.position.set(mx+rx,y+.55,mz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
+      for(var t=.06;t<=.95;t+=.22){
+        var post=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.55,8),solid('#7a8ba5',{metalness:.4}));
+        post.position.set(x1+dx*t+rx,y+.28,z1+dz*t+rz); post.userData.v9=true; addO(post);
+      }
+    });
   }
 
   // ===== 3D DEPTH ENHANCEMENT (low-poly, perf-safe, no shadows) =====
@@ -4678,8 +4706,10 @@
       try{
         if(typeof view==='undefined'||view==='office'||view==='boardroom'){
           var n=Date.now(), dt=Math.min(.08,(n-last)/1000); last=n; window.__wl=(window.__wl||0)+1;
-          // ⚡ only characters animate (boss request)
+          // 🌌 Full living show + characters
           walkerTick(n,dt); tickJanitor(n,dt); tickSpecialty(n,dt);
+          tickSpaceShow(n,dt); tickFallingStars(n,dt); tickUfo(n,dt); tickRealGalaxy(n,dt);
+          tickAlive(n,dt); tickJuice(n,dt); tickChristmas(n,dt); tickAtm(n,dt);
         }
       }catch(e){}
     }, 90);
@@ -5657,6 +5687,71 @@
       }catch(e){}
     }
 
+  /* ☄️ SPACE SHOW - meteors collide with Earth, Earth bursts into rings + debris */
+  var spacefx={meteors:[],bursts:[],earth:null};
+  function buildSpaceShow(){
+    if(!structureGroup||!level3d)return;
+    spacefx.meteors.length=0; spacefx.bursts.length=0;
+    try{ spacefx.earth=galaxfx.earth||null; }catch(e){}
+    var target=spacefx.earth?spacefx.earth.position:new THREE.Vector3(78,62,-88);
+    for(var i=0;i<6;i++){
+      var col=['#ffd34d','#ff8df0','#63e6ff','#7cf0c8','#ff9fc4','#ffffff'][i];
+      var g=new THREE.Group(); g.userData.v9=true; structureGroup.add(g);
+      var head=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),
+        new THREE.MeshBasicMaterial({color:col,fog:false}));
+      head.userData.v9=true; g.add(head);
+      var tail=new THREE.Mesh(new THREE.ConeGeometry(.5,7,10,1,true),
+        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.55,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+      tail.rotation.x=Math.PI/2; tail.position.z=-3.6; tail.userData.v9=true; g.add(tail);
+      var a=i/6*Math.PI*2;
+      spacefx.meteors.push({g:g,head:head,tail:tail,
+        from:new THREE.Vector3(target.x+Math.cos(a)*160,target.y+40+Math.random()*70,target.z+Math.sin(a)*160),
+        to:target.clone(), t:-i*0.22, sp:.055+i*.007, col:col});
+      g.visible=false;
+    }
+  }
+  function spaceBurst(pos,col){
+    try{
+      for(var i=0;i<3;i++){
+        var ring=new THREE.Mesh(new THREE.TorusGeometry(2+i*1.5,.22,8,32),
+          new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+        ring.position.copy(pos); ring.userData.v9=true; addO(ring);
+        spacefx.bursts.push({m:ring,t:0,life:1400+i*260});
+      }
+      for(var j=0;j<10;j++){
+        var frag=new THREE.Mesh(new THREE.SphereGeometry(.3+Math.random()*.4,6,6),
+          new THREE.MeshBasicMaterial({color:j%2?col:'#ffd34d',fog:false}));
+        frag.position.copy(pos); frag.userData.v9=true; addO(frag);
+        var a=Math.random()*Math.PI*2, e=(Math.random()-.5)*2;
+        spacefx.bursts.push({m:frag,t:0,life:1200+Math.random()*900,
+          v:new THREE.Vector3(Math.cos(a)*22,e*18,Math.sin(a)*22)});
+      }
+    }catch(e){}
+  }
+  function tickSpaceShow(now,dt){
+    if(!spacefx.meteors.length)return;
+    try{
+      for(var i=0;i<spacefx.meteors.length;i++){
+        var m=spacefx.meteors[i];
+        m.t+=dt*m.sp; if(m.t<0){m.g.visible=false;continue;}
+        if(m.t>1){ m.g.visible=false; spaceBurst(m.to,m.col); m.t=-2-Math.random()*3; continue; }
+        m.g.visible=true;
+        var k=m.t*m.t*(3-2*m.t);
+        m.g.position.lerpVectors(m.from,m.to,k);
+        m.g.lookAt(m.to);
+        m.tail.material.opacity=.55*(1-k*.4);
+        m.head.scale.setScalar(1+k*.6);
+      }
+      for(var b=spacefx.bursts.length-1;b>=0;b--){
+        var x=spacefx.bursts[b]; x.t+=dt*1000;
+        var q=x.t/x.life;
+        if(q>=1){ try{x.m.parent&&x.m.parent.remove(x.m);}catch(e){} spacefx.bursts.splice(b,1); continue; }
+        if(x.v){ x.m.position.addScaledVector(x.v,dt); x.v.multiplyScalar(.985); }
+        else x.m.scale.setScalar(1+q*7);
+        if(x.m.material.opacity!==undefined) x.m.material.opacity=.85*(1-q);
+      }
+    }catch(e){}
+  }
   function buildFallingStars(){
       if(!structureGroup||!level3d)return;
       fallfx.length=0;
@@ -6000,7 +6095,7 @@
   }
   function buildDevFloor(){
     if(!structureGroup||!level3d)return;
-    var cx=0, cz=30, Y=7;
+    var cx=-52, cz=-42, Y=9;
     // platform
     var disc=new THREE.Mesh(new THREE.CylinderGeometry(8.2,7.6,.5,20),solid('#0a0d15',{roughness:.6,metalness:.25}));
     disc.position.set(cx,Y-.25,cz); disc.userData.v9=true; addO(disc);
@@ -6192,12 +6287,17 @@
     // ⚡ DRAW-CALL CUT: heavy decorative layers disabled by CEO request (lag).
     // Kept: core, particles, life, janitors, UFO delivery, galaxy/Earth, tree, lighting.
     // ⚡ OFFICE + CHARACTERS ONLY (boss request) - solar system & all effects removed
-    var layers=[ ['buildCentralOffice',buildCentralOffice], ['buildDevFloor',buildDevFloor],
-      ['buildJanitor',buildJanitor], ['unrealStyle',unrealStyle] ];
+    // 🌌 FULL SHOW restored (boss request): solar system + meteors + UFO + life + lighting
+    var layers=[ ['enhancedVisuals',enhancedVisuals], ['buildCentralOffice',buildCentralOffice],
+      ['buildDevFloor',buildDevFloor], ['buildJanitor',buildJanitor],
+      ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
+      ['buildSpaceShow',buildSpaceShow], ['buildFallingStars',buildFallingStars], ['buildAlive',buildAlive],
+      ['buildJuice',buildJuice], ['buildChristmas',buildChristmas],
+      ['unrealStyle',unrealStyle], ['cinematicUpgrade',cinematicUpgrade] ];
     function runLayer(pair){ try{ pair[1](); }catch(e){ try{console.warn('scene layer failed:',pair[0],e&&e.message);}catch(_){}} }
     // ⚡ First open: ZERO synchronous heavy work. Robots render immediately;
     // visuals are built one per idle callback so the page never freezes.
-    var queue=layers.slice(), qi=0;
+    var queue=[['harmonizeColors',harmonizeColors]].concat(layers), qi=0;
     var idle=window.requestIdleCallback
       ? function(cb){ window.requestIdleCallback(cb,{timeout:120}); }
       : function(cb){ setTimeout(cb,40); };
