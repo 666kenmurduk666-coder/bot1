@@ -6093,6 +6093,42 @@
     g.add(devLabel(label,color,1.85));
     return g;
   }
+  /* 🌉 DEV BRIDGE - clean sloped walkway from Command hub to the relocated dev floor */
+  function buildDevBridge(){
+    if(!structureGroup||!level3d)return;
+    var sx=0, sz=0, sy=.35;            // Command hub start
+    var ex=-52, ez=-42, ey=9;           // dev floor pad
+    var dx=ex-sx, dz=ez-sz, len=Math.hypot(dx,dz);
+    var ang=-Math.atan2(dz,dx);
+    var SEG=16;
+    var ux=dx/SEG, uz=dz/SEG, uy=(ey-sy)/SEG;
+    for(var i=0;i<SEG;i++){
+      var t=i/(SEG-1);
+      var cx=sx+ux*(i+.5), cz=sz+uz*(i+.5), cy=sy+uy*(i+.5);
+      // thick deck - no thin surfaces, no coplanar overlap
+      var deck=new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(ux,uz)+.12,.22,3.0),
+        solid('#3a4a66',{roughness:.62,metalness:.3,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+      deck.position.set(cx,cy,cz); deck.rotation.y=ang; deck.rotation.x=-Math.atan2(uy,Math.hypot(ux,uz));
+      deck.userData.v9=true; addO(deck);
+      // glowing side rails (thick, no shimmer)
+      [-1,1].forEach(function(side){
+        var off=1.5, rx=Math.sin(ang)*off, rz=Math.cos(ang)*off;
+        var rail=new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(ux,uz)+.1,.16,.18),
+          solid(i%2?'#00e5ff':'#a78bfa',{emissive:i%2?'#00e5ff':'#a78bfa',emissiveIntensity:.55}));
+        rail.position.set(cx+rx,cy+.48,cz+rz); rail.rotation.y=ang; rail.userData.v9=true; addO(rail);
+        var post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.5,8),solid('#8fa9c4',{metalness:.45}));
+        post.position.set(cx+rx,cy+.24,cz+rz); post.userData.v9=true; addO(post);
+      });
+    }
+    // landing pad at the dev floor end
+    var land=new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.6,.3,24),
+      solid('#13233c',{emissive:'#00c8ff',emissiveIntensity:.35,metalness:.5}));
+    land.position.set(ex,ey-.15,ez); land.userData.v9=true; addO(land);
+    // portal arch at the start
+    var arch=new THREE.Mesh(new THREE.TorusGeometry(2.2,.18,8,32,Math.PI),
+      solid('#a78bfa',{emissive:'#a78bfa',emissiveIntensity:.8}));
+    arch.position.set(sx,sy+2.2,sz); arch.userData.v9=true; addO(arch);
+  }
   function buildDevFloor(){
     if(!structureGroup||!level3d)return;
     var cx=-52, cz=-42, Y=9;
@@ -6289,7 +6325,7 @@
     // ⚡ OFFICE + CHARACTERS ONLY (boss request) - solar system & all effects removed
     // 🌌 FULL SHOW restored (boss request): solar system + meteors + UFO + life + lighting
     var layers=[ ['enhancedVisuals',enhancedVisuals], ['buildCentralOffice',buildCentralOffice],
-      ['buildDevFloor',buildDevFloor], ['buildJanitor',buildJanitor],
+      ['buildDevFloor',buildDevFloor], ['buildDevBridge',buildDevBridge], ['buildJanitor',buildJanitor],
       ['buildUfoDelivery',buildUfoDelivery], ['buildRealGalaxy',buildRealGalaxy],
       ['buildSpaceShow',buildSpaceShow], ['buildFallingStars',buildFallingStars], ['buildAlive',buildAlive],
       ['buildJuice',buildJuice], ['buildChristmas',buildChristmas],
